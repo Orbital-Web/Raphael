@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+# SFML
+SFML-2.6.0/

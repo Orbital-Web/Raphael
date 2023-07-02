@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 #include "src/GameEngine/thc.h"
+#include <SFML/Graphics.hpp>
+#include <iostream>
 
 void display_position( thc::ChessRules &cr, const std::string &description )
 {
@@ -97,5 +99,25 @@ int main()
         printf( "As expected, all flags true, so both penultimate and final positions are legal, in the final position White is mated\n" );
     else
         printf( "Strange(?!), we expected all flags true, meaning both penultimate and final positions are legal, in the final position White is mated\n" );
+
+
+    std::cout << "Rendering now";
+    sf::RenderWindow window(sf::VideoMode(200, 200), "SFML works!");
+    sf::CircleShape shape(100.f);
+    shape.setFillColor(sf::Color::Green);
+
+    while (window.isOpen())
+    {
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+
+        window.clear();
+        window.draw(shape);
+        window.display();
+    }
 }
 

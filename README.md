@@ -4,9 +4,10 @@ Will probably start work on it around September 2023. The engine will be based o
 
 
 ## Getting started (Windows)
-1. Install g++
-2. Download SFML from https://www.sfml-dev.org/download.php and add it to the root directory
-3. Compile `main.cpp` with the following commands
+1. Clone the repository
+2. Install g++
+3. Download SFML-2.6.0 from https://www.sfml-dev.org/download/sfml/2.6.0/ and add it to the root directory
+4. Compile `main.cpp` with the following commands
     ```
     g++ -c main.cpp src/GameEngine/thc.cpp -ISFML-2.6.0/include -DSFML_STATIC
     g++ -o main main.o thc.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lopengl32 -lwinmm -lgdi32

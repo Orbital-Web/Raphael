@@ -1,3 +1,19 @@
+#include "src/GameEngine/GameEngine.h"
+#include "src/GameEngine/HumanPlayer.h"
+#include <array>
+
+
+
+int main() {
+    std::array<int, 2> t_remaining = {600, 600};
+    cge::GamePlayer* p1 = new cge::HumanPlayer;
+    cge::GamePlayer* p2 = new cge::HumanPlayer;
+    std::array<cge::GamePlayer*, 2> players = {p1, p2};
+    cge::GameEngine ge(t_remaining, players);
+
+    ge.run_match();
+    return 0;
+}
 /*
 
     Simple demo of THC Chess library
@@ -8,6 +24,7 @@
 
  */
 
+/*
 #include <stdio.h>
 #include <string>
 #include <vector>
@@ -120,4 +137,4 @@ int main()
         window.display();
     }
 }
-
+*/

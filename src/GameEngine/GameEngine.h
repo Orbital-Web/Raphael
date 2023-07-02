@@ -1,5 +1,6 @@
 #pragma once
 #include "GamePlayer.h"
+#include <string>
 #include <array>
 
 
@@ -8,7 +9,10 @@ namespace cge { // chess game engine
 class GameEngine {
 // class variables
 private:
+    int FRAMERATE = 30;
+    int WAITTIME = 1000/FRAMERATE;
     thc::ChessRules manager;
+    thc::Move mv;
     thc::TERMINAL game_ended = thc::NOT_TERMINAL;
     bool turn = true;                           // white's turn
     std::array<int, 2> t_remain;                // (white, black)
@@ -19,7 +23,7 @@ private:
 public:
     // Initialize the GameEngine with the respective
     // players and time remaining
-    GameEngine();
+    GameEngine(std::array<cge::GamePlayer*, 2> players_in);
     GameEngine(std::array<int, 2> t_remain_in, std::array<cge::GamePlayer*, 2> players_in);
     
     // Run a match from start to end
@@ -36,7 +40,7 @@ public:
 private:
     void update_render();
 
-    void move(thc::Move movecode);
+    void move(std::string movestr);
 
     void undo();
 

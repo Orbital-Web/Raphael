@@ -8,9 +8,9 @@
 namespace cge { // chess game engine
 class HumanPlayer: public cge::GamePlayer {
 public:
-    HumanPlayer();
+    //HumanPlayer();
 
-    // Asks the human to return a valid move and sets `ready=true`
-    thc::Move get_move(bool& ready, const thc::ChessRules& manager, int t_remain);
+    // Asks the human to return a valid move string
+    std::string get_move(const thc::ChessRules& manager, int t_remain);
 };  // HumanPlayer
 }   // namespace cge

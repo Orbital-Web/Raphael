@@ -8,7 +8,8 @@
 namespace cge { // chess game engine
 class HumanPlayer: public cge::GamePlayer {
 public:
-    //HumanPlayer();
+    // Initializes a HumanPlayer with a name
+    HumanPlayer(std::string name_in);
 
     // Asks the human to return a valid move string
     std::string get_move(const thc::ChessRules& manager, int t_remain);

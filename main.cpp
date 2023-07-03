@@ -5,7 +5,7 @@
 
 
 int main() {
-    std::array<int, 2> t_remaining = {600, 600};
+    std::array<float, 2> t_remaining = {600.0, 600.0};
     cge::GamePlayer* p1 = new cge::HumanPlayer;
     cge::GamePlayer* p2 = new cge::HumanPlayer;
     std::array<cge::GamePlayer*, 2> players = {p1, p2};

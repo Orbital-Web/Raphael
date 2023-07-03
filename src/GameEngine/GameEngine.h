@@ -2,6 +2,7 @@
 #include "GamePlayer.h"
 #include <string>
 #include <array>
+#include <chrono>
 
 
 
@@ -9,13 +10,13 @@ namespace cge { // chess game engine
 class GameEngine {
 // class variables
 private:
-    int FRAMERATE = 30;
-    int WAITTIME = 1000/FRAMERATE;
+    int FRAMERATE = 60; // actual frate tends to be half of target at higher values
+    std::chrono::milliseconds WAITTIME = std::chrono::milliseconds(1000/FRAMERATE);
     thc::ChessRules manager;
     thc::Move mv;
     thc::TERMINAL game_ended = thc::NOT_TERMINAL;
     bool turn = true;                           // white's turn
-    std::array<int, 2> t_remain;                // (white, black)
+    std::array<float, 2> t_remain;              // (white, black)
     std::array<cge::GamePlayer*, 2> players;    // (white, black)
 
 
@@ -24,7 +25,7 @@ public:
     // Initialize the GameEngine with the respective
     // players and time remaining
     GameEngine(std::array<cge::GamePlayer*, 2> players_in);
-    GameEngine(std::array<int, 2> t_remain_in, std::array<cge::GamePlayer*, 2> players_in);
+    GameEngine(std::array<float, 2> t_remain_in, std::array<cge::GamePlayer*, 2> players_in);
     
     // Run a match from start to end
     void run_match();
@@ -44,6 +45,6 @@ private:
 
     void undo();
 
-    void add_time(std::pair<int, int> extra_time);
+    void add_time(std::array<float, 2> t_extra);
 };  // GameEngine
 }   // namespace cge

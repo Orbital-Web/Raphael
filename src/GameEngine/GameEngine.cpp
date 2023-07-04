@@ -4,6 +4,8 @@
 #include <SFML/Graphics.hpp>
 #include <thread>
 #include <future>
+#include <sstream>
+#include <iomanip>
 
 
 
@@ -42,7 +44,6 @@ void cge::GameEngine::run_match() {
 
             // game loop
             update_window();
-            //printf("%f\n", cur_t_remain);
 
             if (cur_t_remain <= 0) {
                 // handle unreturned move
@@ -66,31 +67,28 @@ void cge::GameEngine::run_match() {
 // generates (mostly) static sprites such as the tiles and timers
 void cge::GameEngine::generate_sprites() {
     // tiles
-    int x,y;
     for (int i=0; i<64; i++) {
-        x = i%8;
-        y = i/8;
+        int x = i%8;
+        int y = i/8;
         tiles[i] = sf::RectangleShape({100, 100});
         tiles[i].setPosition(50 + 100*x, 70 + 100*y);
         tiles[i].setFillColor(((x+y)%2) ? cge::PALETTE::TILE_B : cge::PALETTE::TILE_W);
     }
 
-    // timer boxes
-    timers[0] = sf::RectangleShape({180, 50});
-    timers[0].setPosition(660, 880);
-    timers[0].setFillColor(cge::PALETTE::TIMER_W);
-    timers[1] = sf::RectangleShape({180, 50});
-    timers[1].setPosition(660, 10);
-    timers[1].setFillColor(cge::PALETTE::TIMER_B);
-
-    // player names
+    // timer and player names
     font.loadFromFile("src/assets/fonts/Roboto-Regular.ttf");
     for (int i=0; i<2; i++) {
+        // timer boxes
+        timers[i] = sf::RectangleShape({180, 50});
+        timers[i].setPosition(660, (i) ? 10 : 880);
+        // time remaining
+        timertexts[i] = sf::Text("", font, 40);
+        timertexts[i].setFillColor(cge::PALETTE::TEXT);
+        // names
         names[i] = sf::Text(players[i]->name, font, 40);
         names[i].setFillColor(cge::PALETTE::TEXT);
+        names[i].setPosition(50, (i) ? 10 : 880);
     }
-    names[0].setPosition(50, 880);
-    names[1].setPosition(50, 10);
 
     // piece textures and sprites
     for (int i=0; i<12; i++) {
@@ -104,16 +102,15 @@ void cge::GameEngine::generate_sprites() {
 // renders the chess pieces
 void cge::GameEngine::draw_pieces() {
     char* board = manager.squares;
-    int x, y, piece;
 
     for (int sq=0; sq<64; sq++) {
         // coordinates on the board
-        x = sq%8;
-        y = sq/8;
+        int x = sq%8;
+        int y = sq/8;
 
         // render piece
         if (board[sq] != ' ') {
-            piece = cge::PIECENAME.at(board[sq]);
+            int piece = cge::PIECENAME.at(board[sq]);
             pieces[piece].setPosition(50 + 100*x, 70 + 100*y);
             window->draw(pieces[piece]);
         }
@@ -121,37 +118,63 @@ void cge::GameEngine::draw_pieces() {
 }
 
 
+// renders the timer and names
+void cge::GameEngine::draw_timer() {
+    // set timer display properties
+    for (int i=0; i<2; i++) {
+        // accomodate different format
+        std::stringstream formatter;
+        std::string t_disp;
+
+        if (t_remain[i] >= 60) {    // mm : ss
+            timers[i].setFillColor((i!=turn) ? cge::PALETTE::TIMER : cge::PALETTE::TIMER_A);
+            int min = (int)t_remain[i] / 60;
+            int sec = (int)t_remain[i] % 60;
+            formatter << std::setw(2) << std::setfill('0') << std::to_string(sec);
+            t_disp = std::to_string(min) + " : " + formatter.str();
+        } else {                    // ss.mm
+            timers[i].setFillColor((i!=turn) ? cge::PALETTE::TIMER_LOW : cge::PALETTE::TIMER_ALOW);
+            formatter << std::fixed << std::setprecision(1) << t_remain[i];
+            t_disp = formatter.str();
+        }
+
+        // manage positioning of string
+        timertexts[i].setString(t_disp);
+        sf::FloatRect textbounds = timertexts[i].getLocalBounds();
+        timertexts[i].setPosition(820 - textbounds.width, (i) ? 10 : 880);
+    }
+
+    // draw timer, remaining time, and names
+    for (int i=0; i<2; i++) {
+        window->draw(timers[i]);
+        window->draw(timertexts[i]);
+        window->draw(names[i]);
+    }
+}
+
+
 // handles window events and rendering
 void cge::GameEngine::update_window() {
+    // event handling
     while (window->pollEvent(windowevent))
     {
         if (windowevent.type == sf::Event::Closed)
             window->close();
     }
 
-    // clear window
+    // clear window render
     window->clear(cge::PALETTE::BG);
-
-    // change color of selected tiles
 
     // draw tiles
     for (int i=0; i<64; i++)
         window->draw(tiles[i]);
     
-    // revert color of selected tiles (without redrawing)
+    // selected tiles overlay
     
-    // draw timer boxes and names
-    for (int i=0; i<2; i++) {
-        window->draw(timers[i]);
-        window->draw(names[i]);
-    }
+    draw_timer();   // draw timer and names
+    draw_pieces();  // draw pieces
 
-    // draw remaining time
-
-    // draw pieces
-    draw_pieces();
-    
-    // display window
+    // update window render
     window->display();
 }
 

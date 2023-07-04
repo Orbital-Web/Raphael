@@ -10,12 +10,14 @@
 
 namespace cge { // chess game engine
 namespace PALETTE {
-    const sf::Color BG(49, 46, 43);
-    const sf::Color TIMER_W(152, 151, 149);
-    const sf::Color TIMER_B(43, 39, 34);
+    const sf::Color BG(22, 21, 18);
+    const sf::Color TIMER_A(56, 71, 34);
+    const sf::Color TIMER_ALOW(115, 49, 44);
+    const sf::Color TIMER(38, 36, 33);
+    const sf::Color TIMER_LOW(78, 41, 40);
     const sf::Color TILE_W(240, 217, 181);
     const sf::Color TILE_B(177, 136, 106);
-    const sf::Color TILE_SEL(205, 210, 106);
+    const sf::Color TILE_SEL(191, 197, 85, 160);
     const sf::Color TEXT(255, 255, 255);
 }   // cge::PALETTE
 const std::string TEXTURE[12] = {
@@ -40,6 +42,7 @@ private:
     std::array<sf::RectangleShape, 64> tiles;
     std::array<sf::RectangleShape, 2> timers;
     std::array<sf::Text, 2> names;
+    std::array<sf::Text, 2> timertexts;
     std::array<sf::Texture, 12> piecetextures;
     std::array<sf::Sprite, 12> pieces;
     sf::Font font;
@@ -77,6 +80,9 @@ private:
 
     // renders the chess pieces
     void draw_pieces();
+
+    // renders the timer and names
+    void draw_timer();
 
     // handles window events and rendering
     void update_window();

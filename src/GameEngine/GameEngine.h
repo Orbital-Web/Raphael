@@ -4,11 +4,12 @@
 #include <string>
 #include <array>
 #include <chrono>
+#include <map>
 
 
 
 namespace cge { // chess game engine
-namespace Palette {
+namespace PALETTE {
     const sf::Color BG(49, 46, 43);
     const sf::Color TIMER_W(152, 151, 149);
     const sf::Color TIMER_B(43, 39, 34);
@@ -16,7 +17,15 @@ namespace Palette {
     const sf::Color TILE_B(177, 136, 106);
     const sf::Color TILE_SEL(205, 210, 106);
     const sf::Color TEXT(255, 255, 255);
-}   // cge::Palette
+}   // cge::PALETTE
+const std::string TEXTURE[12] = {
+    "wP", "wK", "wQ", "wN", "wB", "wR",
+    "bP", "bK", "bQ", "bN", "bB", "bR"
+};
+const std::map<char, int> PIECENAME = {
+    {'P', 0}, {'K', 1}, {'Q', 2}, {'N', 3}, {'B', 4}, {'R', 5},
+    {'p', 6}, {'k', 7}, {'q', 8}, {'n', 9}, {'b',10}, {'r',11}
+};
 
 
 
@@ -31,6 +40,8 @@ private:
     std::array<sf::RectangleShape, 64> tiles;
     std::array<sf::RectangleShape, 2> timers;
     std::array<sf::Text, 2> names;
+    std::array<sf::Texture, 12> piecetextures;
+    std::array<sf::Sprite, 12> pieces;
     sf::Font font;
 
     // chess game manager
@@ -63,6 +74,9 @@ public:
 private:
     // generates (mostly) static sprites such as the tiles and timers
     void generate_sprites();
+
+    // renders the chess pieces
+    void draw_pieces();
 
     // handles window events and rendering
     void update_window();

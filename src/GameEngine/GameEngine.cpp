@@ -66,31 +66,58 @@ void cge::GameEngine::run_match() {
 // generates (mostly) static sprites such as the tiles and timers
 void cge::GameEngine::generate_sprites() {
     // tiles
+    int x,y;
     for (int i=0; i<64; i++) {
-        int x = i%8;
-        int y = i/8;
+        x = i%8;
+        y = i/8;
         tiles[i] = sf::RectangleShape({100, 100});
         tiles[i].setPosition(50 + 100*x, 70 + 100*y);
-        tiles[i].setFillColor(((x+y)%2) ? cge::Palette::TILE_B : cge::Palette::TILE_W);
+        tiles[i].setFillColor(((x+y)%2) ? cge::PALETTE::TILE_B : cge::PALETTE::TILE_W);
     }
 
     // timer boxes
     timers[0] = sf::RectangleShape({180, 50});
     timers[0].setPosition(660, 880);
-    timers[0].setFillColor(cge::Palette::TIMER_W);
+    timers[0].setFillColor(cge::PALETTE::TIMER_W);
     timers[1] = sf::RectangleShape({180, 50});
     timers[1].setPosition(660, 10);
-    timers[1].setFillColor(cge::Palette::TIMER_B);
+    timers[1].setFillColor(cge::PALETTE::TIMER_B);
 
     // player names
     font.loadFromFile("src/assets/fonts/Roboto-Regular.ttf");
     for (int i=0; i<2; i++) {
-        printf("AA%s\n", players[i]->name.c_str());
         names[i] = sf::Text(players[i]->name, font, 40);
-        names[i].setFillColor(cge::Palette::TEXT);
+        names[i].setFillColor(cge::PALETTE::TEXT);
     }
     names[0].setPosition(50, 880);
     names[1].setPosition(50, 10);
+
+    // piece textures and sprites
+    for (int i=0; i<12; i++) {
+        piecetextures[i].loadFromFile("src/assets/themes/tartiana/" + cge::TEXTURE[i] + ".png");
+        piecetextures[i].setSmooth(true);
+        pieces[i].setTexture(piecetextures[i]);
+    }
+}
+
+
+// renders the chess pieces
+void cge::GameEngine::draw_pieces() {
+    char* board = manager.squares;
+    int x, y, piece;
+
+    for (int sq=0; sq<64; sq++) {
+        // coordinates on the board
+        x = sq%8;
+        y = sq/8;
+
+        // render piece
+        if (board[sq] != ' ') {
+            piece = cge::PIECENAME.at(board[sq]);
+            pieces[piece].setPosition(50 + 100*x, 70 + 100*y);
+            window->draw(pieces[piece]);
+        }
+    }
 }
 
 
@@ -103,17 +130,26 @@ void cge::GameEngine::update_window() {
     }
 
     // clear window
-    window->clear(cge::Palette::BG);
+    window->clear(cge::PALETTE::BG);
+
+    // change color of selected tiles
 
     // draw tiles
     for (int i=0; i<64; i++)
         window->draw(tiles[i]);
+    
+    // revert color of selected tiles (without redrawing)
     
     // draw timer boxes and names
     for (int i=0; i<2; i++) {
         window->draw(timers[i]);
         window->draw(names[i]);
     }
+
+    // draw remaining time
+
+    // draw pieces
+    draw_pieces();
     
     // display window
     window->display();
@@ -124,6 +160,4 @@ void cge::GameEngine::update_window() {
 void cge::GameEngine::move(std::string movestr) {
     mv.TerseIn(&manager, movestr.c_str());
     manager.PlayMove(mv);
-
-    printf("%s\n", manager.ToDebugStr());
 }

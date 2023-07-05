@@ -1,18 +1,19 @@
 #include "src/GameEngine/GameEngine.h"
 #include "src/GameEngine/HumanPlayer.h"
 #include <array>
-#include <string>
 
 
 
 int main() {
-    std::array<float, 2> t_remaining = {70.0, 70.0};
+    std::array<float, 2> t_remaining = {600, 600};
     cge::GamePlayer* p1 = new cge::HumanPlayer("Adam");
     cge::GamePlayer* p2 = new cge::HumanPlayer("Bob");
+
     std::array<cge::GamePlayer*, 2> players = {p1, p2};
     cge::GameEngine ge(t_remaining, players);
 
     ge.run_match();
+    ge.print_report();
     delete p1;
     delete p2;
     return 0;

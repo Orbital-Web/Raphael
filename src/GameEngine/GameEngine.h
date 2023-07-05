@@ -55,6 +55,9 @@ private:
     std::array<float, 2> t_remain;              // (white, black)
     std::array<cge::GamePlayer*, 2> players;    // (white, black)
 
+    // score tracking
+    std::array<int, 3> results = {0, 0, 0};     // (white, draw, black)
+
 
 // methods
 public:
@@ -68,30 +71,33 @@ public:
 
     //void run_tests(int n_matches);
 
-    //void reset();
+    // Print result of the games
+    void print_report();
+
+    //void restart();
 
     //void load_game();
 
     //void save_game();
 
 private:
-    // generates (mostly) static sprites such as the tiles and timers
+    // Generates (mostly) static sprites such as the tiles and timers
     void generate_sprites();
 
-    // renders the chess pieces
+    // Renders the chess pieces
     void draw_pieces();
 
-    // renders the timer and names
+    // Renders the timer and names
     void draw_timer();
 
-    // handles window events and rendering
+    // Handles window events and rendering
     void update_window();
 
-    // updates the manager with a move
+    // Updates the manager with a move
     void move(std::string movestr);
 
-    void undo();
+    //void undo();
 
-    void add_time(std::array<float, 2> t_extra);
+    //void add_time(std::array<float, 2> t_extra);
 };  // GameEngine
 }   // namespace cge

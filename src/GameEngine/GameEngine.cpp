@@ -30,7 +30,8 @@ void cge::GameEngine::run_match() {
         float& cur_t_remain = t_remain[turn];
 
         // ask player for move in seperate thread so that we can keep rendering
-        auto movereceiver = std::async(&cge::GamePlayer::get_move, cur_player, manager, cur_t_remain);
+        bool halt = false;
+        auto movereceiver = std::async(&cge::GamePlayer::get_move, cur_player, manager, cur_t_remain, std::ref(halt));
 
         // timings
         auto start = std::chrono::high_resolution_clock::now();
@@ -45,12 +46,16 @@ void cge::GameEngine::run_match() {
             // game loop
             update_window();
 
+            // timeout
             if (cur_t_remain <= 0) {
-                // handle unreturned move
-                // set winner
-                // the thread returning the move will still be running
+                halt = true;
+                results[(turn) ? 0 : 2]++;
+                delete window;
                 return;
             }
+
+            // evaluate
+            manager.Evaluate(game_ended);
 
             // count down timer
             auto stop = std::chrono::high_resolution_clock::now();
@@ -61,10 +66,30 @@ void cge::GameEngine::run_match() {
         move(movereceiver.get());
         turn = !turn;
     }
+
+    // score tracking
+    if (game_ended == thc::TERMINAL::TERMINAL_BSTALEMATE ||
+        game_ended == thc::TERMINAL::TERMINAL_WSTALEMATE) {
+        results[1]++;
+    } else {
+        results[(game_ended == thc::TERMINAL_BCHECKMATE) ? 0 : 2]++;
+    }
+
+    delete window;
 }
 
 
-// generates (mostly) static sprites such as the tiles and timers
+// Print result of the games
+void cge::GameEngine::print_report() {
+    int total_matches = results[0] + results[1] + results[2];
+    printf("Out of %i total matches:\n", total_matches);
+    printf("   %s: \t\x1b[32m%i\x1b[0m\n", players[0]->name.c_str(), results[0]);
+    printf("   Draw: \t\x1b[90m%i\x1b[0m\n", results[1]);
+    printf("   %s: \t\x1b[31m%i\x1b[0m\n", players[1]->name.c_str(), results[2]);
+}
+
+
+// Generates (mostly) static sprites such as the tiles and timers
 void cge::GameEngine::generate_sprites() {
     // tiles
     for (int i=0; i<64; i++) {
@@ -99,7 +124,7 @@ void cge::GameEngine::generate_sprites() {
 }
 
 
-// renders the chess pieces
+// Renders the chess pieces
 void cge::GameEngine::draw_pieces() {
     char* board = manager.squares;
 
@@ -118,7 +143,7 @@ void cge::GameEngine::draw_pieces() {
 }
 
 
-// renders the timer and names
+// Renders the timer and names
 void cge::GameEngine::draw_timer() {
     // set timer display properties
     for (int i=0; i<2; i++) {
@@ -153,7 +178,7 @@ void cge::GameEngine::draw_timer() {
 }
 
 
-// handles window events and rendering
+// Handles window events and rendering
 void cge::GameEngine::update_window() {
     // event handling
     while (window->pollEvent(windowevent))
@@ -179,7 +204,7 @@ void cge::GameEngine::update_window() {
 }
 
 
-// updates the manager with a move
+// Updates the manager with a move
 void cge::GameEngine::move(std::string movestr) {
     mv.TerseIn(&manager, movestr.c_str());
     manager.PlayMove(mv);

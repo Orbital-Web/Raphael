@@ -12,6 +12,6 @@ public:
     HumanPlayer(std::string name_in);
 
     // Asks the human to return a valid move string
-    std::string get_move(const thc::ChessRules& manager, int t_remain);
+    std::string get_move(const thc::ChessRules& manager, int t_remain, bool& halt);
 };  // HumanPlayer
 }   // namespace cge

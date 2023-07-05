@@ -12,7 +12,7 @@ int main() {
     std::array<cge::GamePlayer*, 2> players = {p1, p2};
     cge::GameEngine ge(t_remaining, players);
 
-    ge.run_match();
+    ge.run_match(false);
     ge.print_report();
     delete p1;
     delete p2;

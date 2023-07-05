@@ -1,5 +1,6 @@
 #pragma once
 #include "GamePlayer.h"
+#include "chess.hpp"
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <array>
@@ -21,12 +22,8 @@ namespace PALETTE {
     const sf::Color TEXT(255, 255, 255);
 }   // cge::PALETTE
 const std::string TEXTURE[12] = {
-    "wP", "wK", "wQ", "wN", "wB", "wR",
-    "bP", "bK", "bQ", "bN", "bB", "bR"
-};
-const std::map<char, int> PIECENAME = {
-    {'P', 0}, {'K', 1}, {'Q', 2}, {'N', 3}, {'B', 4}, {'R', 5},
-    {'p', 6}, {'k', 7}, {'q', 8}, {'n', 9}, {'b',10}, {'r',11}
+    "wP", "wN", "wB", "wR", "wQ", "wK",
+    "bP", "bN", "bB", "bR", "bQ", "bK"
 };
 
 
@@ -47,11 +44,9 @@ private:
     std::array<sf::Sprite, 12> pieces;
     sf::Font font;
 
-    // chess game manager
-    thc::ChessRules manager;
-    thc::Move mv;
-    thc::TERMINAL game_ended = thc::NOT_TERMINAL;
-    bool turn = false;                          // black's turn
+    // chess game logic
+    chess::Board board;
+    bool turn = 0;                              // current turn (0=white, 1=black)
     std::array<float, 2> t_remain;              // (white, black)
     std::array<cge::GamePlayer*, 2> players;    // (white, black)
 
@@ -67,7 +62,7 @@ public:
     GameEngine(std::array<float, 2> t_remain_in, std::array<cge::GamePlayer*, 2> players_in);
     
     // Run a match from start to end
-    void run_match();
+    void run_match(bool p1_is_white=true, std::string start_fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
     //void run_tests(int n_matches);
 
@@ -93,8 +88,8 @@ private:
     // Handles window events and rendering
     void update_window();
 
-    // Updates the manager with a move
-    void move(std::string movestr);
+    // Updates the board with a move
+    void move(chess::Move move_in);
 
     //void undo();
 

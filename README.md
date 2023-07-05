@@ -9,8 +9,8 @@ Will probably start work on it around September 2023. The engine will be based o
 3. Download SFML-2.6.0 (GCC MinGW) from https://www.sfml-dev.org/download/sfml/2.6.0/ and add it to the root directory
 4. Compile and run `main.exe` with the following commands
     ```
-    g++ -c main.cpp src/GameEngine/GameEngine.cpp  src/GameEngine/HumanPlayer.cpp src/GameEngine/thc.cpp -ISFML-2.6.0/include -DSFML_STATIC
-    g++ -o main main.o GameEngine.o HumanPlayer.o thc.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lopengl32 -lwinmm -lgdi32 -lfreetype
-    del main.o thc.o GameEngine.o HumanPlayer.o
+    g++ -c main.cpp src/GameEngine/GameEngine.cpp src/GameEngine/HumanPlayer.cpp -ISFML-2.6.0/include -DSFML_STATIC
+    g++ -o main main.o GameEngine.o HumanPlayer.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lopengl32 -lwinmm -lgdi32 -lfreetype
+    del main.o GameEngine.o HumanPlayer.o
     main.exe
     ```

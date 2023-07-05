@@ -1,11 +1,12 @@
 #include "GameEngine.h"
 #include "HumanPlayer.h"
-#include "thc.h"
+#include "chess.hpp"
 #include <SFML/Graphics.hpp>
 #include <thread>
 #include <future>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 
 
@@ -19,24 +20,34 @@ cge::GameEngine::GameEngine(std::array<float, 2> t_remain_in,
 
 
 // Run a match from start to end
-void cge::GameEngine::run_match() {
-    // create window
+void cge::GameEngine::run_match(bool p1_is_white, std::string start_fen) {
+    // set white and black
+    if (!p1_is_white)
+        std::reverse(players.begin(), players.end());
+    players[0]->iswhite = true;
+    players[1]->iswhite = false;
+
+    // initialize board
+    board = chess::Board(start_fen);
+    chess::GameResult game_result = chess::GameResult::NONE;
+    
+    // create window and sprites
     window = new sf::RenderWindow(sf::VideoMode(880, 940), "Chess");
     generate_sprites();
     
     // until game ends or time runs out
-    while (!game_ended && t_remain[0]>0 && t_remain[1]>0) {
+    while (game_result==chess::GameResult::NONE && t_remain[0]>0 && t_remain[1]>0) {
         auto& cur_player = players[turn];
         float& cur_t_remain = t_remain[turn];
 
         // ask player for move in seperate thread so that we can keep rendering
         bool halt = false;
-        auto movereceiver = std::async(&cge::GamePlayer::get_move, cur_player, manager, cur_t_remain, std::ref(halt));
+        auto movereceiver = std::async(&cge::GamePlayer::get_move, cur_player,
+                                       board, cur_t_remain, std::ref(windowevent), std::ref(halt));
+        auto status = std::future_status::timeout;
 
         // timings
-        auto start = std::chrono::high_resolution_clock::now();
-        auto stop = std::chrono::high_resolution_clock::now();
-        std::future_status status = std::future_status::timeout;
+        std::chrono::_V2::system_clock::time_point start, stop;
 
         // update visuals until a move is returned
         while(status!=std::future_status::ready) {
@@ -46,6 +57,10 @@ void cge::GameEngine::run_match() {
             // game loop
             update_window();
 
+            // count down timer
+            stop = std::chrono::high_resolution_clock::now();
+            cur_t_remain -= std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count()/1000.0;
+
             // timeout
             if (cur_t_remain <= 0) {
                 halt = true;
@@ -53,27 +68,19 @@ void cge::GameEngine::run_match() {
                 delete window;
                 return;
             }
-
-            // evaluate
-            manager.Evaluate(game_ended);
-
-            // count down timer
-            auto stop = std::chrono::high_resolution_clock::now();
-            cur_t_remain -= std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count()/1000.0;
         }
 
         // play move
         move(movereceiver.get());
         turn = !turn;
+        game_result = board.isGameOver().second;
     }
 
     // score tracking
-    if (game_ended == thc::TERMINAL::TERMINAL_BSTALEMATE ||
-        game_ended == thc::TERMINAL::TERMINAL_WSTALEMATE) {
+    if (game_result==chess::GameResult::DRAW)
         results[1]++;
-    } else {
-        results[(game_ended == thc::TERMINAL_BCHECKMATE) ? 0 : 2]++;
-    }
+    else
+        results[(game_result==chess::GameResult::WIN) ? 2 : 0]++;
 
     delete window;
 }
@@ -126,18 +133,14 @@ void cge::GameEngine::generate_sprites() {
 
 // Renders the chess pieces
 void cge::GameEngine::draw_pieces() {
-    char* board = manager.squares;
-
-    for (int sq=0; sq<64; sq++) {
-        // coordinates on the board
-        int x = sq%8;
-        int y = sq/8;
-
-        // render piece
-        if (board[sq] != ' ') {
-            int piece = cge::PIECENAME.at(board[sq]);
-            pieces[piece].setPosition(50 + 100*x, 70 + 100*y);
-            window->draw(pieces[piece]);
+    for (int rank=0; rank<8; rank++) {
+        for (int file=0; file<8; file++) {
+            chess::Square sq = chess::utils::fileRankSquare(chess::File(file), chess::Rank(rank));
+            int piece = int(board.at(sq));
+            if (piece != 12) {
+                pieces[(int)piece].setPosition(50 + 100*file, 770 - 100*rank);
+                window->draw(pieces[piece]);
+            }
         }
     }
 }
@@ -204,8 +207,7 @@ void cge::GameEngine::update_window() {
 }
 
 
-// Updates the manager with a move
-void cge::GameEngine::move(std::string movestr) {
-    mv.TerseIn(&manager, movestr.c_str());
-    manager.PlayMove(mv);
+// Updates the board with a move
+void cge::GameEngine::move(chess::Move move_in) {
+    board.makeMove(move_in);
 }

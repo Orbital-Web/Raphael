@@ -39,7 +39,7 @@ chess::Move cge::HumanPlayer::get_move(chess::Board board, int t_remain, sf::Eve
 
                 // destination clicked
                 if (sq_from!=chess::Square::NO_SQ && sq_from!=sq) {
-                    chess::Move move = move_if_valid(sq_from, sq, movelist);
+                    chess::Move move = move_if_valid(sq_from, sq, movelist, board);
                     if (move!=chess::Move::NO_MOVE)
                         return move;
                     else
@@ -64,7 +64,25 @@ chess::Square cge::HumanPlayer::get_square(int x, int y) {
 
 
 // Returns a move if the move from sq_from to sq_to is valid
-chess::Move cge::HumanPlayer::move_if_valid(chess::Square sq_from, chess::Square sq_to, chess::Movelist& movelist) {
+chess::Move cge::HumanPlayer::move_if_valid(chess::Square sq_from, chess::Square sq_to,
+                                            const chess::Movelist& movelist, const chess::Board& board) {
+    chess::Piece piece = board.at(sq_from);
+
+    // castling
+    if (piece==chess::Piece::WHITEKING || piece==chess::Piece::BLACKKING) {
+        chess::Color col = board.color(piece);
+
+        // king side
+        if (chess::utils::squareFile(sq_to)==chess::File::FILE_G &&
+            board.castlingRights().hasCastlingRight(col, chess::CastleSide::KING_SIDE))
+            sq_to = (col==chess::Color::WHITE) ? chess::Square::SQ_H1 : chess::Square::SQ_H8;
+        
+        // queen side
+        else if (chess::utils::squareFile(sq_to)==chess::File::FILE_C &&
+                board.castlingRights().hasCastlingRight(col, chess::CastleSide::QUEEN_SIDE))
+            sq_to = (col==chess::Color::WHITE) ? chess::Square::SQ_A1 : chess::Square::SQ_A8;
+    }
+    
     for (auto move : movelist)
         if (move.from()==sq_from && move.to()==sq_to)
             return move;

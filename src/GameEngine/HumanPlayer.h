@@ -20,6 +20,7 @@ private:
     static chess::Square get_square(int x, int y);
 
     // Returns a move if the move from sq_from to sq_to is valid
-    static chess::Move move_if_valid(chess::Square sq_from, chess::Square sq_to, chess::Movelist& movelist);
+    static chess::Move move_if_valid(chess::Square sq_from, chess::Square sq_to,
+                                     const chess::Movelist& movelist, const chess::Board& board);
 };  // HumanPlayer
 }   // namespace cge

@@ -6,20 +6,22 @@
 #include <array>
 #include <chrono>
 #include <map>
+#include <vector>
 
 
 
 namespace cge { // chess game engine
 namespace PALETTE {
-    const sf::Color BG(22, 21, 18);
-    const sf::Color TIMER_A(56, 71, 34);
-    const sf::Color TIMER_ALOW(115, 49, 44);
-    const sf::Color TIMER(38, 36, 33);
-    const sf::Color TIMER_LOW(78, 41, 40);
-    const sf::Color TILE_W(240, 217, 181);
-    const sf::Color TILE_B(177, 136, 106);
-    const sf::Color TILE_SEL(191, 197, 85, 160);
-    const sf::Color TEXT(255, 255, 255);
+    const sf::Color BG(22, 21, 18);             // background
+    const sf::Color TIMER_A(56, 71, 34);        // active timer
+    const sf::Color TIMER_ALOW(115, 49, 44);    // active timer (<60sec)
+    const sf::Color TIMER(38, 36, 33);          // inactive timer
+    const sf::Color TIMER_LOW(78, 41, 40);      // inactive timer (<60sec)
+    const sf::Color TILE_W(240, 217, 181);      // white tile
+    const sf::Color TILE_B(177, 136, 106);      // black tile
+    const sf::Color TILE_MOV(170, 162, 58);     // tile moved to&from
+    const sf::Color TILE_SEL(130, 151, 105);    // tile to move to
+    const sf::Color TEXT(255, 255, 255);        // text
 }   // cge::PALETTE
 const std::string TEXTURE[12] = {
     "wP", "wN", "wB", "wR", "wQ", "wK",
@@ -37,18 +39,24 @@ private:
     sf::RenderWindow* window;
     sf::Event windowevent;
     std::array<sf::RectangleShape, 64> tiles;
+    std::array<sf::RectangleShape, 2> tilesspecial;
     std::array<sf::RectangleShape, 2> timers;
-    std::array<sf::Text, 2> names;
     std::array<sf::Text, 2> timertexts;
+    std::array<sf::Text, 2> names;
+    sf::Font font;
     std::array<sf::Texture, 12> piecetextures;
     std::array<sf::Sprite, 12> pieces;
-    sf::Font font;
 
     // chess game logic
     chess::Board board;
     bool turn = 0;                              // current turn (0=white, 1=black)
     std::array<float, 2> t_remain;              // (white, black)
     std::array<cge::GamePlayer*, 2> players;    // (white, black)
+    // visual-related game logic
+    chess::Square sq_from = chess::Square::NO_SQ;
+    chess::Square sq_to = chess::Square::NO_SQ;
+    std::vector<chess::Square> selectedtiles;
+    chess::Movelist movelist;
 
     // score tracking
     std::array<int, 3> results = {0, 0, 0};     // (white, draw, black)
@@ -84,6 +92,15 @@ private:
 
     // Renders the timer and names
     void draw_timer();
+
+    // Draws possible move square and move to/from squares
+    void draw_select();
+
+    // Converts x and y coordinates into a Square
+    static chess::Square get_square(int x, int y);
+
+    // Adds squares a selectedtiles[0] can move to
+    void add_selectedtiles();
 
     // Handles window events and rendering
     void update_window();

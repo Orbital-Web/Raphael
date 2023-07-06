@@ -6,6 +6,7 @@
 #include <future>
 #include <sstream>
 #include <iomanip>
+#include <vector>
 #include <algorithm>
 
 
@@ -29,6 +30,7 @@ void cge::GameEngine::run_match(bool p1_is_white, std::string start_fen) {
 
     // initialize board
     board = chess::Board(start_fen);
+    chess::movegen::legalmoves(movelist, board);
     chess::GameResult game_result = chess::GameResult::NONE;
     
     // create window and sprites
@@ -107,6 +109,12 @@ void cge::GameEngine::generate_sprites() {
         tiles[i].setFillColor(((x+y)%2) ? cge::PALETTE::TILE_B : cge::PALETTE::TILE_W);
     }
 
+    // special tiles (e.g. move to&from, selection)
+    tilesspecial[0] = sf::RectangleShape({100, 100});
+    tilesspecial[0].setFillColor(cge::PALETTE::TILE_MOV);
+    tilesspecial[1] = sf::RectangleShape({100, 100});
+    tilesspecial[1].setFillColor(cge::PALETTE::TILE_SEL);
+
     // timer and player names
     font.loadFromFile("src/assets/fonts/Roboto-Regular.ttf");
     for (int i=0; i<2; i++) {
@@ -136,7 +144,7 @@ void cge::GameEngine::draw_pieces() {
     for (int rank=0; rank<8; rank++) {
         for (int file=0; file<8; file++) {
             chess::Square sq = chess::utils::fileRankSquare(chess::File(file), chess::Rank(rank));
-            int piece = int(board.at(sq));
+            int piece = (int)board.at(sq);
             if (piece != 12) {
                 pieces[(int)piece].setPosition(50 + 100*file, 770 - 100*rank);
                 window->draw(pieces[piece]);
@@ -181,6 +189,90 @@ void cge::GameEngine::draw_timer() {
 }
 
 
+// Draws possible move square and move to/from squares
+void cge::GameEngine::draw_select() {
+    // draw move to/from squares
+    if (sq_from!=chess::Square::NO_SQ) {
+        int file = (int)chess::utils::squareFile(sq_from);
+        int rank = (int)chess::utils::squareRank(sq_from);
+        tilesspecial[0].setPosition(50 + 100*file, 770 - 100*rank);
+        window->draw(tilesspecial[0]);
+
+        file = (int)chess::utils::squareFile(sq_to);
+        rank = (int)chess::utils::squareRank(sq_to);
+        tilesspecial[0].setPosition(50 + 100*file, 770 - 100*rank);
+        window->draw(tilesspecial[0]);
+    }
+
+    // populate selected squares
+    if (windowevent.type==sf::Event::MouseButtonPressed && windowevent.mouseButton.button==sf::Mouse::Left) {
+        int x = windowevent.mouseButton.x;
+        int y = windowevent.mouseButton.y;
+
+        // board clicked
+        if (x>50 && x<850 && y>70 && y<870) {
+            chess::Square sq = get_square(x, y);
+            int piece = (int)board.at(sq);
+
+            // own pieces clicked
+            if ((!turn && piece>=0 && piece<6) || (turn && piece>=6 && piece<12)) {
+                selectedtiles.clear();
+                selectedtiles.push_back(sq);
+                add_selectedtiles();
+            } else
+                selectedtiles.clear();
+        }
+
+        // only consider first mouse click
+        windowevent.type = sf::Event::MouseMoved;
+    }
+
+    //draw selection squares
+    for (auto sq : selectedtiles) {
+        int file = (int)chess::utils::squareFile(sq);
+        int rank = (int)chess::utils::squareRank(sq);
+        tilesspecial[1].setPosition(50 + 100*file, 770 - 100*rank);
+        window->draw(tilesspecial[1]);
+    }
+}
+
+// Converts x and y coordinates into a Square
+chess::Square cge::GameEngine::get_square(int x, int y) {
+    int rank = (870 - y) / 100;
+    int file = (x - 50) / 100;
+    return chess::utils::fileRankSquare(chess::File(file), chess::Rank(rank));
+}
+
+
+// Adds squares a selectedtiles[0] can move to
+void cge::GameEngine::add_selectedtiles() {
+    chess::Square sq_from = selectedtiles[0];
+
+    for (auto move : movelist) {
+        if (move.from()==sq_from) {
+            // modify castling move to target empty tile
+            if (move.typeOf()==chess::Move::CASTLING) {
+                switch (move.to()) {
+                case chess::Square::SQ_H1:  // white king-side
+                    selectedtiles.push_back(chess::Square::SQ_G1);
+                    break;
+                case chess::Square::SQ_A1:  // white queen-side
+                    selectedtiles.push_back(chess::Square::SQ_C1);
+                    break;
+                case chess::Square::SQ_H8:  // black king-side
+                    selectedtiles.push_back(chess::Square::SQ_G8);
+                    break;
+                case chess::Square::SQ_A8:  // black queen-side
+                    selectedtiles.push_back(chess::Square::SQ_C8);
+                    break;
+                }
+            } else
+                selectedtiles.push_back(move.to());
+        }
+    }
+}
+
+
 // Handles window events and rendering
 void cge::GameEngine::update_window() {
     // event handling
@@ -196,9 +288,8 @@ void cge::GameEngine::update_window() {
     // draw tiles
     for (int i=0; i<64; i++)
         window->draw(tiles[i]);
-    
-    // selected tiles overlay
-    
+
+    draw_select();  // draw selected and move tiles
     draw_timer();   // draw timer and names
     draw_pieces();  // draw pieces
 
@@ -209,5 +300,9 @@ void cge::GameEngine::update_window() {
 
 // Updates the board with a move
 void cge::GameEngine::move(chess::Move move_in) {
+    sq_from = move_in.from();
+    sq_to = move_in.to();
+    selectedtiles.clear();
     board.makeMove(move_in);
+    chess::movegen::legalmoves(movelist, board);
 }

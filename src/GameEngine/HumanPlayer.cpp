@@ -22,14 +22,14 @@ chess::Move cge::HumanPlayer::get_move(chess::Board board, int t_remain, sf::Eve
     // ui controls for move selection
     while (!halt && (sq_to==chess::Square::NO_SQ || sq_from==chess::Square::NO_SQ)) {
         // onclick
-        if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+        if (event.type==sf::Event::MouseButtonPressed && event.mouseButton.button==sf::Mouse::Left) {
             int x = event.mouseButton.x;
             int y = event.mouseButton.y;
 
             // board clicked
             if (x>50 && x<850 && y>70 && y<870) {
                 chess::Square sq = get_square(x, y);
-                int piece = int(board.at(sq));
+                int piece = (int)board.at(sq);
                 
                 // own pieces clicked
                 if ((iswhite && piece>=0 && piece<6) || (!iswhite && piece>=6 && piece<12)) {
@@ -46,9 +46,6 @@ chess::Move cge::HumanPlayer::get_move(chess::Board board, int t_remain, sf::Eve
                         sq_from = chess::Square::NO_SQ;
                 }
             }
-
-            // only consider first mouse click
-            event.type = sf::Event::MouseMoved;
         }
     }
     return chess::Move::NO_MOVE;
@@ -72,15 +69,24 @@ chess::Move cge::HumanPlayer::move_if_valid(chess::Square sq_from, chess::Square
     if (piece==chess::Piece::WHITEKING || piece==chess::Piece::BLACKKING) {
         chess::Color col = board.color(piece);
 
-        // king side
-        if (chess::utils::squareFile(sq_to)==chess::File::FILE_G &&
-            board.castlingRights().hasCastlingRight(col, chess::CastleSide::KING_SIDE))
-            sq_to = (col==chess::Color::WHITE) ? chess::Square::SQ_H1 : chess::Square::SQ_H8;
-        
-        // queen side
-        else if (chess::utils::squareFile(sq_to)==chess::File::FILE_C &&
+        // white
+        if (col==chess::Color::WHITE) {
+            if (sq_to==chess::Square::SQ_G1 &&      // white king-side
+                board.castlingRights().hasCastlingRight(col, chess::CastleSide::KING_SIDE))
+                sq_to = chess::Square::SQ_H1;
+            else if (sq_to==chess::Square::SQ_C1 && // white queen-side
                 board.castlingRights().hasCastlingRight(col, chess::CastleSide::QUEEN_SIDE))
-            sq_to = (col==chess::Color::WHITE) ? chess::Square::SQ_A1 : chess::Square::SQ_A8;
+                sq_to = chess::Square::SQ_A1;
+        
+        // black
+        } else {
+            if (sq_to==chess::Square::SQ_G8 &&      // black king-side
+                board.castlingRights().hasCastlingRight(col, chess::CastleSide::KING_SIDE))
+                sq_to = chess::Square::SQ_H8;
+            else if (sq_to==chess::Square::SQ_C8 && // black queen-side
+                board.castlingRights().hasCastlingRight(col, chess::CastleSide::QUEEN_SIDE))
+                sq_to = chess::Square::SQ_A8;
+        }
     }
     
     for (auto move : movelist)

@@ -13,5 +13,5 @@ Will probably start work on it around September 2023. The engine will be based o
     g++ -c main.cpp src/GameEngine/GameEngine.cpp src/GameEngine/HumanPlayer.cpp -ISFML-2.6.0/include -DSFML_STATIC
     g++ -o main main.o GameEngine.o HumanPlayer.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
     del main.o GameEngine.o HumanPlayer.o
-    main.exe
+    main.exe human "Adam" human "Bob"
     ```

@@ -2,6 +2,7 @@
 #include "HumanPlayer.h"
 #include "chess.hpp"
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <thread>
 #include <future>
 #include <sstream>
@@ -11,35 +12,39 @@
 
 
 
-// Initialize the GameEngine with the respective
-// players and time remaining
+// Initialize the GameEngine with the respective players
 cge::GameEngine::GameEngine(std::array<cge::GamePlayer*, 2> players_in): players(players_in) {
-    t_remain = {600.0, 600.0};
+    generate_assets();
 }
-cge::GameEngine::GameEngine(std::array<float, 2> t_remain_in,
-    std::array<cge::GamePlayer*, 2> players_in): t_remain(t_remain_in), players(players_in) {}
 
 
-// Run a match from start to end
-void cge::GameEngine::run_match(bool p1_is_white, std::string start_fen) {
-    // set white and black
-    if (!p1_is_white)
-        std::reverse(players.begin(), players.end());
-    players[0]->iswhite = true;
-    players[1]->iswhite = false;
-
+// Runs a match from start to end
+void cge::GameEngine::run_match(bool p1_is_white, std::string start_fen, std::array<float, 2> t_remain_in, bool is_interactive) {
+    // open window
+    window = new sf::RenderWindow(sf::VideoMode(880, 940), "Chess");
+    
     // initialize board
     board = chess::Board(start_fen);
     chess::movegen::legalmoves(movelist, board);
     chess::GameResult game_result = chess::GameResult::NONE;
-    
-    // create window and sprites
-    window = new sf::RenderWindow(sf::VideoMode(880, 940), "Chess");
-    generate_sprites();
+
+    // set time
+    t_remain = t_remain_in;
+
+    // manage turns
+    players[0]->iswhite = p1_is_white;
+    players[1]->iswhite = !p1_is_white;
+    names[0].setString(players[!p1_is_white]->name);
+    names[1].setString(players[p1_is_white]->name);
+    turn = (board.sideToMove()!=chess::Color::WHITE);
+
+    interactive = is_interactive;
+    if (interactive)
+        sounds[2].play();
     
     // until game ends or time runs out
     while (game_result==chess::GameResult::NONE && t_remain[0]>0 && t_remain[1]>0) {
-        auto& cur_player = players[turn];
+        auto& cur_player = players[turn^(!p1_is_white)];
         float& cur_t_remain = t_remain[turn];
 
         // ask player for move in seperate thread so that we can keep rendering
@@ -66,9 +71,8 @@ void cge::GameEngine::run_match(bool p1_is_white, std::string start_fen) {
             // timeout
             if (cur_t_remain <= 0) {
                 halt = true;
-                results[(turn) ? 0 : 2]++;
-                delete window;
-                return;
+                game_result = chess::GameResult::WIN;
+                goto game_end;
             }
         }
 
@@ -78,12 +82,25 @@ void cge::GameEngine::run_match(bool p1_is_white, std::string start_fen) {
         game_result = board.isGameOver().second;
     }
 
+    game_end:
     // score tracking
     if (game_result==chess::GameResult::DRAW)
         results[1]++;
     else
-        results[(game_result==chess::GameResult::WIN) ? 2 : 0]++;
+        results[((game_result==chess::GameResult::WIN)^(!p1_is_white)) ? 2 : 0]++;
+    
+    // wait until window closed if interactive
+    if (interactive) {
+        sounds[2].play();
+        while (window->isOpen()) {
+            while (window->pollEvent(windowevent))
+                if (windowevent.type == sf::Event::Closed)
+                    window->close();
+            update_window();
+        }
+    }
 
+    // close window
     delete window;
 }
 
@@ -92,14 +109,14 @@ void cge::GameEngine::run_match(bool p1_is_white, std::string start_fen) {
 void cge::GameEngine::print_report() {
     int total_matches = results[0] + results[1] + results[2];
     printf("Out of %i total matches:\n", total_matches);
-    printf("   %s: \t\x1b[32m%i\x1b[0m\n", players[0]->name.c_str(), results[0]);
-    printf("   Draw: \t\x1b[90m%i\x1b[0m\n", results[1]);
-    printf("   %s: \t\x1b[31m%i\x1b[0m\n", players[1]->name.c_str(), results[2]);
+    printf("   %s: \t\x1b[32m%i\x1b[0m\n", players[0]->name.c_str(), results[0]);   // p1 wins
+    printf("   Draw: \t\x1b[90m%i\x1b[0m\n", results[1]);                           // draws
+    printf("   %s: \t\x1b[31m%i\x1b[0m\n", players[1]->name.c_str(), results[2]);   // p2 wins
 }
 
 
-// Generates (mostly) static sprites such as the tiles and timers
-void cge::GameEngine::generate_sprites() {
+// Generates sprites, texts, and sounds
+void cge::GameEngine::generate_assets() {
     // tiles
     for (int i=0; i<64; i++) {
         int x = i%8;
@@ -125,7 +142,7 @@ void cge::GameEngine::generate_sprites() {
         timertexts[i] = sf::Text("", font, 40);
         timertexts[i].setFillColor(cge::PALETTE::TEXT);
         // names
-        names[i] = sf::Text(players[i]->name, font, 40);
+        names[i] = sf::Text("", font, 40);
         names[i].setFillColor(cge::PALETTE::TEXT);
         names[i].setPosition(50, (i) ? 10 : 880);
     }
@@ -136,6 +153,13 @@ void cge::GameEngine::generate_sprites() {
         piecetextures[i].setSmooth(true);
         pieces[i].setTexture(piecetextures[i]);
     }
+
+    // sounds
+    soundbuffers[0].loadFromFile("src/assets/sounds/Move.ogg");
+    soundbuffers[1].loadFromFile("src/assets/sounds/Capture.ogg");
+    soundbuffers[2].loadFromFile("src/assets/sounds/GenericNotify.ogg");
+    for (int i=0; i<3; i++)
+        sounds[i].setBuffer(soundbuffers[i]);
 }
 
 
@@ -236,6 +260,7 @@ void cge::GameEngine::draw_select() {
     }
 }
 
+
 // Converts x and y coordinates into a Square
 chess::Square cge::GameEngine::get_square(int x, int y) {
     int rank = (870 - y) / 100;
@@ -277,10 +302,8 @@ void cge::GameEngine::add_selectedtiles() {
 void cge::GameEngine::update_window() {
     // event handling
     while (window->pollEvent(windowevent))
-    {
         if (windowevent.type == sf::Event::Closed)
             window->close();
-    }
 
     // clear window render
     window->clear(cge::PALETTE::BG);
@@ -303,6 +326,15 @@ void cge::GameEngine::move(chess::Move move_in) {
     sq_from = move_in.from();
     sq_to = move_in.to();
     selectedtiles.clear();
+
+    // play sound
+    if (interactive) {
+        if (board.at(sq_to)!=chess::Piece::NONE && move_in.typeOf()!=chess::Move::CASTLING)
+            sounds[1].play();   // capture
+        else
+            sounds[0].play();   // move
+    }
+    
     board.makeMove(move_in);
     chess::movegen::legalmoves(movelist, board);
 }

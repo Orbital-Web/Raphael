@@ -12,6 +12,23 @@ namespace PVAL {
     const int BISHOP = 328;
     const int ROOK = 493;
     const int QUEEN = 983;
+    const int KING = 0;
+
+    // combined list
+    const int VALS[12] = {
+        PAWN,
+        KNIGHT,
+        BISHOP,
+        ROOK,
+        QUEEN,
+        KING,
+        -PAWN,
+        -KNIGHT,
+        -BISHOP,
+        -ROOK,
+        -QUEEN,
+        -KING,
+    };
 }   // PVAL
 
 
@@ -157,17 +174,19 @@ namespace PST {
     };
 
     // combined table
-    int MID[12][64];    // (white)pnbRQK (black)pnbRQK
-    int END[12][64];    // (white)pnbRQK (black)pnbRQK
+    int MID[12][64];    // PNBRQKpnbrqk, A1...H8
+    int END[12][64];    // PNBRQKpnbrqk, A1...H8
 
+    // must be called for MID and END to function properly
     void init_pst() {
         for (int p=0; p<6; p++) {
             for (int sq=0; sq<64; sq++) {
-                MID[p][sq] = PST_MID[p][sq];
-                END[p][sq] = PST_END[p][sq];
-                // piece flip for black
-                MID[p+6][sq] = PST_MID[p][sq^56];
-                END[p+6][sq] = PST_END[p][sq^56];
+                // flip to put sq56 -> A1 and so on
+                MID[p][sq] = PST_MID[p][sq^56];
+                END[p][sq] = PST_END[p][sq^56];
+                // flip for black
+                MID[p+6][sq] = -PST_MID[p][sq];
+                END[p+6][sq] = -PST_END[p][sq];
             }
         }
     }

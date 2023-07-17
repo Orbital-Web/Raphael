@@ -51,8 +51,8 @@ private:
     std::array<sf::Sound, 3> sounds;
     bool interactive;       // play sound and keep window open after game end
     // for draw_select()
-    chess::Square sq_from = chess::Square::NO_SQ;
-    chess::Square sq_to = chess::Square::NO_SQ;
+    chess::Square sq_from = chess::NO_SQ;
+    chess::Square sq_to = chess::NO_SQ;
     std::vector<chess::Square> selectedtiles;
     chess::Movelist movelist;
 
@@ -129,8 +129,7 @@ public:
                 // timeout
                 if (cur_t_remain<=0 || event.type==sf::Event::Closed) {
                     halt = true;
-                    turn = !turn;
-                    game_result = chess::GameResult::WIN;
+                    game_result = chess::GameResult::LOSE;
                     goto game_end;
                 }
             }
@@ -146,7 +145,7 @@ public:
         if (game_result==chess::GameResult::DRAW)
             results[1]++;
         else
-            results[((game_result==chess::GameResult::WIN)^(!p1_is_white)^(!turn)) ? 2 : 0]++;
+            results[(p1_is_white==turn) ? 0 : 2]++;
         
         // wait until window closed if interactive
         if (interactive) {
@@ -158,8 +157,8 @@ public:
                 update_window();
             }
         }
-        sq_from = chess::Square::NO_SQ;
-        sq_to = chess::Square::NO_SQ;
+        sq_from = chess::NO_SQ;
+        sq_to = chess::NO_SQ;
         movelist.clear();
         delete window;
     }
@@ -282,7 +281,7 @@ private:
     // Draws possible move square and move to/from squares
     void draw_select() {
         // draw move to/from squares
-        if (sq_from!=chess::Square::NO_SQ) {
+        if (sq_from!=chess::NO_SQ) {
             int file = (int)chess::utils::squareFile(sq_from);
             int rank = (int)chess::utils::squareRank(sq_from);
             tilesspecial[0].setPosition(50 + 100*file, 770 - 100*rank);
@@ -344,17 +343,17 @@ private:
                 // modify castling move to target empty tile
                 if (move.typeOf()==chess::Move::CASTLING) {
                     switch (move.to()) {
-                    case chess::Square::SQ_H1:  // white king-side
-                        selectedtiles.push_back(chess::Square::SQ_G1);
+                    case chess::SQ_H1:  // white king-side
+                        selectedtiles.push_back(chess::SQ_G1);
                         break;
-                    case chess::Square::SQ_A1:  // white queen-side
-                        selectedtiles.push_back(chess::Square::SQ_C1);
+                    case chess::SQ_A1:  // white queen-side
+                        selectedtiles.push_back(chess::SQ_C1);
                         break;
-                    case chess::Square::SQ_H8:  // black king-side
-                        selectedtiles.push_back(chess::Square::SQ_G8);
+                    case chess::SQ_H8:  // black king-side
+                        selectedtiles.push_back(chess::SQ_G8);
                         break;
-                    case chess::Square::SQ_A8:  // black queen-side
-                        selectedtiles.push_back(chess::Square::SQ_C8);
+                    case chess::SQ_A8:  // black queen-side
+                        selectedtiles.push_back(chess::SQ_C8);
                         break;
                     }
                 } else

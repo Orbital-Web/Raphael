@@ -1,5 +1,6 @@
 #include "src/GameEngine/GameEngine.hpp"
 #include "src/GameEngine/HumanPlayer.hpp"
+#include "src/Raphael/Raphael_v1.0.0.hpp"
 #include <string>
 #include <string.h>
 #include <vector>
@@ -50,11 +51,14 @@ void print_help() {
 cge::GamePlayer* player_factory(char* playertype, char* name) {
     if (!strcmp(playertype, "human"))
         return new cge::HumanPlayer(name);
+    else if (!strcmp(playertype, "Raphaelv1.0.0"))
+        return new Raphael::v1_0_0(name);
     
     // invalid
     printf("Invalid playertype: %s\n", playertype);
     printf("Valid playertypes are:\n");
-    printf("   human:\t cge::HumanPlayer\n");
+    printf("   human:\t\t cge::HumanPlayer\n");
+    printf("   Raphaelv1.0.0:\t Raphael::v1_0_0\n");
     return nullptr;
 }
 

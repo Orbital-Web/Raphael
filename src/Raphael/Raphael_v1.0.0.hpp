@@ -14,7 +14,9 @@ class v1_0_0: public cge::GamePlayer {
 public:
 
     // Initializes Raphael with a name
-    v1_0_0(std::string name_in = "Raphael v1.0.0"): GamePlayer(name_in) {}
+    v1_0_0(std::string name_in = "Raphael v1.0.0"): GamePlayer(name_in) {
+        PST::init_pst();
+    }
 
 
     // Uses Negamax algorithm to return the best move. Should return immediately if halt becomes true

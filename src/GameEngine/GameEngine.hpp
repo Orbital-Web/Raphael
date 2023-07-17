@@ -84,6 +84,7 @@ public:
         board = chess::Board(start_fen);
         chess::movegen::legalmoves(movelist, board);
         chess::GameResult game_result = chess::GameResult::NONE;
+        event.type = sf::Event::MouseMoved;
 
         // set time
         t_remain = t_remain_in;
@@ -101,7 +102,7 @@ public:
         
         // until game ends or time runs out
         while (game_result==chess::GameResult::NONE && t_remain[0]>0 && t_remain[1]>0) {
-            auto& cur_player = players[turn^(!p1_is_white)];
+            auto& cur_player = players[turn==p1_is_white];
             float& cur_t_remain = t_remain[turn];
 
             // ask player for move in seperate thread so that we can keep rendering
@@ -159,6 +160,7 @@ public:
         }
         sq_from = chess::Square::NO_SQ;
         sq_to = chess::Square::NO_SQ;
+        movelist.clear();
         delete window;
     }
 

@@ -1,6 +1,7 @@
 # Raphael
-A (soon to be) custom chess engine, coded in C++, made using the Negamax algorithm, a variant of the Minimax algorithm.
-Will probably start work on it around September 2023. The engine will be based on a previous engine I built in Python, with a few optimization and improvement ideas in mind.
+A GUI-based Chess Player as well as a Chess Engine (not implemented yet), coded in C++ and [SFML](https://www.sfml-dev.org/).
+
+The Chess Engine will be added around August to September. Right now I am a little bit busy so I won't be able to implement it yet. It will work off of the negamax algorithm (a variant of the Minimax algorith). 
 
 
 ## Getting started (Windows)
@@ -15,3 +16,24 @@ Will probably start work on it around September 2023. The engine will be based o
     del main.o
     main.exe human "Adam" human "Bob"
     ```
+
+
+## Features
+### Game Engine
+The Game Engine is used to run the game. It can be initialized with an array of two players extending `cge::GamePlayer`. 
+
+Calling `run_match()` will start a chess match between these two players.
+- If `p1_is_white` is set to true, the first player will play as white, and vice versa. 
+- A starting position, formatted as a [FEN string](https://www.chess.com/terms/fen-chess) must be passed into `start_fen`. These can be easily generated from the [Lichess Analysis Board](https://lichess.org/analysis).
+- `t_remain_in` is an array with 2 floats, indicating the time remaining for each player (white and black), in seconds.
+- If `is_interactive` is true, it will play sounds and keep the window open after the game finishes.
+
+Calling `print_report()` will print out the number of wins for each players, as well as the number of draws. If `run_match()` was called multiple times, it will print out the cumulative result. 
+
+
+### Game Player
+The Game Player is a pure virtual function whose primary purpose is to return a move for the given game state. This class can be extended to implement custom move selection behaviours/strategies, and their performances can be compared using the `cge::GameEngine`. 
+
+
+### HumanPlayer
+The Human Player is an extension of `cge::GamePlayer` which will return a move based on UI interactions. Selecting a piece and clicking its destination tile will push that move forward. Note that castling may only be played by selecting the King and clicking on the castling destination tile of the King. Clicking on the King and then the Rook will not castle the King and will instead select the Rook. 

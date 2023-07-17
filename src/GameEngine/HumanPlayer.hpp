@@ -7,7 +7,8 @@
 
 
 namespace cge { // chess game engine
-class HumanPlayer: public cge::GamePlayer {
+class HumanPlayer: public GamePlayer {
+// methods
 public:
     // Initializes a HumanPlayer with a name
     HumanPlayer(std::string name_in): GamePlayer(name_in) {}

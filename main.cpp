@@ -1,5 +1,5 @@
-#include "src/GameEngine/GameEngine.h"
-#include "src/GameEngine/HumanPlayer.h"
+#include "src/GameEngine/GameEngine.hpp"
+#include "src/GameEngine/HumanPlayer.hpp"
 #include <string>
 #include <string.h>
 #include <vector>
@@ -18,7 +18,8 @@ struct InputArgs {
 
 // Prints usage
 void print_help() {
-    printf("main.exe -h:\n"
+    printf("Usage:\n"
+    "main.exe -h:\n"
     "    Shows the help screen\n\n"
 
     "main.exe <playertype1> <name1> <playertype2> <name2>:\n"

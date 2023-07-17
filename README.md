@@ -3,6 +3,10 @@ A GUI-based Chess Player as well as a Chess Engine (not implemented yet), coded 
 
 The Chess Engine will be added around August to September. Right now I am a little bit busy so I won't be able to implement it yet. It will work off of the negamax algorithm (a variant of the Minimax algorith). 
 
+<p align="center">
+    <img src="https://github.com/Orbital-Web/Raphael/blob/c0396fcec6b3221369353dcabe812fb068a03534/Demo.png" alt="demo of Raphael" width=400/>
+</p>
+
 
 ## Getting started (Windows)
 1. Clone the repository

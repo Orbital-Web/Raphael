@@ -49,7 +49,7 @@ private:
         if (result == chess::GameResult::DRAW)
             return {0, 0};
         else if (result == chess::GameResult::LOSE)
-            return {0, -INT_MAX};
+            return {0, -INT_MAX + board.fullMoveNumber()};  // reward faster checkmate
         
         // terminal depth
         if (depth == 0)
@@ -94,7 +94,7 @@ private:
         
         // search
         chess::Movelist movelist;
-        order_cc_moves(movelist, board);
+        order_cap_moves(movelist, board);
         
         for (auto& move : movelist) {
             board.makeMove(move);
@@ -121,7 +121,7 @@ private:
 
 
     // order_moves but for only capture moves
-    void order_cc_moves(chess::Movelist& movelist, const chess::Board& board) {
+    void order_cap_moves(chess::Movelist& movelist, const chess::Board& board) {
         chess::Movelist all_movelist;
         chess::movegen::legalmoves(all_movelist, board);
         for (auto& move : all_movelist) {

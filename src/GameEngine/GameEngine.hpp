@@ -37,7 +37,7 @@ class GameEngine {
 private:
     // visual & sound
     const int FRAMERATE = 60;
-    sf::RenderWindow* window;
+    sf::RenderWindow window;
     sf::Event event;
     std::array<sf::RectangleShape, 64> tiles;
     std::array<sf::RectangleShape, 2> tilesspecial;
@@ -77,8 +77,8 @@ public:
     // Runs a match from start to end
     void run_match(bool p1_is_white, std::string start_fen, std::array<float, 2> t_remain_in, bool is_interactive) {
         // open window
-        window = new sf::RenderWindow(sf::VideoMode(880, 940), "Chess");
-        window->setFramerateLimit(FRAMERATE);
+        window.create(sf::VideoMode(880, 940), "Chess");
+        window.setFramerateLimit(FRAMERATE);
         
         // initialize board
         board = chess::Board(start_fen);
@@ -148,17 +148,16 @@ public:
         // wait until window closed if interactive
         if (interactive) {
             sounds[2].play();
-            while (window->isOpen()) {
-                while (window->pollEvent(event))
+            while (window.isOpen()) {
+                while (window.pollEvent(event))
                     if (event.type == sf::Event::Closed)
-                        window->close();
+                        window.close();
                 update_window();
             }
         }
         sq_from = chess::NO_SQ;
         sq_to = chess::NO_SQ;
         movelist.clear();
-        delete window;
     }
 
 
@@ -234,7 +233,7 @@ private:
                 int piece = (int)board.at(sq);
                 if (piece != 12) {
                     pieces[(int)piece].setPosition(50 + 100*file, 770 - 100*rank);
-                    window->draw(pieces[piece]);
+                    window.draw(pieces[piece]);
                 }
             }
         }
@@ -269,9 +268,9 @@ private:
 
         // draw timer, remaining time, and names
         for (int i=0; i<2; i++) {
-            window->draw(timers[i]);
-            window->draw(timertexts[i]);
-            window->draw(names[i]);
+            window.draw(timers[i]);
+            window.draw(timertexts[i]);
+            window.draw(names[i]);
         }
     }
 
@@ -283,12 +282,12 @@ private:
             int file = (int)chess::utils::squareFile(sq_from);
             int rank = (int)chess::utils::squareRank(sq_from);
             tilesspecial[0].setPosition(50 + 100*file, 770 - 100*rank);
-            window->draw(tilesspecial[0]);
+            window.draw(tilesspecial[0]);
 
             file = (int)chess::utils::squareFile(sq_to);
             rank = (int)chess::utils::squareRank(sq_to);
             tilesspecial[0].setPosition(50 + 100*file, 770 - 100*rank);
-            window->draw(tilesspecial[0]);
+            window.draw(tilesspecial[0]);
         }
 
         // populate selected squares
@@ -319,7 +318,7 @@ private:
             int file = (int)chess::utils::squareFile(sq);
             int rank = (int)chess::utils::squareRank(sq);
             tilesspecial[1].setPosition(50 + 100*file, 770 - 100*rank);
-            window->draw(tilesspecial[1]);
+            window.draw(tilesspecial[1]);
         }
     }
 
@@ -364,23 +363,23 @@ private:
     // Handles window events and rendering
     void update_window() {
         // event handling
-        while (window->pollEvent(event))
+        while (window.pollEvent(event))
             if (event.type == sf::Event::Closed)
-                window->close();
+                window.close();
 
         // clear window render
-        window->clear(cge::PALETTE::BG);
+        window.clear(cge::PALETTE::BG);
 
         // draw tiles
         for (int i=0; i<64; i++)
-            window->draw(tiles[i]);
+            window.draw(tiles[i]);
 
         draw_select();  // draw selected and move tiles
         draw_timer();   // draw timer and names
         draw_pieces();  // draw pieces
 
         // update window render
-        window->display();
+        window.display();
     }
 
 

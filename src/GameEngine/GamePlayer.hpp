@@ -19,5 +19,10 @@ public:
 
     // Returns a valid move string. Should return immediately if halt becomes true
     virtual chess::Move get_move(chess::Board board, int t_remain, sf::Event& event, bool& halt) = 0;
+
+
+    // macros
+    #define whiteturn (board.sideToMove() == chess::Color::WHITE)   // [bool] curently white's turn
+    #define movename (chess::squareToString[move.from()] + chess::squareToString[move.to()])    // [string] numeric of move
 };  // GamePlayer
 }   // namespace cge

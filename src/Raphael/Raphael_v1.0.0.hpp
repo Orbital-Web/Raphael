@@ -31,10 +31,10 @@ public:
     }
 
 
-    // Uses Negamax algorithm to return the best move. Should return immediately if halt becomes true
+    // Uses Negamax to return the best move. Should return immediately if halt becomes true
     chess::Move get_move(chess::Board board, int t_remain, sf::Event& event, bool& halt) {
         n_pieces_left = chess::builtin::popcount(board.occ());
-        return negamax(board, 4, -INT_MAX, INT_MAX, halt).move;
+        return negamax(board, 5, -INT_MAX, INT_MAX, halt).move;
     }
 
 private:
@@ -54,7 +54,7 @@ private:
         order_moves(movelist, board);
         searchres res = {0, -INT_MAX};
 
-        for (auto move : movelist) {
+        for (auto& move : movelist) {
             board.makeMove(move);
             int score = -negamax(board, depth-1, -beta, -alpha, halt).score;
             board.unmakeMove(move);
@@ -76,27 +76,38 @@ private:
     // Modifies movelist to contain a list of moves, ordered from best to worst
     void order_moves(chess::Movelist& movelist, const chess::Board& board) {
         chess::movegen::legalmoves(movelist, board);
-        for (auto move : movelist)
-            score_move(move);
+        for (auto& move : movelist)
+            score_move(move, board);
         movelist.sort();
     }
 
 
     // Assigns a score to the given move
-    void score_move(chess::Move& move) {
+    void score_move(chess::Move& move, const chess::Board& board) {
         int16_t score = 0;
         // calculate score
+        int from = (int)board.at(move.from());
+        int to = (int)board.at(move.to());
+
+        // enemy piece captured
+        if (to!=12 && whiteturn==(to/6))
+            score += abs(PVAL::VALS[to] + PVAL::VALS[from]);
+        
+        // promotion
+        if (move.typeOf()==chess::Move::PROMOTION)
+            score += abs(PVAL::VALS[(int)move.promotionType()]);
+
         move.setScore(score);
     }
 
 
     // Evaluates the current position (from the current player's perspective)
-    int evaluate(const chess::Board& board, chess::GameResult result) {
+    int evaluate(const chess::Board& board, const chess::GameResult& result) {
         // checkmate/draw
         if (result == chess::GameResult::DRAW)
             return 0;
         else if (result == chess::GameResult::LOSE)
-            return (board.sideToMove() == chess::Color::WHITE) ? INT_MAX : -INT_MAX;
+            return (whiteturn) ? -INT_MAX : INT_MAX;
 
         int16_t score = 0;
 
@@ -114,7 +125,7 @@ private:
         }
 
         // convert perspective
-        if (board.sideToMove() != chess::Color::WHITE)
+        if (!whiteturn)
             score *= -1;
         return score;
     }

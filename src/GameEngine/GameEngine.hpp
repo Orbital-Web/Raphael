@@ -14,16 +14,16 @@
 
 namespace cge { // chess game engine
 namespace PALETTE {
-    const sf::Color BG(22, 21, 18);             // background
-    const sf::Color TIMER_A(56, 71, 34);        // active timer
-    const sf::Color TIMER_ALOW(115, 49, 44);    // active timer (<60sec)
-    const sf::Color TIMER(38, 36, 33);          // inactive timer
-    const sf::Color TIMER_LOW(78, 41, 40);      // inactive timer (<60sec)
-    const sf::Color TILE_W(240, 217, 181);      // white tile
-    const sf::Color TILE_B(177, 136, 106);      // black tile
-    const sf::Color TILE_MOV(170, 162, 58);     // tile moved to&from
-    const sf::Color TILE_SEL(130, 151, 105);    // tile to move to
-    const sf::Color TEXT(255, 255, 255);        // text
+    const sf::Color BG(22, 21, 18);                 // background
+    const sf::Color TIMER_A(56, 71, 34);            // active timer
+    const sf::Color TIMER_ALOW(115, 49, 44);        // active timer (<60sec)
+    const sf::Color TIMER(38, 36, 33);              // inactive timer
+    const sf::Color TIMER_LOW(78, 41, 40);          // inactive timer (<60sec)
+    const sf::Color TILE_W(240, 217, 181);          // white tile
+    const sf::Color TILE_B(177, 136, 106);          // black tile
+    const sf::Color TILE_MOV(170, 162, 58, 200);    // tile moved to&from
+    const sf::Color TILE_SEL(130, 151, 105, 200);   // tile to move to
+    const sf::Color TEXT(255, 255, 255);            // text
 }
 const std::string TEXTURE[12] = {
     "wP", "wN", "wB", "wR", "wQ", "wK",
@@ -92,7 +92,7 @@ public:
         // manage turns
         names[0].setString(players[!p1_is_white]->name);
         names[1].setString(players[p1_is_white]->name);
-        turn = (board.sideToMove()!=chess::Color::WHITE);
+        turn = !whiteturn;
 
         interactive = is_interactive;
         if (interactive)
@@ -229,7 +229,7 @@ private:
     void draw_pieces() {
         for (int rank=0; rank<8; rank++) {
             for (int file=0; file<8; file++) {
-                chess::Square sq = chess::utils::fileRankSquare(chess::File(file), chess::Rank(rank));
+                auto sq = chess::utils::fileRankSquare(chess::File(file), chess::Rank(rank));
                 int piece = (int)board.at(sq);
                 if (piece != 12) {
                     pieces[(int)piece].setPosition(50 + 100*file, 770 - 100*rank);
@@ -297,11 +297,11 @@ private:
 
             // board clicked
             if (x>50 && x<850 && y>70 && y<870) {
-                chess::Square sq = get_square(x, y);
+                auto sq = get_square(x, y);
                 int piece = (int)board.at(sq);
 
                 // own pieces clicked
-                if ((!turn && piece>=0 && piece<6) || (turn && piece>=6 && piece<12)) {
+                if (piece!=12 && whiteturn!=(piece/6)) {
                     selectedtiles.clear();
                     selectedtiles.push_back(sq);
                     add_selectedtiles();
@@ -314,7 +314,7 @@ private:
         }
 
         //draw selection squares
-        for (auto sq : selectedtiles) {
+        for (auto& sq : selectedtiles) {
             int file = (int)chess::utils::squareFile(sq);
             int rank = (int)chess::utils::squareRank(sq);
             tilesspecial[1].setPosition(50 + 100*file, 770 - 100*rank);
@@ -333,9 +333,9 @@ private:
 
     // Adds squares that selectedtiles[0] can move to (draw_select)
     void add_selectedtiles() {
-        chess::Square sq_from = selectedtiles[0];
+        auto sq_from = selectedtiles[0];
 
-        for (auto move : movelist) {
+        for (auto& move : movelist) {
             if (move.from()==sq_from) {
                 // modify castling move to target empty tile
                 if (move.typeOf()==chess::Move::CASTLING) {

@@ -102,12 +102,12 @@ private:
 
 
     // Evaluates the current position (from the current player's perspective)
-    int evaluate(const chess::Board& board, const chess::GameResult& result) {
+    int evaluate(const chess::Board& board, const chess::GameResult result) {
         // checkmate/draw
         if (result == chess::GameResult::DRAW)
             return 0;
         else if (result == chess::GameResult::LOSE)
-            return (whiteturn) ? -INT_MAX : INT_MAX;
+            return -INT_MAX;
 
         int16_t score = 0;
 

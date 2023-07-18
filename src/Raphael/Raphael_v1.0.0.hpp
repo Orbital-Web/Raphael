@@ -14,7 +14,7 @@ class v1_0_0: public cge::GamePlayer {
 private:
     const int N_PIECES_END = 8;
     int n_pieces_left;
-
+    // return type of negamax search
     struct searchres {
         chess::Move move;
         int score;
@@ -112,9 +112,10 @@ private:
                 score += (n_pieces_left < N_PIECES_END) ? PST::END[piece][sqi] : PST::MID[piece][sqi];
             }
         }
+
+        // convert perspective
         if (board.sideToMove() != chess::Color::WHITE)
             score *= -1;
-
         return score;
     }
 };  // Raphael

@@ -1,11 +1,12 @@
 # Raphael
-A GUI-based Chess Player as well as a Chess Engine (not implemented yet), coded in C++ and [SFML](https://www.sfml-dev.org/).
+A GUI-based Chess Player as well as a Chess Engine, coded in C++ and [SFML](https://www.sfml-dev.org/).
 
-The Chess Engine will be added around August to September. Right now I am a little bit busy so I won't be able to implement it yet. It will work off of the negamax algorithm (a variant of the Minimax algorith). 
+The engine is still a work in progress and will be updated as time goes by. [Scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-1) to see a list of features currently implemented.
 
 <p align="center">
     <img src="https://github.com/Orbital-Web/Raphael/blob/c0396fcec6b3221369353dcabe812fb068a03534/Demo.png" alt="demo of Raphael" width=400/>
 </p>
+
 
 
 ## Getting started (Windows)
@@ -18,8 +19,9 @@ The Chess Engine will be added around August to September. Right now I am a litt
     g++ -c main.cpp -ISFML-2.6.0/include -DSFML_STATIC
     g++ -o main main.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
     del main.o
-    main.exe human "Adam" human "Bob"
+    main.exe human "Adam" Raphaelv1.0.0 "Bob"
     ```
+
 
 
 ## Features
@@ -43,5 +45,26 @@ The Game Player is a pure virtual function whose primary purpose is to return a 
 The Human Player is an extension of `cge::GamePlayer` which will return a move based on UI interactions. Selecting a piece and clicking its destination tile will push that move forward. Note that castling may only be played by selecting the King and clicking on the castling destination tile of the King. Clicking on the King and then the Rook will not castle the King and will instead select the Rook. 
 
 
-
 ### Raphael
+Raphael is an extension of `cge::GamePlayer` which will use a negamax search tree to return the best move it can find. 
+
+**General Improvements**
+- [x] Alpha-beta pruning        (`v1.0.0+`)
+- [ ] Move ordering
+- [ ] Transposition table
+- [ ] Iterative deepening
+- [ ] Opening book
+- [ ] Quiescence search
+- [ ] Pondering
+
+**Evaluation**
+- [x] Material cost             (`v1.0.0+`)
+- [x] Piece-square tables       (`v1.0.0+`)
+- [ ] Midgame King safety
+- [ ] Endgame King proximity
+- [ ] Pawn structure
+
+**Move Ordering**
+- [ ] Captures
+- [ ] Checks
+- [ ] Promotion

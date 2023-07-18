@@ -96,7 +96,7 @@ private:
         if (result == chess::GameResult::DRAW)
             return 0;
         else if (result == chess::GameResult::LOSE)
-            return (board.sideToMove() == chess::Color::WHITE) ? -INT_MAX : INT_MAX;
+            return (board.sideToMove() == chess::Color::WHITE) ? INT_MAX : -INT_MAX;
 
         int16_t score = 0;
 

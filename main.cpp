@@ -112,9 +112,7 @@ int main(int argc, char** argv) {
         int n_matches = (argc-5) / 4;
 
         for (int i=0; i<n_matches; i++) {
-            printf("A\n");
             std::array<float, 2> t_remain = {(float)atof(argv[4*i + 5]), (float)atof(argv[4*i + 6])};
-            printf("B\n");
             std::string start_fen = argv[4*i + 7];
             bool p1_is_white = (strcmp(argv[4*i + 8], "1")==0);
             matchargs.push_back({p1_is_white, start_fen, t_remain});

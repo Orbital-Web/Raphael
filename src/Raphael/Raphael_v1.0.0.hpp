@@ -34,7 +34,7 @@ public:
     // Uses Negamax to return the best move. Should return immediately if halt becomes true
     chess::Move get_move(chess::Board board, int t_remain, sf::Event& event, bool& halt) {
         n_pieces_left = chess::builtin::popcount(board.occ());
-        return negamax(board, 5, -INT_MAX, INT_MAX, halt).move;
+        return negamax(board, 4, -INT_MAX, INT_MAX, halt).move;
     }
 
 private:
@@ -44,10 +44,16 @@ private:
         if (halt)
             return {0, 0};
 
-        // terminal depth/state
+        // checkmate/draw
         auto result = board.isGameOver().second;
-        if (depth==0 || result!=chess::GameResult::NONE)
-            return {0, evaluate(board, result)};
+        if (result == chess::GameResult::DRAW)
+            return {0, 0};
+        else if (result == chess::GameResult::LOSE)
+            return {0, -INT_MAX};
+        
+        // terminal depth
+        if (depth == 0)
+            return {0, quiescence(board, alpha, beta, halt)};
         
         // search
         chess::Movelist movelist;
@@ -73,11 +79,59 @@ private:
     }
 
 
+    // Quiescence search for all captures
+    int quiescence(chess::Board& board, int alpha, int beta, bool& halt) {
+        int score = evaluate(board);
+
+        // timeout
+        if (halt)
+            return score;
+
+        // prune
+        alpha = std::max(alpha, score);
+        if (alpha >= beta)
+            return alpha;
+        
+        // search
+        chess::Movelist movelist;
+        order_cc_moves(movelist, board);
+        
+        for (auto& move : movelist) {
+            board.makeMove(move);
+            int score = -quiescence(board, -beta, -alpha, halt);
+            board.unmakeMove(move);
+
+            // prune
+            alpha = std::max(alpha, score);
+            if (alpha >= beta)
+                break;
+        }
+        
+        return alpha;
+    }
+
+
     // Modifies movelist to contain a list of moves, ordered from best to worst
     void order_moves(chess::Movelist& movelist, const chess::Board& board) {
         chess::movegen::legalmoves(movelist, board);
         for (auto& move : movelist)
             score_move(move, board);
+        movelist.sort();
+    }
+
+
+    // order_moves but for only capture moves
+    void order_cc_moves(chess::Movelist& movelist, const chess::Board& board) {
+        chess::Movelist all_movelist;
+        chess::movegen::legalmoves(all_movelist, board);
+        for (auto& move : all_movelist) {
+            int to = (int)board.at(move.to());
+            // enemy piece captured
+            if (to!=12 && whiteturn==(to/6)) {
+                score_move(move, board);
+                movelist.add(move);
+            }
+        }
         movelist.sort();
     }
 
@@ -102,13 +156,7 @@ private:
 
 
     // Evaluates the current position (from the current player's perspective)
-    int evaluate(const chess::Board& board, const chess::GameResult result) {
-        // checkmate/draw
-        if (result == chess::GameResult::DRAW)
-            return 0;
-        else if (result == chess::GameResult::LOSE)
-            return -INT_MAX;
-
+    int evaluate(const chess::Board& board) {
         int16_t score = 0;
 
         // count pieces and added their values (material + pst)

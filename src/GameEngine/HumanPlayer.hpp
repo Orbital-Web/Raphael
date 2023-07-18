@@ -18,6 +18,7 @@ public:
     chess::Move get_move(chess::Board board, int t_remain, sf::Event& event, bool& halt) {
         chess::Square sq_from = chess::Square::NO_SQ;
         chess::Square sq_to = chess::Square::NO_SQ;
+        bool iswhite = (board.sideToMove() == chess::Color::WHITE);
 
         // generate movelist
         chess::Movelist movelist;

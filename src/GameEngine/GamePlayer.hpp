@@ -9,7 +9,6 @@ namespace cge { // chess game engine
 class GamePlayer {
 // class variables
 public:
-    bool iswhite;
     std::string name;
 
 

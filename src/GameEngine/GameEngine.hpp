@@ -90,8 +90,6 @@ public:
         t_remain = t_remain_in;
 
         // manage turns
-        players[0]->iswhite = p1_is_white;
-        players[1]->iswhite = !p1_is_white;
         names[0].setString(players[!p1_is_white]->name);
         names[1].setString(players[p1_is_white]->name);
         turn = (board.sideToMove()!=chess::Color::WHITE);

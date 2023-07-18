@@ -41,3 +41,7 @@ The Game Player is a pure virtual function whose primary purpose is to return a 
 
 ### HumanPlayer
 The Human Player is an extension of `cge::GamePlayer` which will return a move based on UI interactions. Selecting a piece and clicking its destination tile will push that move forward. Note that castling may only be played by selecting the King and clicking on the castling destination tile of the King. Clicking on the King and then the Rook will not castle the King and will instead select the Rook. 
+
+
+
+### Raphael

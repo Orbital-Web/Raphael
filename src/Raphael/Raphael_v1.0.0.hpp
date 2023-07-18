@@ -15,6 +15,11 @@ private:
     const int N_PIECES_END = 8;
     int n_pieces_left;
 
+    struct searchres {
+        chess::Move move;
+        int score;
+    };
+
 
 
 // methods
@@ -29,14 +34,45 @@ public:
     // Uses Negamax algorithm to return the best move. Should return immediately if halt becomes true
     chess::Move get_move(chess::Board board, int t_remain, sf::Event& event, bool& halt) {
         n_pieces_left = chess::builtin::popcount(board.occ());
-        printf("Eval: %d\n", evaluate(board));
-
-        chess::Movelist movelist;
-        order_moves(movelist, board);
-        return movelist[0];
+        return negamax(board, 4, -INT_MAX, INT_MAX, halt).move;
     }
 
 private:
+    // The Negamax search algorithm to search for the best move
+    searchres negamax(chess::Board& board, int depth, int alpha, int beta, bool& halt) {
+        // timeout
+        if (halt)
+            return {0, 0};
+
+        // terminal depth/state
+        auto result = board.isGameOver().second;
+        if (depth==0 || result!=chess::GameResult::NONE)
+            return {0, evaluate(board, result)};
+        
+        // search
+        chess::Movelist movelist;
+        order_moves(movelist, board);
+        searchres res = {0, -INT_MAX};
+
+        for (auto move : movelist) {
+            board.makeMove(move);
+            int score = -negamax(board, depth-1, -beta, -alpha, halt).score;
+            board.unmakeMove(move);
+
+            // update score
+            if (score > res.score)
+                res = {move, score};
+
+            // prune
+            alpha = std::max(alpha, score);
+            if (alpha >= beta)
+                break;
+        }
+
+        return res;
+    }
+
+
     // Modifies movelist to contain a list of moves, ordered from best to worst
     void order_moves(chess::Movelist& movelist, const chess::Board& board) {
         chess::movegen::legalmoves(movelist, board);
@@ -54,14 +90,13 @@ private:
     }
 
 
-    // Evaluates the current position (from white's perspective)
-    int16_t evaluate(const chess::Board& board) {
+    // Evaluates the current position (from the current player's perspective)
+    int evaluate(const chess::Board& board, chess::GameResult result) {
         // checkmate/draw
-        auto result = board.isGameOver().second;
         if (result == chess::GameResult::DRAW)
             return 0;
         else if (result == chess::GameResult::LOSE)
-            return (board.sideToMove() == chess::Color::WHITE) ? INT16_MIN : INT16_MAX;
+            return (board.sideToMove() == chess::Color::WHITE) ? -INT_MAX : INT_MAX;
 
         int16_t score = 0;
 
@@ -77,6 +112,9 @@ private:
                 score += (n_pieces_left < N_PIECES_END) ? PST::END[piece][sqi] : PST::MID[piece][sqi];
             }
         }
+        if (board.sideToMove() != chess::Color::WHITE)
+            score *= -1;
+
         return score;
     }
 };  // Raphael

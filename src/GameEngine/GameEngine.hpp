@@ -168,7 +168,7 @@ public:
 
 
     // Print result of the games
-    void print_report() {
+    void print_report() const {
         int total_matches = results[0] + results[1] + results[2];
         printf("Out of %i total matches:\n", total_matches);
         printf("   %s: \t\x1b[32m%i\x1b[0m\n", players[0]->name.c_str(), results[0]);   // p1 wins

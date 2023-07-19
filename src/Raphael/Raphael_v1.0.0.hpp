@@ -1,6 +1,7 @@
 #pragma once
 #define NDEBUG  // disables assert inside chess.hpp
 #include "consts.hpp"
+#include "Transposition.hpp"
 #include "../GameEngine/GamePlayer.hpp"
 #include "../GameEngine/chess.hpp"
 #include <SFML/Graphics.hpp>
@@ -12,34 +13,31 @@ namespace Raphael {
 class v1_0_0: public cge::GamePlayer {
 // class variables
 private:
-    const int N_PIECES_END = 8;
-    int n_pieces_left;
     // return type of negamax search
-    struct searchres {
+    struct Searchres {
         chess::Move move;
         int score;
     };
+    TranspositionTable tt;
 
 
 
 // methods
 public:
-
     // Initializes Raphael with a name
-    v1_0_0(std::string name_in = "Raphael v1.0.0"): GamePlayer(name_in) {
+    v1_0_0(std::string name_in = "Raphael v1.0.0"): GamePlayer(name_in), tt(TABLE_SIZE) {
         PST::init_pst();
     }
 
 
     // Uses Negamax to return the best move. Should return immediately if halt becomes true
     chess::Move get_move(chess::Board board, int t_remain, sf::Event& event, bool& halt) {
-        n_pieces_left = chess::builtin::popcount(board.occ());
-        return negamax(board, 4, -INT_MAX, INT_MAX, halt).move;
+        return negamax(board, 6, -INT_MAX, INT_MAX, halt).move;
     }
 
 private:
     // The Negamax search algorithm to search for the best move
-    searchres negamax(chess::Board& board, int depth, int alpha, int beta, bool& halt) {
+    Searchres negamax(chess::Board& board, int depth, int alpha, int beta, bool& halt) const {
         // timeout
         if (halt)
             return {0, 0};
@@ -58,7 +56,7 @@ private:
         // search
         chess::Movelist movelist;
         order_moves(movelist, board);
-        searchres res = {0, -INT_MAX};
+        Searchres res = {0, -INT_MAX};
 
         for (auto& move : movelist) {
             board.makeMove(move);
@@ -80,7 +78,7 @@ private:
 
 
     // Quiescence search for all captures
-    int quiescence(chess::Board& board, int alpha, int beta, bool& halt) {
+    int quiescence(chess::Board& board, int alpha, int beta, bool& halt) const {
         int score = evaluate(board);
 
         // timeout
@@ -112,7 +110,7 @@ private:
 
 
     // Modifies movelist to contain a list of moves, ordered from best to worst
-    void order_moves(chess::Movelist& movelist, const chess::Board& board) {
+    void order_moves(chess::Movelist& movelist, const chess::Board& board) const {
         chess::movegen::legalmoves(movelist, board);
         for (auto& move : movelist)
             score_move(move, board);
@@ -121,7 +119,7 @@ private:
 
 
     // order_moves but for only capture moves
-    void order_cap_moves(chess::Movelist& movelist, const chess::Board& board) {
+    void order_cap_moves(chess::Movelist& movelist, const chess::Board& board) const {
         chess::Movelist all_movelist;
         chess::movegen::legalmoves(all_movelist, board);
         for (auto& move : all_movelist) {
@@ -137,7 +135,7 @@ private:
 
 
     // Assigns a score to the given move
-    void score_move(chess::Move& move, const chess::Board& board) {
+    void score_move(chess::Move& move, const chess::Board& board) const {
         int16_t score = 0;
         // calculate score
         int from = (int)board.at(move.from());
@@ -156,21 +154,38 @@ private:
 
 
     // Evaluates the current position (from the current player's perspective)
-    int evaluate(const chess::Board& board) {
+    int evaluate(const chess::Board& board) const {
         int16_t score = 0;
+        int n_pieces_left = chess::builtin::popcount(board.occ());
+        double eg_weight = std::min(1.0, double(32-n_pieces_left)/(32-N_PIECES_END));
+        int wkr, bkr, wkf, bkf;
 
         // count pieces and added their values (material + pst)
         for (int sqi=0; sqi<64; sqi++) {
-            int piece = (int)board.at((chess::Square)sqi);
+            auto sq = (chess::Square)sqi;
+            int piece = (int)board.at(sq);
 
             // non-empty
             if (piece != 12) {
                 // add material score
                 score += PVAL::VALS[piece];
                 // add positional score
-                score += (n_pieces_left < N_PIECES_END) ? PST::END[piece][sqi] : PST::MID[piece][sqi];
+                score += PST::MID[piece][sqi] + eg_weight*(PST::END[piece][sqi] - PST::MID[piece][sqi]);
+            }
+
+            // King proximity
+            if (piece == 5) {
+                wkr = (int)chess::utils::squareRank(sq);
+                wkf = (int)chess::utils::squareFile(sq);
+            } else if (piece == 11) {
+                bkr = (int)chess::utils::squareRank(sq);
+                bkf = (int)chess::utils::squareFile(sq);
             }
         }
+
+        // King Proximity
+        int kingdist = abs(wkr-bkr) + abs(wkf-bkf);
+        score += (14 - kingdist) * KING_DIST_WEIGHT * eg_weight;
 
         // convert perspective
         if (!whiteturn)

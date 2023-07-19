@@ -171,7 +171,7 @@ private:
 
         // enemy piece captured
         if (to!=12 && whiteturn==(to/6))
-            score += abs(PVAL::VALS[to] + PVAL::VALS[from]) + 13;  // small bias to encourage trades
+            score += abs(PVAL::VALS[to]) - abs(PVAL::VALS[from]) + 13;  // small bias to encourage trades
         
         // promotion
         if (move.typeOf()==chess::Move::PROMOTION)

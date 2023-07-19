@@ -63,11 +63,11 @@ Raphael is an extension of `cge::GamePlayer` which will use a negamax search tre
 - [x] Material cost             (`v1.0.0+`)
 - [x] Piece-square tables       (`v1.0.0+`)
 - [ ] Midgame King safety
-- [ ] Endgame King proximity
+- [x] Endgame King proximity    (`v1.0.0+`)
 - [ ] Pawn structure
 
 **Move Ordering**
 - [x] Captures                  (`v1.0.0+`)
-- [x] Promotion                 (`v1.0.0+`)
+- [x] Promotions                (`v1.0.0+`)
 - [ ] Checks
-- [ ] Moving into attack
+- [ ] Moving into attacks

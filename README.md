@@ -1,7 +1,7 @@
 # Raphael
 A GUI-based Chess Player as well as a Chess Engine, coded in C++ and [SFML](https://www.sfml-dev.org/).
 
-The engine is still a work in progress and will be updated as time goes by. [Scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-1) to see a list of features currently implemented.
+The engine is still a work in progress and will be updated as time goes by (though it is already quite competent). Its main features are negamax with alpha-beta pruning, transposition table, and iterative deepening. [Scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-1) to see a full list of features currently implemented.
 
 <p align="center">
     <img src="https://github.com/Orbital-Web/Raphael/blob/c0396fcec6b3221369353dcabe812fb068a03534/Demo.png" alt="demo of Raphael" width=400/>
@@ -46,16 +46,16 @@ The Human Player is an extension of `cge::GamePlayer` which will return a move b
 
 
 ### Raphael
-Raphael is an extension of `cge::GamePlayer` which will use a negamax search tree to return the best move it can find. 
+Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax search tree to return the best move it can find. 
 
-**General Improvements**
+**General Optimizations**
 - [x] Alpha-beta pruning        (`v1.0.0+`)
 - [x] Move ordering             (`v1.0.0+`)
 - [x] Transposition table       (`v1.0.0+`)
-- [ ] Iterative deepening
+- [x] Iterative deepening       (`v1.0.0+`)
 - [ ] Opening book
-- [x] Quiescence with capture   (`v1.0.0+`)
-- [ ] Quiescence with check
+- [x] Quiescence with captures  (`v1.0.0+`)
+- [ ] Quiescence with checks
 - [ ] Time management
 - [ ] Pondering
 

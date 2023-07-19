@@ -3,7 +3,6 @@
 #include "chess.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
-#include <thread>
 #include <future>
 #include <sstream>
 #include <iomanip>

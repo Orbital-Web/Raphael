@@ -18,7 +18,7 @@ public:
     GamePlayer(std::string name_in): name(name_in) {}
 
     // Returns a valid move string. Should return immediately if halt becomes true
-    virtual chess::Move get_move(chess::Board board, int t_remain, sf::Event& event, bool& halt) = 0;
+    virtual chess::Move get_move(chess::Board board, float t_remain, sf::Event& event, bool& halt) = 0;
 
     // macros
     #define whiteturn (board.sideToMove() == chess::Color::WHITE)   // [bool] curently white's turn

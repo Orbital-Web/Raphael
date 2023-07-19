@@ -6,6 +6,8 @@
 #include "../GameEngine/chess.hpp"
 #include <SFML/Graphics.hpp>
 #include <string>
+#include <future>
+#include <chrono>
 
 
 
@@ -19,6 +21,7 @@ private:
         int score;
     };
     TranspositionTable tt;
+    chess::Move itermove;   // best move from previous iteration
 
 
 
@@ -31,12 +34,70 @@ public:
 
 
     // Uses Negamax to return the best move. Should return immediately if halt becomes true
-    chess::Move get_move(chess::Board board, int t_remain, sf::Event& event, bool& halt) {
+    chess::Move get_move(chess::Board board, float t_remain, sf::Event& event, bool& halt) {
         tt.clear();
-        return negamax(board, 4, -INT_MAX, INT_MAX, halt).move;
+        return iterative_deepening(board, t_remain, halt);
     }
 
 private:
+    // Uses iterative deepening on Negamax to find best move
+    chess::Move iterative_deepening(chess::Board& board, const float t_remain, bool& halt) {
+        int depth = 1;
+        itermove = chess::Move::NO_MOVE;
+        Searchres res = {0, 0};
+
+        // stop search after an appropriate duration
+        int duration = search_time(t_remain);
+        auto _ = std::async(manage_time, std::ref(halt), duration);
+
+        // begin iterative deepening
+        while (!halt) {
+            auto iterres = negamax(board, depth, -INT_MAX, INT_MAX, halt);
+
+            // not timeout
+            if (!halt)
+                res = iterres;
+            
+            // checkmate, no need to continue
+            if (abs(res.score)>=1073641824) {
+                // get absolute evaluation (i.e, set to white's perspective)
+                if (!whiteturn == (res.score > 0))
+                    depth *= -1;
+                printf("Eval: #%d\n", depth);
+                halt = true;
+                return res.move;
+            }
+
+            itermove = res.move;
+            depth++;
+        }
+        // get absolute evaluation (i.e, set to white's perspective)
+        if (!whiteturn)
+            res.score *= -1;
+        printf("Eval: %.2f\tDepth %d\n", res.score/100.0, depth-1);
+        return res.move;
+    }
+
+
+    // Estimates the time (ms) it should spend on searching a move
+    int search_time(const float t_remain) {
+        return 5000;
+    }
+
+
+    // Sets halt to true if duration (ms) passes
+    // Must be called asynchronously
+    static void manage_time(bool& halt, const int duration) {
+        auto start = std::chrono::high_resolution_clock::now();
+        while (!halt) {
+            auto now = std::chrono::high_resolution_clock::now();
+            auto dtime = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
+            if (dtime >= duration)
+                halt = true;
+        }
+    }
+
+
     // The Negamax search algorithm to search for the best move
     Searchres negamax(chess::Board& board, unsigned int depth, int alpha, int beta, bool& halt) {
         // timeout
@@ -164,8 +225,14 @@ private:
 
     // Assigns a score to the given move
     void score_move(chess::Move& move, const chess::Board& board) const {
-        int score = 0;
+        // prioritize best move from previous iteraton
+        if (move == itermove) {
+            move.setScore(INT16_MAX);
+            return;
+        }
+
         // calculate score
+        int score = 0;
         int from = (int)board.at(move.from());
         int to = (int)board.at(move.to());
 

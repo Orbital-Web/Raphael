@@ -51,7 +51,7 @@ Raphael is an extension of `cge::GamePlayer` which will use a negamax search tre
 **General Improvements**
 - [x] Alpha-beta pruning        (`v1.0.0+`)
 - [x] Move ordering             (`v1.0.0+`)
-- [ ] Transposition table
+- [x] Transposition table       (`v1.0.0+`)
 - [ ] Iterative deepening
 - [ ] Opening book
 - [x] Quiescence with capture   (`v1.0.0+`)

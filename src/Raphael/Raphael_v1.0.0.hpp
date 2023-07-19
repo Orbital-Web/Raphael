@@ -32,22 +32,40 @@ public:
 
     // Uses Negamax to return the best move. Should return immediately if halt becomes true
     chess::Move get_move(chess::Board board, int t_remain, sf::Event& event, bool& halt) {
-        return negamax(board, 6, -INT_MAX, INT_MAX, halt).move;
+        tt.clear();
+        return negamax(board, 4, -INT_MAX, INT_MAX, halt).move;
     }
 
 private:
     // The Negamax search algorithm to search for the best move
-    Searchres negamax(chess::Board& board, int depth, int alpha, int beta, bool& halt) const {
+    Searchres negamax(chess::Board& board, unsigned int depth, int alpha, int beta, bool& halt) {
         // timeout
         if (halt)
             return {0, 0};
+        
+        // transposition lookup
+        int alphaorig = alpha;
+        int ttkey = board.zobrist();
+        auto entry = tt.get(ttkey);
+        if (tt.valid(entry, depth)) {
+            if (entry.flag == tt.EXACT)
+                return {entry.move, entry.score};
+            else if (entry.flag == tt.LOWER)
+                alpha = std::max(alpha, entry.score);
+            else
+                beta = std::min(beta, entry.score);
+            
+            // prune
+            if (alpha >= beta)
+                return {entry.move, entry.score};
+        }
 
         // checkmate/draw
         auto result = board.isGameOver().second;
         if (result == chess::GameResult::DRAW)
             return {0, 0};
         else if (result == chess::GameResult::LOSE)
-            return {0, -INT_MAX + board.fullMoveNumber()};  // reward faster checkmate
+            return {0, -INT_MAX + 1000*board.fullMoveNumber()};  // reward faster checkmate
         
         // terminal depth
         if (depth == 0)
@@ -72,6 +90,16 @@ private:
             if (alpha >= beta)
                 break;
         }
+
+        // store transposition
+        TranspositionTable::Flag flag;
+        if (res.score <= alphaorig)
+            flag = tt.UPPER;
+        else if (res.score >= beta)
+            flag = tt.LOWER;
+        else
+            flag = tt.EXACT;
+        tt.set(ttkey, {depth, flag, res.score, res.move});
 
         return res;
     }
@@ -136,14 +164,14 @@ private:
 
     // Assigns a score to the given move
     void score_move(chess::Move& move, const chess::Board& board) const {
-        int16_t score = 0;
+        int score = 0;
         // calculate score
         int from = (int)board.at(move.from());
         int to = (int)board.at(move.to());
 
         // enemy piece captured
         if (to!=12 && whiteturn==(to/6))
-            score += abs(PVAL::VALS[to] + PVAL::VALS[from]);
+            score += abs(PVAL::VALS[to] + PVAL::VALS[from]) + 13;  // small bias to encourage trades
         
         // promotion
         if (move.typeOf()==chess::Move::PROMOTION)

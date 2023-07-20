@@ -36,3 +36,6 @@ SFML-2.6.0/
 
 # vs code
 .vscode/
+
+# pgn files
+*.pgn

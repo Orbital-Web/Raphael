@@ -56,7 +56,7 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [ ] Opening book
 - [x] Quiescence with captures  (`v1.0.0+`)
 - [ ] Quiescence with checks
-- [x] Time management           (`v1.0.0+`)
+- [x] Time management           (`v1.1.0+`)
 - [ ] Pondering
 
 **Evaluation**

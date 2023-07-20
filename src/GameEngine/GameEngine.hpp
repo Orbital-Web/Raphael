@@ -132,7 +132,12 @@ public:
             }
 
             // play move
-            move(movereceiver.get());
+            auto toPlay = movereceiver.get();
+            if (toPlay == chess::Move::NO_MOVE) {
+                game_result = chess::GameResult::LOSE;
+                goto game_end;
+            }
+            move(toPlay);
             turn = !turn;
             game_result = board.isGameOver().second;
         }

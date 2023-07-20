@@ -82,9 +82,9 @@ private:
 
     // Estimates the time (ms) it should spend on searching a move
     int search_time(const chess::Board& board, const float t_remain) {
-        // any function within [0, 1]
+        // ratio: a function within [0, 1]
         // in this case it's a function at 0 when n_pieces = 0 or 32
-        // and around 1 when n_pieces is around 11
+        // and 1 when n_pieces is 11
         float n = chess::builtin::popcount(board.occ());
         float ratio = 0.0138*(32-n)*(n/32)*pow(2.5-n/32, 3);
         // use 0.5~4% of the remaining time based on the ratio

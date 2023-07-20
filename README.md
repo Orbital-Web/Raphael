@@ -14,7 +14,7 @@ The engine is still a work in progress and will be updated as time goes by (thou
 2. Install g++
 3. Download SFML-2.6.0 (GCC MinGW) from https://www.sfml-dev.org/download/sfml/2.6.0/ and add it to the root directory
 4. Copy `openal32.dll` from SFML-2.6.0/bin/ and add it to the root directory
-5. Compile and run `main.exe` with the following commands
+5. Compile and run `main.exe` with the following commands (optionally, compile with the `-DNDEBUG` flag)
     ```
     g++ -c main.cpp -ISFML-2.6.0/include -DSFML_STATIC
     g++ -o main main.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
@@ -30,7 +30,7 @@ The Game Engine is used to run the game. It can be initialized with an array of 
 
 Calling `run_match()` will start a chess match between these two players.
 - If `p1_is_white` is set to true, the first player will play as white, and vice versa. 
-- A starting position, formatted as a [FEN string](https://www.chess.com/terms/fen-chess) must be passed into `start_fen`. These can be easily generated from the [Lichess Analysis Board](https://lichess.org/analysis).
+- A starting position, formatted as a [FEN string](https://www.chess.com/terms/fen-chess) must be passed into `start_fen`. These can be easily generated from the [Lichess Board Editor](https://lichess.org/editor).
 - `t_remain_in` is an array with 2 floats, indicating the time remaining for each player (white and black), in seconds.
 - If `is_interactive` is true, it will play sounds and keep the window open after the game finishes.
 
@@ -48,7 +48,7 @@ The Human Player is an extension of `cge::GamePlayer` which will return a move b
 ### Raphael
 Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax search tree to return the best move it can find. 
 
-**General Optimizations**
+#### General Optimizations
 - [x] Alpha-beta pruning        (`v1.0.0+`)
 - [x] Move ordering             (`v1.0.0+`)
 - [x] Transposition table       (`v1.0.0+`)
@@ -59,15 +59,20 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Time management           (`v1.0.0+`)
 - [ ] Pondering
 
-**Evaluation**
+#### Evaluation
 - [x] Material cost             (`v1.0.0+`)
 - [x] Piece-square tables       (`v1.0.0+`)
 - [ ] Midgame King safety
 - [x] Endgame King proximity    (`v1.0.0+`)
 - [ ] Pawn structure
 
-**Move Ordering**
+#### Move Ordering
 - [x] Captures                  (`v1.0.0+`)
 - [x] Promotions                (`v1.0.0+`)
 - [ ] Checks
 - [ ] Moving into attacks
+
+**Comparisons**
+
+Different versions of the engine were put against each other in 400 matches, starting from a different starting position and alternating between playing as white and black. 
+- `v1.0.0` 🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 `v1.0.0` [174 /  36 / 190]

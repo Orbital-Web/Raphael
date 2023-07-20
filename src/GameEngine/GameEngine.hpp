@@ -165,13 +165,6 @@ public:
     }
 
 
-    // Runs several matches with random starting positions to compare the strengths of
-    // each player. Best used to compare different engines
-    void compare_players() {
-
-    }
-
-
     // Print result of the games
     void print_report() const {
         int total_matches = results[0] + results[1] + results[2];

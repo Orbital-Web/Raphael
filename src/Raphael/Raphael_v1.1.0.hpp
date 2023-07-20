@@ -1,5 +1,4 @@
 #pragma once
-#define NDEBUG  // disables assert inside chess.hpp
 #include "consts.hpp"
 #include "Transposition.hpp"
 #include "../GameEngine/GamePlayer.hpp"
@@ -61,10 +60,12 @@ private:
             
             // checkmate, no need to continue
             if (abs(res.score)>=1073641824) {
+                #ifndef NDEBUG
                 // get absolute evaluation (i.e, set to white's perspective)
                 if (!whiteturn == (res.score > 0))
                     depth *= -1;
                 printf("Eval: #%d\n", depth);
+                #endif
                 halt = true;
                 return res.move;
             }
@@ -72,10 +73,12 @@ private:
             itermove = res.move;
             depth++;
         }
+        #ifndef NDEBUG
         // get absolute evaluation (i.e, set to white's perspective)
         if (!whiteturn)
             res.score *= -1;
         printf("Eval: %.2f\tDepth %d\n", res.score/100.0, depth-1);
+        #endif
         return res.move;
     }
 

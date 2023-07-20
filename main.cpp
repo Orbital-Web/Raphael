@@ -6,6 +6,7 @@
 #include <string.h>
 #include <vector>
 #include <array>
+#include <fstream>
 
 
 
@@ -14,6 +15,7 @@ struct InputArgs {
     bool p1_is_white = true;
     std::string start_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     std::array<float, 2> t_remain = {600, 600};
+    bool interactive = true;
 };
 
 
@@ -97,8 +99,14 @@ int main(int argc, char** argv) {
     else if (argc==6) {
         // main.exe [players] -c
         if (!strcmp(argv[5], "-c")) {
-            printf("Not Implemented!\n");
-            return 0;
+            std::ifstream pgns("src/Games/randomGames.txt");
+            std::string pgn;
+            bool p1_is_white = true;
+            while (std::getline(pgns, pgn)) {
+                matchargs.push_back({p1_is_white, pgn, {20, 20}, false});
+                p1_is_white = !p1_is_white;
+            }
+            pgns.close();
         }
         // main.exe [players] <n_matches>
         for (int i=0; i<atoi(argv[5]); i++) {
@@ -140,7 +148,7 @@ int main(int argc, char** argv) {
 
     for (auto ma : matchargs) {
         printf("Starting match %i of %i\n", matchn, n_matches);
-        ge.run_match(ma.p1_is_white, ma.start_fen, ma.t_remain, true);
+        ge.run_match(ma.p1_is_white, ma.start_fen, ma.t_remain, ma.interactive);
         matchn++;
     }
 

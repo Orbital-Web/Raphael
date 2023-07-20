@@ -22,6 +22,6 @@ public:
 
     // macros
     #define whiteturn (board.sideToMove() == chess::Color::WHITE)   // [bool] curently white's turn
-    #define movename (chess::squareToString[move.from()] + chess::squareToString[move.to()])    // [string] numeric of move
+    #define movename(move) (chess::squareToString[move.from()] + chess::squareToString[move.to()])    // [string] numeric of move
 };  // GamePlayer
 }   // namespace cge

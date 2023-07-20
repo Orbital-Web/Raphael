@@ -15,7 +15,7 @@ public:
     struct Entry {
         unsigned int depth: 6;  // [0, 64)
         Flag flag: 2;
-        int score;              // 4 bytes
+        int eval;               // 4 bytes
         chess::Move move;       // 4 bytes
     };
 

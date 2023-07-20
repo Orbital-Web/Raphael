@@ -15,12 +15,8 @@ namespace Raphael {
 class v1_1_0: public cge::GamePlayer {
 // class variables
 private:
-    // return type of negamax search
-    struct Searchres {
-        chess::Move move;
-        int score;
-    };
     TranspositionTable tt;
+    chess::Move toPlay;     // overall best move
     chess::Move itermove;   // best move from previous iteration
 
 
@@ -43,8 +39,9 @@ private:
     // Uses iterative deepening on Negamax to find best move
     chess::Move iterative_deepening(chess::Board& board, const float t_remain, bool& halt) {
         int depth = 1;
+        int eval = 0;
+        toPlay = chess::Move::NO_MOVE;
         itermove = chess::Move::NO_MOVE;
-        Searchres res = {0, 0};
 
         // stop search after an appropriate duration
         int duration = search_time(board, t_remain);
@@ -52,34 +49,32 @@ private:
 
         // begin iterative deepening
         while (!halt) {
-            auto iterres = negamax(board, depth, -INT_MAX, INT_MAX, halt);
+            eval = negamax(board, depth, -INT_MAX, INT_MAX, halt);
 
             // not timeout
             if (!halt)
-                res = iterres;
+                toPlay = itermove;
             
             // checkmate, no need to continue
-            if (abs(res.score)>=1073641824) {
+            if (abs(eval)>=1073641824) {
                 #ifndef NDEBUG
                 // get absolute evaluation (i.e, set to white's perspective)
-                if (!whiteturn == (res.score > 0))
+                if (!whiteturn == (eval > 0))
                     depth *= -1;
                 printf("Eval: #%d\n", depth);
                 #endif
                 halt = true;
-                return res.move;
+                return toPlay;
             }
-
-            itermove = res.move;
             depth++;
         }
         #ifndef NDEBUG
         // get absolute evaluation (i.e, set to white's perspective)
         if (!whiteturn)
-            res.score *= -1;
-        printf("Eval: %.2f\tDepth %d\n", res.score/100.0, depth-1);
+            eval *= -1;
+        printf("Eval: %.2f\tDepth: %d\n", eval/100.0, depth-1);
         #endif
-        return res.move;
+        return toPlay;
     }
 
 
@@ -110,83 +105,87 @@ private:
 
 
     // The Negamax search algorithm to search for the best move
-    Searchres negamax(chess::Board& board, unsigned int depth, int alpha, int beta, bool& halt) {
+    int negamax(chess::Board& board, unsigned int depth, int alpha, int beta, bool& halt, bool root = true) {
         // timeout
         if (halt)
-            return {0, 0};
+            return 0;
         
         // transposition lookup
         int alphaorig = alpha;
-        int ttkey = board.zobrist();
+        auto ttkey = board.zobrist();
         auto entry = tt.get(ttkey);
         if (tt.valid(entry, depth)) {
-            if (entry.flag == tt.EXACT)
-                return {entry.move, entry.score};
+            if (entry.flag == tt.EXACT) {
+                if (root) itermove = entry.move;
+                return entry.eval;
+            }
             else if (entry.flag == tt.LOWER)
-                alpha = std::max(alpha, entry.score);
+                alpha = std::max(alpha, entry.eval);
             else
-                beta = std::min(beta, entry.score);
+                beta = std::min(beta, entry.eval);
             
             // prune
             if (alpha >= beta)
-                return {entry.move, entry.score};
+                return entry.eval;
         }
 
         // checkmate/draw
         auto result = board.isGameOver().second;
         if (result == chess::GameResult::DRAW)
-            return {0, 0};
+            return 0;
         else if (result == chess::GameResult::LOSE)
-            return {0, -INT_MAX + 1000*board.fullMoveNumber()};  // reward faster checkmate
+            return -INT_MAX + 1000*board.fullMoveNumber();  // reward faster checkmate
         
         // terminal depth
         if (depth == 0)
-            return {0, quiescence(board, alpha, beta, halt)};
+            return quiescence(board, alpha, beta, halt);
         
         // search
         chess::Movelist movelist;
         order_moves(movelist, board);
-        Searchres res = {0, -INT_MAX};
+        chess::Move bestmove = chess::Move::NO_MOVE;    // best move in this position
 
         for (auto& move : movelist) {
             board.makeMove(move);
-            int score = -negamax(board, depth-1, -beta, -alpha, halt).score;
+            int eval = -negamax(board, depth-1, -beta, -alpha, halt, false);
             board.unmakeMove(move);
 
-            // update score
-            if (score > res.score)
-                res = {move, score};
+            // update eval
+            if (eval > alpha) {
+                alpha = eval;
+                bestmove = move;
+                if (root) itermove = move;
+            }
 
             // prune
-            alpha = std::max(alpha, score);
             if (alpha >= beta)
                 break;
         }
 
         // store transposition
         TranspositionTable::Flag flag;
-        if (res.score <= alphaorig)
+        if (alpha <= alphaorig)
             flag = tt.UPPER;
-        else if (res.score >= beta)
+        else if (alpha >= beta)
             flag = tt.LOWER;
         else
             flag = tt.EXACT;
-        tt.set(ttkey, {depth, flag, res.score, res.move});
+        tt.set(ttkey, {depth, flag, alpha, bestmove});
 
-        return res;
+        return alpha;
     }
 
 
     // Quiescence search for all captures
     int quiescence(chess::Board& board, int alpha, int beta, bool& halt) const {
-        int score = evaluate(board);
+        int eval = evaluate(board);
 
         // timeout
         if (halt)
-            return score;
+            return eval;
 
         // prune
-        alpha = std::max(alpha, score);
+        alpha = std::max(alpha, eval);
         if (alpha >= beta)
             return alpha;
         
@@ -196,11 +195,11 @@ private:
         
         for (auto& move : movelist) {
             board.makeMove(move);
-            int score = -quiescence(board, -beta, -alpha, halt);
+            eval = -quiescence(board, -beta, -alpha, halt);
             board.unmakeMove(move);
 
             // prune
-            alpha = std::max(alpha, score);
+            alpha = std::max(alpha, eval);
             if (alpha >= beta)
                 break;
         }
@@ -261,7 +260,7 @@ private:
 
     // Evaluates the current position (from the current player's perspective)
     int evaluate(const chess::Board& board) const {
-        int16_t score = 0;
+        int eval = 0;
         int n_pieces_left = chess::builtin::popcount(board.occ());
         double eg_weight = std::min(1.0, double(32-n_pieces_left)/(32-N_PIECES_END));
         int wkr, bkr, wkf, bkf;
@@ -273,10 +272,10 @@ private:
 
             // non-empty
             if (piece != 12) {
-                // add material score
-                score += PVAL::VALS[piece];
-                // add positional score
-                score += PST::MID[piece][sqi] + eg_weight*(PST::END[piece][sqi] - PST::MID[piece][sqi]);
+                // add material value
+                eval += PVAL::VALS[piece];
+                // add positional value
+                eval += PST::MID[piece][sqi] + eg_weight*(PST::END[piece][sqi] - PST::MID[piece][sqi]);
             }
 
             // King proximity
@@ -291,12 +290,12 @@ private:
 
         // King Proximity
         int kingdist = abs(wkr-bkr) + abs(wkf-bkf);
-        score += (14 - kingdist) * KING_DIST_WEIGHT * eg_weight;
+        eval += (14 - kingdist) * KING_DIST_WEIGHT * eg_weight;
 
         // convert perspective
         if (!whiteturn)
-            score *= -1;
-        return score;
+            eval *= -1;
+        return eval;
     }
 };  // Raphael
 }   // namespace Raphael

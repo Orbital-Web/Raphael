@@ -8,6 +8,7 @@
 #include <string>
 #include <future>
 #include <chrono>
+#include <math.h>
 
 
 
@@ -47,7 +48,7 @@ private:
         Searchres res = {0, 0};
 
         // stop search after an appropriate duration
-        int duration = search_time(t_remain);
+        int duration = search_time(board, t_remain);
         auto _ = std::async(manage_time, std::ref(halt), duration);
 
         // begin iterative deepening
@@ -80,8 +81,15 @@ private:
 
 
     // Estimates the time (ms) it should spend on searching a move
-    int search_time(const float t_remain) {
-        return 5000;
+    int search_time(const chess::Board& board, const float t_remain) {
+        // ratio: a function within [0, 1]
+        // in this case it's a function at 0 when n_pieces = 0 or 32
+        // and 1 when n_pieces is 11
+        float n = chess::builtin::popcount(board.occ());
+        float ratio = 0.0138*(32-n)*(n/32)*pow(2.5-n/32, 3);
+        // use 0.5~4% of the remaining time based on the ratio
+        float duration = t_remain * (0.005 + 0.035*ratio);
+        return duration*1000;
     }
 
 

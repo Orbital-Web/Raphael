@@ -165,10 +165,11 @@ public:
     }
 
 
-    // Runs several matches with set starting position to
-    // compare the strengths of each player. Best used to
-    // compare different engines
-    //void compare_players();
+    // Runs several matches with random starting positions to compare the strengths of
+    // each player. Best used to compare different engines
+    void compare_players() {
+
+    }
 
 
     // Print result of the games

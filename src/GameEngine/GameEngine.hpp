@@ -85,6 +85,10 @@ public:
         chess::GameResult game_result = chess::GameResult::NONE;
         event.type = sf::Event::MouseMoved;
 
+        // reset players
+        players[0]->reset();
+        players[1]->reset();
+
         // set time
         t_remain = t_remain_in;
 

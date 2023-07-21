@@ -31,8 +31,14 @@ public:
 
     // Uses Negamax to return the best move. Should return immediately if halt becomes true
     chess::Move get_move(chess::Board board, float t_remain, sf::Event& event, bool& halt) {
-        tt.clear();
+        //tt.clear();
         return iterative_deepening(board, t_remain, halt);
+    }
+
+
+    // Resets the player
+    void reset() {
+        tt.clear();
     }
 
 private:
@@ -49,10 +55,12 @@ private:
 
         // begin iterative deepening
         while (!halt) {
-            eval = negamax(board, depth, -INT_MAX, INT_MAX, halt);
+            int itereval = negamax(board, depth, -INT_MAX, INT_MAX, halt);
 
             // not timeout
             if (!halt)
+                eval = itereval;
+            if (itermove != chess::Move::NO_MOVE)
                 toPlay = itermove;
             
             // checkmate, no need to continue
@@ -149,6 +157,10 @@ private:
             board.makeMove(move);
             int eval = -negamax(board, depth-1, -beta, -alpha, halt, false);
             board.unmakeMove(move);
+
+            // timeout
+            if (halt)
+                return 0;
 
             // update eval
             if (eval > alpha) {

@@ -1,14 +1,20 @@
 # modified version of Sebastian Lague's code from https://youtu.be/_vqlIPDR2TU
 # extacts game positions to start with for engine performance comparison
 import chess.pgn
+import chess.engine
 from random import random
 
 
-N_GAMES = 500
+N_GAMES = 400   # number of games to store
+MAX_ADV = 150   # maximum advantage (centipawn)
+# download stockfish from https://stockfishchess.org/download/ and add it to the current directory
+engine = chess.engine.SimpleEngine.popen_uci("./stockfish/stockfish-windows-x86-64-avx2.exe")
+
 
 with open("randomGames.txt", "w") as out:
     with open("lichess_db_standard_rated_2015-07.pgn") as pgn:
         n_saved = 0
+        
         while (n_saved < N_GAMES):
             game = chess.pgn.read_game(pgn)
             moves = game.mainline_moves()
@@ -18,15 +24,27 @@ with open("randomGames.txt", "w") as out:
             plyToPlay = int(16 + 20*random())
             plyPlayed = 0
             fen = ""
+            store = False
             
             for move in moves:
                 board.push(move)
                 plyPlayed += 1
                 if plyPlayed == plyToPlay:
                     fen = board.fen()
+                    # must be >= 10 important pieces
+                    if sum([fen.lower().count(piece) for piece in "rnbq"]) < 10:
+                        break
+                    eval = engine.analyse(board, chess.engine.Limit(time=0.1))['score']
+                    # must be <= MAX_ADV point advantage
+                    if eval.is_mate() or abs(eval.white().score()) > MAX_ADV:
+                        break
+                    store = True
             
-            if fen!="":
-                # more than 20 moves to play and more than 10 pieces
-                if plyPlayed > plyToPlay + 40 and sum([fen.lower().count(piece) for piece in "rnbq"]) >= 10:
-                    n_saved += 1
-                    out.write(fen + "\n")
+            # continued for 20 more turns
+            if store and plyPlayed > plyToPlay + 40:
+                n_saved += 1
+                progress = int(50*n_saved / N_GAMES)
+                print("Progress: [" + "█"*progress + "."*(50-progress) + f"] ({n_saved}/{N_GAMES})", end='\r')
+                out.write(fen + "\n")
+
+engine.close()

@@ -35,6 +35,12 @@ public:
         return iterative_deepening(board, t_remain, halt);
     }
 
+
+    // Resets the player
+    void reset() {
+        tt.clear();
+    }
+
 private:
     // Uses iterative deepening on Negamax to find best move
     chess::Move iterative_deepening(chess::Board& board, const float t_remain, bool& halt) {
@@ -49,11 +55,13 @@ private:
 
         // begin iterative deepening
         while (!halt) {
-            eval = negamax(board, depth, -INT_MAX, INT_MAX, halt);
+            int itereval = negamax(board, depth, -INT_MAX, INT_MAX, halt);
 
             // not timeout
-            if (!halt)
+            if (!halt) {
                 toPlay = itermove;
+                eval = itereval;
+            }
             
             // checkmate, no need to continue
             if (abs(eval)>=1073641824) {

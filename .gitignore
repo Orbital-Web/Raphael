@@ -39,3 +39,6 @@ SFML-2.6.0/
 
 # pgn files
 *.pgn
+
+# stockfish
+stockfish/

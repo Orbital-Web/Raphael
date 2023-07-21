@@ -133,7 +133,7 @@ private:
                 beta = std::min(beta, entry.eval);
             
             // prune
-            if (alpha >= beta)
+            if (alpha >= beta) 
                 return entry.eval;
         }
 

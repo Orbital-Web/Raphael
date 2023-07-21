@@ -31,7 +31,7 @@ public:
 
     // Uses Negamax to return the best move. Should return immediately if halt becomes true
     chess::Move get_move(chess::Board board, float t_remain, sf::Event& event, bool& halt) {
-        //tt.clear();
+        tt.clear();
         return iterative_deepening(board, t_remain, halt);
     }
 
@@ -72,7 +72,7 @@ private:
                 printf("Eval: #%d\n", depth);
                 #endif
                 halt = true;
-                return toPlay;
+                return itermove;
             }
             depth++;
         }
@@ -133,8 +133,10 @@ private:
                 beta = std::min(beta, entry.eval);
             
             // prune
-            if (alpha >= beta)
+            if (alpha >= beta) {
+                if (root) itermove = entry.move;
                 return entry.eval;
+            }
         }
 
         // checkmate/draw

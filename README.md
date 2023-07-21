@@ -54,7 +54,7 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Alpha-beta pruning        (`v1.0.0+`)
 - [x] Move ordering             (`v1.0.0+`)
 - [x] Transposition table       (`v1.0.0+`)
-- [x] Iterative deepening       (`v1.0.0+`)
+- [x] Iterative deepening (fix) (`v1.1.0+`)
 - [ ] Opening book
 - [x] Quiescence with captures  (`v1.0.0+`)
 - [ ] Quiescence with checks
@@ -77,4 +77,5 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 **Comparisons**
 
 Different versions of the engine were put against each other in 400 matches, starting from a different starting position and alternating between playing as white and black. 
-- `v1.0.0` 🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 `v1.0.0` [174 /  36 / 190]
+- `v1.0.0` 🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥🟥🟥🟥 `v1.0.0` [176 / 41 / 183]
+- `v1.1.0` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥🟥 `v1.0.0` [223 / 43 / 134]

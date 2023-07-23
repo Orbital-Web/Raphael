@@ -12,7 +12,7 @@
 
 
 namespace Raphael {
-class v1_0_0: public cge::GamePlayer {
+class v1_2: public cge::GamePlayer {
 // class variables
 private:
     TranspositionTable tt;
@@ -24,7 +24,7 @@ private:
 // methods
 public:
     // Initializes Raphael with a name
-    v1_0_0(std::string name_in): GamePlayer(name_in), tt(TABLE_SIZE) {
+    v1_2(std::string name_in): GamePlayer(name_in), tt(TABLE_SIZE) {
         PST::init_pst();
     }
 
@@ -32,7 +32,6 @@ public:
     // Uses iterative deepening on Negamax to find best move
     // Should return immediately if halt becomes true
     chess::Move get_move(chess::Board board, float t_remain, sf::Event& event, bool& halt) {
-        tt.clear();
         int depth = 1;
         int eval = 0;
         toPlay = chess::Move::NO_MOVE;
@@ -47,10 +46,10 @@ public:
             int itereval = negamax(board, depth, 0, -INT_MAX, INT_MAX, halt);
 
             // not timeout
-            if (!halt) {
-                toPlay = itermove;
+            if (!halt)
                 eval = itereval;
-            }
+            if (itermove != chess::Move::NO_MOVE)
+                toPlay = itermove;
             
             // checkmate, no need to continue
             if (tt.isMate(eval)) {
@@ -140,7 +139,7 @@ private:
         if (result == chess::GameResult::DRAW)
             return 0;
         else if (result == chess::GameResult::LOSE)
-            return -MATE_EVAL + ply;    // reward faster checkmate
+            return -MATE_EVAL + ply;  // reward faster checkmate
         
         // terminal depth
         if (depth == 0)
@@ -297,7 +296,7 @@ private:
                 bkf = (int)chess::utils::squareFile(sq);
             }
         }
-
+        
         // convert perspective
         if (!whiteturn)
             eval *= -1;
@@ -307,7 +306,7 @@ private:
             int kingdist = abs(wkr-bkr) + abs(wkf-bkf);
             eval += (14 - kingdist) * KING_DIST_WEIGHT * eg_weight;
         }
-
+        
         return eval;
     }
 };  // Raphael

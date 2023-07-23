@@ -1,13 +1,50 @@
 #include "src/GameEngine/GameEngine.hpp"
 #include "src/GameEngine/HumanPlayer.hpp"
-#include "src/Raphael/Raphael_v1.0.0.hpp"
-#include "src/Raphael/Raphael_v1.1.0.hpp"
-#include <string>
+#include "src/Raphael/Raphael_v1.0.hpp"
+#include "src/Raphael/Raphael_v1.1.hpp"
+#include "src/Raphael/Raphael_v1.2.hpp"
 #include <string.h>
+#include <string>
 #include <vector>
 #include <array>
 #include <fstream>
 
+
+
+// Creates the specified player
+cge::GamePlayer* player_factory(char* playertype, char* name) {
+    if (!strcmp(playertype, "human"))
+        return new cge::HumanPlayer(name);
+    else if (!strcmp(playertype, "Raphaelv1.0.0"))
+        return new Raphael::v1_0(name);
+    else if (!strcmp(playertype, "Raphaelv1.1.0"))
+        return new Raphael::v1_1(name);
+    else if (!strcmp(playertype, "Raphaelv1.2.0"))
+        return new Raphael::v1_2(name);
+    else if (!strcmp(playertype, "Raphael"))
+        return new Raphael::v1_2(name);
+    
+    // invalid
+    printf("Invalid player type: %s\n", playertype);
+    printf("Valid player types are:\n");
+    printf("   human:\t cge::HumanPlayer\n");
+    printf("   Raphael:\t Raphael::v1_2\n");
+    printf("   Raphaelv1.0:\t Raphael::v1_0\n");
+    printf("   Raphaelv1.1:\t Raphael::v1_1\n");
+    printf("   Raphaelv1.2:\t Raphael::v1_2\n");
+    return nullptr;
+}
+
+
+void print_usage() {
+    std::cout << "Usage: main.exe <p1type> <p1name> <p2type> <p2name> [mode] [options]\n\n"
+              << "Modes:\n"
+              << "  [int]\tNumber of matches (defaults to 1 if not specified)\n"
+              << "  -c\tComparison mode (options will be ignored)\n\n"
+              << "Options:\n"
+              << "  -t <int> <int>\tTime (sec) for white and black (defaults to 10min each)\n"
+              << "  -f <FENstring>\tStarting position FEN (defaults to standard chess board)\n\n";
+}
 
 
 // struct for storing input arguments to GameEngine::run_match()
@@ -19,68 +56,28 @@ struct InputArgs {
 };
 
 
+/*
+Example
+main.exe human "Adam" Raphael "Raphael"
+    1 rapid match, human (white) vs Raphael (black)
 
-// Prints usage
-void print_help() {
-    printf("Usage:\n"
-    "main.exe -h:\n"
-    "    Shows the help screen\n\n"
+main.exe human "Adam" Raphael "Raphael" 5
+    5 rapid matches, human vs Raphael (human plays white 3 times)
 
-    "main.exe <playertype1> <name1> <playertype2> <name2>:\n"
-    "main.exe [players]:\n"
-    "    Starts a match (rapid) with the corresponding players\n\n"
+main.exe human "Adam" human "Bob" -t 60 60
+    1 bullet match, both human players
 
-    "main.exe [players] -c:\n"
-    "main.exe [players] -compare:\n"
-    "    Runs compare_players with the corresponding players\n\n"
-
-    "main.exe [players] <n_matches>:\n"
-    "    Runs n_matches matches (rapid) with the corresponding players,\n"
-    "    starting with p1 as white and swapping every match\n\n"
-
-    "main.exe [players] <n_matches> <timeW> <timeB>:\n"
-    "    Runs n_matches matches with the corresponding players and time,\n"
-    "    starting with p1 as white and swapping every match\n\n"
-
-    "main.exe [players] <timeW> <timeB> <start_fen> <whiteplayer> ...\n"
-    "    Runs a match with the corresponding players, time, and\n"
-    "    starting position, with whiteplayer (1 or 2) playing\n"
-    "    as white. Arguments can be repeated to play multiple\n"
-    "    matches consecutively\n\n");
-}
-
-
-// Creates a player
-cge::GamePlayer* player_factory(char* playertype, char* name) {
-    if (!strcmp(playertype, "human"))
-        return new cge::HumanPlayer(name);
-    else if (!strcmp(playertype, "Raphaelv1.0.0"))
-        return new Raphael::v1_0_0(name);
-    else if (!strcmp(playertype, "Raphaelv1.1.0"))
-        return new Raphael::v1_1_0(name);
-    else if (!strcmp(playertype, "Raphael"))
-        return new Raphael::v1_1_0(name);
-    
-    // invalid
-    printf("Invalid playertype: %s\n", playertype);
-    printf("Valid playertypes are:\n");
-    printf("   human:\t\t cge::HumanPlayer\n");
-    printf("   Raphael:\t\t Raphael::v1_1_0\n");
-    printf("   Raphaelv1.0.0:\t Raphael::v1_0_0\n");
-    printf("   Raphaelv1.1.0:\t Raphael::v1_1_0\n");
-    return nullptr;
-}
-
-
-
+main.exe Raphael "Raph1" Raphael "Raph2" 2 -f "8/8/2q5/2k5/8/5K2/8/8 w - - 0 1"
+    2 rapid matches with set starting position, Raphael vs Raphael
+*/
 int main(int argc, char** argv) {
     cge::GamePlayer* p1;
     cge::GamePlayer* p2;
     std::vector<InputArgs> matchargs;
 
-    // invalid input
+    // invalid
     if (argc<5) {
-        print_help();
+        print_usage();
         return -1;
     }
 
@@ -89,52 +86,68 @@ int main(int argc, char** argv) {
     p2 = player_factory(argv[3], argv[4]);
     if (!p1 || !p2)
         return -1;
-    
 
-    // main.exe [players]
-    if (argc==5)
-        matchargs.push_back({});
-
-    // main.exe [players] -c  or  main.exe [players] <n_matches>
-    else if (argc==6) {
-        // main.exe [players] -c
-        if (!strcmp(argv[5], "-c")) {
+    // parse mode
+    int i = 5;
+    if (argc >= 6) {
+        // comparison mode
+        if (!strcmp(argv[i], "-c")) {
             std::ifstream pgns("src/Games/randomGames.txt");
             std::string pgn;
             bool p1_is_white = true;
+            // create 400 matches with alterating color
             while (std::getline(pgns, pgn)) {
                 matchargs.push_back({p1_is_white, pgn, {20, 20}, false});
                 p1_is_white = !p1_is_white;
             }
             pgns.close();
-        }
-        // main.exe [players] <n_matches>
-        for (int i=0; i<atoi(argv[5]); i++) {
-            bool p1_is_white = (i+1)%2;
-            matchargs.push_back({.p1_is_white=p1_is_white});
+            i = INT_MAX;    // ignore all options
         }
 
-    // main.exe [players] <n_matches> <timeW> <timeB>
-    } else if(argc==8) {
-        std::array<float, 2> t_remain = {(float)atof(argv[6]), (float)atof(argv[7])};
-        for (int i=0; i<atoi(argv[5]); i++) {
-            bool p1_is_white = (i+1)%2;
-            matchargs.push_back({.p1_is_white=p1_is_white, .t_remain=t_remain});
+        // number of games
+        else {
+            // create n matches with alternating color
+            int n_matches = atoi(argv[i]);
+            if (n_matches) {
+                bool p1_is_white = true;
+                for (int n=0; n<n_matches; n++) {
+                    matchargs.push_back({.p1_is_white=p1_is_white});
+                    p1_is_white = !p1_is_white;
+                }
+                i++;
+            } else
+                matchargs.push_back({});    // defaults to 1 match
         }
+    } else
+        matchargs.push_back({});    // defaults to 1 match
     
-    // main.exe [players] <timeW> <timeB> <start_fen> <startplayer> ...
-    } else if ((argc-5)%4 == 0){
-        int n_matches = (argc-5) / 4;
 
-        for (int i=0; i<n_matches; i++) {
-            std::array<float, 2> t_remain = {(float)atof(argv[4*i + 5]), (float)atof(argv[4*i + 6])};
-            std::string start_fen = argv[4*i + 7];
-            bool p1_is_white = (strcmp(argv[4*i + 8], "1")==0);
-            matchargs.push_back({p1_is_white, start_fen, t_remain});
+    // parse arguments
+    while (i < argc) {
+        // time
+        if(!strcmp(argv[i], "-t")) {
+            // set the time for every match
+            float t_white = (float)atof(argv[++i]);
+            float t_black = (float)atof(argv[++i]);
+            for (auto& ma : matchargs) {
+                ma.t_remain[0] = t_white;
+                ma.t_remain[1] = t_black;
+            }
         }
-    } else {
-        print_help();
-        return -1;
+
+        // fen
+        else if (!strcmp(argv[i], "-f")) {
+            i++;
+            for (auto& ma : matchargs)
+                ma.start_fen = argv[i];
+        }
+
+        else {
+            print_usage();
+            return -1;
+        }
+
+        i++;
     }
 
 

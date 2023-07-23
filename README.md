@@ -76,9 +76,26 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 
 ## Comparisons
 
-Different versions of the engine were put against each other in 400 matches, starting from a different starting position and alternating between playing as white and black. 
+Different versions of the engine were put against each other in 400 matches (20 seconds each), starting from a different  position (within a ±300 centipawn stockfish evaluation) and alternating between playing as white and black. 
 - `v1.0.0` 🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥🟥🟥🟥 `v1.0.0` [177 / 34 / 189]
 - `v1.1.0` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥 `v1.0.0` [245 / 39 / 116]
+
+The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability) of the different versions in relation to one another is as follows (with `v1.0.0` set to an ELO of 1000). Note that these ELO do not reflect each version's strength against human players. Rather, they are just used as a way to compare each version's performance. 
+<table>
+    <tr align="center">
+        <th>Version</th>
+        <th>ELO</th>
+    </tr>
+    <!--Results-->
+    <tr align="center">
+        <td>v1.0.0</td>
+        <td>1000</td>
+    <tr>
+    <tr align="center">
+        <td>v1.1.0</td>
+        <td>1116</td>
+    <tr>
+</table>
 
 **Detailed Results**
 <table>

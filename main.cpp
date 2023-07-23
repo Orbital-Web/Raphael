@@ -15,11 +15,11 @@
 cge::GamePlayer* player_factory(char* playertype, char* name) {
     if (!strcmp(playertype, "human"))
         return new cge::HumanPlayer(name);
-    else if (!strcmp(playertype, "Raphaelv1.0.0"))
+    else if (!strcmp(playertype, "Raphaelv1.0"))
         return new Raphael::v1_0(name);
-    else if (!strcmp(playertype, "Raphaelv1.1.0"))
+    else if (!strcmp(playertype, "Raphaelv1.1"))
         return new Raphael::v1_1(name);
-    else if (!strcmp(playertype, "Raphaelv1.2.0"))
+    else if (!strcmp(playertype, "Raphaelv1.2"))
         return new Raphael::v1_2(name);
     else if (!strcmp(playertype, "Raphael"))
         return new Raphael::v1_2(name);
@@ -36,6 +36,7 @@ cge::GamePlayer* player_factory(char* playertype, char* name) {
 }
 
 
+// Prints usage comment
 void print_usage() {
     std::cout << "Usage: main.exe <p1type> <p1name> <p2type> <p2name> [mode] [options]\n\n"
               << "Modes:\n"
@@ -67,8 +68,11 @@ main.exe human "Adam" Raphael "Raphael" 5
 main.exe human "Adam" human "Bob" -t 60 60
     1 bullet match, both human players
 
-main.exe Raphael "Raph1" Raphael "Raph2" 2 -f "8/8/2q5/2k5/8/5K2/8/8 w - - 0 1"
-    2 rapid matches with set starting position, Raphael vs Raphael
+main.exe Raphael "Raphael" Human "Bob" 3 -f "8/8/2q5/2k5/8/5K2/8/8 w - - 0 1"
+    3 rapid matches with set starting position, Raphael vs human (human plays white 1 time)
+
+main.exe Raphael "Raph1" Raphael "Raph2" 3 -f "8/8/2q5/2k5/8/5K2/8/8 w - - 0 1" -t 300 300
+    3 blitz matches with set starting position, both Raphael
 */
 int main(int argc, char** argv) {
     cge::GamePlayer* p1;

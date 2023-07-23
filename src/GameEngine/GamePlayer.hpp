@@ -1,4 +1,5 @@
 #pragma once
+#include "utils.hpp"
 #include "chess.hpp"
 #include <SFML/Graphics.hpp>
 #include <string>
@@ -22,9 +23,5 @@ public:
 
     // Resets the player
     virtual void reset() {}
-
-    // macros
-    #define whiteturn (board.sideToMove() == chess::Color::WHITE)   // [bool] curently white's turn
-    #define movename(move) (chess::squareToString[move.from()] + chess::squareToString[move.to()])    // [string] numeric of move
 };  // GamePlayer
 }   // namespace cge

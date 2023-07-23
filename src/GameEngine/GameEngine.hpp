@@ -1,5 +1,6 @@
 #pragma once
 #include "HumanPlayer.hpp"
+#include "utils.hpp"
 #include "chess.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
@@ -132,8 +133,8 @@ public:
                 // timeout
                 if (cur_t_remain<=0 || event.type==sf::Event::Closed) {
                     timeoutwins[(p1_is_white!=turn)]++;
-                    halt = true;
                     game_result = chess::GameResult::LOSE;
+                    halt = true;
                     goto game_end;
                 }
             }
@@ -141,6 +142,7 @@ public:
             // play move
             auto toPlay = movereceiver.get();
             if (toPlay == chess::Move::NO_MOVE) {
+                timeoutwins[(p1_is_white!=turn)]++;
                 game_result = chess::GameResult::LOSE;
                 goto game_end;
             }

@@ -29,25 +29,14 @@ public:
     }
 
 
-    // Uses Negamax to return the best move. Should return immediately if halt becomes true
+    // Uses iterative deepening on Negamax to find best move
+    // Should return immediately if halt becomes true
     chess::Move get_move(chess::Board board, float t_remain, sf::Event& event, bool& halt) {
         tt.clear();
-        return iterative_deepening(board, t_remain, halt);
-    }
-
-
-    // Resets the player
-    void reset() {
-        tt.clear();
-    }
-
-private:
-    // Uses iterative deepening on Negamax to find best move
-    chess::Move iterative_deepening(chess::Board& board, const float t_remain, bool& halt) {
         int depth = 1;
         int eval = 0;
         toPlay = chess::Move::NO_MOVE;
-        itermove = chess::Move::NO_MOVE;
+        itermove = chess::Move::NULL_MOVE;
 
         // stop search after an appropriate duration
         int duration = search_time(board, t_remain);
@@ -55,7 +44,7 @@ private:
 
         // begin iterative deepening
         while (!halt) {
-            int itereval = negamax(board, depth, -INT_MAX, INT_MAX, halt);
+            int itereval = negamax(board, depth, 0, -INT_MAX, INT_MAX, halt);
 
             // not timeout
             if (!halt) {
@@ -64,12 +53,13 @@ private:
             }
             
             // checkmate, no need to continue
-            if (abs(eval)>=1073641824) {
+            if (tt.isMate(eval)) {
                 #ifndef NDEBUG
                 // get absolute evaluation (i.e, set to white's perspective)
-                if (!whiteturn == (eval > 0))
-                    depth *= -1;
-                printf("Eval: #%d\n", depth);
+                if (whiteturn == (eval > 0))
+                    printf("Eval: +#\n", depth);
+                else
+                    printf("Eval: -#\n", depth);
                 #endif
                 halt = true;
                 return toPlay;
@@ -86,6 +76,12 @@ private:
     }
 
 
+    // Resets the player
+    void reset() {
+        tt.clear();
+    }
+
+private:
     // Estimates the time (ms) it should spend on searching a move
     int search_time(const chess::Board& board, const float t_remain) {
         // ratio: a function within [0, 1]
@@ -113,7 +109,7 @@ private:
 
 
     // The Negamax search algorithm to search for the best move
-    int negamax(chess::Board& board, unsigned int depth, int alpha, int beta, bool& halt, bool root = true) {
+    int negamax(chess::Board& board, unsigned int depth, int ply, int alpha, int beta, bool& halt) {
         // timeout
         if (halt)
             return 0;
@@ -121,10 +117,10 @@ private:
         // transposition lookup
         int alphaorig = alpha;
         auto ttkey = board.zobrist();
-        auto entry = tt.get(ttkey);
-        if (tt.valid(entry, depth)) {
+        auto entry = tt.get(ttkey, ply);
+        if (tt.valid(entry, ttkey, depth)) {
             if (entry.flag == tt.EXACT) {
-                if (root) itermove = entry.move;
+                if (!ply) itermove = entry.move;
                 return entry.eval;
             }
             else if (entry.flag == tt.LOWER)
@@ -133,8 +129,10 @@ private:
                 beta = std::min(beta, entry.eval);
             
             // prune
-            if (alpha >= beta) 
+            if (alpha >= beta) {
+                if (!ply) itermove = entry.move;
                 return entry.eval;
+            }
         }
 
         // checkmate/draw
@@ -142,7 +140,7 @@ private:
         if (result == chess::GameResult::DRAW)
             return 0;
         else if (result == chess::GameResult::LOSE)
-            return -INT_MAX + 1000*board.fullMoveNumber();  // reward faster checkmate
+            return -MATE_EVAL + ply;    // reward faster checkmate
         
         // terminal depth
         if (depth == 0)
@@ -155,14 +153,18 @@ private:
 
         for (auto& move : movelist) {
             board.makeMove(move);
-            int eval = -negamax(board, depth-1, -beta, -alpha, halt, false);
+            int eval = -negamax(board, depth-1, ply+1, -beta, -alpha, halt);
             board.unmakeMove(move);
+
+            // timeout
+            if (halt)
+                return 0;
 
             // update eval
             if (eval > alpha) {
                 alpha = eval;
                 bestmove = move;
-                if (root) itermove = move;
+                if (!ply) itermove = move;
             }
 
             // prune
@@ -178,7 +180,7 @@ private:
             flag = tt.LOWER;
         else
             flag = tt.EXACT;
-        tt.set(ttkey, {depth, flag, alpha, bestmove});
+        tt.set(ttkey, {ttkey, depth, flag, alpha, bestmove}, ply);
 
         return alpha;
     }
@@ -296,13 +298,16 @@ private:
             }
         }
 
-        // King Proximity
-        int kingdist = abs(wkr-bkr) + abs(wkf-bkf);
-        eval += (14 - kingdist) * KING_DIST_WEIGHT * eg_weight;
-
         // convert perspective
         if (!whiteturn)
             eval *= -1;
+
+        // King proximity (if winning)
+        if (eval>=0) {
+            int kingdist = abs(wkr-bkr) + abs(wkf-bkf);
+            eval += (14 - kingdist) * KING_DIST_WEIGHT * eg_weight;
+        }
+
         return eval;
     }
 };  // Raphael

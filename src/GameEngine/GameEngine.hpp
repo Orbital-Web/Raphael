@@ -63,6 +63,8 @@ private:
 
     // score tracking
     std::array<int, 3> results = {0, 0, 0};     // (p1, draw, p2)
+    std::array<int, 2> timeoutwins = {0, 0};    // (p1, p2)
+    std::array<int, 2> whitewins = {0, 0};      // (p1, p2)
 
 
 // methods
@@ -129,6 +131,7 @@ public:
 
                 // timeout
                 if (cur_t_remain<=0 || event.type==sf::Event::Closed) {
+                    timeoutwins[(p1_is_white!=turn)]++;
                     halt = true;
                     game_result = chess::GameResult::LOSE;
                     goto game_end;
@@ -150,8 +153,11 @@ public:
         // score tracking
         if (game_result==chess::GameResult::DRAW)
             results[1]++;
-        else
+        else {
             results[(p1_is_white==turn) ? 0 : 2]++;
+            if ((p1_is_white==turn) == p1_is_white)
+                whitewins[(p1_is_white!=turn)]++;
+        }
         
         // wait until window closed if interactive
         if (interactive) {
@@ -172,10 +178,15 @@ public:
     // Print result of the games
     void print_report() const {
         int total_matches = results[0] + results[1] + results[2];
-        printf("Out of %i total matches:\n", total_matches);
-        printf("   %s: \t\x1b[32m%i\x1b[0m\n", players[0]->name.c_str(), results[0]);   // p1 wins
-        printf("   Draw: \t\x1b[90m%i\x1b[0m\n", results[1]);                           // draws
-        printf("   %s: \t\x1b[31m%i\x1b[0m\n", players[1]->name.c_str(), results[2]);   // p2 wins
+        printf("Out of %d total matches:\n", total_matches);
+        // white wins
+        printf("   %s: \t\x1b[32m%d (white: %d, ", players[0]->name.c_str(), results[0], whitewins[0]);
+        printf("black: %d, timeout: %d)\x1b[0m\n", results[0]-whitewins[0]-timeoutwins[0], timeoutwins[0]);
+        // draws
+        printf("   Draw: \t\x1b[90m%d\x1b[0m\n", results[1]);
+        // black wins
+        printf("   %s: \t\x1b[31m%d (white: %d, ", players[1]->name.c_str(), results[2], whitewins[1]);
+        printf("black: %d, timeout: %d)\x1b[0m\n", results[2]-whitewins[1]-timeoutwins[1], timeoutwins[1]);
     }
 
 private:

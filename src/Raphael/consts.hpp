@@ -3,9 +3,10 @@
 
 
 namespace Raphael {
-    const unsigned int TABLE_SIZE = 8388608;    // number of entries in TranspositionTable
-    const int N_PIECES_END = 8;                 // pieces left to count as endgame
-    const int KING_DIST_WEIGHT = 10;            // how important king proximity is for the evaluation at endgame
+    const unsigned int TABLE_SIZE = 8388608;  // number of entries in TranspositionTable (160mb)
+    const int N_PIECES_END = 8;               // pieces left to count as endgame
+    const int KING_DIST_WEIGHT = 10;          // how important king proximity is for the evaluation at endgame
+    const int MATE_EVAL = 2000000000;         // evaluation for immediate mate
 
 
 

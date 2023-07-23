@@ -6,7 +6,7 @@ from random import random
 
 
 N_GAMES = 400   # number of games to store
-MAX_ADV = 150   # maximum advantage (centipawn)
+MAX_ADV = 200   # maximum advantage (centipawn)
 # download stockfish from https://stockfishchess.org/download/ and add it to the current directory
 engine = chess.engine.SimpleEngine.popen_uci("./stockfish/stockfish-windows-x86-64-avx2.exe")
 
@@ -14,6 +14,7 @@ engine = chess.engine.SimpleEngine.popen_uci("./stockfish/stockfish-windows-x86-
 with open("randomGames.txt", "w") as out:
     with open("lichess_db_standard_rated_2015-07.pgn") as pgn:
         n_saved = 0
+        avg_eval = 0
         
         while (n_saved < N_GAMES):
             game = chess.pgn.read_game(pgn)
@@ -23,7 +24,6 @@ with open("randomGames.txt", "w") as out:
             # anywhere from 16 to 36 moves in
             plyToPlay = int(16 + 20*random())
             plyPlayed = 0
-            fen = ""
             store = False
             
             for move in moves:
@@ -43,8 +43,10 @@ with open("randomGames.txt", "w") as out:
             # continued for 20 more turns
             if store and plyPlayed > plyToPlay + 40:
                 n_saved += 1
+                avg_eval += eval.white().score()
                 progress = int(50*n_saved / N_GAMES)
                 print("Progress: [" + "█"*progress + "."*(50-progress) + f"] ({n_saved}/{N_GAMES})", end='\r')
                 out.write(fen + "\n")
 
+print(f"\nAverage eval: {avg_eval/N_GAMES/100}")
 engine.close()

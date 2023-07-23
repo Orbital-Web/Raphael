@@ -53,7 +53,7 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 #### General Optimizations
 - [x] Alpha-beta pruning        (`v1.0.0+`)
 - [x] Move ordering             (`v1.0.0+`)
-- [x] Transposition table       (`v1.0.0+`)
+- [x] Transposition table (fix) (`v1.1.0+`)
 - [x] Iterative deepening (fix) (`v1.1.0+`)
 - [ ] Opening book
 - [x] Quiescence with captures  (`v1.0.0+`)
@@ -74,8 +74,50 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [ ] Checks
 - [ ] Moving into attacks
 
-**Comparisons**
+## Comparisons
 
 Different versions of the engine were put against each other in 400 matches, starting from a different starting position and alternating between playing as white and black. 
-- `v1.0.0` 🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥🟥🟥🟥 `v1.0.0` [176 / 41 / 183]
-- `v1.1.0` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥🟥 `v1.0.0` [223 / 43 / 134]
+- `v1.0.0` 🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥🟥🟥🟥 `v1.0.0` [177 / 34 / 189]
+- `v1.1.0` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥 `v1.0.0` [245 / 39 / 116]
+
+**Detailed Results**
+<table>
+    <tr align="center">
+        <th rowspan="2">Player</th>
+        <th colspan="3"">Wins</th>
+        <th rowspan="2">Draws</th>
+        <th colspan="3"">Losses</th>
+        <th rowspan="2">Opponent</th>
+    </tr>
+    <tr align="center">
+        <th>White</th>
+        <th>Black</th>
+        <th>Timeout</th>
+        <th>White</th>
+        <th>Black</th>
+        <th>Timeout</th>
+    </tr>
+    <!--Results-->
+    <tr align="center">
+        <td>v1.0.0</td>
+        <td>99</td>
+        <td>62</td>
+        <td>16</td>
+        <td>34</td>
+        <td>106</td>
+        <td>56</td>
+        <td>27</td>
+        <td>v1.0.0</td>
+    </tr>
+    <tr align="center">
+        <td>v1.1.0</td>
+        <td>117</td>
+        <td>81</td>
+        <td>47</td>
+        <td>39</td>
+        <td>53</td>
+        <td>63</td>
+        <td>0</td>
+        <td>v1.0.0</td>
+    </tr>
+</table>

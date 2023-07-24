@@ -16,13 +16,14 @@ Raphael is largely inspired by [Sebastian Lague's Coding Adventure video on crea
 2. Install g++
 3. Download SFML-2.6.0 (GCC MinGW) from https://www.sfml-dev.org/download/sfml/2.6.0/ and add it to the root directory
 4. Copy `openal32.dll` from SFML-2.6.0/bin/ and add it to the root directory
-5. Compile and run `main.exe` with the following commands (optionally, compile with the `-DNDEBUG` flag)
+5. Compile and run `main.exe` with the following commands (optionally, compile with the `-DNDEBUG` flag to mute evaluations)
     ```
     g++ -c main.cpp -ISFML-2.6.0/include -DSFML_STATIC
     g++ -o main main.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
     del main.o
-    main.exe human "Adam" Raphaelv1.0.0 "Bob"
+    main.exe human "Adam" Raphael "Raphael"
     ```
+6. Try out other settings with command-line arguments (`main.exe -help`)
 
 
 

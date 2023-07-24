@@ -55,6 +55,14 @@ public:
         return chess::Move::NO_MOVE;
     }
 
+
+    // Think during opponent's turn. Should return immediately if halt becomes true
+    void ponder(chess::Board board, float t_remain, sf::Event& event, bool& halt) {}
+
+
+    // Resets the player
+    void reset() {}
+
 private:
     // Converts x and y coordinates into a Square
     static chess::Square get_square(int x, int y) {

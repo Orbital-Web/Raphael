@@ -75,6 +75,10 @@ public:
     }
 
 
+    // Think during opponent's turn. Should return immediately if halt becomes true
+    void ponder(chess::Board board, float t_remain, sf::Event& event, bool& halt) {}
+
+
     // Resets the player
     void reset() {
         tt.clear();

@@ -16,8 +16,10 @@ class v1_2: public cge::GamePlayer {
 // class variables
 private:
     TranspositionTable tt;
-    chess::Move toPlay;     // overall best move
     chess::Move itermove;   // best move from previous iteration
+    uint64_t ponderkey = 0; // hashed board after ponder move
+    int pondereval = 0;     // eval we got during ponder
+    int ponderdepth = 1;    // depth we searched to during ponder
 
 
 
@@ -34,8 +36,15 @@ public:
     chess::Move get_move(chess::Board board, float t_remain, sf::Event& event, bool& halt) {
         int depth = 1;
         int eval = 0;
-        toPlay = chess::Move::NO_MOVE;
-        itermove = chess::Move::NULL_MOVE;
+        chess::Move toPlay = chess::Move::NO_MOVE;  // overall best move
+
+        // if ponderhit, start with ponder result and depth
+        if (board.zobrist() != ponderkey)
+            itermove = chess::Move::NULL_MOVE;
+        else {
+            depth = ponderdepth;
+            eval = pondereval;
+        }
 
         // stop search after an appropriate duration
         int duration = search_time(board, t_remain);
@@ -60,7 +69,6 @@ public:
                 else
                     printf("Eval: -#\n", depth);
                 #endif
-                halt = true;
                 return toPlay;
             }
             depth++;
@@ -75,9 +83,59 @@ public:
     }
 
 
+    // Think during opponent's turn. Should return immediately if halt becomes true
+    void ponder(chess::Board board, float t_remain, sf::Event& event, bool& halt) {
+        pondereval = 0;
+        ponderdepth = 1;
+        int depth = 1;
+        itermove = chess::Move::NULL_MOVE;  // opponent's best move
+
+        // begin iterative deepening up to depth 4 for opponent's best move
+        while (!halt && depth <= 4) {
+            int eval = negamax(board, depth, 0, -INT_MAX, INT_MAX, halt);
+            
+            // checkmate, no need to continue
+            if (tt.isMate(eval))
+                break;
+            depth++;
+        }
+
+        // not enough time to continue
+        if (halt) return;
+
+        // store move to check for ponderhit on our turn
+        board.makeMove(itermove);
+        ponderkey = board.zobrist();
+        chess::Move toPlay = chess::Move::NO_MOVE;  // our best response
+        itermove = chess::Move::NULL_MOVE;
+
+        // begin iterative deepening for our best response
+        while (!halt) {
+            int eval = negamax(board, ponderdepth, 0, -INT_MAX, INT_MAX, halt);
+
+            // store into toPlay to prevent NO_MOVE
+            if (itermove != chess::Move::NO_MOVE)
+                toPlay = itermove;
+            
+            if (!halt) {
+                pondereval = eval;
+                ponderdepth++;
+            }
+            
+            // checkmate, no need to continue
+            if (tt.isMate(eval))
+                break;
+        }
+
+        // override in case of NO_MOVE
+        itermove = toPlay;
+    }
+
+
     // Resets the player
     void reset() {
         tt.clear();
+        itermove = chess::Move::NULL_MOVE;
     }
 
 private:

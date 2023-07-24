@@ -107,6 +107,7 @@ public:
         // until game ends or time runs out
         while (game_result==chess::GameResult::NONE && t_remain[0]>0 && t_remain[1]>0) {
             auto& cur_player = players[turn==p1_is_white];
+            auto& oth_player = players[turn!=p1_is_white];
             float& cur_t_remain = t_remain[turn];
 
             // ask player for move in seperate thread so that we can keep rendering
@@ -114,6 +115,10 @@ public:
             auto movereceiver = std::async(&cge::GamePlayer::get_move, cur_player,
                                         board, cur_t_remain, std::ref(event), std::ref(halt));
             auto status = std::future_status::timeout;
+
+            // allow other player to ponder
+            auto _ = std::async(&cge::GamePlayer::ponder, oth_player,
+                                        board, cur_t_remain, std::ref(event), std::ref(halt));
 
             // timings
             std::chrono::_V2::system_clock::time_point start, stop;
@@ -132,6 +137,7 @@ public:
 
                 // timeout
                 if (cur_t_remain<=0 || event.type==sf::Event::Closed) {
+                    printf("Hmm");
                     timeoutwins[(p1_is_white!=turn)]++;
                     game_result = chess::GameResult::LOSE;
                     halt = true;

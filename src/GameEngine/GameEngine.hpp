@@ -137,7 +137,6 @@ public:
 
                 // timeout
                 if (cur_t_remain<=0 || event.type==sf::Event::Closed) {
-                    printf("Hmm");
                     timeoutwins[(p1_is_white!=turn)]++;
                     game_result = chess::GameResult::LOSE;
                     halt = true;
@@ -152,6 +151,7 @@ public:
                 game_result = chess::GameResult::LOSE;
                 goto game_end;
             }
+            halt = true;    // force stop pondering
             move(toPlay);
             turn = !turn;
             game_result = board.isGameOver().second;

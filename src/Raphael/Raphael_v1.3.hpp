@@ -1,6 +1,7 @@
 #pragma once
 #include "consts.hpp"
 #include "Transposition.hpp"
+#include "Killers.hpp"
 #include "../GameEngine/GamePlayer.hpp"
 #include "../GameEngine/chess.hpp"
 #include <SFML/Graphics.hpp>
@@ -12,20 +13,24 @@
 
 
 namespace Raphael {
-class v1_1: public cge::GamePlayer {
+class v1_3: public cge::GamePlayer {
 // class variables
 private:
     TranspositionTable tt;
-    chess::Move toPlay;     // overall best move
-    chess::Move itermove;   // best move from previous iteration
+    chess::Move itermove;       // best move from previous iteration
+    uint64_t ponderkey = 0;     // hashed board after ponder move
+    int pondereval = 0;         // eval we got during ponder
+    int ponderdepth = 1;        // depth we searched to during ponder
+    Killers killers;            // killer moves at each ply
 
 
 
 // methods
 public:
     // Initializes Raphael with a name
-    v1_1(std::string name_in): GamePlayer(name_in), tt(TABLE_SIZE) {
+    v1_3(std::string name_in): GamePlayer(name_in), tt(TABLE_SIZE) {
         PST::init_pst();
+        PMASK::init_pawnmask();
     }
 
 
@@ -34,15 +39,23 @@ public:
     chess::Move get_move(chess::Board board, float t_remain, sf::Event& event, bool& halt) {
         int depth = 1;
         int eval = 0;
-        toPlay = chess::Move::NO_MOVE;
-        itermove = chess::Move::NULL_MOVE;
+        chess::Move toPlay = chess::Move::NO_MOVE;  // overall best move
+
+        // if ponderhit, start with ponder result and depth
+        if (board.zobrist() != ponderkey)
+            itermove = chess::Move::NO_MOVE;
+        else {
+            depth = ponderdepth;
+            eval = pondereval;
+        }
 
         // stop search after an appropriate duration
         int duration = search_time(board, t_remain);
         auto _ = std::async(manage_time, std::ref(halt), duration);
 
         // begin iterative deepening
-        while (!halt) {
+        while (!halt && depth<=MAX_DEPTH) {
+            killers.clear();
             int itereval = negamax(board, depth, 0, -INT_MAX, INT_MAX, halt);
 
             // not timeout
@@ -60,7 +73,6 @@ public:
                 else
                     printf("Eval: -#\n", depth);
                 #endif
-                halt = true;
                 return toPlay;
             }
             depth++;
@@ -74,10 +86,62 @@ public:
         return toPlay;
     }
 
-    
+
+    // Think during opponent's turn. Should return immediately if halt becomes true
+    void ponder(chess::Board board, float t_remain, sf::Event& event, bool& halt) {
+        pondereval = 0;
+        ponderdepth = 1;
+        int depth = 1;
+        itermove = chess::Move::NO_MOVE;    // opponent's best move
+
+        // begin iterative deepening up to depth 4 for opponent's best move
+        while (!halt && depth <= 4) {
+            killers.clear();
+            int eval = negamax(board, depth, 0, -INT_MAX, INT_MAX, halt);
+            
+            // checkmate, no need to continue
+            if (tt.isMate(eval))
+                break;
+            depth++;
+        }
+
+        // not enough time to continue
+        if (halt) return;
+
+        // store move to check for ponderhit on our turn
+        board.makeMove(itermove);
+        ponderkey = board.zobrist();
+        chess::Move toPlay = chess::Move::NO_MOVE;  // our best response
+        itermove = chess::Move::NO_MOVE;
+
+        // begin iterative deepening for our best response
+        while (!halt && depth<=MAX_DEPTH) {
+            killers.clear();
+            int eval = negamax(board, ponderdepth, 0, -INT_MAX, INT_MAX, halt);
+
+            // store into toPlay to prevent NO_MOVE
+            if (itermove != chess::Move::NO_MOVE)
+                toPlay = itermove;
+            
+            if (!halt) {
+                pondereval = eval;
+                ponderdepth++;
+            }
+            
+            // checkmate, no need to continue
+            if (tt.isMate(eval))
+                break;
+        }
+
+        // override in case of NO_MOVE
+        itermove = toPlay;
+    }
+
+
     // Resets the player
     void reset() {
         tt.clear();
+        itermove = chess::Move::NO_MOVE;
     }
 
 private:
@@ -147,7 +211,7 @@ private:
         
         // search
         chess::Movelist movelist;
-        order_moves(movelist, board);
+        order_moves(movelist, board, ply);
         chess::Move bestmove = chess::Move::NO_MOVE;    // best move in this position
 
         for (auto& move : movelist) {
@@ -167,8 +231,13 @@ private:
             }
 
             // prune
-            if (alpha >= beta)
+            if (alpha >= beta) {
+                // store killer move (ignore captures/promotions)
+                int to = (int)board.at(move.to());
+                if (to!=12 && whiteturn==(to/6) || move.typeOf()==chess::Move::PROMOTION)
+                    killers.put(move, ply);
                 break;
+            }
         }
 
         // store transposition
@@ -218,10 +287,10 @@ private:
 
 
     // Modifies movelist to contain a list of moves, ordered from best to worst
-    void order_moves(chess::Movelist& movelist, const chess::Board& board) const {
+    void order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const {
         chess::movegen::legalmoves(movelist, board);
         for (auto& move : movelist)
-            score_move(move, board);
+            score_move(move, board, ply);
         movelist.sort();
     }
 
@@ -234,7 +303,7 @@ private:
             int to = (int)board.at(move.to());
             // enemy piece captured
             if (to!=12 && whiteturn==(to/6)) {
-                score_move(move, board);
+                score_move(move, board, -1);
                 movelist.add(move);
             }
         }
@@ -243,10 +312,16 @@ private:
 
 
     // Assigns a score to the given move
-    void score_move(chess::Move& move, const chess::Board& board) const {
+    void score_move(chess::Move& move, const chess::Board& board, const int ply) const {
         // prioritize best move from previous iteraton
         if (move == itermove) {
             move.setScore(INT16_MAX);
+            return;
+        }
+
+        // killer move
+        if (ply>0 && killers.isKiller(move, ply)) {
+            move.setScore(KILLER_WEIGHT);
             return;
         }
 
@@ -271,8 +346,8 @@ private:
     int evaluate(const chess::Board& board) const {
         int eval = 0;
         int n_pieces_left = chess::builtin::popcount(board.occ());
-        double eg_weight = std::min(1.0, double(32-n_pieces_left)/(32-N_PIECES_END));
-        int wkr, bkr, wkf, bkf;
+        double eg_weight = std::min(1.0, double(32-n_pieces_left)/(32-N_PIECES_END));   // 0~1 as pieces left decreases
+        int krd = 0, kfd = 0;   // king rank and file distance
 
         // count pieces and added their values (material + pst)
         for (int sqi=0; sqi<64; sqi++) {
@@ -280,20 +355,39 @@ private:
             int piece = (int)board.at(sq);
 
             // non-empty
-            if (piece != 12) {
-                // add material value
-                eval += PVAL::VALS[piece];
-                // add positional value
-                eval += PST::MID[piece][sqi] + eg_weight*(PST::END[piece][sqi] - PST::MID[piece][sqi]);
-            }
+            if (piece == 12)
+                continue;
+            
+            // add material value
+            eval += PVAL::VALS[piece];
+            // add positional value
+            eval += PST::MID[piece][sqi] + eg_weight*(PST::END[piece][sqi] - PST::MID[piece][sqi]);
 
             // King proximity
             if (piece == 5) {
-                wkr = (int)chess::utils::squareRank(sq);
-                wkf = (int)chess::utils::squareFile(sq);
+                krd += (int)chess::utils::squareRank(sq);
+                kfd += (int)chess::utils::squareFile(sq);
             } else if (piece == 11) {
-                bkr = (int)chess::utils::squareRank(sq);
-                bkf = (int)chess::utils::squareFile(sq);
+                krd -= (int)chess::utils::squareRank(sq);
+                kfd -= (int)chess::utils::squareFile(sq);
+            }
+
+            // pawn structure
+            else if (piece == 0) {
+                // passed (+ for white) (more important in endgame)
+                if ((PMASK::WPASSED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::BLACK)) == 0) 
+                    eval += PMASK::PASSEDBONUS[7 - (sqi/8)] * eg_weight;
+                // isolated (- for white)
+                if ((PMASK::ISOLATED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::WHITE)) == 0)
+                    eval -= PMASK::ISOLATION_WEIGHT;
+
+            } else if (piece == 6) {
+                // passed (- for white) (more important in endgame)
+                if ((PMASK::BPASSED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::WHITE)) == 0)
+                    eval -= PMASK::PASSEDBONUS[(sqi/8)] * eg_weight;
+                // isolated (+ for white)
+                if ((PMASK::ISOLATED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::BLACK)) == 0)
+                    eval += PMASK::ISOLATION_WEIGHT;
             }
         }
         
@@ -301,11 +395,9 @@ private:
         if (!whiteturn)
             eval *= -1;
 
-        // King proximity (if winning)
-        if (eval>=0) {
-            int kingdist = abs(wkr-bkr) + abs(wkf-bkf);
-            eval += (14 - kingdist) * KING_DIST_WEIGHT * eg_weight;
-        }
+        // King proximity bonus (if winning)
+        if (eval>=0)
+            eval += (14 - abs(krd) - abs(kfd)) * KING_DIST_WEIGHT * eg_weight;
         
         return eval;
     }

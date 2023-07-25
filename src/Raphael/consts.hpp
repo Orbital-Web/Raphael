@@ -1,9 +1,11 @@
 #pragma once
 namespace Raphael {
-    const unsigned int TABLE_SIZE = 8388608;  // number of entries in TranspositionTable (160mb)
-    const int MATE_EVAL = 2000000000;         // evaluation for immediate mate
-    const int N_PIECES_END = 8;               // pieces left to count as endgame
-    const int KING_DIST_WEIGHT = 20;          // how important king proximity is for the evaluation at endgame
+    const int MAX_DEPTH = 128;
+    const unsigned int TABLE_SIZE = 8388608;    // number of entries in TranspositionTable (160mb)
+    const int MATE_EVAL = 2000000000;           // evaluation for immediate mate
+    const int N_PIECES_END = 8;                 // pieces left to count as endgame
+    const int KING_DIST_WEIGHT = 20;            // how important king proximity is for the evaluation at endgame
+    const int KILLER_WEIGHT = 100;              // move ordering priority for killer moves
 
 
 // Value of each piece
@@ -193,4 +195,56 @@ namespace PST {
         }
     }
 }   // PST
+
+
+// Past Pawn and Isolated Pawn Mask
+// & with the enemy pieces to determine whether the pawn at the square is a past pawn
+// & with our pieces to determine whether the pawn at the file is isolated
+namespace PMASK {
+    const int PASSEDBONUS[7] = {        // bonus for passed pawn based on distance to promotion line
+        0, 85, 60, 40, 20, 15, 10
+    };
+    const int ISOLATION_WEIGHT = 30;    // penalty for an isolated pawn
+
+    uint64_t WPASSED[64];   // passed pawn mask bitboard for white (A1...H8)
+    uint64_t BPASSED[64];   // passed pawn mask bitboard for black
+    uint64_t ISOLATED[64];   // isolated pawn mask bitboard (A1...H8)
+
+    void init_pawnmask() {
+        uint64_t filemask = 0x0101010101010101; // A-file
+        uint64_t rankregion = 0xFFFFFFFFFF;     // ranks 1~5
+
+        for (int sq=0; sq<64; sq++) {
+            ISOLATED[sq] = 0;
+            int file = sq%8;
+            int rank = sq/8;
+
+            // left file of pawn
+            if (file > 0) 
+                ISOLATED[sq] |= filemask << (file-1);
+            // right file of pawn
+            if (file < 7)
+                ISOLATED[sq] |= filemask << (file+1);
+
+            // middle file of pawn for passed mask
+            WPASSED[sq] = filemask << file;
+            WPASSED[sq] |= ISOLATED[sq];
+            // same for black
+            BPASSED[sq] = WPASSED[sq];
+
+            // crop ranks above of pawn for white passed
+            WPASSED[sq] &= UINT64_MAX << 8*(rank+1);
+            // crop ranks below of pawn for black passed
+            BPASSED[sq] &= UINT64_MAX >> 8*(8-rank);
+
+            // crop ±2 ranks of pawn for isolation
+            // even if adjacent files are occupied,
+            // the pawns must be close to each other
+            if (rank > 1)
+                ISOLATED[sq] &= rankregion << 8*(rank-2);
+            else
+                ISOLATED[sq] &= rankregion >> 8*(2-rank);
+        }
+    }
+}
 }   // namespace Raphael

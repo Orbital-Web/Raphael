@@ -1,8 +1,8 @@
 #include "src/GameEngine/GameEngine.hpp"
 #include "src/GameEngine/HumanPlayer.hpp"
 #include "src/Raphael/Raphael_v1.0.hpp"
-#include "src/Raphael/Raphael_v1.1.hpp"
 #include "src/Raphael/Raphael_v1.2.hpp"
+#include "src/Raphael/Raphael_v1.3.hpp"
 #include <string.h>
 #include <string>
 #include <vector>
@@ -17,21 +17,21 @@ cge::GamePlayer* player_factory(char* playertype, char* name) {
         return new cge::HumanPlayer(name);
     else if (!strcmp(playertype, "Raphaelv1.0"))
         return new Raphael::v1_0(name);
-    else if (!strcmp(playertype, "Raphaelv1.1"))
-        return new Raphael::v1_1(name);
     else if (!strcmp(playertype, "Raphaelv1.2"))
         return new Raphael::v1_2(name);
+    else if (!strcmp(playertype, "Raphaelv1.3"))
+        return new Raphael::v1_3(name);
     else if (!strcmp(playertype, "Raphael"))
-        return new Raphael::v1_2(name);
+        return new Raphael::v1_3(name);
     
     // invalid
     printf("Invalid player type: %s\n", playertype);
     printf("Valid player types are:\n");
     printf("   human:\t cge::HumanPlayer\n");
-    printf("   Raphael:\t Raphael::v1_2\n");
+    printf("   Raphael:\t Raphael::v1_3\n");
     printf("   Raphaelv1.0:\t Raphael::v1_0\n");
-    printf("   Raphaelv1.1:\t Raphael::v1_1\n");
     printf("   Raphaelv1.2:\t Raphael::v1_2\n");
+    printf("   Raphaelv1.3:\t Raphael::v1_3\n");
     return nullptr;
 }
 

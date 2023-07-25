@@ -40,7 +40,7 @@ public:
 
         // if ponderhit, start with ponder result and depth
         if (board.zobrist() != ponderkey)
-            itermove = chess::Move::NULL_MOVE;
+            itermove = chess::Move::NO_MOVE;
         else {
             depth = ponderdepth;
             eval = pondereval;
@@ -88,7 +88,7 @@ public:
         pondereval = 0;
         ponderdepth = 1;
         int depth = 1;
-        itermove = chess::Move::NULL_MOVE;  // opponent's best move
+        itermove = chess::Move::NO_MOVE;    // opponent's best move
 
         // begin iterative deepening up to depth 4 for opponent's best move
         while (!halt && depth <= 4) {
@@ -107,7 +107,7 @@ public:
         board.makeMove(itermove);
         ponderkey = board.zobrist();
         chess::Move toPlay = chess::Move::NO_MOVE;  // our best response
-        itermove = chess::Move::NULL_MOVE;
+        itermove = chess::Move::NO_MOVE;
 
         // begin iterative deepening for our best response
         while (!halt) {
@@ -135,7 +135,7 @@ public:
     // Resets the player
     void reset() {
         tt.clear();
-        itermove = chess::Move::NULL_MOVE;
+        itermove = chess::Move::NO_MOVE;
     }
 
 private:

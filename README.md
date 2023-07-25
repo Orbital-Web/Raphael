@@ -67,11 +67,13 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Piece-square tables       (`v1.0+`)
 - [ ] Midgame King safety
 - [x] Endgame King proximity    (`v1.0+`)
-- [ ] Pawn structure
+- [x] Passed Pawn               (`v1.3+`)
+- [x] Isolated Pawn             (`v1.3+`)
 
 #### Move Ordering
 - [x] Captures                  (`v1.0+`)
 - [x] Promotions                (`v1.0+`)
+- [x] Killer moves              (`v1.3+`)
 - [ ] Checks
 - [ ] Moving into attacks
 
@@ -123,19 +125,19 @@ The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating
     <!--Results-->
     <tr align="center">
         <td>v1.0</td>
-        <td>99</td>
-        <td>62</td>
+        <td>91</td>
+        <td>70</td>
         <td>16</td>
         <td>34</td>
-        <td>106</td>
-        <td>56</td>
+        <td>92</td>
+        <td>70</td>
         <td>27</td>
         <td>v1.0</td>
     </tr>
     <tr align="center">
         <td>v1.1</td>
-        <td>117</td>
-        <td>81</td>
+        <td>94</td>
+        <td>104</td>
         <td>47</td>
         <td>39</td>
         <td>53</td>
@@ -145,8 +147,8 @@ The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating
     </tr>
     <tr align="center">
         <td>v1.2</td>
-        <td>135</td>
-        <td>84</td>
+        <td>115</td>
+        <td>104</td>
         <td>34</td>
         <td>34</td>
         <td>62</td>
@@ -156,12 +158,12 @@ The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating
     </tr>
     <tr align="center">
         <td>v1.2</td>
-        <td>115</td>
-        <td>93</td>
+        <td>112</td>
+        <td>96</td>
         <td>6</td>
         <td>30</td>
-        <td>90</td>
-        <td>57</td>
+        <td>86</td>
+        <td>61</td>
         <td>9</td>
         <td>v1.1</td>
     </tr>

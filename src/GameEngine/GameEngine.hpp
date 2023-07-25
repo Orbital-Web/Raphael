@@ -87,6 +87,7 @@ public:
         chess::movegen::legalmoves(movelist, board);
         chess::GameResult game_result = chess::GameResult::NONE;
         event.type = sf::Event::MouseMoved;
+        bool timeout = false;
 
         // reset players
         players[0]->reset();
@@ -138,6 +139,7 @@ public:
                 // timeout
                 if (cur_t_remain<=0 || event.type==sf::Event::Closed) {
                     timeoutwins[(p1_is_white!=turn)]++;
+                    timeout = true;
                     game_result = chess::GameResult::LOSE;
                     halt = true;
                     goto game_end;
@@ -147,6 +149,7 @@ public:
             // play move
             auto toPlay = movereceiver.get();
             if (toPlay == chess::Move::NO_MOVE) {
+                timeout = true;
                 timeoutwins[(p1_is_white!=turn)]++;
                 game_result = chess::GameResult::LOSE;
                 goto game_end;
@@ -163,7 +166,7 @@ public:
             results[1]++;
         else {
             results[(p1_is_white==turn) ? 0 : 2]++;
-            if ((p1_is_white==turn) == p1_is_white)
+            if (!timeout && ((p1_is_white==turn)==p1_is_white))
                 whitewins[(p1_is_white!=turn)]++;
         }
         

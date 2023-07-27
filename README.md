@@ -61,6 +61,8 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [ ] Quiescence with checks
 - [x] Time management           (`v1.0+`)
 - [x] Pondering                 (`v1.2+`)
+- [ ] Check Extensions
+- [ ] Promotion Extensions
 
 #### Evaluation
 - [x] Material cost             (`v1.0+`)
@@ -69,6 +71,7 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Endgame King proximity    (`v1.0+`)
 - [x] Passed Pawn               (`v1.3+`)
 - [x] Isolated Pawn             (`v1.3+`)
+- [ ] Mobility
 
 #### Move Ordering
 - [x] Captures                  (`v1.0+`)
@@ -105,7 +108,7 @@ The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating
         <td>1127</td>
     <tr>
     <tr align="center">
-        <td>v1.2</td>
+        <td>v1.3</td>
         <td>1203</td>
     <tr>
 </table>

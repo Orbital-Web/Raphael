@@ -214,7 +214,7 @@ private:
         order_moves(movelist, board, ply);
         chess::Move bestmove = chess::Move::NO_MOVE;    // best move in this position
 
-        for (auto& move : movelist) {
+        for (const auto& move : movelist) {
             board.makeMove(move);
             int eval = -negamax(board, depth-1, ply+1, -beta, -alpha, halt);
             board.unmakeMove(move);
@@ -271,7 +271,7 @@ private:
         chess::Movelist movelist;
         order_cap_moves(movelist, board);
         
-        for (auto& move : movelist) {
+        for (const auto& move : movelist) {
             board.makeMove(move);
             eval = -quiescence(board, -beta, -alpha, halt);
             board.unmakeMove(move);
@@ -325,7 +325,7 @@ private:
             return;
         }
 
-        // calculate score
+        // calculate other scores
         int score = 0;
         int from = (int)board.at(move.from());
         int to = (int)board.at(move.to());
@@ -345,18 +345,16 @@ private:
     // Evaluates the current position (from the current player's perspective)
     int evaluate(const chess::Board& board) const {
         int eval = 0;
-        int n_pieces_left = chess::builtin::popcount(board.occ());
+        auto pieces = board.occ();
+        int n_pieces_left = chess::builtin::popcount(pieces);
         double eg_weight = std::min(1.0, double(32-n_pieces_left)/(32-N_PIECES_END));   // 0~1 as pieces left decreases
         int krd = 0, kfd = 0;   // king rank and file distance
 
-        // count pieces and added their values (material + pst)
-        for (int sqi=0; sqi<64; sqi++) {
-            auto sq = (chess::Square)sqi;
+        // loop through all pieces
+        while (pieces) {
+            auto sq = chess::builtin::poplsb(pieces);
+            int sqi = (int)sq;
             int piece = (int)board.at(sq);
-
-            // non-empty
-            if (piece == 12)
-                continue;
             
             // add material value
             eval += PVAL::VALS[piece];

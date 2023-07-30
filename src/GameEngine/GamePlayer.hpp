@@ -22,7 +22,7 @@ public:
     virtual chess::Move get_move(chess::Board board, float t_remain, sf::Event& event, bool& halt) = 0;
 
     // Think during opponent's turn. Should return immediately if halt becomes true
-    virtual void ponder(chess::Board board, float t_remain, sf::Event& event, bool& halt) {}
+    virtual void ponder(chess::Board board, bool& halt) {}
 
     // Resets the player
     virtual void reset() {}

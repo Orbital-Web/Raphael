@@ -55,6 +55,9 @@ private:
     chess::Square sq_to = chess::NO_SQ;
     std::vector<chess::Square> selectedtiles;
     chess::Movelist movelist;
+    // arrows
+    chess::Square arrow_from = chess::NO_SQ;
+    std::vector<Arrow> arrows;
 
     // chess game logic
     chess::Board board;
@@ -118,8 +121,7 @@ public:
             auto status = std::future_status::timeout;
 
             // allow other player to ponder
-            auto _ = std::async(&cge::GamePlayer::ponder, oth_player,
-                                        board, cur_t_remain, std::ref(event), std::ref(halt));
+            auto _ = std::async(&cge::GamePlayer::ponder, oth_player, board, std::ref(halt));
 
             // timings
             std::chrono::_V2::system_clock::time_point start, stop;
@@ -316,6 +318,7 @@ private:
 
         // populate selected squares
         if (event.type==sf::Event::MouseButtonPressed && event.mouseButton.button==sf::Mouse::Left) {
+            arrows.clear();
             int x = event.mouseButton.x;
             int y = event.mouseButton.y;
 
@@ -332,7 +335,6 @@ private:
                 } else
                     selectedtiles.clear();
             }
-
             // only consider first mouse click
             event.type = sf::Event::MouseMoved;
         }
@@ -344,14 +346,6 @@ private:
             tilesspecial[1].setPosition(50 + 100*file, 770 - 100*rank);
             window.draw(tilesspecial[1]);
         }
-    }
-
-
-    // Converts x and y coordinates into a Square (draw_select)
-    static chess::Square get_square(int x, int y) {
-        int rank = (870 - y) / 100;
-        int file = (x - 50) / 100;
-        return chess::utils::fileRankSquare(chess::File(file), chess::Rank(rank));
     }
 
 
@@ -384,6 +378,56 @@ private:
     }
 
 
+    // Draw arrows
+    void draw_arrows() {
+        // from arrow
+        if (event.type==sf::Event::MouseButtonPressed && event.mouseButton.button==sf::Mouse::Right) {
+            int x = event.mouseButton.x;
+            int y = event.mouseButton.y;
+            // board clicked
+            if (x>50 && x<850 && y>70 && y<870)
+                arrow_from = get_square(x, y);
+            // only consider first mouse click
+            event.type = sf::Event::MouseMoved;
+        }
+
+        // to arrow
+        else if (event.type==sf::Event::MouseButtonReleased && event.mouseButton.button==sf::Mouse::Right) {
+            int x = event.mouseButton.x;
+            int y = event.mouseButton.y;
+
+            // board clicked
+            if (x>50 && x<850 && y>70 && y<870) {
+                auto arrow_to = get_square(x, y);
+                if (arrow_to!=arrow_from && arrow_from!=chess::NO_SQ) {
+                    Arrow newarrow(arrow_from, arrow_to, 40, 40, PALETTE::TILE_SEL);
+
+                    // check arrow does not exist
+                    bool arrow_exists = false;
+                    for (int i=0; i<arrows.size(); i++) {
+                        if (newarrow==arrows[i]) {
+                            arrows.erase(arrows.begin() + i);
+                            arrow_exists = true;
+                            break;
+                        }
+                    }
+
+                    // add arrow
+                    if (!arrow_exists) {
+                        arrows.push_back(newarrow);
+                        arrow_from = chess::NO_SQ;
+                    }
+                }
+            }
+            // only consider first mouse click
+            event.type = sf::Event::MouseMoved;
+        }
+        
+        for (auto& arrow : arrows)
+            window.draw(arrow);
+    }
+
+
     // Handles window events and rendering
     void update_window() {
         // event handling
@@ -401,6 +445,7 @@ private:
         draw_select();  // draw selected and move tiles
         draw_timer();   // draw timer and names
         draw_pieces();  // draw pieces
+        draw_arrows();  // draw placed arrows
 
         // update window render
         window.display();

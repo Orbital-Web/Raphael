@@ -56,14 +56,6 @@ public:
     }
 
 private:
-    // Converts x and y coordinates into a Square
-    static chess::Square get_square(int x, int y) {
-        int rank = (870 - y) / 100;
-        int file = (x - 50) / 100;
-        return chess::utils::fileRankSquare(chess::File(file), chess::Rank(rank));
-    }
-
-
     // Returns a move if the move from sq_from to sq_to is valid
     static chess::Move move_if_valid(chess::Square sq_from, chess::Square sq_to, const chess::Movelist& movelist, const chess::Board& board) {
         chess::Piece piece = board.at(sq_from);

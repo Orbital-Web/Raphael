@@ -88,7 +88,7 @@ public:
 
 
     // Think during opponent's turn. Should return immediately if halt becomes true
-    void ponder(chess::Board board, float t_remain, sf::Event& event, bool& halt) {
+    void ponder(chess::Board board, bool& halt) {
         pondereval = 0;
         ponderdepth = 1;
         int depth = 1;
@@ -320,13 +320,11 @@ private:
         }
 
         // killer move
-        if (ply>0 && killers.isKiller(move, ply)) {
-            move.setScore(KILLER_WEIGHT);
-            return;
-        }
+        int score = 0;
+        if (ply>0 && killers.isKiller(move, ply))
+            score += KILLER_WEIGHT;
 
         // calculate other scores
-        int score = 0;
         int from = (int)board.at(move.from());
         int to = (int)board.at(move.to());
 
@@ -347,7 +345,7 @@ private:
         int eval = 0;
         auto pieces = board.occ();
         int n_pieces_left = chess::builtin::popcount(pieces);
-        double eg_weight = std::min(1.0, double(32-n_pieces_left)/(32-N_PIECES_END));   // 0~1 as pieces left decreases
+        float eg_weight = std::min(1.0f, float(32-n_pieces_left)/(32-N_PIECES_END));    // 0~1 as pieces left decreases
         int krd = 0, kfd = 0;   // king rank and file distance
 
         // loop through all pieces

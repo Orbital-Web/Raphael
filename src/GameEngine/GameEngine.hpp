@@ -89,7 +89,7 @@ public:
         board = chess::Board(start_fen);
         chess::movegen::legalmoves(movelist, board);
         chess::GameResult game_result = chess::GameResult::NONE;
-        event.type = sf::Event::MouseMoved;
+        event.type = sf::Event::MouseMoved; // in case run_match is called consecutively
         bool timeout = false;
 
         // reset players
@@ -304,7 +304,7 @@ private:
     // Update selected squares list
     void update_select() {
         // populate selected squares
-        if (event.type==sf::Event::MouseButtonPressed && event.mouseButton.button==sf::Mouse::Left) {
+        if (lmbdown) {
             arrows.clear();
             int x = event.mouseButton.x;
             int y = event.mouseButton.y;
@@ -358,7 +358,7 @@ private:
     // Update arrows
     void update_arrows() {
         // from arrow
-        if (event.type==sf::Event::MouseButtonPressed && event.mouseButton.button==sf::Mouse::Right) {
+        if (rmbdown) {
             int x = event.mouseButton.x;
             int y = event.mouseButton.y;
             // board clicked
@@ -367,7 +367,7 @@ private:
         }
 
         // to arrow
-        else if (event.type==sf::Event::MouseButtonReleased && event.mouseButton.button==sf::Mouse::Right) {
+        else if (rmbup) {
             int x = event.mouseButton.x;
             int y = event.mouseButton.y;
 

@@ -25,8 +25,8 @@ public:
 
         // ui controls for move selection
         while (!halt && (sq_to==chess::NO_SQ || sq_from==chess::NO_SQ)) {
-            // onclick
-            if (event.type==sf::Event::MouseButtonPressed && event.mouseButton.button==sf::Mouse::Left) {
+            // onclick (or drag)
+            if (lmbdown || lmbup) {
                 int x = event.mouseButton.x;
                 int y = event.mouseButton.y;
 

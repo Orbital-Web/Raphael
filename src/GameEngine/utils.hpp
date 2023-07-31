@@ -5,11 +5,14 @@
 
 
 
+// mouse buttons
+#define rmbdown (event.type==sf::Event::MouseButtonPressed && event.mouseButton.button==sf::Mouse::Right)
+#define rmbup (event.type==sf::Event::MouseButtonReleased && event.mouseButton.button==sf::Mouse::Right)
+#define lmbdown (event.type==sf::Event::MouseButtonPressed && event.mouseButton.button==sf::Mouse::Left)
+#define lmbup (event.type==sf::Event::MouseButtonReleased && event.mouseButton.button==sf::Mouse::Left)
+
 // [bool] curently white's turn
 #define whiteturn (board.sideToMove() == chess::Color::WHITE)
-
-// [string] numeric name of move
-#define movename(move) (chess::squareToString[move.from()] + chess::squareToString[move.to()])
 
 // [bool] square is a light tile
 #define lighttile(sqi) (((sq >> 3) ^ sq) & 1)

@@ -1,8 +1,7 @@
 #pragma once
-#include "GamePlayer.hpp"
 #include "chess.hpp"
+#include "GamePlayer.hpp"
 #include <SFML/Graphics.hpp>
-#include <string>
 
 
 

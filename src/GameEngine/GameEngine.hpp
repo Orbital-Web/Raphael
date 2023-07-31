@@ -1,14 +1,10 @@
 #pragma once
-#include "HumanPlayer.hpp"
-#include "utils.hpp"
 #include "chess.hpp"
+#include "GamePlayer.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <future>
-#include <sstream>
 #include <iomanip>
-#include <vector>
-#include <algorithm>
 
 
 
@@ -258,7 +254,7 @@ private:
                 auto sq = chess::utils::fileRankSquare(chess::File(file), chess::Rank(rank));
                 int piece = (int)board.at(sq);
                 if (piece != 12) {
-                    pieces[(int)piece].setPosition(50 + 100*file, 770 - 100*rank);
+                    pieces[piece].setPosition(50 + 100*file, 770 - 100*rank);
                     window.draw(pieces[piece]);
                 }
             }

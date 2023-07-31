@@ -4,9 +4,6 @@
 #include "src/Raphael/Raphael_v1.2.hpp"
 #include "src/Raphael/Raphael_v1.3.hpp"
 #include <string.h>
-#include <string>
-#include <vector>
-#include <array>
 #include <fstream>
 
 

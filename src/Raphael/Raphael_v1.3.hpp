@@ -4,11 +4,8 @@
 #include "Killers.hpp"
 #include "../GameEngine/GamePlayer.hpp"
 #include "../GameEngine/chess.hpp"
-#include <SFML/Graphics.hpp>
-#include <string>
 #include <future>
 #include <chrono>
-#include <math.h>
 
 
 

@@ -1,7 +1,5 @@
 #pragma once
 #include "utils.hpp"
-#include "chess.hpp"
-#include <SFML/Graphics.hpp>
 #include <string>
 
 

@@ -44,5 +44,4 @@ SFML-2.6.0/
 stockfish/
 
 # incomplete
-Raphael_uci.hpp
 RaphaelUCI.cpp

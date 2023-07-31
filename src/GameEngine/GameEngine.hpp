@@ -301,21 +301,8 @@ private:
     }
 
 
-    // Draws possible move square and move to/from squares
-    void draw_select() {
-        // draw move to/from squares
-        if (sq_from!=chess::NO_SQ) {
-            int file = (int)chess::utils::squareFile(sq_from);
-            int rank = (int)chess::utils::squareRank(sq_from);
-            tilesspecial[0].setPosition(50 + 100*file, 770 - 100*rank);
-            window.draw(tilesspecial[0]);
-
-            file = (int)chess::utils::squareFile(sq_to);
-            rank = (int)chess::utils::squareRank(sq_to);
-            tilesspecial[0].setPosition(50 + 100*file, 770 - 100*rank);
-            window.draw(tilesspecial[0]);
-        }
-
+    // Update selected squares list
+    void update_select() {
         // populate selected squares
         if (event.type==sf::Event::MouseButtonPressed && event.mouseButton.button==sf::Mouse::Left) {
             arrows.clear();
@@ -335,16 +322,6 @@ private:
                 } else
                     selectedtiles.clear();
             }
-            // only consider first mouse click
-            event.type = sf::Event::MouseMoved;
-        }
-
-        //draw selection squares
-        for (auto& sq : selectedtiles) {
-            int file = (int)chess::utils::squareFile(sq);
-            int rank = (int)chess::utils::squareRank(sq);
-            tilesspecial[1].setPosition(50 + 100*file, 770 - 100*rank);
-            window.draw(tilesspecial[1]);
         }
     }
 
@@ -378,8 +355,8 @@ private:
     }
 
 
-    // Draw arrows
-    void draw_arrows() {
+    // Update arrows
+    void update_arrows() {
         // from arrow
         if (event.type==sf::Event::MouseButtonPressed && event.mouseButton.button==sf::Mouse::Right) {
             int x = event.mouseButton.x;
@@ -387,8 +364,6 @@ private:
             // board clicked
             if (x>50 && x<850 && y>70 && y<870)
                 arrow_from = get_square(x, y);
-            // only consider first mouse click
-            event.type = sf::Event::MouseMoved;
         }
 
         // to arrow
@@ -407,6 +382,7 @@ private:
                     for (int i=0; i<arrows.size(); i++) {
                         if (newarrow==arrows[i]) {
                             arrows.erase(arrows.begin() + i);
+                            arrow_from = chess::NO_SQ;
                             arrow_exists = true;
                             break;
                         }
@@ -419,21 +395,20 @@ private:
                     }
                 }
             }
-            // only consider first mouse click
-            event.type = sf::Event::MouseMoved;
         }
-        
-        for (auto& arrow : arrows)
-            window.draw(arrow);
     }
 
 
     // Handles window events and rendering
     void update_window() {
         // event handling
-        while (window.pollEvent(event))
+        while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed)
                 window.close();
+            if (event.type == sf::Event::MouseButtonPressed || event.type==sf::Event::MouseButtonReleased)
+                update_arrows();  // handle arrow placing
+                update_select();  // handle move selection
+        }
 
         // clear window render
         window.clear(cge::PALETTE::BG);
@@ -441,11 +416,34 @@ private:
         // draw tiles
         for (int i=0; i<64; i++)
             window.draw(tiles[i]);
+        
+        // draw move to/from squares
+        if (sq_from!=chess::NO_SQ) {
+            int file = (int)chess::utils::squareFile(sq_from);
+            int rank = (int)chess::utils::squareRank(sq_from);
+            tilesspecial[0].setPosition(50 + 100*file, 770 - 100*rank);
+            window.draw(tilesspecial[0]);
 
-        draw_select();  // draw selected and move tiles
-        draw_timer();   // draw timer and names
+            file = (int)chess::utils::squareFile(sq_to);
+            rank = (int)chess::utils::squareRank(sq_to);
+            tilesspecial[0].setPosition(50 + 100*file, 770 - 100*rank);
+            window.draw(tilesspecial[0]);
+        }
+
+        //draw selection squares
+        for (auto& sq : selectedtiles) {
+            int file = (int)chess::utils::squareFile(sq);
+            int rank = (int)chess::utils::squareRank(sq);
+            tilesspecial[1].setPosition(50 + 100*file, 770 - 100*rank);
+            window.draw(tilesspecial[1]);
+        }
+
         draw_pieces();  // draw pieces
-        draw_arrows();  // draw placed arrows
+        draw_timer();   // draw timer and names
+
+        // draw arrows
+        for (auto& arrow : arrows)
+            window.draw(arrow);
 
         // update window render
         window.display();

@@ -1,5 +1,5 @@
 #pragma once
-#include <GameEngine/chess.hpp>
+#include <chess.hpp>
 #include <SFML/Graphics.hpp>
 #include <GameEngine/utils.hpp>
 #include <GameEngine/GamePlayer.hpp>
@@ -44,7 +44,7 @@ public:
                     // destination clicked
                     if (sq_from!=chess::NO_SQ && sq_from!=sq) {
                         chess::Move move = move_if_valid(sq_from, sq, movelist, board);
-                        if (move!=chess::Move::NO_MOVE)
+                        if (move!=EMPTY_MOVE)
                             return move;
                         else
                             sq_from = chess::NO_SQ;
@@ -52,7 +52,7 @@ public:
                 }
             }
         }
-        return chess::Move::NO_MOVE;
+        return EMPTY_MOVE;
     }
 
 private:
@@ -87,7 +87,7 @@ private:
         for (auto& move : movelist)
             if (move.from()==sq_from && move.to()==sq_to)
                 return move;
-        return chess::Move::NO_MOVE;
+        return EMPTY_MOVE;
     }
 };  // HumanPlayer
 }   // namespace cge

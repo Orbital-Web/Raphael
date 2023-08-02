@@ -1,5 +1,5 @@
 #pragma once
-#include <GameEngine/chess.hpp>
+#include <chess.hpp>
 #include <SFML/Graphics.hpp>
 #include <math.h>
 
@@ -18,6 +18,9 @@
 
 // [bool] square is a light tile
 #define lighttile(sqi) (((sq >> 3) ^ sq) & 1)
+
+
+#define EMPTY_MOVE (chess::Move(chess::Move::NO_MOVE))
 
 
 namespace cge {

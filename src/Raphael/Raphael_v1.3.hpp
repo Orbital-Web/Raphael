@@ -1,5 +1,5 @@
 #pragma once
-#include <GameEngine/chess.hpp>
+#include <chess.hpp>
 #include <GameEngine/utils.hpp>
 #include <Raphael/consts.hpp>
 #include <Raphael/Transposition.hpp>
@@ -36,11 +36,11 @@ public:
     chess::Move get_move(chess::Board board, float t_remain, sf::Event& event, bool& halt) {
         int depth = 1;
         int eval = 0;
-        chess::Move toPlay = chess::Move::NO_MOVE;  // overall best move
+        chess::Move toPlay = EMPTY_MOVE;    // overall best move
 
         // if ponderhit, start with ponder result and depth
         if (board.zobrist() != ponderkey)
-            itermove = chess::Move::NO_MOVE;
+            itermove = EMPTY_MOVE;
         else {
             depth = ponderdepth;
             eval = pondereval;
@@ -58,7 +58,7 @@ public:
             // not timeout
             if (!halt)
                 eval = itereval;
-            if (itermove != chess::Move::NO_MOVE)
+            if (itermove != EMPTY_MOVE)
                 toPlay = itermove;
             
             // checkmate, no need to continue
@@ -89,7 +89,7 @@ public:
         pondereval = 0;
         ponderdepth = 1;
         int depth = 1;
-        itermove = chess::Move::NO_MOVE;    // opponent's best move
+        itermove = EMPTY_MOVE;    // opponent's best move
 
         // begin iterative deepening up to depth 4 for opponent's best move
         while (!halt && depth <= 4) {
@@ -108,8 +108,8 @@ public:
         // store move to check for ponderhit on our turn
         board.makeMove(itermove);
         ponderkey = board.zobrist();
-        chess::Move toPlay = chess::Move::NO_MOVE;  // our best response
-        itermove = chess::Move::NO_MOVE;
+        chess::Move toPlay = EMPTY_MOVE;    // our best response
+        itermove = EMPTY_MOVE;
 
         // begin iterative deepening for our best response
         while (!halt && depth<=MAX_DEPTH) {
@@ -117,7 +117,7 @@ public:
             int eval = negamax(board, ponderdepth, 0, -INT_MAX, INT_MAX, halt);
 
             // store into toPlay to prevent NO_MOVE
-            if (itermove != chess::Move::NO_MOVE)
+            if (itermove != EMPTY_MOVE)
                 toPlay = itermove;
             
             if (!halt) {
@@ -138,7 +138,7 @@ public:
     // Resets the player
     void reset() {
         tt.clear();
-        itermove = chess::Move::NO_MOVE;
+        itermove = EMPTY_MOVE;
     }
 
 private:
@@ -209,7 +209,7 @@ private:
         // search
         chess::Movelist movelist;
         order_moves(movelist, board, ply);
-        chess::Move bestmove = chess::Move::NO_MOVE;    // best move in this position
+        chess::Move bestmove = EMPTY_MOVE;  // best move in this position
 
         for (const auto& move : movelist) {
             board.makeMove(move);

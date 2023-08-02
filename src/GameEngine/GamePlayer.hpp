@@ -1,5 +1,5 @@
 #pragma once
-#include "GameEngine/chess.hpp"
+#include <chess.hpp>
 #include <SFML/Graphics.hpp>
 
 

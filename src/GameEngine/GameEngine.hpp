@@ -455,7 +455,7 @@ private:
 
         // play sound
         if (interactive) {
-            if (board.at(sq_to)!=chess::Piece::NONE && move_in.typeOf()!=chess::Move::CASTLING)
+            if (board.isCapture(move_in))
                 sounds[1].play();   // capture
             else
                 sounds[0].play();   // move

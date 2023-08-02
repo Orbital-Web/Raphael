@@ -21,7 +21,7 @@ Raphael is largely inspired by [Sebastian Lague's Coding Adventure video on crea
     g++ -c main.cpp -Isrc -ISFML-2.6.0/include -DSFML_STATIC
     g++ -o main main.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
     del main.o
-    main.exe human "Me" Raphael "Raphael"
+    main.exe human "Human" Raphael "Raphael"
     ```
 6. Try out other settings with command-line arguments (`main.exe -help`)
 

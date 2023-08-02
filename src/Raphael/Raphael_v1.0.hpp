@@ -231,7 +231,7 @@ private:
         for (auto& move : all_movelist) {
             int to = (int)board.at(move.to());
             // enemy piece captured
-            if (to!=12 && whiteturn==(to/6)) {
+            if (board.isCapture(move)) {
                 score_move(move, board);
                 movelist.add(move);
             }
@@ -249,12 +249,12 @@ private:
         }
 
         // calculate score
-        int score = 0;
+        int16_t score = 0;
         int from = (int)board.at(move.from());
         int to = (int)board.at(move.to());
 
         // enemy piece captured
-        if (to!=12 && whiteturn==(to/6))
+        if (board.isCapture(move))
             score += abs(PVAL::VALS[to]) - abs(PVAL::VALS[from]) + 13;  // small bias to encourage trades
         
         // promotion

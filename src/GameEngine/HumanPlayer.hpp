@@ -44,7 +44,7 @@ public:
                     // destination clicked
                     if (sq_from!=chess::NO_SQ && sq_from!=sq) {
                         chess::Move move = move_if_valid(sq_from, sq, movelist, board);
-                        if (move!=EMPTY_MOVE)
+                        if (move!=chess::Move::NO_MOVE)
                             return move;
                         else
                             sq_from = chess::NO_SQ;
@@ -52,7 +52,7 @@ public:
                 }
             }
         }
-        return EMPTY_MOVE;
+        return chess::Move::NO_MOVE;
     }
 
 private:
@@ -87,7 +87,7 @@ private:
         for (auto& move : movelist)
             if (move.from()==sq_from && move.to()==sq_to)
                 return move;
-        return EMPTY_MOVE;
+        return chess::Move::NO_MOVE;
     }
 };  // HumanPlayer
 }   // namespace cge

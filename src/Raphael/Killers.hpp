@@ -15,7 +15,7 @@ private:
 // methods
 public:
     // Initialize the storage with 2 killer moves per ply
-    Killers(): _killers(MAX_DEPTH*2, EMPTY_MOVE) {}
+    Killers(): _killers(MAX_DEPTH*2, chess::Move::NO_MOVE) {}
 
 
     // Add killer move (assumes move is not a capture/promotion)
@@ -35,7 +35,7 @@ public:
 
     // Clears the killer storage
     void clear() {
-        std::fill(_killers.begin(), _killers.end(), EMPTY_MOVE);
+        std::fill(_killers.begin(), _killers.end(), chess::Move::NO_MOVE);
     }
 };  // Killers
 }   // namespace name

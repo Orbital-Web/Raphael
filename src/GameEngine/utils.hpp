@@ -20,9 +20,6 @@
 #define lighttile(sqi) (((sq >> 3) ^ sq) & 1)
 
 
-#define EMPTY_MOVE (chess::Move(chess::Move::NO_MOVE))
-
-
 namespace cge {
 
 // An arrow drawable that goes from squares `from` to `to`

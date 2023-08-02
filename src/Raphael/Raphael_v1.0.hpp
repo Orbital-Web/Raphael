@@ -32,8 +32,8 @@ public:
         tt.clear();
         int depth = 1;
         int eval = 0;
-        toPlay = EMPTY_MOVE;
-        itermove = EMPTY_MOVE;
+        toPlay = chess::Move::NO_MOVE;
+        itermove = chess::Move::NO_MOVE;
 
         // stop search after an appropriate duration
         int duration = search_time(board, t_remain);
@@ -146,7 +146,7 @@ private:
         // search
         chess::Movelist movelist;
         order_moves(movelist, board);
-        chess::Move bestmove = EMPTY_MOVE;  // best move in this position
+        chess::Move bestmove = chess::Move::NO_MOVE;  // best move in this position
 
         for (auto& move : movelist) {
             board.makeMove(move);

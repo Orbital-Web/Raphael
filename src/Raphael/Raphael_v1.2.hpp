@@ -81,7 +81,7 @@ public:
 
 
     // Think during opponent's turn. Should return immediately if halt becomes true
-    void ponder(chess::Board board, float t_remain, sf::Event& event, bool& halt) {
+    void ponder(chess::Board board, bool& halt) {
         pondereval = 0;
         ponderdepth = 1;
         int depth = 1;
@@ -326,7 +326,7 @@ private:
     int evaluate(const chess::Board& board) const {
         int eval = 0;
         int n_pieces_left = chess::builtin::popcount(board.occ());
-        double eg_weight = std::min(1.0, double(32-n_pieces_left)/(32-N_PIECES_END));
+        float eg_weight = std::min(1.0f, float(32-n_pieces_left)/(32-N_PIECES_END));
         int wkr, bkr, wkf, bkf;
 
         // count pieces and added their values (material + pst)

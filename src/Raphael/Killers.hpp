@@ -1,7 +1,6 @@
 #pragma once
-#include "consts.hpp"
-#include "../GameEngine/chess.hpp"
-#include <vector>
+#include <GameEngine/chess.hpp>
+#include <Raphael/consts.hpp>
 
 
 

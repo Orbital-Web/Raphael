@@ -1,6 +1,6 @@
 #pragma once
-#include "utils.hpp"
-#include <string>
+#include "GameEngine/chess.hpp"
+#include <SFML/Graphics.hpp>
 
 
 

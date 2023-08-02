@@ -1,8 +1,8 @@
-#include "src/GameEngine/GameEngine.hpp"
-#include "src/GameEngine/HumanPlayer.hpp"
-#include "src/Raphael/Raphael_v1.0.hpp"
-#include "src/Raphael/Raphael_v1.2.hpp"
-#include "src/Raphael/Raphael_v1.3.hpp"
+#include <GameEngine/GameEngine.hpp>
+#include <GameEngine/HumanPlayer.hpp>
+#include <Raphael/Raphael_v1.0.hpp>
+#include <Raphael/Raphael_v1.2.hpp>
+#include <Raphael/Raphael_v1.3.hpp>
 #include <string.h>
 #include <fstream>
 

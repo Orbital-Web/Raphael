@@ -1,8 +1,9 @@
 #pragma once
-#include "chess.hpp"
-#include "GamePlayer.hpp"
+#include <GameEngine/chess.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
+#include <GameEngine/utils.hpp>
+#include <GameEngine/GamePlayer.hpp>
 #include <future>
 #include <iomanip>
 

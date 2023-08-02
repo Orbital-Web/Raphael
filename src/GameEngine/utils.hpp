@@ -1,5 +1,5 @@
 #pragma once
-#include "chess.hpp"
+#include <GameEngine/chess.hpp>
 #include <SFML/Graphics.hpp>
 #include <math.h>
 
@@ -11,11 +11,14 @@
 #define lmbdown (event.type==sf::Event::MouseButtonPressed && event.mouseButton.button==sf::Mouse::Left)
 #define lmbup (event.type==sf::Event::MouseButtonReleased && event.mouseButton.button==sf::Mouse::Left)
 
+
 // [bool] curently white's turn
 #define whiteturn (board.sideToMove() == chess::Color::WHITE)
 
+
 // [bool] square is a light tile
 #define lighttile(sqi) (((sq >> 3) ^ sq) & 1)
+
 
 namespace cge {
 

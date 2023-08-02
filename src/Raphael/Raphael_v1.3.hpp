@@ -1,11 +1,11 @@
 #pragma once
-#include "consts.hpp"
-#include "Transposition.hpp"
-#include "Killers.hpp"
-#include "../GameEngine/GamePlayer.hpp"
-#include "../GameEngine/chess.hpp"
+#include <GameEngine/chess.hpp>
+#include <GameEngine/utils.hpp>
+#include <Raphael/consts.hpp>
+#include <Raphael/Transposition.hpp>
+#include <Raphael/Killers.hpp>
+#include <GameEngine/GamePlayer.hpp>
 #include <future>
-#include <chrono>
 
 
 

@@ -12,18 +12,17 @@ Raphael is largely inspired by [Sebastian Lague's Coding Adventure video on crea
 
 
 ## Getting started (Windows)
-1. Clone the repository
-2. Install g++
-3. Download SFML-2.6.0 (GCC MinGW) from https://www.sfml-dev.org/download/sfml/2.6.0/ and add it to the root directory
-4. Copy `openal32.dll` from SFML-2.6.0/bin/ and add it to the root directory
-5. Compile and run `main.exe` with the following commands (optionally, compile with the `-DNDEBUG` flag to mute evaluations)
+1. Clone (or pull if it's already been cloned) the repository with `git clone https://github.com/Orbital-Web/Raphael.git --recurse-submodules`
+2. Download SFML-2.6.0 (GCC MinGW) from https://www.sfml-dev.org/download/sfml/2.6.0/ and add it to the root directory
+3. Copy `openal32.dll` from SFML-2.6.0/bin/ and add it to the root directory
+4. Compile and run `main.exe` with the following commands (optionally, compile with the `-DNDEBUG` flag to mute evaluations)
     ```
     g++ -c main.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
     g++ -o main main.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
     del main.o
     main.exe human "Human" Raphael "Raphael"
     ```
-6. Try out other settings with command-line arguments (`main.exe -help`)
+5. Try out other settings with command-line arguments (`main.exe -help`)
 
 
 

@@ -6,12 +6,12 @@
 
 namespace cge { // chess game engine
 class GamePlayer {
-// class variables
+// GamePlayer vars
 public:
     std::string name;
 
 
-// methods
+// GamePlayer methods
 public:
     // Initializes a GamePlayer with a name
     GamePlayer(std::string name_in): name(name_in) {}

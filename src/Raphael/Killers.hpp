@@ -6,13 +6,12 @@
 
 namespace Raphael {
 class Killers {     // based on https://rustic-chess.org/search/ordering/killers.html
-// class variables
+// Killers vars
 private:
     std::vector<chess::Move> _killers;
 
 
-
-// methods
+// Killers methods
 public:
     // Initialize the storage with 2 killer moves per ply
     Killers(): _killers(MAX_DEPTH*2, chess::Move::NO_MOVE) {}

@@ -10,7 +10,7 @@
 
 namespace Raphael {
 class v1_2: public cge::GamePlayer {
-// class variables
+// Raphael vars
 private:
     TranspositionTable tt;
     chess::Move itermove;   // best move from previous iteration
@@ -20,7 +20,7 @@ private:
 
 
 
-// methods
+// Raphael methods
 public:
     // Initializes Raphael with a name
     v1_2(std::string name_in): GamePlayer(name_in), tt(TABLE_SIZE) {

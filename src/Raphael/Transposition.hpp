@@ -6,12 +6,12 @@
 
 namespace Raphael {
 class TranspositionTable {
-// class variables
-public:
-    static constexpr unsigned int MAX_TABLE_SIZE = 134217728;   // 2.5GB
+static constexpr unsigned int MAX_TABLE_SIZE = 134217728;   // 2.5GB
 
-    // storage type (size = 20 bytes)
+// TranspositionTable vars
+public:
     enum Flag {INVALID=-2, LOWER, EXACT, UPPER}; 
+    // storage type (size = 20 bytes)
     struct Entry {
         uint64_t key;           // 8 bytes
         unsigned int depth: 30; // 4 bytes
@@ -26,7 +26,7 @@ private:
 
 
 
-// methods
+// TranspositionTable methods
 public:
     // Initialize the Transposition Table (TranspositionTable<size>)
     TranspositionTable(unsigned int size_in): size(size_in), _table(size, {.flag = INVALID}) {

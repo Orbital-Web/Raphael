@@ -41,14 +41,19 @@ const std::string TEXTURE[12] = {
 
 
 class Arrow : public sf::Drawable {     // An arrow drawable that goes from squares `from` to `to`
+static constexpr float THICKNESS = 40;
+static constexpr float ARROWSIZE = 40;
+
+// Arrow vars
 private:
     chess::Square to, from;
     sf::ConvexShape arrowhead;
     sf::RectangleShape arrowbody;
 
+
+// Arrow methods
 public:
-    Arrow(const chess::Square from_in, chess::Square to_in, const float thickness,
-    const float arrowsize, const sf::Color color): from(from_in), to(to_in) {
+    Arrow(const chess::Square from_in, const chess::Square to_in): from(from_in), to(to_in) {
         sf::Vector2f from_coord = {
             100.0f + 100*(int)chess::utils::squareFile(from),
             820.0f - 100*(int)chess::utils::squareRank(from)
@@ -60,24 +65,24 @@ public:
 
         float dx = to_coord.x - from_coord.x;
         float dy = from_coord.y - to_coord.y;
-        float headlen = arrowsize*1.5f;
+        float headlen = ARROWSIZE*1.5f;
         float arrowlen = sqrt(dx*dx + dy*dy);
         float arrowang = 180*atan2(dx, dy)/M_PI;
 
-        arrowbody.setSize({thickness, arrowlen - headlen});
-        arrowbody.setOrigin(0.5f*thickness, arrowlen - headlen);
+        arrowbody.setSize({THICKNESS, arrowlen - headlen});
+        arrowbody.setOrigin(0.5f*THICKNESS, arrowlen - headlen);
         arrowbody.setPosition(from_coord);
         arrowbody.setRotation(arrowang);
-        arrowbody.setFillColor(color);
+        arrowbody.setFillColor(PALETTE::TILE_SEL);
 
         arrowhead.setPointCount(3);
         arrowhead.setPoint(0, sf::Vector2f(0, 0));
-        arrowhead.setPoint(1, sf::Vector2f(-0.9f*arrowsize, headlen));
-        arrowhead.setPoint(2, sf::Vector2f(0.9f*arrowsize, headlen));
+        arrowhead.setPoint(1, sf::Vector2f(-0.9f*ARROWSIZE, headlen));
+        arrowhead.setPoint(2, sf::Vector2f(0.9f*ARROWSIZE, headlen));
         arrowhead.setOrigin(0, arrowlen);
         arrowhead.setPosition(from_coord);
         arrowhead.setRotation(arrowang);
-        arrowhead.setFillColor(color);
+        arrowhead.setFillColor(PALETTE::TILE_SEL);
     }
 
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override {
@@ -93,10 +98,13 @@ public:
 
 
 class PieceDrawer {     // Class for drawing a piece on screen
+// PieceDrawer vars
 private:
     std::vector<sf::Texture> textures;
     std::vector<sf::Sprite> sprites;
 
+
+// PieceDrawer methods
 public:
     PieceDrawer(): textures(12), sprites(12) {
         for (int i=0; i<12; i++) {
@@ -117,12 +125,15 @@ public:
 
 
 class Timer : public sf::Drawable {     // A timer drawable
+// Timer vars
 private:
     bool top;
     std::string t_disp;
     sf::Text timertext;
     sf::RectangleShape timerbox;
 
+
+// Timer methods
 public:
     Timer(const bool at_top, const sf::Font& font): top(at_top), timertext("", font, 40), timerbox({180, 50}) {
         timerbox.setPosition(660, (top) ? 10 : 880);

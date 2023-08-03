@@ -10,10 +10,11 @@
 
 namespace cge { // chess game engine
 class GameEngine {      // Class for managing games
-// class variables
+static constexpr int FRAMERATE = 60;
+
+// GameEngine vars
 private:
     // visual & sound
-    const int FRAMERATE = 60;
     sf::RenderWindow window;
     sf::Event event;
     sf::Font font;
@@ -53,10 +54,11 @@ public:
     };
 
 
-// methods
+
+// GameEngine methods
 public:
     // Initialize the GameEngine with the respective players
-    GameEngine(std::vector<GamePlayer*> players_in): players(players_in), tiles(66, sf::RectangleShape({100, 100})),
+    GameEngine(const std::vector<GamePlayer*>& players_in): players(players_in), tiles(66, sf::RectangleShape({100, 100})),
     soundbuffers(3), sounds(3) {
         generate_assets();
     }
@@ -98,12 +100,12 @@ public:
 
             // ask player for move in seperate thread so that we can keep rendering
             bool halt = false;
-            auto movereceiver = std::async(&cge::GamePlayer::get_move, cur_player,
+            auto movereceiver = std::async(&GamePlayer::get_move, cur_player,
                                         board, cur_t_remain, std::ref(event), std::ref(halt));
             auto status = std::future_status::timeout;
 
             // allow other player to ponder
-            auto _ = std::async(&cge::GamePlayer::ponder, oth_player, board, std::ref(halt));
+            auto _ = std::async(&GamePlayer::ponder, oth_player, board, std::ref(halt));
 
             // timings
             std::chrono::_V2::system_clock::time_point start, stop;
@@ -194,19 +196,19 @@ private:
             int x = i%8;
             int y = i/8;
             tiles[i].setPosition(50 + 100*x, 70 + 100*y);
-            tiles[i].setFillColor(((x+y)%2) ? cge::PALETTE::TILE_B : cge::PALETTE::TILE_W);
+            tiles[i].setFillColor(((x+y)%2) ? PALETTE::TILE_B : PALETTE::TILE_W);
         }
 
         // special tiles
-        tiles[64].setFillColor(cge::PALETTE::TILE_MOV); // move to/from
-        tiles[65].setFillColor(cge::PALETTE::TILE_SEL); // selection squares
+        tiles[64].setFillColor(PALETTE::TILE_MOV); // move to/from
+        tiles[65].setFillColor(PALETTE::TILE_SEL); // selection squares
 
         // timer and player names
         font.loadFromFile("src/assets/fonts/Roboto-Regular.ttf");
         for (int i=0; i<2; i++) {
             timers.emplace_back(i, font);
             names.emplace_back("", font, 40);
-            names[i].setFillColor(cge::PALETTE::TEXT);
+            names[i].setFillColor(PALETTE::TEXT);
             names[i].setPosition(50, (i) ? 10 : 880);
         }
 
@@ -293,7 +295,7 @@ private:
             if (x>50 && x<850 && y>70 && y<870) {
                 auto arrow_to = get_square(x, y);
                 if (arrow_to!=arrow_from && arrow_from!=chess::NO_SQ) {
-                    Arrow newarrow(arrow_from, arrow_to, 40, 40, PALETTE::TILE_SEL);
+                    Arrow newarrow(arrow_from, arrow_to);
 
                     // check arrow does not exist
                     bool arrow_exists = false;
@@ -330,7 +332,7 @@ private:
         }
 
         // clear window render
-        window.clear(cge::PALETTE::BG);
+        window.clear(PALETTE::BG);
 
         // draw tiles
         for (int i=0; i<64; i++)

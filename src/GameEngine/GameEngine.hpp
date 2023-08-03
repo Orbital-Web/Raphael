@@ -44,6 +44,14 @@ private:
     std::vector<int> timeoutwins = {0, 0};  // (p1, p2)
     std::vector<int> whitewins = {0, 0};    // (p1, p2)
 
+public:
+    struct GameOptions {
+        bool p1_is_white = true;
+        std::string start_fen = chess::STARTPOS;
+        std::vector<float> t_remain = {600, 600};
+        bool interactive = true;
+    };
+
 
 // methods
 public:
@@ -55,32 +63,30 @@ public:
     
 
     // Runs a match from start to end
-    void run_match(const bool p1_is_white, const std::string start_fen,
-    const std::vector<float> t_remain_in, const bool is_interactive) {
+    void run_match(const GameOptions& options) {
         // open window
         window.create(sf::VideoMode(880, 940), "Chess");
         window.setFramerateLimit(FRAMERATE);
         event.type = sf::Event::MouseMoved; // in case run_match is called consecutively
         
         // initialize board
-        board = chess::Board(start_fen);
+        board = chess::Board(options.start_fen);
         chess::movegen::legalmoves(movelist, board);
         chess::GameResult game_result = chess::GameResult::NONE;
-        bool timeout = false;
+        turn = !whiteturn;
 
         // reset players
         players[0]->reset();
         players[1]->reset();
-
-        // set time
-        t_remain = t_remain_in;
-
-        // manage turns
+        bool p1_is_white = options.p1_is_white;
         names[0].setString(players[!p1_is_white]->name);
         names[1].setString(players[p1_is_white]->name);
-        turn = !whiteturn;
 
-        interactive = is_interactive;
+        // set time
+        bool timeout = false;
+        t_remain = options.t_remain;
+
+        interactive = options.interactive;
         if (interactive)
             sounds[2].play();
         
@@ -110,7 +116,7 @@ public:
                 // game loop
                 update_window();
 
-                // count down timer (only after white moves)
+                // count down timer (only after first white moves)
                 if (board.fullMoveNumber() != 2) {
                     stop = std::chrono::high_resolution_clock::now();
                     cur_t_remain -= std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count()/1000.0;

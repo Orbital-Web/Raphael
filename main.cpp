@@ -45,15 +45,6 @@ void print_usage() {
 }
 
 
-// struct for storing input arguments to GameEngine::run_match()
-struct InputArgs {
-    bool p1_is_white = true;
-    std::string start_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    std::vector<float> t_remain = {600, 600};
-    bool interactive = true;
-};
-
-
 /*
 Example
 main.exe human "Adam" Raphael "Raphael"
@@ -74,7 +65,7 @@ main.exe Raphael "Raph1" Raphael "Raph2" 3 -f "8/8/2q5/2k5/8/5K2/8/8 w - - 0 1" 
 int main(int argc, char** argv) {
     cge::GamePlayer* p1;
     cge::GamePlayer* p2;
-    std::vector<InputArgs> matchargs;
+    std::vector<cge::GameEngine::GameOptions> gameoptions;
 
     // invalid
     if (argc<5) {
@@ -98,7 +89,7 @@ int main(int argc, char** argv) {
             bool p1_is_white = true;
             // create 400 matches with alterating color
             while (std::getline(pgns, pgn)) {
-                matchargs.push_back({p1_is_white, pgn, {20, 20}, false});
+                gameoptions.push_back({p1_is_white, pgn, {20, 20}, false});
                 p1_is_white = !p1_is_white;
             }
             pgns.close();
@@ -112,15 +103,15 @@ int main(int argc, char** argv) {
             if (n_matches) {
                 bool p1_is_white = true;
                 for (int n=0; n<n_matches; n++) {
-                    matchargs.push_back({.p1_is_white=p1_is_white});
+                    gameoptions.push_back({.p1_is_white=p1_is_white});
                     p1_is_white = !p1_is_white;
                 }
                 i++;
             } else
-                matchargs.push_back({});    // defaults to 1 match
+                gameoptions.push_back({});  // defaults to 1 match
         }
     } else
-        matchargs.push_back({});    // defaults to 1 match
+        gameoptions.push_back({});  // defaults to 1 match
     
 
     // parse arguments
@@ -130,17 +121,17 @@ int main(int argc, char** argv) {
             // set the time for every match
             float t_white = (float)atof(argv[++i]);
             float t_black = (float)atof(argv[++i]);
-            for (auto& ma : matchargs) {
-                ma.t_remain[0] = t_white;
-                ma.t_remain[1] = t_black;
+            for (auto& gopt : gameoptions) {
+                gopt.t_remain[0] = t_white;
+                gopt.t_remain[1] = t_black;
             }
         }
 
         // fen
-        else if (!strcmp(argv[i], "-f")) {
+        else if (!strcmp(argv[i], "-f") || !strcmp(argv[i], "-fen")) {
             i++;
-            for (auto& ma : matchargs)
-                ma.start_fen = argv[i];
+            for (auto& gopt : gameoptions)
+                gopt.start_fen = argv[i];
         }
 
         else {
@@ -158,11 +149,11 @@ int main(int argc, char** argv) {
 
     // Play Matches
     int matchn = 1;
-    int n_matches = matchargs.size();
+    int n_matches = gameoptions.size();
 
-    for (auto ma : matchargs) {
+    for (auto gopt : gameoptions) {
         printf("Starting match %i of %i\n", matchn, n_matches);
-        ge.run_match(ma.p1_is_white, ma.start_fen, ma.t_remain, ma.interactive);
+        ge.run_match(gopt);
         matchn++;
     }
 

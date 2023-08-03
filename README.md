@@ -14,9 +14,12 @@ In the future, I also plan on tackling NNUEs. This would make most of the handcr
 
 
 ## Getting started (Windows)
-1. Clone (or pull if it's already been cloned) the repository with `git clone https://github.com/Orbital-Web/Raphael.git --recurse-submodules`
-2. Download SFML-2.6.0 (GCC MinGW) from https://www.sfml-dev.org/download/sfml/2.6.0/ and add it to the root directory
-3. Copy `openal32.dll` from SFML-2.6.0/bin/ and add it to the root directory
+1. Clone (or pull if it's already been cloned) the repository with
+    ```
+    git clone https://github.com/Orbital-Web/Raphael.git --recurse-submodules
+    ```
+2. Download [SFML-2.6.0 (GCC MinGW)](https://www.sfml-dev.org/download/sfml/2.6.0/) and add it to the root directory
+3. Copy `openal32.dll` from `SFML-2.6.0/bin/` and add it to the root directory
 4. Compile and run `main.exe` with the following commands (optionally, compile with the `-DNDEBUG` flag to mute evaluations)
     ```
     g++ -c main.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC

@@ -49,7 +49,7 @@ void print_usage() {
 struct InputArgs {
     bool p1_is_white = true;
     std::string start_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    std::array<float, 2> t_remain = {600, 600};
+    std::vector<float> t_remain = {600, 600};
     bool interactive = true;
 };
 
@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
 
 
     // Initialize GameEngine
-    std::array<cge::GamePlayer*, 2> players = {p1, p2};
+    std::vector<cge::GamePlayer*> players = {p1, p2};
     cge::GameEngine ge(players);
 
     // Play Matches

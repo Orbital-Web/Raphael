@@ -5,47 +5,24 @@
 #include <GameEngine/utils.hpp>
 #include <GameEngine/GamePlayer.hpp>
 #include <future>
-#include <iomanip>
 
 
 
 namespace cge { // chess game engine
-namespace PALETTE {
-    const sf::Color BG(22, 21, 18);                 // background
-    const sf::Color TIMER_A(56, 71, 34);            // active timer
-    const sf::Color TIMER_ALOW(115, 49, 44);        // active timer (<60sec)
-    const sf::Color TIMER(38, 36, 33);              // inactive timer
-    const sf::Color TIMER_LOW(78, 41, 40);          // inactive timer (<60sec)
-    const sf::Color TILE_W(240, 217, 181);          // white tile
-    const sf::Color TILE_B(177, 136, 106);          // black tile
-    const sf::Color TILE_MOV(170, 162, 58, 200);    // tile moved to&from
-    const sf::Color TILE_SEL(130, 151, 105, 200);   // tile to move to
-    const sf::Color TEXT(255, 255, 255);            // text
-}
-const std::string TEXTURE[12] = {
-    "wP", "wN", "wB", "wR", "wQ", "wK",
-    "bP", "bN", "bB", "bR", "bQ", "bK"
-};
-
-
-
-class GameEngine {
+class GameEngine {      // Class for managing games
 // class variables
 private:
     // visual & sound
     const int FRAMERATE = 60;
     sf::RenderWindow window;
     sf::Event event;
-    std::array<sf::RectangleShape, 64> tiles;
-    std::array<sf::RectangleShape, 2> tilesspecial;
-    std::array<sf::RectangleShape, 2> timers;
-    std::array<sf::Text, 2> timertexts;
-    std::array<sf::Text, 2> names;
     sf::Font font;
-    std::array<sf::Texture, 12> piecetextures;
-    std::array<sf::Sprite, 12> pieces;
-    std::array<sf::SoundBuffer, 3> soundbuffers;
-    std::array<sf::Sound, 3> sounds;
+    std::vector<sf::RectangleShape> tiles;
+    std::vector<Timer> timers;
+    std::vector<sf::Text> names;
+    PieceDrawer piecedrawer;
+    std::vector<sf::SoundBuffer> soundbuffers;
+    std::vector<sf::Sound> sounds;
     bool interactive;       // play sound and keep window open after game end
     // for draw_select()
     chess::Square sq_from = chess::NO_SQ;
@@ -58,35 +35,37 @@ private:
 
     // chess game logic
     chess::Board board;
-    bool turn;                                  // current turn (0=white, 1=black)
-    std::array<GamePlayer*, 2> players;         // players (p1, p2)
-    std::array<float, 2> t_remain;              // time remaining (white, black)
+    bool turn;                              // current turn (0=white, 1=black)
+    std::vector<GamePlayer*> players;       // players (p1, p2)
+    std::vector<float> t_remain;            // time remaining (white, black)
 
     // score tracking
-    std::array<int, 3> results = {0, 0, 0};     // (p1, draw, p2)
-    std::array<int, 2> timeoutwins = {0, 0};    // (p1, p2)
-    std::array<int, 2> whitewins = {0, 0};      // (p1, p2)
+    std::vector<int> results = {0, 0, 0};   // (p1, draw, p2)
+    std::vector<int> timeoutwins = {0, 0};  // (p1, p2)
+    std::vector<int> whitewins = {0, 0};    // (p1, p2)
 
 
 // methods
 public:
     // Initialize the GameEngine with the respective players
-    GameEngine(std::array<GamePlayer*, 2> players_in): players(players_in) {
+    GameEngine(std::vector<GamePlayer*> players_in): players(players_in), tiles(66, sf::RectangleShape({100, 100})),
+    soundbuffers(3), sounds(3) {
         generate_assets();
     }
     
 
     // Runs a match from start to end
-    void run_match(bool p1_is_white, std::string start_fen, std::array<float, 2> t_remain_in, bool is_interactive) {
+    void run_match(const bool p1_is_white, const std::string start_fen,
+    const std::vector<float> t_remain_in, const bool is_interactive) {
         // open window
         window.create(sf::VideoMode(880, 940), "Chess");
         window.setFramerateLimit(FRAMERATE);
+        event.type = sf::Event::MouseMoved; // in case run_match is called consecutively
         
         // initialize board
         board = chess::Board(start_fen);
         chess::movegen::legalmoves(movelist, board);
         chess::GameResult game_result = chess::GameResult::NONE;
-        event.type = sf::Event::MouseMoved; // in case run_match is called consecutively
         bool timeout = false;
 
         // reset players
@@ -208,37 +187,21 @@ private:
         for (int i=0; i<64; i++) {
             int x = i%8;
             int y = i/8;
-            tiles[i] = sf::RectangleShape({100, 100});
             tiles[i].setPosition(50 + 100*x, 70 + 100*y);
             tiles[i].setFillColor(((x+y)%2) ? cge::PALETTE::TILE_B : cge::PALETTE::TILE_W);
         }
 
-        // special tiles (e.g. move to&from, selection)
-        tilesspecial[0] = sf::RectangleShape({100, 100});
-        tilesspecial[0].setFillColor(cge::PALETTE::TILE_MOV);
-        tilesspecial[1] = sf::RectangleShape({100, 100});
-        tilesspecial[1].setFillColor(cge::PALETTE::TILE_SEL);
+        // special tiles
+        tiles[64].setFillColor(cge::PALETTE::TILE_MOV); // move to/from
+        tiles[65].setFillColor(cge::PALETTE::TILE_SEL); // selection squares
 
         // timer and player names
         font.loadFromFile("src/assets/fonts/Roboto-Regular.ttf");
         for (int i=0; i<2; i++) {
-            // timer boxes
-            timers[i] = sf::RectangleShape({180, 50});
-            timers[i].setPosition(660, (i) ? 10 : 880);
-            // time remaining
-            timertexts[i] = sf::Text("", font, 40);
-            timertexts[i].setFillColor(cge::PALETTE::TEXT);
-            // names
-            names[i] = sf::Text("", font, 40);
+            timers.emplace_back(i, font);
+            names.emplace_back("", font, 40);
             names[i].setFillColor(cge::PALETTE::TEXT);
             names[i].setPosition(50, (i) ? 10 : 880);
-        }
-
-        // piece textures and sprites
-        for (int i=0; i<12; i++) {
-            piecetextures[i].loadFromFile("src/assets/themes/tartiana/" + cge::TEXTURE[i] + ".png");
-            piecetextures[i].setSmooth(true);
-            pieces[i].setTexture(piecetextures[i]);
         }
 
         // sounds
@@ -247,56 +210,6 @@ private:
         soundbuffers[2].loadFromFile("src/assets/sounds/GenericNotify.ogg");
         for (int i=0; i<3; i++)
             sounds[i].setBuffer(soundbuffers[i]);
-    }
-
-
-    // Renders the chess pieces
-    void draw_pieces() {
-        for (int rank=0; rank<8; rank++) {
-            for (int file=0; file<8; file++) {
-                auto sq = chess::utils::fileRankSquare(chess::File(file), chess::Rank(rank));
-                int piece = (int)board.at(sq);
-                if (piece != 12) {
-                    pieces[piece].setPosition(50 + 100*file, 770 - 100*rank);
-                    window.draw(pieces[piece]);
-                }
-            }
-        }
-    }
-
-
-    // Renders the timer and names
-    void draw_timer() {
-        // set timer display properties
-        for (int i=0; i<2; i++) {
-            // accomodate different format
-            std::stringstream formatter;
-            std::string t_disp;
-
-            if (t_remain[i] >= 60) {    // mm : ss
-                timers[i].setFillColor((i!=turn) ? cge::PALETTE::TIMER : cge::PALETTE::TIMER_A);
-                int min = (int)t_remain[i] / 60;
-                int sec = (int)t_remain[i] % 60;
-                formatter << std::setw(2) << std::setfill('0') << std::to_string(sec);
-                t_disp = std::to_string(min) + " : " + formatter.str();
-            } else {                    // ss.mm
-                timers[i].setFillColor((i!=turn) ? cge::PALETTE::TIMER_LOW : cge::PALETTE::TIMER_ALOW);
-                formatter << std::fixed << std::setprecision(1) << t_remain[i];
-                t_disp = formatter.str();
-            }
-
-            // manage positioning of string
-            timertexts[i].setString(t_disp);
-            sf::FloatRect textbounds = timertexts[i].getLocalBounds();
-            timertexts[i].setPosition(820 - textbounds.width, (i) ? 10 : 880);
-        }
-
-        // draw timer, remaining time, and names
-        for (int i=0; i<2; i++) {
-            window.draw(timers[i]);
-            window.draw(timertexts[i]);
-            window.draw(names[i]);
-        }
     }
 
 
@@ -404,9 +317,10 @@ private:
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed)
                 window.close();
-            if (event.type == sf::Event::MouseButtonPressed || event.type==sf::Event::MouseButtonReleased)
+            if (event.type == sf::Event::MouseButtonPressed || event.type==sf::Event::MouseButtonReleased) {
                 update_arrows();  // handle arrow placing
                 update_select();  // handle move selection
+            }
         }
 
         // clear window render
@@ -420,25 +334,39 @@ private:
         if (sq_from!=chess::NO_SQ) {
             int file = (int)chess::utils::squareFile(sq_from);
             int rank = (int)chess::utils::squareRank(sq_from);
-            tilesspecial[0].setPosition(50 + 100*file, 770 - 100*rank);
-            window.draw(tilesspecial[0]);
+            tiles[64].setPosition(50 + 100*file, 770 - 100*rank);
+            window.draw(tiles[64]);
 
             file = (int)chess::utils::squareFile(sq_to);
             rank = (int)chess::utils::squareRank(sq_to);
-            tilesspecial[0].setPosition(50 + 100*file, 770 - 100*rank);
-            window.draw(tilesspecial[0]);
+            tiles[64].setPosition(50 + 100*file, 770 - 100*rank);
+            window.draw(tiles[64]);
         }
 
         //draw selection squares
         for (auto& sq : selectedtiles) {
             int file = (int)chess::utils::squareFile(sq);
             int rank = (int)chess::utils::squareRank(sq);
-            tilesspecial[1].setPosition(50 + 100*file, 770 - 100*rank);
-            window.draw(tilesspecial[1]);
+            tiles[65].setPosition(50 + 100*file, 770 - 100*rank);
+            window.draw(tiles[65]);
         }
 
-        draw_pieces();  // draw pieces
-        draw_timer();   // draw timer and names
+        // draw pieces
+        auto pieces = board.occ();
+        while (pieces) {
+            auto sq = chess::builtin::poplsb(pieces);
+            int file = (int)chess::utils::squareFile(sq);
+            int rank = (int)chess::utils::squareRank(sq);
+            auto piece = board.at(sq);
+            piecedrawer.draw(window, piece, 50 + 100*file, 770 - 100*rank);
+        }
+        
+        // draw timers and names
+        for (int i=0; i<2; i++) {
+            timers[i].update(t_remain[i], i==turn);
+            window.draw(timers[i]);
+            window.draw(names[i]);
+        }
 
         // draw arrows
         for (auto& arrow : arrows)

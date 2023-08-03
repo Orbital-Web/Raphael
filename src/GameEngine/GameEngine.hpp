@@ -131,9 +131,11 @@ public:
                 // game loop
                 update_window();
 
-                // count down timer
-                stop = std::chrono::high_resolution_clock::now();
-                cur_t_remain -= std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count()/1000.0;
+                // count down timer (only after white moves)
+                if (board.fullMoveNumber() != 2) {
+                    stop = std::chrono::high_resolution_clock::now();
+                    cur_t_remain -= std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count()/1000.0;
+                }
 
                 // timeout
                 if (cur_t_remain<=0 || event.type==sf::Event::Closed) {

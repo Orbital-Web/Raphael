@@ -39,7 +39,7 @@ public:
         chess::Move toPlay = chess::Move::NO_MOVE;    // overall best move
 
         // if ponderhit, start with ponder result and depth
-        if (board.zobrist() != ponderkey)
+        if (board.hash() != ponderkey)
             itermove = chess::Move::NO_MOVE;
         else {
             depth = ponderdepth;
@@ -107,7 +107,7 @@ public:
 
         // store move to check for ponderhit on our turn
         board.makeMove(itermove);
-        ponderkey = board.zobrist();
+        ponderkey = board.hash();
         chess::Move toPlay = chess::Move::NO_MOVE;    // our best response
         itermove = chess::Move::NO_MOVE;
 
@@ -176,7 +176,7 @@ private:
         
         // transposition lookup
         int alphaorig = alpha;
-        auto ttkey = board.zobrist();
+        auto ttkey = board.hash();
         auto entry = tt.get(ttkey, ply);
         if (tt.valid(entry, ttkey, depth)) {
             if (entry.flag == tt.EXACT) {

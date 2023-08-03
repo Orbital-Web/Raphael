@@ -5,6 +5,8 @@ Raphael is still a work in progress and will be updated as time goes by (though 
 
 Raphael is largely inspired by [Sebastian Lague's Coding Adventure video on creating a chess engine](https://youtu.be/U4ogK0MIzqk), as well as ideas from my own chess engine I made a while back in Python.
 
+In the future, I also plan on tackling NNUEs. This would make most of the handcrafted evaluation redundant, thought it's a fun mix of machine-learning and the negamax search tree. 
+
 <p align="center">
     <img src="https://github.com/Orbital-Web/Raphael/blob/8667a6f6db60c5cacce297145246f89a22fa5333/Demo.png" alt="demo of Raphael" width=400/>
 </p>
@@ -44,7 +46,7 @@ The Game Player is a pure virtual function whose primary purpose is to return a 
 
 
 ### HumanPlayer
-The Human Player is an extension of `cge::GamePlayer` which will return a move based on UI interactions. Selecting a piece and clicking its destination tile will push that move forward. Note that castling may only be played by selecting the King and clicking on the castling destination tile of the King. Clicking on the King and then the Rook will not castle the King and will instead select the Rook. 
+The Human Player is an extension of `cge::GamePlayer` which will return a move based on UI interactions. Selecting a piece and clicking (or dragging to) its destination tile will push that move forward. Note that castling may only be played by selecting the King and clicking on the castling destination tile of the King. Clicking on the King and then the Rook will not castle the King and will instead select the Rook. 
 
 
 ### Raphael
@@ -56,8 +58,9 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Transposition table (fix) (`v1.1+`)
 - [x] Iterative deepening (fix) (`v1.1+`)
 - [ ] Opening book
+- [ ] EndGame table
 - [x] Quiescence with captures  (`v1.0+`)
-- [ ] Quiescence with checks
+- [ ] Quiescence with queening
 - [x] Time management           (`v1.0+`)
 - [x] Pondering                 (`v1.2+`)
 - [ ] Check Extensions
@@ -71,6 +74,7 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Passed Pawn               (`v1.3+`)
 - [x] Isolated Pawn             (`v1.3+`)
 - [ ] Mobility
+- [ ] NNUE
 
 #### Move Ordering
 - [x] Captures                  (`v1.0+`)
@@ -198,4 +202,4 @@ The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating
     </tr>
 </table>
 
-*Note that a timeout usually means that the game was relatively equal and/or closed*
+*Note that a timeout usually means that the game was relatively equal*

@@ -1,12 +1,16 @@
 #pragma once
 namespace Raphael {
+    // should remain largely unchanged
     const int MAX_DEPTH = 128;
-    const unsigned int TABLE_SIZE = 8388608;    // number of entries in TranspositionTable (160mb)
     const int MATE_EVAL = 2000000000;           // evaluation for immediate mate
+    // tunable
+    const unsigned int TABLE_SIZE = 8388608;    // number of entries in TranspositionTable (160mb)
+    const int ASPIRATION_WINDOW = 50;           // size of aspiration window
     const int N_PIECES_END = 8;                 // pieces left to count as endgame
     const int KING_DIST_WEIGHT = 20;            // how important king proximity is for the evaluation at endgame
+    const int OPEN_ROOK_WEIGHT = 40;            // bonus for rook on open file
+    const int BISHOP_MOBILITY_WEIGHT = 4;       // bonus per square the bishop sees
     const int KILLER_WEIGHT = 50;               // move ordering priority for killer moves
-    const int ASPIRATION_WINDOW = 50;           // size of aspiration window
 
 
 // Value of each piece
@@ -247,5 +251,5 @@ namespace PMASK {
                 ISOLATED[sq] &= rankregion >> 8*(2-rank);
         }
     }
-}
+}   // PMASK
 }   // namespace Raphael

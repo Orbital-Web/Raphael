@@ -34,14 +34,12 @@
 # SFML
 SFML-2.6.0/
 
-# vs code
+# VS Code
 .vscode/
 
-# pgn files
+# Position Gen
+stockfish/
 *.pgn
 
-# stockfish
-stockfish/
-
-# incomplete
+# WIP
 RaphaelUCI.cpp

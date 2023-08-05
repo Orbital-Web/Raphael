@@ -33,10 +33,6 @@ namespace PALETTE {
     const sf::Color TILE_SEL(130, 151, 105, 200);   // tile to move to
     const sf::Color TEXT(255, 255, 255);            // text
 }
-const std::string TEXTURE[12] = {
-    "wP", "wN", "wB", "wR", "wQ", "wK",
-    "bP", "bN", "bB", "bR", "bQ", "bK"
-};
 
 
 
@@ -107,6 +103,10 @@ private:
 // PieceDrawer methods
 public:
     PieceDrawer(): textures(12), sprites(12) {
+        const std::string TEXTURE[12] = {
+            "wP", "wN", "wB", "wR", "wQ", "wK",
+            "bP", "bN", "bB", "bR", "bQ", "bK"
+        };
         for (int i=0; i<12; i++) {
             textures[i].loadFromFile("src/assets/themes/tartiana/" + TEXTURE[i] + ".png");
             textures[i].setSmooth(true);

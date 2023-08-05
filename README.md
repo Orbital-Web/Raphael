@@ -68,6 +68,7 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Pondering                 (`v1.2+`)
 - [ ] Check Extensions
 - [ ] Promotion Extensions
+- [x] Aspiration Window         (`v1.3+`)
 
 #### Evaluation
 - [x] Material cost             (`v1.0+`)
@@ -92,7 +93,7 @@ Different versions of the engine were put against each other in 400 matches (20 
 - `v1.0` 🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥🟥🟥🟥 `v1.0` [177 / 34 / 189]
 - `v1.1` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥 `v1.0` [245 / 39 / 116]
 - `v1.2` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥 `v1.0` [253 / 34 / 113]
-- `v1.3` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥🟥🟥 `v1.0` [294 / 22 / 84]
+- `v1.3` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥🟥🟥 `v1.0` [301 / 23 / 76]
 
 The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability) of the different versions in relation to one another is as follows (with `v1.0` set to an ELO of 1000). Note that these ELO do not reflect each version's strength against human players. Rather, they are just used as a way to compare each version's performance. 
 <table>
@@ -115,7 +116,7 @@ The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating
     <tr>
     <tr align="center">
         <td>v1.3</td>
-        <td>1203</td>
+        <td>1221</td>
     <tr>
 </table>
 
@@ -183,13 +184,13 @@ The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating
     </tr>
     <tr align="center">
         <td>v1.3</td>
-        <td>111</td>
-        <td>115</td>
-        <td>68</td>
-        <td>22</td>
-        <td>47</td>
-        <td>35</td>
-        <td>2</td>
+        <td>144</td>
+        <td>120</td>
+        <td>37</td>
+        <td>23</td>
+        <td>43</td>
+        <td>32</td>
+        <td>1</td>
         <td>v1.0</td>
     </tr>
     <tr align="center">

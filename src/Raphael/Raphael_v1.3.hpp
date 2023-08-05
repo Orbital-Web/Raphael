@@ -36,6 +36,8 @@ public:
     chess::Move get_move(chess::Board board, float t_remain, sf::Event& event, bool& halt) {
         int depth = 1;
         int eval = 0;
+        int alpha = -INT_MAX;
+        int beta = INT_MAX;
         chess::Move toPlay = chess::Move::NO_MOVE;    // overall best move
 
         // if ponderhit, start with ponder result and depth
@@ -44,6 +46,8 @@ public:
         else {
             depth = ponderdepth;
             eval = pondereval;
+            alpha = eval - ASPIRATION_WINDOW;
+            beta = eval + ASPIRATION_WINDOW;
         }
 
         // stop search after an appropriate duration
@@ -53,11 +57,25 @@ public:
         // begin iterative deepening
         while (!halt && depth<=MAX_DEPTH) {
             killers.clear();
-            int itereval = negamax(board, depth, 0, -INT_MAX, INT_MAX, halt);
+            int itereval = negamax(board, depth, 0, alpha, beta, halt);
 
             // not timeout
-            if (!halt)
+            if (!halt) {
                 eval = itereval;
+            
+                // re-search required
+                if ((eval<=alpha) || (eval>=beta)) {
+                    alpha = -INT_MAX;
+                    beta = INT_MAX;
+                    continue;
+                }
+
+                // narrow window
+                alpha = eval - ASPIRATION_WINDOW;
+                beta = eval + ASPIRATION_WINDOW;
+                depth++;
+            }
+
             if (itermove != chess::Move::NO_MOVE)
                 toPlay = itermove;
             
@@ -66,19 +84,18 @@ public:
                 #ifndef NDEBUG
                 // get absolute evaluation (i.e, set to white's perspective)
                 if (whiteturn == (eval > 0))
-                    printf("Eval: +#\n", depth);
+                    printf("Eval: +#\n");
                 else
-                    printf("Eval: -#\n", depth);
+                    printf("Eval: -#\n");
                 #endif
                 return toPlay;
             }
-            depth++;
         }
         #ifndef NDEBUG
         // get absolute evaluation (i.e, set to white's perspective)
         if (!whiteturn)
             eval *= -1;
-        printf("Eval: %.2f\tDepth: %d\n", eval/100.0, depth-1);
+        printf("Eval: %.2f\tDepth: %d\n", eval/100.0f, depth-1);
         #endif
         return toPlay;
     }
@@ -92,7 +109,7 @@ public:
         itermove = chess::Move::NO_MOVE;    // opponent's best move
 
         // begin iterative deepening up to depth 4 for opponent's best move
-        while (!halt && depth <= 4) {
+        while (!halt && depth<=4) {
             killers.clear();
             int eval = negamax(board, depth, 0, -INT_MAX, INT_MAX, halt);
             
@@ -111,22 +128,36 @@ public:
         chess::Move toPlay = chess::Move::NO_MOVE;    // our best response
         itermove = chess::Move::NO_MOVE;
 
+        int alpha = -INT_MAX;
+        int beta = INT_MAX;
+
         // begin iterative deepening for our best response
-        while (!halt && depth<=MAX_DEPTH) {
+        while (!halt && ponderdepth<=MAX_DEPTH) {
             killers.clear();
-            int eval = negamax(board, ponderdepth, 0, -INT_MAX, INT_MAX, halt);
+            int itereval = negamax(board, ponderdepth, 0, alpha, beta, halt);
+
+            if (!halt) {
+                pondereval = itereval;
+
+                // re-search required
+                if ((pondereval<=alpha) || (pondereval>=beta)) {
+                    alpha = -INT_MAX;
+                    beta = INT_MAX;
+                    continue;
+                }
+
+                // narrow window
+                alpha = pondereval - ASPIRATION_WINDOW;
+                beta = pondereval + ASPIRATION_WINDOW;
+                ponderdepth++;
+            }
 
             // store into toPlay to prevent NO_MOVE
             if (itermove != chess::Move::NO_MOVE)
                 toPlay = itermove;
             
-            if (!halt) {
-                pondereval = eval;
-                ponderdepth++;
-            }
-            
             // checkmate, no need to continue
-            if (tt.isMate(eval))
+            if (tt.isMate(pondereval))
                 break;
         }
 

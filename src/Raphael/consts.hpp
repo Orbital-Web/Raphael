@@ -6,6 +6,7 @@ namespace Raphael {
     const int N_PIECES_END = 8;                 // pieces left to count as endgame
     const int KING_DIST_WEIGHT = 20;            // how important king proximity is for the evaluation at endgame
     const int KILLER_WEIGHT = 50;               // move ordering priority for killer moves
+    const int ASPIRATION_WINDOW = 50;           // size of aspiration window
 
 
 // Value of each piece

@@ -8,7 +8,7 @@ namespace Raphael {
     const int ASPIRATION_WINDOW = 50;           // size of aspiration window
     const int N_PIECES_END = 8;                 // pieces left to count as endgame
     const int KING_DIST_WEIGHT = 20;            // how important king proximity is for the evaluation at endgame
-    const int OPEN_ROOK_WEIGHT = 40;            // bonus for rook on open file
+    const int OPEN_ROOK_WEIGHT = 20;            // bonus for rook on open file
     const int BISHOP_MOBILITY_WEIGHT = 4;       // bonus per square the bishop sees
     const int KILLER_WEIGHT = 50;               // move ordering priority for killer moves
 
@@ -238,17 +238,17 @@ namespace PMASK {
             BPASSED[sq] = WPASSED[sq];
 
             // crop ranks above of pawn for white passed
-            WPASSED[sq] &= UINT64_MAX << 8*(rank+1);
+            WPASSED[sq] &= UINT64_MAX << (8*(rank+1));
             // crop ranks below of pawn for black passed
-            BPASSED[sq] &= UINT64_MAX >> 8*(8-rank);
+            BPASSED[sq] &= UINT64_MAX >> (8*(8-rank));
 
             // crop ±2 ranks of pawn for isolation
             // even if adjacent files are occupied,
             // the pawns must be close to each other
             if (rank > 1)
-                ISOLATED[sq] &= rankregion << 8*(rank-2);
+                ISOLATED[sq] &= rankregion << (8*(rank-2));
             else
-                ISOLATED[sq] &= rankregion >> 8*(2-rank);
+                ISOLATED[sq] &= rankregion >> (8*(2-rank));
         }
     }
 }   // PMASK

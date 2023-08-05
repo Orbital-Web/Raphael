@@ -87,7 +87,7 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 #### Move Ordering
 - [x] MVV-LVA                   (`v1.0+`)
 - [x] Promotions                (`v1.0+`)
-- [x] Previous iteration        (`v1.0+`) 
+- [x] Previous iteration        (`v1.0+`)
 - [x] Killer heuristics         (`v1.3+`)
 - [ ] Checks
 - [ ] Moving into attacks

@@ -14,7 +14,7 @@ My goal is to eventually implement NNUE-based evaluations and compare its ELO wi
 
 
 ## Getting started (Windows)
-1. Clone (or pull if it's already been cloned) the repository with
+1. Clone the repository (*make sure to use `--recurse-submodules` when pulling too*)
     ```
     git clone https://github.com/Orbital-Web/Raphael.git --recurse-submodules
     ```
@@ -27,7 +27,9 @@ My goal is to eventually implement NNUE-based evaluations and compare its ELO wi
     del main.o
     main.exe human "Human" Raphael "Raphael"
     ```
-5. Try out other settings with command-line arguments (`main.exe -help`)
+5. Try out other features (`main.exe -help`)
+
+The compilation process should be similar for Linux and macOS, though setting up SFML may be slightly different. Please refer to the [official SFML documentation](https://www.sfml-dev.org/tutorials/2.6/).
 
 
 
@@ -60,18 +62,18 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Move ordering             (`v1.0+`)
 - [x] Transposition table (fix) (`v1.1+`)
 - [x] Iterative deepening (fix) (`v1.1+`)
+- [x] Aspiration window         (`v1.3+`)
 - [ ] Opening book
-- [ ] EndGame table
+- [ ] Endgame table
 - [x] Quiescence with captures  (`v1.0+`)
 - [ ] Quiescence with queening
 - [x] Time management           (`v1.0+`)
 - [x] Pondering                 (`v1.2+`)
-- [ ] Check Extensions
-- [ ] Promotion Extensions
-- [x] Aspiration Window         (`v1.3+`)
+- [ ] Check extensions
+- [ ] Promotion extensions
 
 #### Evaluation
-- [x] Material cost             (`v1.0+`)
+- [x] Materials                 (`v1.0+`)
 - [x] Piece-square tables       (`v1.0+`)
 - [ ] Midgame King safety
 - [x] Endgame King proximity    (`v1.0+`)
@@ -83,7 +85,8 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 #### Move Ordering
 - [x] Captures                  (`v1.0+`)
 - [x] Promotions                (`v1.0+`)
-- [x] Killer moves              (`v1.3+`)
+- [x] Previous iteration        (`v1.0+`) 
+- [x] Killer heuristics         (`v1.3+`)
 - [ ] Checks
 - [ ] Moving into attacks
 
@@ -95,7 +98,7 @@ Different versions of the engine were put against each other in 400 matches (20 
 - `v1.2` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥 `v1.0` [253 / 34 / 113]
 - `v1.3` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥🟥🟥 `v1.0` [301 / 23 / 76]
 
-The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability) of the different versions in relation to one another is as follows (with `v1.0` set to an ELO of 1000). Note that these ELO do not reflect each version's strength against human players. Rather, they are just used as a way to compare each version's performance. 
+The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability) of the different versions in relation to one another is as follows (with `v1.0` set to an ELO of 1000). Note that these ELO do not reflect each version's strength against humans and other engines. Rather, they are just used as a way to compare each version's performance.
 <table>
     <tr align="center">
         <th>Version</th>
@@ -206,4 +209,4 @@ The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating
     </tr>
 </table>
 
-*Note that a timeout usually means that the game was relatively equal*
+*Note: a timeout usually means that the game was relatively equal*

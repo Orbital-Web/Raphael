@@ -41,7 +41,8 @@ void print_usage() {
               << "  -c\tComparison mode (options will be ignored)\n\n"
               << "Options:\n"
               << "  -t <int> <int>\tTime (sec) for white and black (defaults to 10min each)\n"
-              << "  -f <FENstring>\tStarting position FEN (defaults to standard chess board)\n\n";
+              << "  -f <FENstring>\tStarting position FEN (defaults to standard chess board)\n"
+              << "  -s <filename>\tFilename for saving as pgn (saves inside /logs folder)\n\n";
 }
 
 
@@ -89,7 +90,7 @@ int main(int argc, char** argv) {
             bool p1_is_white = true;
             // create 400 matches with alterating color
             while (std::getline(pgns, pgn)) {
-                gameoptions.push_back({p1_is_white, pgn, {20, 20}, false});
+                gameoptions.push_back({p1_is_white, pgn, {20, 20}, false, "./logs/compare.pgn"});
                 p1_is_white = !p1_is_white;
             }
             pgns.close();
@@ -132,6 +133,13 @@ int main(int argc, char** argv) {
             i++;
             for (auto& gopt : gameoptions)
                 gopt.start_fen = argv[i];
+        }
+
+        // pgn save
+        else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "-save")) {
+            std::string pgn_file = "./logs/" + (std::string)argv[++i];
+            for (auto& gopt : gameoptions)
+                gopt.pgn_file = pgn_file;
         }
 
         else {

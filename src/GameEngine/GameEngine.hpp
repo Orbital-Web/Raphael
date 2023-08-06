@@ -5,6 +5,7 @@
 #include <GameEngine/utils.hpp>
 #include <GameEngine/GamePlayer.hpp>
 #include <future>
+#include <fstream>
 
 
 
@@ -51,6 +52,7 @@ public:
         std::string start_fen = chess::STARTPOS;
         std::vector<float> t_remain = {600, 600};
         bool interactive = true;
+        std::string pgn_file = "";
     };
 
 
@@ -69,7 +71,6 @@ public:
         // open window
         window.create(sf::VideoMode(880, 940), "Chess");
         window.setFramerateLimit(FRAMERATE);
-        event.type = sf::Event::MouseMoved; // in case run_match is called consecutively
         
         // initialize board
         board = chess::Board(options.start_fen);
@@ -83,6 +84,17 @@ public:
         bool p1_is_white = options.p1_is_white;
         names[0].setString(players[!p1_is_white]->name);
         names[1].setString(players[p1_is_white]->name);
+
+        // initialize pgn
+        bool savepgn = (options.pgn_file != "");
+        std::ofstream pgn;
+        if (savepgn) {
+            pgn.open(options.pgn_file, std::ios_base::app);
+            pgn << "[White \"" << players[!p1_is_white]->name << "\"]\n"
+                << "[Black \"" << players[p1_is_white]->name << "\"]\n"
+                << "[FEN \"" << options.start_fen << "\"]\n\n";
+        }
+        int nmoves = 1;
 
         // set time
         bool timeout = false;
@@ -119,17 +131,17 @@ public:
                 update_window();
 
                 // count down timer (only after first white moves)
-                if (board.fullMoveNumber() != 2) {
+                if (nmoves != 1) {
                     stop = std::chrono::high_resolution_clock::now();
                     cur_t_remain -= std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count()/1000.0;
                 }
 
                 // timeout
                 if (cur_t_remain<=0 || event.type==sf::Event::Closed) {
+                    halt = true;
                     timeoutwins[(p1_is_white!=turn)]++;
                     timeout = true;
                     game_result = chess::GameResult::LOSE;
-                    halt = true;
                     goto game_end;
                 }
             }
@@ -142,10 +154,15 @@ public:
                 game_result = chess::GameResult::LOSE;
                 goto game_end;
             }
+            // pgn
+            if (savepgn)
+                pgn << nmoves << ". " << chess::uci::moveToSan(board, toPlay) << " ";
+            // play move
             halt = true;    // force stop pondering
             move(toPlay);
             turn = !turn;
             game_result = board.isGameOver().second;
+            nmoves++;
         }
 
         game_end:
@@ -171,6 +188,10 @@ public:
         sq_from = chess::NO_SQ;
         sq_to = chess::NO_SQ;
         movelist.clear();
+        event.type = sf::Event::MouseMoved;
+        if (savepgn)
+            pgn << "\n\n";
+        pgn.close();
     }
 
 

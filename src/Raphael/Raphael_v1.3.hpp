@@ -88,6 +88,7 @@ public:
                 else
                     printf("Eval: -#\n");
                 #endif
+                halt = true;
                 return toPlay;
             }
         }
@@ -115,7 +116,7 @@ public:
             
             // checkmate, no need to continue
             if (tt.isMate(eval))
-                break;
+                halt = true;
             depth++;
         }
 
@@ -158,7 +159,7 @@ public:
             
             // checkmate, no need to continue
             if (tt.isMate(pondereval))
-                break;
+                halt = true;
         }
 
         // override in case of NO_MOVE

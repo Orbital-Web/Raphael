@@ -121,7 +121,7 @@ public:
         }
 
         // not enough time to continue
-        if (halt) return;
+        if (halt || itermove==chess::Move::NO_MOVE) return;
 
         // store move to check for ponderhit on our turn
         board.makeMove(itermove);

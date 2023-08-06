@@ -77,7 +77,7 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Piece-square tables       (`v1.0+`)
 - [ ] Midgame King safety
 - [x] Endgame King proximity    (`v1.0+`)
-- [ ] Evaluation tapering       (`v1.0+`)
+- [x] Evaluation tapering       (`v1.0+`)
 - [x] Passed Pawn               (`v1.3+`)
 - [x] Isolated Pawn             (`v1.3+`)
 - [ ] Mobility

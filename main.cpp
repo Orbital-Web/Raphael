@@ -42,7 +42,7 @@ void print_usage() {
               << "Options:\n"
               << "  -t <int> <int>\tTime (sec) for white and black (defaults to 10min each)\n"
               << "  -f <FENstring>\tStarting position FEN (defaults to standard chess board)\n"
-              << "  -s <filename>\tFilename for saving as pgn (saves inside /logs folder)\n\n";
+              << "  -s <filename> \tFilename for saving as pgn (saves inside /logs folder)\n\n";
 }
 
 

@@ -25,7 +25,7 @@ My goal is to eventually implement NNUE-based evaluations and compare its ELO wi
     g++ -c main.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
     g++ -o main main.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
     del main.o
-    main.exe human "Human" Raphael "Raphael"
+    main.exe human "Human" Raphael "Raphael" -s "game.pgn"
     ```
 5. Try out other features (`main.exe -help`)
 

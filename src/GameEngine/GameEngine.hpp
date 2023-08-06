@@ -139,8 +139,8 @@ public:
                 // timeout
                 if (cur_t_remain<=0 || event.type==sf::Event::Closed) {
                     halt = true;
-                    timeoutwins[(p1_is_white!=turn)]++;
                     timeout = true;
+                    timeoutwins[(p1_is_white!=turn)]++;
                     game_result = chess::GameResult::LOSE;
                     goto game_end;
                 }

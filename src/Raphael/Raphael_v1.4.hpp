@@ -116,7 +116,7 @@ public:
             
             // checkmate, no need to continue
             if (tt.isMate(eval))
-                halt = true;
+                break;
             depth++;
         }
 
@@ -157,9 +157,9 @@ public:
             if (itermove != chess::Move::NO_MOVE)
                 toPlay = itermove;
             
-            // checkmate, no need to continue
+            // checkmate, no need to continue (but don't edit halt)
             if (tt.isMate(pondereval))
-                halt = true;
+                break;
         }
 
         // override in case of NO_MOVE

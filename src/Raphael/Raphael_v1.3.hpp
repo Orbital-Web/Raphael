@@ -116,7 +116,7 @@ public:
             
             // checkmate, no need to continue
             if (tt.isMate(eval))
-                halt = true;
+                break;
             depth++;
         }
 
@@ -159,7 +159,7 @@ public:
             
             // checkmate, no need to continue
             if (tt.isMate(pondereval))
-                halt = true;
+                break;
         }
 
         // override in case of NO_MOVE

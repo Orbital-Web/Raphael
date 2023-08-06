@@ -20,7 +20,7 @@ My goal is to eventually implement NNUE-based evaluations and compare its ELO wi
     ```
 2. Download [SFML-2.6.0 (GCC MinGW)](https://www.sfml-dev.org/download/sfml/2.6.0/) and add it to the root directory
 3. Copy `openal32.dll` from `SFML-2.6.0/bin/` and add it to the root directory
-4. Compile and run `main.exe` with the following commands (optionally, compile with the `-DNDEBUG` flag to mute evaluations)
+4. Compile and run `main.exe` with the following commands (optionally, compile with the `-DMUTEEVAL` flag to mute evaluations)
     ```
     g++ -c main.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
     g++ -o main main.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg

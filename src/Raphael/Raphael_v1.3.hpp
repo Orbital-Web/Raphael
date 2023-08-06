@@ -81,7 +81,7 @@ public:
             
             // checkmate, no need to continue
             if (tt.isMate(eval)) {
-                #ifndef NDEBUG
+                #ifndef MUTEEVAL
                 // get absolute evaluation (i.e, set to white's perspective)
                 if (whiteturn == (eval > 0))
                     printf("Eval: +#\n");
@@ -91,7 +91,7 @@ public:
                 return toPlay;
             }
         }
-        #ifndef NDEBUG
+        #ifndef MUTEEVAL
         // get absolute evaluation (i.e, set to white's perspective)
         if (!whiteturn)
             eval *= -1;

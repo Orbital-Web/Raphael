@@ -265,20 +265,14 @@ private:
                 int to = (int)board.at(move.to());
                 if (board.isCapture(move) || move.typeOf()==chess::Move::PROMOTION)
                     killers.put(move, ply);
-                break;
+                // update transposition
+                tt.set(ttkey, {ttkey, depth, tt.LOWER, alpha, bestmove}, ply);
+                return beta;
             }
         }
 
-        // store transposition
-        TranspositionTable::Flag flag;
-        if (alpha <= alphaorig)
-            flag = tt.UPPER;
-        else if (alpha >= beta)
-            flag = tt.LOWER;
-        else
-            flag = tt.EXACT;
-        tt.set(ttkey, {ttkey, depth, flag, alpha, bestmove}, ply);
-
+        // update transposition
+        tt.set(ttkey, {ttkey, depth, (alpha <= alphaorig) ? tt.UPPER : tt.EXACT, alpha, bestmove}, ply);
         return alpha;
     }
 

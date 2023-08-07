@@ -46,11 +46,12 @@ public:
 
 
     // Sets an entry for the given key
-    void set(Entry entry, const int ply) {
+    void set(const Entry entry, const int ply) {
         // correct mate eval when storing (https://youtu.be/XfeuxubYlT0)
-        if (entry.eval < -MATE_EVAL+1000) entry.eval -= ply;
-        else if (entry.eval > MATE_EVAL-1000) entry.eval += ply;
-        _table[index(entry.key)] = entry;
+        auto key = index(entry.key);
+        _table[key] = entry;
+        if (entry.eval < -MATE_EVAL+1000) _table[key].eval -= ply;
+        else if (entry.eval > MATE_EVAL-1000) _table[key].eval += ply;
     }
 
 

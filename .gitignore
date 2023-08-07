@@ -43,3 +43,6 @@ stockfish/
 
 # WIP
 RaphaelUCI.cpp
+
+# Saved games
+logs/

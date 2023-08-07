@@ -29,14 +29,14 @@ private:
 // TranspositionTable methods
 public:
     // Initialize the Transposition Table (TranspositionTable<size>)
-    TranspositionTable(unsigned int size_in): size(size_in), _table(size, {.flag = INVALID}) {
+    TranspositionTable(const unsigned int size_in): size(size_in), _table(size, {.flag = INVALID}) {
         assert((size>0 && size<=MAX_TABLE_SIZE));   // size is within (0, MAX_TABLE_SIZE]
         assert(((size & (size-1)) == 0));           // size is a power of 2
     }
 
 
     // Retrieves the table value for a given key (assumes valid is true)
-    Entry get(uint64_t key, int ply) const {
+    Entry get(const uint64_t key, const int ply) const {
         // correct mate eval when storing (https://youtu.be/XfeuxubYlT0)
         Entry entry = _table[index(key)];
         if (entry.eval < -MATE_EVAL+1000) entry.eval += ply;
@@ -46,7 +46,7 @@ public:
 
 
     // Sets an entry for the given key
-    void set(uint64_t key, Entry entry, int ply) {
+    void set(const uint64_t key, Entry entry, const int ply) {
         // correct mate eval when storing (https://youtu.be/XfeuxubYlT0)
         if (entry.eval < -MATE_EVAL+1000) entry.eval -= ply;
         else if (entry.eval > MATE_EVAL-1000) entry.eval += ply;
@@ -61,20 +61,20 @@ public:
 
 
     // Whether the entry is valid or not at the current depth
-    static bool valid(Entry& entry, uint64_t key, int depth) {
+    static bool valid(const Entry entry, const uint64_t key, const int depth) {
         return ((entry.flag != INVALID) && (entry.depth >= depth) && (entry.key == key));
     }
 
 
     // whether the given eval implies a mate
-    static bool isMate(int eval) {
+    static bool isMate(const int eval) {
         int abseval = abs(eval);
         return ((abseval<=MATE_EVAL) && (abseval>MATE_EVAL-1000));
     }
 
 private:
     // Get index on table
-    uint64_t index(uint64_t key) const {
+    uint64_t index(const uint64_t key) const {
         return key&size;    // same as key%size since size = 2**n
     }
 };  // TranspositionTable

@@ -177,7 +177,7 @@ private:
             flag = tt.LOWER;
         else
             flag = tt.EXACT;
-        tt.set(ttkey, {ttkey, depth, flag, alpha, bestmove}, ply);
+        tt.set({ttkey, depth, flag, alpha, bestmove}, ply);
 
         return alpha;
     }

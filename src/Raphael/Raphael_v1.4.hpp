@@ -266,14 +266,14 @@ private:
                 if (board.isCapture(move) || move.typeOf()==chess::Move::PROMOTION)
                     killers.put(move, ply);
                 // update transposition
-                tt.set(ttkey, {ttkey, depth, tt.LOWER, alpha, move}, ply);
+                tt.set({ttkey, depth, tt.LOWER, alpha, move}, ply);
                 return beta;
             }
         }
 
         // update transposition
         TranspositionTable::Flag flag  = (alpha <= alphaorig) ? tt.UPPER : tt.EXACT;
-        tt.set(ttkey, {ttkey, depth, flag, alpha, bestmove}, ply);
+        tt.set({ttkey, depth, flag, alpha, bestmove}, ply);
         return alpha;
     }
 

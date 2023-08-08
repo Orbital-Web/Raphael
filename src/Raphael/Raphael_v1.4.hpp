@@ -57,7 +57,7 @@ public:
         // begin iterative deepening
         while (!halt && depth<=MAX_DEPTH) {
             killers.clear();
-            int itereval = negamax(board, depth, 0, alpha, beta, halt);
+            int itereval = negamax(board, depth, 0, MAX_EXTENSIONS, alpha, beta, halt);
 
             // not timeout
             if (!halt) {
@@ -112,7 +112,7 @@ public:
         // begin iterative deepening up to depth 4 for opponent's best move
         while (!halt && depth<=4) {
             killers.clear();
-            int eval = negamax(board, depth, 0, -INT_MAX, INT_MAX, halt);
+            int eval = negamax(board, depth, 0, MAX_EXTENSIONS, -INT_MAX, INT_MAX, halt);
             
             // checkmate, no need to continue
             if (tt.isMate(eval))
@@ -135,7 +135,7 @@ public:
         // begin iterative deepening for our best response
         while (!halt && ponderdepth<=MAX_DEPTH) {
             killers.clear();
-            int itereval = negamax(board, ponderdepth, 0, alpha, beta, halt);
+            int itereval = negamax(board, ponderdepth, 0, MAX_EXTENSIONS, alpha, beta, halt);
 
             if (!halt) {
                 pondereval = itereval;
@@ -201,7 +201,7 @@ private:
 
 
     // The Negamax search algorithm to search for the best move
-    int negamax(chess::Board& board, unsigned int depth, int ply, int alpha, int beta, bool& halt) {
+    int negamax(chess::Board& board, unsigned int depth, int ply, int ext, int alpha, int beta, bool& halt) {
         // timeout
         if (halt)
             return 0;
@@ -227,7 +227,7 @@ private:
             }
         }
 
-        // checkmate/draw
+        // terminal analysis
         auto result = board.isGameOver().second;
         if (result == chess::GameResult::DRAW)
             return 0;
@@ -245,7 +245,11 @@ private:
 
         for (const auto& move : movelist) {
             board.makeMove(move);
-            int eval = -negamax(board, depth-1, ply+1, -beta, -alpha, halt);
+            int extension = 0;
+            if (board.inCheck())
+                extension++;
+            extension = std::min(ext, extension);
+            int eval = -negamax(board, depth-1+extension, ply+1, ext-extension, -beta, -alpha, halt);
             board.unmakeMove(move);
 
             // timeout

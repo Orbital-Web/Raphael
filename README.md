@@ -82,7 +82,6 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Passed Pawn               (`v1.3+`)
 - [x] Isolated Pawn             (`v1.3+`)
 - [ ] Mobility
-- [x] Rook on open file         (`v1.4+`)
 - [ ] NNUE
 
 #### Move Ordering

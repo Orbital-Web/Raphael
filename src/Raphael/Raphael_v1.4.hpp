@@ -389,12 +389,6 @@ private:
                     eval += PMASK::ISOLATION_WEIGHT;
             }
 
-            // rook on open files
-            else if (piece==3 || piece==9) {
-                if (chess::builtin::popcount((0x0101010101010101ULL<<(sqi%8)) & board.occ()) == 1)
-                    eval += (piece==3) ? OPEN_ROOK_WEIGHT : -OPEN_ROOK_WEIGHT;
-            }
-
             // King proximity
             else if (piece==5) {
                 krd += (int)chess::utils::squareRank(sq);

@@ -245,10 +245,11 @@ private:
 
         for (const auto& move : movelist) {
             board.makeMove(move);
+            // check and promotion extension
             int extension = 0;
-            if (board.inCheck())
-                extension++;
-            extension = std::min(ext, extension);
+            if (ext>0)
+                if (board.inCheck() || move.typeOf()==chess::Move::PROMOTION)
+                    extension = 1;
             int eval = -negamax(board, depth-1+extension, ply+1, ext-extension, -beta, -alpha, halt);
             board.unmakeMove(move);
 

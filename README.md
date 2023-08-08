@@ -70,7 +70,7 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Time management           (`v1.0+`)
 - [x] Pondering                 (`v1.2+`)
 - [x] Check extensions          (`v1.4+`)
-- [ ] Promotion extensions
+- [x] Promotion extensions      (`v1.4+`)
 - [ ] Late move reductions
 
 #### Evaluation

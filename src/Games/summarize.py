@@ -22,7 +22,7 @@ with open("../../logs/compare.pgn", "r") as pgn:
         for move in moves:
             board.push(move)
         
-        outcome = board.outcome()
+        outcome = board.outcome(claim_draw=True)
         if outcome == None: # no outcome, must be timeout (player on turn loses)
             results["timeout wins"][board.turn!=p1_is_white] += 1
             continue

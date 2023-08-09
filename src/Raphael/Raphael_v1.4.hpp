@@ -267,8 +267,8 @@ private:
 
             // prune
             if (eval >= beta) {
-                // store killer move (ignore captures/promotions)
-                if (!board.isCapture(move) && !move.typeOf()==chess::Move::PROMOTION)
+                // store killer move (ignore captures)
+                if (!board.isCapture(move))
                     killers.put(move, ply);
                 // update transposition
                 tt.set({ttkey, depth, tt.LOWER, alpha, move}, ply);

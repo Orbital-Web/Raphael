@@ -265,7 +265,7 @@ private:
                 return 0;
 
             // prune
-            if (alpha >= beta) {
+            if (eval >= beta) {
                 // store killer move (ignore captures/promotions)
                 int to = (int)board.at(move.to());
                 if (board.isCapture(move) || move.typeOf()==chess::Move::PROMOTION)
@@ -299,11 +299,11 @@ private:
             return eval;
 
         // prune
-        if (alpha >= beta)
+        if (eval >= beta)
             return beta;
         alpha = std::max(alpha, eval);
         
-
+        
         
         // search
         chess::Movelist movelist;
@@ -315,7 +315,7 @@ private:
             board.unmakeMove(move);
 
             // prune
-            if (alpha >= beta)
+            if (eval >= beta)
                 return beta;
             alpha = std::max(alpha, eval);
         }

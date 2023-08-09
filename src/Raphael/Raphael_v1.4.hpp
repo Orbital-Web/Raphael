@@ -251,9 +251,10 @@ private:
                 if (board.inCheck())
                     extension = 1;
                 else {
-                    int sqrank = (int)chess::utils::squareRank(move.to());
+                    auto sqrank = chess::utils::squareRank(move.to());
                     auto piece = board.at(move.to());
-                    if ((sqrank==1 && piece==chess::Piece::BLACKPAWN) || (sqrank==6 && piece==chess::Piece::WHITEPAWN))
+                    if ((sqrank==chess::Rank::RANK_2 && piece==chess::Piece::BLACKPAWN) ||
+                        (sqrank==chess::Rank::RANK_7 && piece==chess::Piece::WHITEPAWN))
                         extension = 1;
                 }
             }
@@ -267,8 +268,7 @@ private:
             // prune
             if (eval >= beta) {
                 // store killer move (ignore captures/promotions)
-                int to = (int)board.at(move.to());
-                if (board.isCapture(move) || move.typeOf()==chess::Move::PROMOTION)
+                if (!board.isCapture(move) && !move.typeOf()==chess::Move::PROMOTION)
                     killers.put(move, ply);
                 // update transposition
                 tt.set({ttkey, depth, tt.LOWER, alpha, move}, ply);
@@ -302,8 +302,6 @@ private:
         if (eval >= beta)
             return beta;
         alpha = std::max(alpha, eval);
-        
-        
         
         // search
         chess::Movelist movelist;

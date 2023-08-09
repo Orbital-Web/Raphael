@@ -264,13 +264,6 @@ private:
             if (halt)
                 return 0;
 
-            // update eval
-            if (eval > alpha) {
-                alpha = eval;
-                bestmove = move;
-                if (!ply) itermove = move;
-            }
-
             // prune
             if (alpha >= beta) {
                 // store killer move (ignore captures/promotions)
@@ -280,6 +273,13 @@ private:
                 // update transposition
                 tt.set({ttkey, depth, tt.LOWER, alpha, move}, ply);
                 return beta;
+            }
+
+            // update eval
+            if (eval > alpha) {
+                alpha = eval;
+                bestmove = move;
+                if (!ply) itermove = move;
             }
         }
 
@@ -299,9 +299,11 @@ private:
             return eval;
 
         // prune
-        alpha = std::max(alpha, eval);
         if (alpha >= beta)
-            return alpha;
+            return beta;
+        alpha = std::max(alpha, eval);
+        
+
         
         // search
         chess::Movelist movelist;
@@ -313,9 +315,9 @@ private:
             board.unmakeMove(move);
 
             // prune
-            alpha = std::max(alpha, eval);
             if (alpha >= beta)
-                break;
+                return beta;
+            alpha = std::max(alpha, eval);
         }
         
         return alpha;

@@ -56,7 +56,6 @@ public:
 
         // begin iterative deepening
         while (!halt && depth<=MAX_DEPTH) {
-            killers.clear();
             int itereval = negamax(board, depth, 0, MAX_EXTENSIONS, alpha, beta, halt);
 
             // not timeout
@@ -111,7 +110,6 @@ public:
 
         // begin iterative deepening up to depth 4 for opponent's best move
         while (!halt && depth<=4) {
-            killers.clear();
             int eval = negamax(board, depth, 0, MAX_EXTENSIONS, -INT_MAX, INT_MAX, halt);
             
             // checkmate, no need to continue
@@ -134,7 +132,6 @@ public:
 
         // begin iterative deepening for our best response
         while (!halt && ponderdepth<=MAX_DEPTH) {
-            killers.clear();
             int itereval = negamax(board, ponderdepth, 0, MAX_EXTENSIONS, alpha, beta, halt);
 
             if (!halt) {
@@ -170,6 +167,7 @@ public:
     // Resets the player
     void reset() {
         tt.clear();
+        killers.clear();
         itermove = chess::Move::NO_MOVE;
     }
 

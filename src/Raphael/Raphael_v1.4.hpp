@@ -247,8 +247,16 @@ private:
             board.makeMove(move);
             // check and promotion extension
             int extension = 0;
-            if (ext>0 && (board.inCheck() || move.typeOf()==chess::Move::PROMOTION))
-                extension = 1;
+            if (ext>0) {
+                if (board.inCheck())
+                    extension = 1;
+                else {
+                    int sqrank = (int)chess::utils::squareRank(move.to());
+                    auto piece = board.at(move.to());
+                    if ((sqrank==1 && piece==chess::Piece::BLACKPAWN) || (sqrank==6 && piece==chess::Piece::WHITEPAWN))
+                        extension = 1;
+                }
+            }
             int eval = -negamax(board, depth-1+extension, ply+1, ext-extension, -beta, -alpha, halt);
             board.unmakeMove(move);
 

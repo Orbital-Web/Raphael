@@ -71,6 +71,7 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Pondering                 (`v1.2+`)
 - [x] Check extensions          (`v1.4+`)
 - [x] Promotion extensions      (`v1.4+`)
+- [ ] Recapture extensions
 - [ ] Late move reductions
 
 #### Evaluation
@@ -89,7 +90,6 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Promotions                (`v1.0+`)
 - [x] Previous iteration        (`v1.0+`)
 - [x] Killer heuristics         (`v1.3+`)
-- [ ] Checks
 - [ ] Moving into attacks
 
 ## Comparisons
@@ -99,6 +99,7 @@ Different versions of the engine were put against each other in 400 matches (20 
 - `v1.1` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥 `v1.0` [245 / 39 / 116]
 - `v1.2` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥 `v1.0` [253 / 34 / 113]
 - `v1.3` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥🟥🟥 `v1.0` [301 / 23 / 76]
+- `v1.4` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [333 / 25 / 42]
 
 The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability) of the different versions in relation to one another is as follows (with `v1.0` set to an ELO of 1000). Note that these ELO do not reflect each version's strength against humans and other engines. Rather, they are just used as a way to compare each version's performance.
 <table>
@@ -122,6 +123,10 @@ The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating
     <tr align="center">
         <td>v1.3</td>
         <td>1221</td>
+    <tr>
+    <tr align="center">
+        <td>v1.4</td>
+        <td>1321</td>
     <tr>
 </table>
 
@@ -208,6 +213,28 @@ The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating
         <td>61</td>
         <td>16</td>
         <td>v1.2</td>
+    </tr>
+    <tr align="center">
+        <td>v1.4</td>
+        <td>144</td>
+        <td>136</td>
+        <td>53</td>
+        <td>25</td>
+        <td>14</td>
+        <td>27</td>
+        <td>1</td>
+        <td>v1.0</td>
+    </tr>
+    <tr align="center">
+        <td>v1.4</td>
+        <td>117</td>
+        <td>114</td>
+        <td>13</td>
+        <td>40</td>
+        <td>57</td>
+        <td>49</td>
+        <td>10</td>
+        <td>v1.3</td>
     </tr>
 </table>
 

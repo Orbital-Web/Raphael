@@ -1,7 +1,7 @@
 # Raphael
 A GUI-based Chess Player and Chess Engine (Raphael), coded in C++, with [SFML](https://www.sfml-dev.org/), and [Disservin's Chess Library](https://github.com/Disservin/chess-library).
 
-Raphael is still a work in progress and will be updated as time goes by (though it's already quite competent). Its main features are negamax with alpha-beta pruning, a transposition table, and iterative deepening. [Scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-1) to see a full list of features currently implemented. There are currently no UCI support (comming soon). 
+Raphael is still a work in progress and will be updated as time goes by (though it's already quite competent). [Scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-1) to see a list of features currently implemented. There are currently no UCI support (comming soon). 
 
 Raphael is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), as well as ideas from my own chess engine I made a while back in Python.
 

@@ -38,7 +38,7 @@ public:
         int eval = 0;
         int alpha = -INT_MAX;
         int beta = INT_MAX;
-        chess::Move toPlay = chess::Move::NO_MOVE;    // overall best move
+        chess::Move toPlay = chess::Move::NO_MOVE;  // overall best move
 
         // if ponderhit, start with ponder result and depth
         if (board.hash() != ponderkey)
@@ -82,7 +82,7 @@ public:
             if (tt.isMate(eval)) {
                 #ifndef MUTEEVAL
                 // get absolute evaluation (i.e, set to white's perspective)
-                if (whiteturn == (eval > 0))
+                if (whiteturn == (eval>0))
                     printf("Eval: +#\n");
                 else
                     printf("Eval: -#\n");
@@ -93,8 +93,7 @@ public:
         }
         #ifndef MUTEEVAL
         // get absolute evaluation (i.e, set to white's perspective)
-        if (!whiteturn)
-            eval *= -1;
+        if (!whiteturn) eval *= -1;
         printf("Eval: %.2f\tDepth: %d\n", eval/100.0f, depth-1);
         #endif
         return toPlay;
@@ -124,7 +123,7 @@ public:
         // store move to check for ponderhit on our turn
         board.makeMove(itermove);
         ponderkey = board.hash();
-        chess::Move toPlay = chess::Move::NO_MOVE;    // our best response
+        chess::Move toPlay = chess::Move::NO_MOVE;  // our best response
         itermove = chess::Move::NO_MOVE;
 
         int alpha = -INT_MAX;
@@ -175,12 +174,11 @@ private:
     // Estimates the time (ms) it should spend on searching a move
     int search_time(const chess::Board& board, const float t_remain) {
         // ratio: a function within [0, 1]
-        // in this case it's a function at 0 when n_pieces = 0 or 32
-        // and 1 when n_pieces is 11
+        // uses 0.5~4% of the remaining time (max at 11 pieces left)
         float n = chess::builtin::popcount(board.occ());
-        float ratio = 0.0138*(32-n)*(n/32)*pow(2.5-n/32, 3);
+        float ratio = 0.0138f*(32-n)*(n/32)*pow(2.5f-n/32, 3);
         // use 0.5~4% of the remaining time based on the ratio
-        float duration = t_remain * (0.005 + 0.035*ratio);
+        float duration = t_remain * (0.005f + 0.035f*ratio);
         return duration*1000;
     }
 
@@ -201,8 +199,7 @@ private:
     // The Negamax search algorithm to search for the best move
     int negamax(chess::Board& board, unsigned int depth, int ply, int ext, int alpha, int beta, bool& halt) {
         // timeout
-        if (halt)
-            return 0;
+        if (halt) return 0;
         
         // transposition lookup
         int alphaorig = alpha;
@@ -230,7 +227,7 @@ private:
         if (result == chess::GameResult::DRAW)
             return 0;
         else if (result == chess::GameResult::LOSE)
-            return -MATE_EVAL + ply;  // reward faster checkmate
+            return -MATE_EVAL + ply;    // reward faster checkmate
         
         // terminal depth
         if (depth <= 0)
@@ -239,7 +236,7 @@ private:
         // search
         chess::Movelist movelist;
         order_moves(movelist, board, ply);
-        chess::Move bestmove = chess::Move::NO_MOVE;  // best move in this position
+        chess::Move bestmove = chess::Move::NO_MOVE;    // best move in this position
         int movei = 0;
 
         for (const auto& move : movelist) {
@@ -271,8 +268,7 @@ private:
             board.unmakeMove(move);
 
             // timeout
-            if (halt)
-                return 0;
+            if (halt) return 0;
 
             // prune
             if (eval >= beta) {
@@ -293,7 +289,7 @@ private:
         }
 
         // update transposition
-        TranspositionTable::Flag flag  = (alpha <= alphaorig) ? tt.UPPER : tt.EXACT;
+        TranspositionTable::Flag flag = (alpha <= alphaorig) ? tt.UPPER : tt.EXACT;
         tt.set({ttkey, depth, flag, alpha, bestmove}, ply);
         return alpha;
     }
@@ -304,12 +300,10 @@ private:
         int eval = evaluate(board);
 
         // timeout
-        if (halt)
-            return eval;
+        if (halt) return eval;
 
         // prune
-        if (eval >= beta)
-            return beta;
+        if (eval>=beta) return beta;
         alpha = std::max(alpha, eval);
         
         // search
@@ -322,8 +316,7 @@ private:
             board.unmakeMove(move);
 
             // prune
-            if (eval >= beta)
-                return beta;
+            if (eval>=beta) return beta;
             alpha = std::max(alpha, eval);
         }
         
@@ -334,7 +327,7 @@ private:
     // Modifies movelist to contain a list of moves, ordered from best to worst
     // Generates capture moves only if ply = -1 for quiescence search
     void order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const {
-        if (ply>=0)
+        if (ply >= 0)
             chess::movegen::legalmoves<chess::MoveGenType::ALL>(movelist, board);
         else
             chess::movegen::legalmoves<chess::MoveGenType::CAPTURE>(movelist, board);
@@ -366,7 +359,7 @@ private:
             score += abs(PVAL::VALS[to]) - abs(PVAL::VALS[from]) + 13;  // small bias to encourage trades
         
         // promotion
-        if (move.typeOf()==chess::Move::PROMOTION)
+        if (move.typeOf() == chess::Move::PROMOTION)
             score += abs(PVAL::VALS[(int)move.promotionType()]);
 
         move.setScore(score);
@@ -393,7 +386,7 @@ private:
             eval += PST::MID[piece][sqi] + eg_weight*(PST::END[piece][sqi] - PST::MID[piece][sqi]);
 
             // pawn structure
-            if (piece==0) {
+            if (piece == 0) {
                 // passed (+ for white) (more important in endgame)
                 if ((PMASK::WPASSED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::BLACK)) == 0) 
                     eval += PMASK::PASSEDBONUS[7 - (sqi/8)] * eg_weight;
@@ -401,7 +394,7 @@ private:
                 if ((PMASK::ISOLATED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::WHITE)) == 0)
                     eval -= PMASK::ISOLATION_WEIGHT;
 
-            } else if (piece==6) {
+            } else if (piece == 6) {
                 // passed (- for white) (more important in endgame)
                 if ((PMASK::BPASSED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::WHITE)) == 0)
                     eval -= PMASK::PASSEDBONUS[(sqi/8)] * eg_weight;
@@ -411,7 +404,7 @@ private:
             }
 
             // King proximity
-            else if (piece==5) {
+            else if (piece == 5) {
                 krd += (int)chess::utils::squareRank(sq);
                 kfd += (int)chess::utils::squareFile(sq);
             } else if (piece == 11) {
@@ -421,11 +414,10 @@ private:
         }
         
         // convert perspective
-        if (!whiteturn)
-            eval *= -1;
+        if (!whiteturn) eval *= -1;
 
         // King proximity bonus (if winning)
-        if (eval>=0)
+        if (eval >= 0)
             eval += (14 - abs(krd) - abs(kfd)) * KING_DIST_WEIGHT * eg_weight;
         
         return eval;

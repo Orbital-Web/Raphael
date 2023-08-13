@@ -372,7 +372,12 @@ private:
         auto pieces = board.occ();
         int n_pieces_left = chess::builtin::popcount(pieces);
         float eg_weight = std::min(1.0f, float(32-n_pieces_left)/(32-N_PIECES_END));    // 0~1 as pieces left decreases
+
+        // mobility
+        auto occ = pieces;
         int krd = 0, kfd = 0;   // king rank and file distance
+        chess::Bitboard wbishatk = 0, bbishatk = 0;
+        chess::Bitboard wrookatk = 0, brookatk = 0;
 
         // loop through all pieces
         while (pieces) {
@@ -385,33 +390,54 @@ private:
             // add positional value
             eval += PST::MID[piece][sqi] + eg_weight*(PST::END[piece][sqi] - PST::MID[piece][sqi]);
 
-            // pawn structure
-            if (piece == 0) {
-                // passed (+ for white) (more important in endgame)
-                if ((PMASK::WPASSED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::BLACK)) == 0) 
-                    eval += PMASK::PASSEDBONUS[7 - (sqi/8)] * eg_weight;
-                // isolated (- for white)
-                if ((PMASK::ISOLATED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::WHITE)) == 0)
-                    eval -= PMASK::ISOLATION_WEIGHT;
+            switch (piece) {
+                // pawn structure
+                case 0:
+                    // passed (+ for white) (more important in endgame)
+                    if ((PMASK::WPASSED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::BLACK)) == 0) 
+                        eval += PMASK::PASSEDBONUS[7 - (sqi/8)] * eg_weight;
+                    // isolated (- for white)
+                    if ((PMASK::ISOLATED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::WHITE)) == 0)
+                        eval -= PMASK::ISOLATION_WEIGHT;
+                    break;
+                case 6:
+                    // passed (- for white) (more important in endgame)
+                    if ((PMASK::BPASSED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::WHITE)) == 0)
+                        eval -= PMASK::PASSEDBONUS[(sqi/8)] * eg_weight;
+                    // isolated (+ for white)
+                    if ((PMASK::ISOLATED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::BLACK)) == 0)
+                        eval += PMASK::ISOLATION_WEIGHT;
+                    break;
 
-            } else if (piece == 6) {
-                // passed (- for white) (more important in endgame)
-                if ((PMASK::BPASSED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::WHITE)) == 0)
-                    eval -= PMASK::PASSEDBONUS[(sqi/8)] * eg_weight;
-                // isolated (+ for white)
-                if ((PMASK::ISOLATED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::BLACK)) == 0)
-                    eval += PMASK::ISOLATION_WEIGHT;
-            }
+                // bishop mobility
+                case 2:
+                    wbishatk |= chess::movegen::attacks::bishop(sq, occ);break;
+                case 8:
+                    bbishatk |= chess::movegen::attacks::bishop(sq, occ);break;
 
-            // King proximity
-            else if (piece == 5) {
-                krd += (int)chess::utils::squareRank(sq);
-                kfd += (int)chess::utils::squareFile(sq);
-            } else if (piece == 11) {
-                krd -= (int)chess::utils::squareRank(sq);
-                kfd -= (int)chess::utils::squareFile(sq);
+                // rook mobility
+                case 3:
+                    wrookatk |= chess::movegen::attacks::rook(sq, occ);break;
+                case 9:
+                    brookatk |= chess::movegen::attacks::rook(sq, occ);break;
+
+                // king proximity
+                case 5:
+                    krd += (int)chess::utils::squareRank(sq);
+                    kfd += (int)chess::utils::squareFile(sq);
+                    break;
+                case 11:
+                    krd -= (int)chess::utils::squareRank(sq);
+                    kfd -= (int)chess::utils::squareFile(sq);
+                    break;
             }
         }
+
+        // mobility
+        int bishmob = chess::builtin::popcount(wbishatk) - chess::builtin::popcount(bbishatk);
+        int rookmob = chess::builtin::popcount(wrookatk) - chess::builtin::popcount(brookatk);
+        eval += bishmob * (MOBILITY::BISH_MID + eg_weight*(MOBILITY::BISH_END - MOBILITY::BISH_MID));
+        eval += rookmob * (MOBILITY::ROOK_MID + eg_weight*(MOBILITY::ROOK_END - MOBILITY::ROOK_MID));
         
         // convert perspective
         if (!whiteturn) eval *= -1;

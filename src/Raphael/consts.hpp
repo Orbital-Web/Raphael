@@ -252,4 +252,13 @@ namespace PMASK {
         }
     }
 }   // PMASK
+
+
+// mobility
+namespace MOBILITY {
+    const int BISH_MID = 2;
+    const int BISH_END = 3;
+    const int ROOK_MID = 1;
+    const int ROOK_END = 2;
+}
 }   // namespace Raphael

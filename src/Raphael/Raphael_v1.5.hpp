@@ -375,11 +375,12 @@ public:
         float eg_weight = std::min(1.0f, float(32-n_pieces_left)/(32-N_PIECES_END));    // 0~1 as pieces left decreases
 
         // mobility
-        auto occ = pieces;
         int krd = 0, kfd = 0;   // king rank and file distance
         int bishmob = 0, rookmob = 0;
-        auto wrooks = board.pieces(chess::PieceType::ROOK, chess::Color::WHITE);
-        auto brooks = board.pieces(chess::PieceType::ROOK, chess::Color::BLACK);
+        auto wbishx = pieces & ~board.pieces(chess::PieceType::QUEEN, chess::Color::WHITE); // occ - wqueen
+        auto bbishx = pieces & ~board.pieces(chess::PieceType::QUEEN, chess::Color::BLACK); // occ - bqueen
+        auto wrookx = wbishx & ~board.pieces(chess::PieceType::ROOK, chess::Color::WHITE);  // occ - (wqueen | wrook)
+        auto brookx = bbishx & ~board.pieces(chess::PieceType::ROOK, chess::Color::BLACK);  // occ - (bqueen | brook)
         auto wpawns = board.pieces(chess::PieceType::PAWN, chess::Color::WHITE);
         auto bpawns = board.pieces(chess::PieceType::PAWN, chess::Color::BLACK);
 
@@ -413,17 +414,17 @@ public:
                         eval += PMASK::ISOLATION_WEIGHT;
                     break;
 
-                // bishop mobility
+                // bishop mobility (xrays queens)
                 case 2:
-                    bishmob += chess::builtin::popcount(chess::movegen::attacks::bishop(sq, occ) & ~occ);break;
+                    bishmob += chess::builtin::popcount(chess::movegen::attacks::bishop(sq, wbishx));break;
                 case 8:
-                    bishmob -= chess::builtin::popcount(chess::movegen::attacks::bishop(sq, occ) & ~occ);break;
+                    bishmob -= chess::builtin::popcount(chess::movegen::attacks::bishop(sq, bbishx));break;
 
-                // rook mobility (ignore own rooks for xray mobility)
+                // rook mobility (xrays rooks and queens)
                 case 3:
-                    rookmob += chess::builtin::popcount(chess::movegen::attacks::rook(sq, occ & ~wrooks) & ~occ);break;
+                    rookmob += chess::builtin::popcount(chess::movegen::attacks::rook(sq, wrookx));break;
                 case 9:
-                    rookmob -= chess::builtin::popcount(chess::movegen::attacks::rook(sq, occ & ~brooks) & ~occ);break;
+                    rookmob -= chess::builtin::popcount(chess::movegen::attacks::rook(sq, brookx));break;
 
                 // king proximity
                 case 5:

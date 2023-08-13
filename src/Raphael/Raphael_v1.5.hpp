@@ -367,6 +367,7 @@ private:
 
 
     // Evaluates the current position (from the current player's perspective)
+public:
     int evaluate(const chess::Board& board) const {
         int eval = 0;
         auto pieces = board.occ();
@@ -376,8 +377,11 @@ private:
         // mobility
         auto occ = pieces;
         int krd = 0, kfd = 0;   // king rank and file distance
-        chess::Bitboard wbishatk = 0, bbishatk = 0;
-        chess::Bitboard wrookatk = 0, brookatk = 0;
+        int bishmob = 0, rookmob = 0;
+        auto wrooks = board.pieces(chess::PieceType::ROOK, chess::Color::WHITE);
+        auto brooks = board.pieces(chess::PieceType::ROOK, chess::Color::BLACK);
+        auto wpawns = board.pieces(chess::PieceType::PAWN, chess::Color::WHITE);
+        auto bpawns = board.pieces(chess::PieceType::PAWN, chess::Color::BLACK);
 
         // loop through all pieces
         while (pieces) {
@@ -394,32 +398,32 @@ private:
                 // pawn structure
                 case 0:
                     // passed (+ for white) (more important in endgame)
-                    if ((PMASK::WPASSED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::BLACK)) == 0) 
+                    if ((PMASK::WPASSED[sqi] & bpawns) == 0) 
                         eval += PMASK::PASSEDBONUS[7 - (sqi/8)] * eg_weight;
                     // isolated (- for white)
-                    if ((PMASK::ISOLATED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::WHITE)) == 0)
+                    if ((PMASK::ISOLATED[sqi] & wpawns) == 0)
                         eval -= PMASK::ISOLATION_WEIGHT;
                     break;
                 case 6:
                     // passed (- for white) (more important in endgame)
-                    if ((PMASK::BPASSED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::WHITE)) == 0)
+                    if ((PMASK::BPASSED[sqi] & wpawns) == 0)
                         eval -= PMASK::PASSEDBONUS[(sqi/8)] * eg_weight;
                     // isolated (+ for white)
-                    if ((PMASK::ISOLATED[sqi] & board.pieces(chess::PieceType::PAWN, chess::Color::BLACK)) == 0)
+                    if ((PMASK::ISOLATED[sqi] & bpawns) == 0)
                         eval += PMASK::ISOLATION_WEIGHT;
                     break;
 
                 // bishop mobility
                 case 2:
-                    wbishatk |= chess::movegen::attacks::bishop(sq, occ);break;
+                    bishmob += chess::builtin::popcount(chess::movegen::attacks::bishop(sq, occ) & ~occ);break;
                 case 8:
-                    bbishatk |= chess::movegen::attacks::bishop(sq, occ);break;
+                    bishmob -= chess::builtin::popcount(chess::movegen::attacks::bishop(sq, occ) & ~occ);break;
 
-                // rook mobility
+                // rook mobility (ignore own rooks for xray mobility)
                 case 3:
-                    wrookatk |= chess::movegen::attacks::rook(sq, occ);break;
+                    rookmob += chess::builtin::popcount(chess::movegen::attacks::rook(sq, occ & ~wrooks) & ~occ);break;
                 case 9:
-                    brookatk |= chess::movegen::attacks::rook(sq, occ);break;
+                    rookmob -= chess::builtin::popcount(chess::movegen::attacks::rook(sq, occ & ~brooks) & ~occ);break;
 
                 // king proximity
                 case 5:
@@ -434,8 +438,6 @@ private:
         }
 
         // mobility
-        int bishmob = chess::builtin::popcount(wbishatk) - chess::builtin::popcount(bbishatk);
-        int rookmob = chess::builtin::popcount(wrookatk) - chess::builtin::popcount(brookatk);
         eval += bishmob * (MOBILITY::BISH_MID + eg_weight*(MOBILITY::BISH_END - MOBILITY::BISH_MID));
         eval += rookmob * (MOBILITY::ROOK_MID + eg_weight*(MOBILITY::ROOK_END - MOBILITY::ROOK_MID));
         

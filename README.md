@@ -72,7 +72,7 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Check extensions          (`v1.4+`)
 - [x] Promotion extensions      (`v1.4+`)
 - [ ] Recapture extensions
-- [ ] Late move reductions
+- [x] Late move reductions      (`v1.5+`)
 
 #### Evaluation
 - [x] Materials                 (`v1.0+`)
@@ -82,7 +82,7 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Evaluation tapering       (`v1.0+`)
 - [x] Passed Pawn               (`v1.3+`)
 - [x] Isolated Pawn             (`v1.3+`)
-- [ ] Mobility
+- [x] Mobility                  (`v1.5+`)
 - [ ] NNUE
 
 #### Move Ordering

@@ -39,7 +39,7 @@ private:
     chess::Board board;
     bool turn;                              // current turn (0=white, 1=black)
     std::vector<GamePlayer*> players;       // players (p1, p2)
-    std::vector<float> t_remain;            // time remaining (white, black)
+    std::vector<int64_t> t_remain;          // time remaining ms (white, black)
 
     // score tracking
     std::vector<int> results = {0, 0, 0};   // (p1, draw, p2)
@@ -50,7 +50,7 @@ public:
     struct GameOptions {
         bool p1_is_white = true;
         std::string start_fen = chess::STARTPOS;
-        std::vector<float> t_remain = {600, 600};
+        std::vector<int64_t> t_remain = {600000, 600000};
         bool interactive = true;
         std::string pgn_file = "";
     };
@@ -108,7 +108,7 @@ public:
         while (game_result==chess::GameResult::NONE && t_remain[0]>0 && t_remain[1]>0) {
             auto& cur_player = players[turn==p1_is_white];
             auto& oth_player = players[turn!=p1_is_white];
-            float& cur_t_remain = t_remain[turn];
+            int64_t& cur_t_remain = t_remain[turn];
 
             // ask player for move in seperate thread so that we can keep rendering
             bool halt = false;
@@ -133,7 +133,7 @@ public:
                 // count down timer (only after first white moves)
                 if (nmoves != 1) {
                     stop = std::chrono::high_resolution_clock::now();
-                    cur_t_remain -= std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count()/1000.0;
+                    cur_t_remain -= std::chrono::duration_cast<std::chrono::milliseconds>(stop-start).count();
                 }
 
                 // timeout
@@ -392,7 +392,7 @@ private:
         
         // draw timers and names
         for (int i=0; i<2; i++) {
-            timers[i].update(t_remain[i], i==turn);
+            timers[i].update(t_remain[i]/1000.0f, i==turn);
             window.draw(timers[i]);
             window.draw(names[i]);
         }

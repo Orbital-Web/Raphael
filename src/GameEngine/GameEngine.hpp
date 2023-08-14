@@ -125,7 +125,7 @@ public:
             // update visuals until a move is returned
             while(status!=std::future_status::ready) {
                 start = std::chrono::high_resolution_clock::now();
-                status = movereceiver.wait_for(std::chrono::milliseconds(0));
+                status = movereceiver.wait_for(std::chrono::milliseconds(5));
 
                 // game loop
                 update_window();

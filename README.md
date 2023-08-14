@@ -1,7 +1,7 @@
 # Raphael
-A GUI-based Chess Player and Chess Engine (Raphael), coded in C++, with [SFML](https://www.sfml-dev.org/), and [Disservin's Chess Library](https://github.com/Disservin/chess-library).
+Both a UCI Chess Engine (Raphael) and a Chess GUI (to play against Raphael or to make Raphael play itself), coded in C++, using [SFML](https://www.sfml-dev.org/), and [Disservin's Chess Library](https://github.com/Disservin/chess-library).
 
-Raphael is still a work in progress and will be updated as time goes by (though it's already quite competent). [Scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-1) to see a list of features currently implemented. There are currently no UCI support (comming soon). 
+Raphael is still a work in progress and will be updated as time goes by (though it's already quite competent). [Scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-1) to see a list of features currently implemented.
 
 Raphael is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), as well as ideas from my own chess engine I made a while back in Python.
 
@@ -18,7 +18,7 @@ My goal is to eventually implement NNUE-based evaluations and compare its ELO wi
     ```
     git clone https://github.com/Orbital-Web/Raphael.git --recurse-submodules
     ```
-2. Download [SFML-2.6.0 (GCC MinGW)](https://www.sfml-dev.org/download/sfml/2.6.0/) and add it to the root directory
+2. Download [SFML-2.6.0 (GCC MinGW Version)](https://www.sfml-dev.org/download/sfml/2.6.0/) and add it to the root directory
 3. Copy `openal32.dll` from `SFML-2.6.0/bin/` and add it to the root directory
 4. Compile and run `main.exe` with the following commands (optionally, compile with the `-DMUTEEVAL` flag to mute evaluations)
     ```
@@ -27,9 +27,17 @@ My goal is to eventually implement NNUE-based evaluations and compare its ELO wi
     del main.o
     main.exe human "Human" Raphael "Raphael" -s "game.pgn"
     ```
-5. Try out other features (`main.exe -help`)
+5. Try out other features (check out `main.exe -help`)
 
 The compilation process should be similar for Linux and macOS, though setting up SFML may be slightly different. Please refer to the [official SFML documentation](https://www.sfml-dev.org/tutorials/2.6/).
+
+To use compile and run the uci engine, follow steps 1~3 and use the commands
+```
+g++ -c -DMUTEEVAL uci.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
+g++ -o uci uci.o -LSFML-2.6.0/lib -lsfml-graphics-s
+del uci.o
+uci.exe
+```
 
 
 
@@ -102,7 +110,7 @@ Different versions of the engine were put against each other in 400 matches (20 
 - `v1.3` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥🟥🟥 `v1.0` [301 / 23 / 76]
 - `v1.4` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [333 / 25 / 42]
 
-The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability) of the different versions in relation to one another is as follows (with `v1.0` set to an ELO of 1000). Note that these ELO do not reflect each version's strength against humans and other engines. Rather, they are just used as a way to compare each version's performance.
+The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability) of the different versions in relation to one another is as follows (with `v1.0` set to an ELO of 1000). Note that these ELO do not reflect each version's strength against humans or other engines. Rather, they are used as a way to compare each version's performance and improvements.
 <table>
     <tr align="center">
         <th>Version</th>

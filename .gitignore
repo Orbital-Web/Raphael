@@ -41,8 +41,8 @@ SFML-2.6.0/
 stockfish/
 *.pgn
 
-# WIP
-RaphaelUCI.cpp
+# UCI
+*.uci_options
 
 # Saved games
 logs/

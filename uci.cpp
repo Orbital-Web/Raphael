@@ -1,4 +1,5 @@
-#include "Raphael/Raphael_v1.5.hpp"
+#include <chess.hpp>
+#include <Raphael/Raphael_v1.5.hpp>
 #include <SFML/Graphics.hpp>
 #include <future>
 #include <string>

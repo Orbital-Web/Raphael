@@ -4,6 +4,7 @@
 #include <Raphael/consts.hpp>
 #include <Raphael/Transposition.hpp>
 #include <Raphael/Killers.hpp>
+#include <Raphael/History.hpp>
 #include <GameEngine/GamePlayer.hpp>
 #include <future>
 
@@ -19,6 +20,7 @@ private:
     int pondereval = 0;         // eval we got during ponder
     int ponderdepth = 1;        // depth we searched to during ponder
     Killers killers;            // killer moves at each ply
+    History history;            // history score
 
 
 
@@ -39,6 +41,7 @@ public:
         int alpha = -INT_MAX;
         int beta = INT_MAX;
         chess::Move toPlay = chess::Move::NO_MOVE;  // overall best move
+        history.clear();
 
         // if ponderhit, start with ponder result and depth
         if (board.hash() != ponderkey)
@@ -106,6 +109,7 @@ public:
         ponderdepth = 1;
         int depth = 1;
         itermove = chess::Move::NO_MOVE;    // opponent's best move
+        history.clear();
 
         // begin iterative deepening up to depth 4 for opponent's best move
         while (!halt && depth<=4) {
@@ -125,6 +129,7 @@ public:
         ponderkey = board.hash();
         chess::Move toPlay = chess::Move::NO_MOVE;  // our best response
         itermove = chess::Move::NO_MOVE;
+        history.clear();
 
         int alpha = -INT_MAX;
         int beta = INT_MAX;
@@ -273,8 +278,10 @@ private:
             // prune
             if (eval >= beta) {
                 // store killer move (ignore captures)
-                if (!board.isCapture(move))
+                if (!board.isCapture(move)) {
                     killers.put(move, ply);
+                    history.update(move, depth, whiteturn);
+                }
                 // update transposition
                 tt.set({ttkey, depth, tt.LOWER, alpha, move}, ply);
                 return beta;
@@ -289,7 +296,7 @@ private:
         }
 
         // update transposition
-        TranspositionTable::Flag flag = (alpha <= alphaorig) ? tt.UPPER : tt.EXACT;
+        auto flag = (alpha <= alphaorig) ? tt.UPPER : tt.EXACT;
         tt.set({ttkey, depth, flag, alpha, bestmove}, ply);
         return alpha;
     }
@@ -345,10 +352,7 @@ private:
             return;
         }
 
-        // killer move
         int16_t score = 0;
-        if (ply>0 && killers.isKiller(move, ply))
-            score += KILLER_WEIGHT;
 
         // calculate other scores
         int from = (int)board.at(move.from());
@@ -357,6 +361,13 @@ private:
         // enemy piece captured
         if (board.isCapture(move))
             score += abs(PVAL::VALS[to]) - abs(PVAL::VALS[from]) + 13;  // small bias to encourage trades
+        else {
+            // killer move
+            if (ply>0 && killers.isKiller(move, ply))
+                score += KILLER_WEIGHT;
+            // history
+            score += history.get(move, whiteturn);
+        }
         
         // promotion
         if (move.typeOf() == chess::Move::PROMOTION)

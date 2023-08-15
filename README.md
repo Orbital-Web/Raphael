@@ -1,5 +1,5 @@
 # Raphael
-Both a UCI Chess Engine (Raphael) and a Chess GUI (to play against Raphael or to make Raphael play itself), coded in C++, using [SFML](https://www.sfml-dev.org/), and [Disservin's Chess Library](https://github.com/Disservin/chess-library).
+Both a UCI Chess Engine (Raphael) and a Chess GUI (to play against Raphael or to make Raphael play itself), coded in C++, using [SFML](https://www.sfml-dev.org/) and [Disservin's Chess Library](https://github.com/Disservin/chess-library).
 
 Raphael is still a work in progress and will be updated as time goes by (though it's already quite competent). [Scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-1) to see a list of features currently implemented.
 

@@ -28,7 +28,7 @@ private:
 
 // TranspositionTable methods
 public:
-    // Initialize the Transposition Table (TranspositionTable<size>)
+    // Initializes the Transposition Table (TranspositionTable<size>)
     TranspositionTable(const unsigned int size_in): size(size_in), _table(size, {.flag = INVALID}) {
         assert((size>0 && size<=MAX_TABLE_SIZE));   // size is within (0, MAX_TABLE_SIZE]
         assert(((size & (size-1)) == 0));           // size is a power of 2
@@ -67,14 +67,14 @@ public:
     }
 
 
-    // whether the given eval implies a mate
+    // Whether the given eval implies a mate
     static bool isMate(const int eval) {
         int abseval = abs(eval);
         return ((abseval<=MATE_EVAL) && (abseval>MATE_EVAL-1000));
     }
 
 private:
-    // Get index on table
+    // Gets index on table
     uint64_t index(const uint64_t key) const {
         return key&size;    // same as key%size since size = 2**n
     }

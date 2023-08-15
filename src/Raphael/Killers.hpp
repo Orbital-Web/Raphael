@@ -13,11 +13,11 @@ private:
 
 // Killers methods
 public:
-    // Initialize the storage with 2 killer moves per ply
+    // Initializes the storage with 2 killer moves per ply
     Killers(): _killers(MAX_DEPTH*2, chess::Move::NO_MOVE) {}
 
 
-    // Add killer move (assumes move is not a capture/promotion)
+    // Adds killer move (assumes move is quiet)
     void put(const chess::Move move, const int ply) {
         if (move != _killers[2*ply]) {
             _killers[2*ply+1] = _killers[2*ply];    // override old
@@ -37,4 +37,4 @@ public:
         std::fill(_killers.begin(), _killers.end(), chess::Move::NO_MOVE);
     }
 };  // Killers
-}   // namespace name
+}   // namespace Raphael

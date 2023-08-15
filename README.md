@@ -98,7 +98,7 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Promotions                (`v1.0+`)
 - [x] Previous iteration        (`v1.0+`)
 - [x] Killer heuristics         (`v1.3+`)
-- [ ] History heuristics
+- [x] History heuristics        (`v1.5+`)
 - [ ] SEE
 
 ## Comparisons
@@ -109,6 +109,7 @@ Different versions of the engine were put against each other in 400 matches (20 
 - `v1.2` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥 `v1.0` [253 / 34 / 113]
 - `v1.3` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥🟥🟥 `v1.0` [301 / 23 / 76]
 - `v1.4` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [333 / 25 / 42]
+- `v1.5` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [344 / 23 / 43]
 
 The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability) of the different versions in relation to one another is as follows (with `v1.0` set to an ELO of 1000). Note that these ELO do not reflect each version's strength against humans or other engines. Rather, they are used as a way to compare each version's performance and improvements.
 <table>
@@ -136,6 +137,10 @@ The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating
     <tr align="center">
         <td>v1.4</td>
         <td>1321</td>
+    <tr>
+    <tr align="center">
+        <td>v1.5</td>
+        <td>1361</td>
     <tr>
 </table>
 
@@ -244,6 +249,28 @@ The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating
         <td>49</td>
         <td>10</td>
         <td>v1.3</td>
+    </tr>
+    <tr align="center">
+        <td>v1.5</td>
+        <td>156</td>
+        <td>154</td>
+        <td>34</td>
+        <td>23</td>
+        <td>15</td>
+        <td>18</td>
+        <td>0</td>
+        <td>v1.0</td>
+    </tr>
+    <tr align="center">
+        <td>v1.5</td>
+        <td>99</td>
+        <td>99</td>
+        <td>13</td>
+        <td>62</td>
+        <td>61</td>
+        <td>60</td>
+        <td>6</td>
+        <td>v1.4</td>
     </tr>
 </table>
 

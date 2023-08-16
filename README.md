@@ -1,11 +1,11 @@
 # Raphael
 Both a UCI Chess Engine (Raphael) and a Chess GUI (to play against Raphael or to make Raphael play itself), coded in C++, using [SFML](https://www.sfml-dev.org/) and [Disservin's Chess Library](https://github.com/Disservin/chess-library).
 
-Raphael is still a work in progress and will be updated as time goes by (though it's already quite competent). [Scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-1) to see a list of features currently implemented.
+Raphael is still a work in progress and will be updated as time goes by (though it's already quite competent). [Scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-engine) to see a list of features currently implemented.
 
-Raphael is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), as well as ideas from my own chess engine I made a while back in Python.
+Raphael is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python. 
 
-My goal is to eventually implement NNUE-based evaluations and compare its ELO with other engines. 
+My goal is to eventually implement NNUE-based evaluations and to compare its ELO with other engines.
 
 <p align="center">
     <img src="https://github.com/Orbital-Web/Raphael/blob/8667a6f6db60c5cacce297145246f89a22fa5333/Demo.png" alt="demo of Raphael" width=400/>
@@ -42,30 +42,18 @@ uci.exe
 
 
 ## Features
-### Game Engine
-The Game Engine is used to run the game. It can be initialized with an array of two players extending `cge::GamePlayer`. 
+### Game Engine (GUI)
+The game engine is a combination of `GameEngine.hpp`, `GamePlayer.hpp`, and `HumanPlayer.hpp`. It is a GUI-based chess game engine (not to be confused with a chess engine) which lets the user interactively play chess. 
 
-Calling `run_match()` will start a chess match between these two players.
-- If `p1_is_white` is set to true, the first player will play as white, and vice versa. 
-- A starting position, formatted as a [FEN string](https://www.chess.com/terms/fen-chess) must be passed into `start_fen`. These can be easily generated from the [Lichess Board Editor](https://lichess.org/editor).
-- `t_remain_in` is an array with 2 floats, indicating the time remaining for each player (white and black), in seconds.
-- If `is_interactive` is true, it will play sounds and keep the window open after the game finishes.
+If using a human player, the user may annotate the board with arrows and select/play moves similarly to other chess GUIs. The user may also specify the number of rounds, different time controls (increments not implemented yet), starting positions (with fens), and even swap out the players (e.g., with different versions of Raphael). 
 
-Calling `print_report()` will print out the number of wins for each players, as well as the number of draws. If `run_match()` was called multiple times, it will print out the cumulative result. 
+To use it, refer to the [setup instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows), and run the command `main.exe -help` in the command line. 
 
 
-### Game Player
-The Game Player is a pure virtual function whose primary purpose is to return a move for the given game state. This class can be extended to implement custom move selection behaviours/strategies, and their performances can be compared using the `cge::GameEngine`. 
+### Raphael (Engine)
+Raphael is a UCI-compliant chess engine that comes with this project. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows). The UCI engine currently supports the following commands: `uci`, `ready`, `ucinewgame`, `position`, and `go`. Pondering and info is not implemented yet. The engine contains the following features:
 
-
-### HumanPlayer
-The Human Player is an extension of `cge::GamePlayer` which will return a move based on UI interactions. Selecting a piece and clicking (or dragging to) its destination tile will push that move forward. Note that castling may only be played by selecting the King and clicking on the castling destination tile of the King. Clicking on the King and then the Rook will not castle the King and will instead select the Rook. 
-
-
-### Raphael
-Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax search tree to return the best move it can find. 
-
-#### General Optimizations
+#### General
 - [x] Alpha-beta pruning        (`v1.0+`)
 - [x] Move ordering             (`v1.0+`)
 - [x] Transposition table (fix) (`v1.1+`)
@@ -101,6 +89,8 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Killer heuristics         (`v1.3+`)
 - [x] History heuristics        (`v1.5+`)
 - [ ] SEE
+
+
 
 ## Comparisons
 

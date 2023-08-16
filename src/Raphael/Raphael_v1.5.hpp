@@ -21,6 +21,7 @@ private:
     int ponderdepth = 1;        // depth we searched to during ponder
     Killers killers;            // killer moves at each ply
     History history;            // history score
+    uint32_t nodes;
 
 
 
@@ -59,6 +60,7 @@ public:
 
         // begin iterative deepening
         while (!halt && depth<=MAX_DEPTH) {
+            nodes = 0;
             int itereval = negamax(board, depth, 0, MAX_EXTENSIONS, alpha, beta, halt);
 
             // not timeout
@@ -86,7 +88,7 @@ public:
                 #ifndef MUTEEVAL
                 // get absolute evaluation (i.e, set to white's perspective)
                 if (whiteturn == (eval>0))
-                    printf("Eval: +#\n");
+                    printf("Eval: +#\tNodes: %d\n", nodes);
                 else
                     printf("Eval: -#\n");
                 #endif
@@ -97,7 +99,7 @@ public:
         #ifndef MUTEEVAL
         // get absolute evaluation (i.e, set to white's perspective)
         if (!whiteturn) eval *= -1;
-        printf("Eval: %.2f\tDepth: %d\n", eval/100.0f, depth-1);
+        printf("Eval: %.2f\tDepth: %d\tNodes: %d\n", eval/100.0f, depth-1, nodes);
         #endif
         return toPlay;
     }
@@ -205,6 +207,7 @@ private:
     int negamax(chess::Board& board, unsigned int depth, int ply, int ext, int alpha, int beta, bool& halt) {
         // timeout
         if (halt) return 0;
+        nodes++;
         
         // transposition lookup
         int alphaorig = alpha;

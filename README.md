@@ -31,7 +31,7 @@ My goal is to eventually implement NNUE-based evaluations and compare its ELO wi
 
 The compilation process should be similar for Linux and macOS, though setting up SFML may be slightly different. Please refer to the [official SFML documentation](https://www.sfml-dev.org/tutorials/2.6/).
 
-To use compile and run the uci engine, follow steps 1~3 and use the commands
+To compile and run the uci engine, follow steps 1~2 and use the commands
 ```
 g++ -c -DMUTEEVAL uci.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
 g++ -o uci uci.o -LSFML-2.6.0/lib -lsfml-graphics-s
@@ -76,6 +76,7 @@ Raphael is an extension of `cge::GamePlayer` which at its core uses a negamax se
 - [x] Quiescence with captures  (`v1.0+`)
 - [ ] Quiescence with queening
 - [x] Time management           (`v1.0+`)
+- [ ] Better time management
 - [x] Pondering                 (`v1.2+`)
 - [x] Check extensions          (`v1.4+`)
 - [x] Promotion extensions      (`v1.4+`)

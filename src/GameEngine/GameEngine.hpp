@@ -264,6 +264,8 @@ private:
                     selectedtiles.clear();
             }
         }
+        if (rmbdown)
+            selectedtiles.clear();
     }
 
 

@@ -51,6 +51,8 @@ public:
                     }
                 }
             }
+            if (rmbdown)
+                sq_from = chess::NO_SQ;
         }
         return chess::Move::NO_MOVE;
     }

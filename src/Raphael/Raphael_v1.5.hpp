@@ -21,7 +21,7 @@ private:
     int ponderdepth = 1;        // depth we searched to during ponder
     Killers killers;            // killer moves at each ply
     History history;            // history score
-    uint32_t nodes;
+    uint32_t nodes;             // number of nodes visited
 
 
 
@@ -179,7 +179,7 @@ public:
 
 private:
     // Estimates the time (ms) it should spend on searching a move
-    int search_time(const chess::Board& board, const int t_remain) {
+    static int search_time(const chess::Board& board, const int t_remain) {
         // ratio: a function within [0, 1]
         // uses 0.5~4% of the remaining time (max at 11 pieces left)
         float n = chess::builtin::popcount(board.occ());
@@ -381,8 +381,7 @@ private:
 
 
     // Evaluates the current position (from the current player's perspective)
-public:
-    int evaluate(const chess::Board& board) const {
+    static int evaluate(const chess::Board& board) {
         int eval = 0;
         auto pieces = board.occ();
         int n_pieces_left = chess::builtin::popcount(pieces);

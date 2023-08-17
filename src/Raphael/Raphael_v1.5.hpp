@@ -14,15 +14,19 @@ namespace Raphael {
 class v1_5: public cge::GamePlayer {
 // Raphael vars
 private:
-    TranspositionTable tt;
-    chess::Move itermove;       // best move from previous iteration
-    uint64_t ponderkey = 0;     // hashed board after ponder move
+    // search
+    chess::Move itermove;       // current iteration's bestmove
+    chess::Move prevPlay;       // previous iteration's bestmove
+    int consecutives;           // number of consecutive bestmoves
+    // ponder
+    uint64_t ponderkey = 0;     // hash after opponent's best response
     int pondereval = 0;         // eval we got during ponder
     int ponderdepth = 1;        // depth we searched to during ponder
-    chess::Move prevPlay;       // previous bestmove
-    int consecutives;           // number of consecutive bestmoves
-    Killers killers;            // killer moves at each ply
-    History history;            // history score
+    // storage
+    TranspositionTable tt;      // table with position, eval, and bestmove
+    Killers killers;            // 2 killer moves at each ply
+    History history;            // history score for each move
+    // info
     uint32_t nodes;             // number of nodes visited
 
 
@@ -51,6 +55,7 @@ public:
             itermove = chess::Move::NO_MOVE;
             prevPlay = chess::Move::NO_MOVE;
             consecutives = 1;
+            nodes = 0;
         } else {
             depth = ponderdepth;
             eval = pondereval;
@@ -64,7 +69,6 @@ public:
         auto _ = std::async(manage_time, std::ref(halt), duration);
 
         // begin iterative deepening
-        nodes = 0;
         while (!halt && depth<=MAX_DEPTH) {
             // stable pv, skip
             if (consecutives >= PV_STABLE_COUNT)
@@ -153,6 +157,7 @@ public:
         int beta = INT_MAX;
 
         // begin iterative deepening for our best response
+        nodes = 0;
         while (!halt && ponderdepth<=MAX_DEPTH) {
             int itereval = negamax(board, ponderdepth, 0, MAX_EXTENSIONS, alpha, beta, halt);
 

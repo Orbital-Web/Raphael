@@ -9,6 +9,7 @@ namespace Raphael {
     const int MAX_EXTENSIONS = 16;              // max number of times we can extend the search
     const int REDUCTION_FROM = 5;               // from which move to apply late move reduction from
     const int N_PIECES_END = 8;                 // pieces left to count as endgame
+    const int PV_STABLE_COUNT = 5;              // number of consecutive bestmove to consider pv as stable and halt search
     const int KING_DIST_WEIGHT = 20;            // how important king proximity is for the evaluation at endgame
     const int KILLER_WEIGHT = 50;               // move ordering priority for killer moves
 

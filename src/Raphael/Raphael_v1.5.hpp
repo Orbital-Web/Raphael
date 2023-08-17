@@ -19,6 +19,8 @@ private:
     uint64_t ponderkey = 0;     // hashed board after ponder move
     int pondereval = 0;         // eval we got during ponder
     int ponderdepth = 1;        // depth we searched to during ponder
+    chess::Move prevPlay;       // previous bestmove
+    int consecutives;           // number of consecutive bestmoves
     Killers killers;            // killer moves at each ply
     History history;            // history score
     uint32_t nodes;             // number of nodes visited
@@ -45,13 +47,16 @@ public:
         history.clear();
 
         // if ponderhit, start with ponder result and depth
-        if (board.hash() != ponderkey)
+        if (board.hash() != ponderkey) {
             itermove = chess::Move::NO_MOVE;
-        else {
+            prevPlay = chess::Move::NO_MOVE;
+            consecutives = 1;
+        } else {
             depth = ponderdepth;
             eval = pondereval;
             alpha = eval - ASPIRATION_WINDOW;
             beta = eval + ASPIRATION_WINDOW;
+            toPlay = itermove;
         }
 
         // stop search after an appropriate duration
@@ -59,8 +64,11 @@ public:
         auto _ = std::async(manage_time, std::ref(halt), duration);
 
         // begin iterative deepening
+        nodes = 0;
         while (!halt && depth<=MAX_DEPTH) {
-            nodes = 0;
+            // stable pv, skip
+            if (consecutives >= PV_STABLE_COUNT)
+                halt = true;
             int itereval = negamax(board, depth, 0, MAX_EXTENSIONS, alpha, beta, halt);
 
             // not timeout
@@ -80,8 +88,16 @@ public:
                 depth++;
             }
 
-            if (itermove != chess::Move::NO_MOVE)
+            if (itermove != chess::Move::NO_MOVE) {
                 toPlay = itermove;
+                // count how many times we get the same bestmove in a row
+                if (toPlay == prevPlay)
+                    consecutives++;
+                else {
+                    prevPlay = toPlay;
+                    consecutives = 1;
+                }
+            }
             
             // checkmate, no need to continue
             if (tt.isMate(eval)) {
@@ -157,8 +173,15 @@ public:
             }
 
             // store into toPlay to prevent NO_MOVE
-            if (itermove != chess::Move::NO_MOVE)
+            if (itermove != chess::Move::NO_MOVE) {
                 toPlay = itermove;
+                if (toPlay == prevPlay)
+                    consecutives++;
+                else {
+                    prevPlay = toPlay;
+                    consecutives = 1;
+                }
+            }
             
             // checkmate, no need to continue (but don't edit halt)
             if (tt.isMate(pondereval))

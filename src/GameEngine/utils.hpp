@@ -102,21 +102,31 @@ private:
 
 // PieceDrawer methods
 public:
-    PieceDrawer(): textures(12), sprites(12) {
+    PieceDrawer(): textures(13), sprites(13) {
         const std::string TEXTURE[12] = {
             "wP", "wN", "wB", "wR", "wQ", "wK",
-            "bP", "bN", "bB", "bR", "bQ", "bK"
+            "bP", "bN", "bB", "bR", "bQ", "bK",
         };
         for (int i=0; i<12; i++) {
             textures[i].loadFromFile("src/assets/themes/tartiana/" + TEXTURE[i] + ".png");
             textures[i].setSmooth(true);
             sprites[i].setTexture(textures[i]);
         }
+        // check texture
+        textures[12].loadFromFile("src/assets/themes/check.png");
+        textures[12].setSmooth(true);
+        sprites[12].setTexture(textures[12]);
     }
 
-    void draw(sf::RenderWindow& window, const chess::Piece piece, const float x, const float y) {
+    void draw(sf::RenderWindow& window, const chess::Piece piece, const float x, const float y, const int check) {
         int i = (int)piece;
         assert((i != 12));
+        // draw check overlay
+        if (piece==chess::Piece::WHITEKING && check==1 || piece==chess::Piece::BLACKKING && check==-1) {
+            sprites[12].setPosition(x, y);
+            window.draw(sprites[12]);
+        }
+        // draw piece
         sprites[i].setPosition(x, y);
         window.draw(sprites[i]);
     }

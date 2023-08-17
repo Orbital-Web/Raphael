@@ -384,12 +384,15 @@ private:
 
         // draw pieces
         auto pieces = board.occ();
+        int check = 0;
+        if (board.inCheck())
+            check = (whiteturn) ? 1 : -1;
         while (pieces) {
             auto sq = chess::builtin::poplsb(pieces);
             int file = (int)chess::utils::squareFile(sq);
             int rank = (int)chess::utils::squareRank(sq);
             auto piece = board.at(sq);
-            piecedrawer.draw(window, piece, 50 + 100*file, 770 - 100*rank);
+            piecedrawer.draw(window, piece, 50 + 100*file, 770 - 100*rank, check);
         }
         
         // draw timers and names

@@ -14,20 +14,13 @@ namespace Raphael {
 class v1_5: public cge::GamePlayer {
 // Raphael vars
 private:
-    // search
-    chess::Move itermove;       // current iteration's bestmove
-    chess::Move prevPlay;       // previous iteration's bestmove
-    int consecutives;           // number of consecutive bestmoves
-    // ponder
-    uint64_t ponderkey = 0;     // hash after opponent's best response
+    TranspositionTable tt;
+    chess::Move itermove;       // best move from previous iteration
+    uint64_t ponderkey = 0;     // hashed board after ponder move
     int pondereval = 0;         // eval we got during ponder
     int ponderdepth = 1;        // depth we searched to during ponder
-    // storage
-    TranspositionTable tt;      // table with position, eval, and bestmove
-    Killers killers;            // 2 killer moves at each ply
-    History history;            // history score for each move
-    // info
-    uint32_t nodes;             // number of nodes visited
+    Killers killers;            // killer moves at each ply
+    History history;            // history score
 
 
 
@@ -51,17 +44,13 @@ public:
         history.clear();
 
         // if ponderhit, start with ponder result and depth
-        if (board.hash() != ponderkey) {
+        if (board.hash() != ponderkey)
             itermove = chess::Move::NO_MOVE;
-            prevPlay = chess::Move::NO_MOVE;
-            consecutives = 1;
-            nodes = 0;
-        } else {
+        else {
             depth = ponderdepth;
             eval = pondereval;
             alpha = eval - ASPIRATION_WINDOW;
             beta = eval + ASPIRATION_WINDOW;
-            toPlay = itermove;
         }
 
         // stop search after an appropriate duration
@@ -70,9 +59,6 @@ public:
 
         // begin iterative deepening
         while (!halt && depth<=MAX_DEPTH) {
-            // stable pv, skip
-            if (consecutives >= PV_STABLE_COUNT)
-                halt = true;
             int itereval = negamax(board, depth, 0, MAX_EXTENSIONS, alpha, beta, halt);
 
             // not timeout
@@ -92,23 +78,15 @@ public:
                 depth++;
             }
 
-            if (itermove != chess::Move::NO_MOVE) {
+            if (itermove != chess::Move::NO_MOVE)
                 toPlay = itermove;
-                // count how many times we get the same bestmove in a row
-                if (toPlay == prevPlay)
-                    consecutives++;
-                else {
-                    prevPlay = toPlay;
-                    consecutives = 1;
-                }
-            }
             
             // checkmate, no need to continue
             if (tt.isMate(eval)) {
                 #ifndef MUTEEVAL
                 // get absolute evaluation (i.e, set to white's perspective)
                 if (whiteturn == (eval>0))
-                    printf("Eval: +#\tNodes: %d\n", nodes);
+                    printf("Eval: +#\n");
                 else
                     printf("Eval: -#\n");
                 #endif
@@ -119,7 +97,7 @@ public:
         #ifndef MUTEEVAL
         // get absolute evaluation (i.e, set to white's perspective)
         if (!whiteturn) eval *= -1;
-        printf("Eval: %.2f\tDepth: %d\tNodes: %d\n", eval/100.0f, depth-1, nodes);
+        printf("Eval: %.2f\tDepth: %d\n", eval/100.0f, depth-1);
         #endif
         return toPlay;
     }
@@ -157,7 +135,6 @@ public:
         int beta = INT_MAX;
 
         // begin iterative deepening for our best response
-        nodes = 0;
         while (!halt && ponderdepth<=MAX_DEPTH) {
             int itereval = negamax(board, ponderdepth, 0, MAX_EXTENSIONS, alpha, beta, halt);
 
@@ -178,15 +155,8 @@ public:
             }
 
             // store into toPlay to prevent NO_MOVE
-            if (itermove != chess::Move::NO_MOVE) {
+            if (itermove != chess::Move::NO_MOVE)
                 toPlay = itermove;
-                if (toPlay == prevPlay)
-                    consecutives++;
-                else {
-                    prevPlay = toPlay;
-                    consecutives = 1;
-                }
-            }
             
             // checkmate, no need to continue (but don't edit halt)
             if (tt.isMate(pondereval))
@@ -207,7 +177,7 @@ public:
 
 private:
     // Estimates the time (ms) it should spend on searching a move
-    static int search_time(const chess::Board& board, const int t_remain) {
+    int search_time(const chess::Board& board, const int t_remain) {
         // ratio: a function within [0, 1]
         // uses 0.5~4% of the remaining time (max at 11 pieces left)
         float n = chess::builtin::popcount(board.occ());
@@ -235,7 +205,6 @@ private:
     int negamax(chess::Board& board, unsigned int depth, int ply, int ext, int alpha, int beta, bool& halt) {
         // timeout
         if (halt) return 0;
-        nodes++;
         
         // transposition lookup
         int alphaorig = alpha;
@@ -409,7 +378,8 @@ private:
 
 
     // Evaluates the current position (from the current player's perspective)
-    static int evaluate(const chess::Board& board) {
+public:
+    int evaluate(const chess::Board& board) const {
         int eval = 0;
         auto pieces = board.occ();
         int n_pieces_left = chess::builtin::popcount(pieces);

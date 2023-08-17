@@ -64,7 +64,7 @@ Raphael is a UCI-compliant chess engine that comes with this project. To use it 
 - [x] Quiescence with captures  (`v1.0+`)
 - [ ] Quiescence with queening
 - [x] Time management           (`v1.0+`)
-- [x] Skip search on stable pv  (`v1.5+`)
+- [x] Skip search on stable pv  (`v1.6+`)
 - [x] Pondering                 (`v1.2+`)
 - [x] Check extensions          (`v1.4+`)
 - [x] Promotion extensions      (`v1.4+`)

@@ -36,7 +36,7 @@ public:
                     int piece = (int)board.at(sq);
                     
                     // own pieces clicked
-                    if (piece!=12 && whiteturn!=(piece/6)) {
+                    if (piece!=12 && whiteturn==(piece<6)) {
                         sq_from = sq;
                         sq_to = chess::NO_SQ;
                     }

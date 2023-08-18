@@ -214,8 +214,8 @@ private:
     void generate_assets() {
         // tiles
         for (int i=0; i<64; i++) {
-            int x = i%8;
             int y = i/8;
+            int x = i%8;
             tiles[i].setPosition(50 + 100*x, 70 + 100*y);
             tiles[i].setFillColor(((x+y)%2) ? PALETTE::TILE_B : PALETTE::TILE_W);
         }
@@ -256,7 +256,7 @@ private:
                 int piece = (int)board.at(sq);
 
                 // own pieces clicked
-                if (piece!=12 && whiteturn!=(piece/6)) {
+                if (piece!=12 && whiteturn==(piece<6)) {
                     selectedtiles.clear();
                     selectedtiles.push_back(sq);
                     add_selectedtiles();

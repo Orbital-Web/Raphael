@@ -1,5 +1,5 @@
 #include <chess.hpp>
-#include <Raphael/Raphael_v1.5.hpp>
+#include <Raphael/Raphael_v1.6.hpp>
 #include <SFML/Graphics.hpp>
 #include <future>
 #include <string>
@@ -15,7 +15,7 @@
 
 // global vars
 chess::Board board;
-Raphael::v1_5 engine("Raphael");
+Raphael::v1_6 engine("Raphael");
 bool halt = false;
 bool quit = false;
 

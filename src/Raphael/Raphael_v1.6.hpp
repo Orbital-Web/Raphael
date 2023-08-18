@@ -61,7 +61,6 @@ public:
             eval = pondereval;
             alpha = eval - ASPIRATION_WINDOW;
             beta = eval + ASPIRATION_WINDOW;
-            toPlay = itermove;
         }
 
         // stop search after an appropriate duration
@@ -144,7 +143,10 @@ public:
         }
 
         // not enough time to continue
-        if (halt || itermove==chess::Move::NO_MOVE) return;
+        if (halt || itermove==chess::Move::NO_MOVE) {
+            consecutives = 1;
+            return;
+        }
 
         // store move to check for ponderhit on our turn
         board.makeMove(itermove);
@@ -158,6 +160,7 @@ public:
 
         // begin iterative deepening for our best response
         nodes = 0;
+        consecutives = 1;
         while (!halt && ponderdepth<=MAX_DEPTH) {
             int itereval = negamax(board, ponderdepth, 0, MAX_EXTENSIONS, alpha, beta, halt);
 
@@ -203,6 +206,8 @@ public:
         tt.clear();
         killers.clear();
         itermove = chess::Move::NO_MOVE;
+        prevPlay = chess::Move::NO_MOVE;
+        consecutives = 0;
     }
 
 private:

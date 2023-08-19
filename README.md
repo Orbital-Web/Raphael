@@ -34,9 +34,9 @@ The compilation process should be similar for Linux and macOS, though the proces
 To compile and run the uci engine, follow steps 1~2, and use the following commands (consider also increasing the `TABLE_SIZE` to `2^24`)
 ```
 g++ -c uci.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
-g++ -o uci uci.o -LSFML-2.6.0/lib -lsfml-graphics-s
+g++ -o Raphael uci.o -LSFML-2.6.0/lib -lsfml-graphics-s
 del uci.o
-uci.exe
+Raphael.exe
 ```
 
 

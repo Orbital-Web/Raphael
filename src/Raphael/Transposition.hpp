@@ -76,7 +76,7 @@ public:
 private:
     // Gets index on table
     uint64_t index(const uint64_t key) const {
-        return key&size;    // same as key%size since size = 2**n
+        return key%size;
     }
 };  // TranspositionTable
 }   // namespace Raphael

@@ -4,7 +4,7 @@ namespace Raphael {
     const int MAX_DEPTH = 128;
     const int MATE_EVAL = 2000000000;           // evaluation for immediate mate
     // tunable
-    const unsigned int TABLE_SIZE = 8388608;    // number of entries in TranspositionTable (160mb), must be powers of 2
+    const unsigned int TABLE_SIZE = 8388608;    // number of entries in TranspositionTable (160mb)
     const int ASPIRATION_WINDOW = 50;           // size of aspiration window
     const int MAX_EXTENSIONS = 16;              // max number of times we can extend the search
     const int REDUCTION_FROM = 5;               // from which move to apply late move reduction from

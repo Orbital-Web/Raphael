@@ -150,7 +150,7 @@ public:
 
             // play move
             auto toPlay = movereceiver.get();
-            if (toPlay==chess::Move::NO_MOVE) {
+            if (toPlay == chess::Move::NO_MOVE) {
                 timeout = true;
                 timeoutwins[(p1_is_white!=turn)]++;
                 game_result = chess::GameResult::LOSE;

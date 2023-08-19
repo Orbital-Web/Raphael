@@ -114,8 +114,9 @@ private:
         if (halt) return 0;
         
         // prevent draw in winning positions
-        if (board.isRepetition() || board.isHalfMoveDraw())
-            return 0;
+        if (ply)
+            if (board.isRepetition(1) || board.isHalfMoveDraw())
+                return 0;
         
         // transposition lookup
         int alphaorig = alpha;
@@ -152,7 +153,7 @@ private:
         // search
         chess::Movelist movelist;
         order_moves(movelist, board);
-        chess::Move bestmove = chess::Move::NO_MOVE;  // best move in this position
+        chess::Move bestmove = movelist[0]; // best move in this position
 
         for (auto& move : movelist) {
             board.makeMove(move);

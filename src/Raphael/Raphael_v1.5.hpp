@@ -135,7 +135,6 @@ public:
         board.makeMove(itermove);
         ponderkey = board.hash();
         chess::Move toPlay = chess::Move::NO_MOVE;  // our best response
-        itermove = chess::Move::NO_MOVE;
         history.clear();
 
         int alpha = -INT_MAX;
@@ -214,14 +213,9 @@ private:
         if (halt) return 0;
 
         // prevent draw in winning positions
-        if (board.isRepetition() || board.isHalfMoveDraw())
-            return 0;
-        
-        // mate distance pruning
-        alpha = std::max(alpha, -MATE_EVAL + ply);
-        beta = std::min(beta, MATE_EVAL - ply);
-        if (alpha >= beta)
-            return alpha;
+        if (ply)
+            if (board.isRepetition(1) || board.isHalfMoveDraw())
+                return 0;
         
         // transposition lookup
         int alphaorig = alpha;
@@ -258,7 +252,7 @@ private:
         // search
         chess::Movelist movelist;
         order_moves(movelist, board, ply);
-        chess::Move bestmove = chess::Move::NO_MOVE;    // best move in this position
+        chess::Move bestmove = movelist[0]; // best move in this position
         int movei = 0;
 
         for (const auto& move : movelist) {

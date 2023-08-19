@@ -47,7 +47,6 @@ public:
         int eval = 0;
         int alpha = -INT_MAX;
         int beta = INT_MAX;
-        chess::Move toPlay = chess::Move::NO_MOVE;  // overall best move
         history.clear();
 
         // if ponderhit, start with ponder result and depth
@@ -92,12 +91,11 @@ public:
             }
 
             if (itermove != chess::Move::NO_MOVE) {
-                toPlay = itermove;
                 // count how many times we get the same bestmove in a row
-                if (toPlay == prevPlay)
+                if (itermove == prevPlay)
                     consecutives++;
                 else {
-                    prevPlay = toPlay;
+                    prevPlay = itermove;
                     consecutives = 1;
                 }
             }
@@ -119,7 +117,7 @@ public:
                         printf("info depth %d nodes %d score mate %d\n", depth-1, nodes, -depth+1);
                 #endif
                 halt = true;
-                return toPlay;
+                return itermove;
             }
         }
         #ifndef UCI
@@ -131,7 +129,7 @@ public:
         #else
             printf("info depth %d nodes %d score cp %d\n", depth-1, nodes, eval);
         #endif
-        return toPlay;
+        return itermove;
     }
 
 
@@ -162,8 +160,6 @@ public:
         // store move to check for ponderhit on our turn
         board.makeMove(itermove);
         ponderkey = board.hash();
-        chess::Move toPlay = chess::Move::NO_MOVE;  // our best response
-        itermove = chess::Move::NO_MOVE;
         history.clear();
 
         int alpha = -INT_MAX;
@@ -191,13 +187,11 @@ public:
                 ponderdepth++;
             }
 
-            // store into toPlay to prevent NO_MOVE
             if (itermove != chess::Move::NO_MOVE) {
-                toPlay = itermove;
-                if (toPlay == prevPlay)
+                if (itermove == prevPlay)
                     consecutives++;
                 else {
-                    prevPlay = toPlay;
+                    prevPlay = itermove;
                     consecutives = 1;
                 }
             }
@@ -206,9 +200,6 @@ public:
             if (tt.isMate(pondereval))
                 break;
         }
-
-        // override in case of NO_MOVE
-        itermove = toPlay;
     }
 
 
@@ -254,14 +245,9 @@ private:
 
         // prevent draw in winning positions
         // technically this ignores checkmate on 50th move (mate > draw)
-        if (board.isRepetition() || board.isHalfMoveDraw())
-            return 0;
-        
-        // mate distance pruning
-        alpha = std::max(alpha, -MATE_EVAL + ply);
-        beta = std::min(beta, MATE_EVAL - ply);
-        if (alpha >= beta)
-            return alpha;
+        if (ply)
+            if (board.isRepetition(1) || board.isHalfMoveDraw())
+                return 0;
         
         // transposition lookup
         int alphaorig = alpha;
@@ -301,7 +287,7 @@ private:
         
         // search
         order_moves(movelist, board, ply);
-        chess::Move bestmove = chess::Move::NO_MOVE;    // best move in this position
+        chess::Move bestmove = movelist[0]; // best move in this position
         int movei = 0;
 
         for (const auto& move : movelist) {

@@ -1,3 +1,4 @@
+#define UCI
 #include <chess.hpp>
 #include <Raphael/Raphael_v1.6.hpp>
 #include <SFML/Graphics.hpp>

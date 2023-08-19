@@ -33,7 +33,7 @@ The compilation process should be similar for Linux and macOS, though setting up
 
 To compile and run the uci engine, follow steps 1~2 and use the commands
 ```
-g++ -c -DMUTEEVAL uci.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
+g++ -c uci.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
 g++ -o uci uci.o -LSFML-2.6.0/lib -lsfml-graphics-s
 del uci.o
 uci.exe

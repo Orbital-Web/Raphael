@@ -51,7 +51,7 @@ public:
             
             // checkmate, no need to continue
             if (tt.isMate(eval)) {
-                #ifndef MUTEEVAL
+                #ifndef UCI
                 // get absolute evaluation (i.e, set to white's perspective)
                 if (whiteturn == (eval > 0))
                     printf("Eval: +#\n", depth);
@@ -63,7 +63,7 @@ public:
             }
             depth++;
         }
-        #ifndef MUTEEVAL
+        #ifndef UCI
         // get absolute evaluation (i.e, set to white's perspective)
         if (!whiteturn)
             eval *= -1;

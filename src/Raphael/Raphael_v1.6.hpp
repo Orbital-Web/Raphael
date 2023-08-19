@@ -104,21 +104,32 @@ public:
             
             // checkmate, no need to continue
             if (tt.isMate(eval)) {
+                #ifndef UCI
                 #ifndef MUTEEVAL
-                // get absolute evaluation (i.e, set to white's perspective)
-                if (whiteturn == (eval>0))
-                    printf("Eval: +#\tNodes: %d\n", nodes);
-                else
-                    printf("Eval: -#\n");
+                    // get absolute evaluation (i.e, set to white's perspective)
+                    if (whiteturn == (eval>0))
+                        printf("Eval: +#\tNodes: %d\n", nodes);
+                    else
+                        printf("Eval: -#\n");
+                #endif
+                #else
+                    if (whiteturn == (eval>0))
+                        printf("info depth %d nodes %d score mate %d\n", depth-1, nodes, depth-1);
+                    else
+                        printf("info depth %d nodes %d score mate %d\n", depth-1, nodes, -depth+1);
                 #endif
                 halt = true;
                 return toPlay;
             }
         }
-        #ifndef MUTEEVAL
         // get absolute evaluation (i.e, set to white's perspective)
         if (!whiteturn) eval *= -1;
-        printf("Eval: %.2f\tDepth: %d\tNodes: %d\n", eval/100.0f, depth-1, nodes);
+        #ifndef UCI
+        #ifndef MUTEEVAL
+            printf("Eval: %.2f\tDepth: %d\tNodes: %d\n", eval/100.0f, depth-1, nodes);
+        #endif
+        #else
+            printf("info depth %d nodes %d score cp %d\n", depth-1, nodes, eval);
         #endif
         return toPlay;
     }

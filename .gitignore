@@ -46,3 +46,4 @@ stockfish/
 
 # Saved games
 logs/
+*.log

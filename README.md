@@ -5,7 +5,7 @@ Raphael is still a work in progress and will be updated as time goes by (though 
 
 Raphael is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python. 
 
-My goal is to eventually implement NNUE-based evaluations and to compare its ELO with other engines.
+*Note: v1.6 will be the last of the minor releases to Raphael. The next major release will be v2.0 using a custom NNUE evaluation function.*
 
 <p align="center">
     <img src="https://github.com/Orbital-Web/Raphael/blob/8667a6f6db60c5cacce297145246f89a22fa5333/Demo.png" alt="demo of Raphael" width=400/>
@@ -31,7 +31,7 @@ My goal is to eventually implement NNUE-based evaluations and to compare its ELO
 
 The compilation process should be similar for Linux and macOS, though setting up SFML may be slightly different. Please refer to the [official SFML documentation](https://www.sfml-dev.org/tutorials/2.6/).
 
-To compile and run the uci engine, follow steps 1~2 and use the commands
+To compile and run the uci engine, follow steps 1~2 and use the commands (consider also increasing the `TABLE_SIZE` to `2^24`)
 ```
 g++ -c uci.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
 g++ -o uci uci.o -LSFML-2.6.0/lib -lsfml-graphics-s
@@ -92,7 +92,7 @@ Raphael is a UCI-compliant chess engine that comes with this project. To use it 
 
 
 
-## Comparisons
+## ELO (CEGT) and Comparisons
 
 Different versions of the engine were put against each other in 400 matches (20 seconds each), starting from a different  position (within a ±300 centipawn stockfish evaluation) and alternating between playing as white and black. 
 - `v1.0` 🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥🟥🟥🟥 `v1.0` [177 / 34 / 189]
@@ -102,36 +102,46 @@ Different versions of the engine were put against each other in 400 matches (20 
 - `v1.4` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [333 / 25 / 42]
 - `v1.5` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [344 / 23 / 43]
 
-The estimated [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability) of the different versions in relation to one another is as follows (with `v1.0` set to an ELO of 1000). Note that these ELO do not reflect each version's strength against humans or other engines. Rather, they are used as a way to compare each version's performance and improvements.
+To estimate Raphael's [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability), I paired Raphaelv1.6 (the newest version at the time of testing) against [Shallow Blue](https://github.com/GunshipPenguin/shallow-blue) (a C++ chess engine written by Rhys Rustad-Elliott) inside of [Arena](http://www.playwitharena.de) in a 10 rounds gauntlet tournament with random starting positions. 
+
+The results came out as 6 wins, 4 losses, and 0 draws, putting Raphaelv1.6 at a CEGT ELO of around 1550 (though I believe Shallow Blue performs better in longer time controls and worse on lower time controls than Raphaelv1.6). 
+
+From that, I estimated the ELOs of the other versions using the approxiamte relationship between [win probability and ELO differnece](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability).
+
+Note that this method of ELO estimation is very crude, with only 10 rounds against one other engine. In the future, I will conduct a more thorough comparison (maybe once v2.0 is out). 
 <table>
     <tr align="center">
         <th>Version</th>
-        <th>ELO</th>
+        <th>CEGT ELO</th>
     </tr>
     <!--Results-->
     <tr align="center">
         <td>v1.0</td>
-        <td>1000</td>
+        <td>1113</td>
     <tr>
     <tr align="center">
         <td>v1.1</td>
-        <td>1116</td>
+        <td>1230</td>
     <tr>
     <tr align="center">
         <td>v1.2</td>
-        <td>1127</td>
+        <td>1240</td>
     <tr>
     <tr align="center">
         <td>v1.3</td>
-        <td>1221</td>
+        <td>1334</td>
     <tr>
     <tr align="center">
         <td>v1.4</td>
-        <td>1321</td>
+        <td>1434</td>
     <tr>
     <tr align="center">
         <td>v1.5</td>
-        <td>1361</td>
+        <td>1474</td>
+    <tr>
+    <tr align="center">
+        <td>v1.6</td>
+        <td>1550</td>
     <tr>
 </table>
 

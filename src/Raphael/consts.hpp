@@ -208,7 +208,7 @@ namespace PST {
 // & with our pieces to determine whether the pawn at the file is isolated
 namespace PMASK {
     const int PASSEDBONUS[7] = {        // bonus for passed pawn based on distance to promotion line
-        0, 85, 60, 40, 20, 15, 10
+        0, 115, 80, 50, 30, 15, 10
     };
     const int ISOLATION_WEIGHT = 30;    // penalty for an isolated pawn
 

@@ -21,6 +21,9 @@ private:
     int ponderdepth = 1;        // depth we searched to during ponder
     Killers killers;            // killer moves at each ply
     History history;            // history score
+    const int OLDPASSEDBONUS[7] = {     // bonus for passed pawn based on distance to promotion line
+        0, 85, 60, 40, 20, 15, 10
+    };
 
 
 
@@ -411,7 +414,7 @@ public:
                 case 0:
                     // passed (+ for white) (more important in endgame)
                     if ((PMASK::WPASSED[sqi] & bpawns) == 0) 
-                        eval += PMASK::PASSEDBONUS[7 - (sqi/8)] * eg_weight;
+                        eval += OLDPASSEDBONUS[7 - (sqi/8)] * eg_weight;
                     // isolated (- for white)
                     if ((PMASK::ISOLATED[sqi] & wpawns) == 0)
                         eval -= PMASK::ISOLATION_WEIGHT;
@@ -419,7 +422,7 @@ public:
                 case 6:
                     // passed (- for white) (more important in endgame)
                     if ((PMASK::BPASSED[sqi] & wpawns) == 0)
-                        eval -= PMASK::PASSEDBONUS[(sqi/8)] * eg_weight;
+                        eval -= OLDPASSEDBONUS[(sqi/8)] * eg_weight;
                     // isolated (+ for white)
                     if ((PMASK::ISOLATED[sqi] & bpawns) == 0)
                         eval += PMASK::ISOLATION_WEIGHT;

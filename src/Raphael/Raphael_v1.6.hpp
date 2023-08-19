@@ -253,6 +253,7 @@ private:
         nodes++;
 
         // prevent draw in winning positions
+        // technically this ignores checkmate on 50th move (mate > draw)
         if (board.isRepetition() || board.isHalfMoveDraw())
             return 0;
         
@@ -284,18 +285,21 @@ private:
         }
 
         // terminal analysis
-        auto result = board.isGameOver().second;
-        if (result == chess::GameResult::DRAW)
+        if (board.isInsufficientMaterial())
             return 0;
-        else if (result == chess::GameResult::LOSE)
-            return -MATE_EVAL + ply;    // reward faster checkmate
-        
+        chess::Movelist movelist;
+        chess::movegen::legalmoves<chess::MoveGenType::ALL>(movelist, board);
+        if (movelist.empty()) {
+            if (board.inCheck())
+                return -MATE_EVAL + ply;    // reward faster checkmate
+            return 0;
+        }
+
         // terminal depth
         if (depth <= 0)
             return quiescence(board, alpha, beta, halt);
         
         // search
-        chess::Movelist movelist;
         order_moves(movelist, board, ply);
         chess::Move bestmove = chess::Move::NO_MOVE;    // best move in this position
         int movei = 0;
@@ -371,7 +375,8 @@ private:
         
         // search
         chess::Movelist movelist;
-        order_moves(movelist, board, -1);
+        chess::movegen::legalmoves<chess::MoveGenType::CAPTURE>(movelist, board);
+        order_moves(movelist, board, 0);
         
         for (const auto& move : movelist) {
             board.makeMove(move);
@@ -388,12 +393,7 @@ private:
 
 
     // Modifies movelist to contain a list of moves, ordered from best to worst
-    // Generates capture moves only if ply = -1 for quiescence search
     void order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const {
-        if (ply >= 0)
-            chess::movegen::legalmoves<chess::MoveGenType::ALL>(movelist, board);
-        else
-            chess::movegen::legalmoves<chess::MoveGenType::CAPTURE>(movelist, board);
         for (auto& move : movelist)
             score_move(move, board, ply);
         movelist.sort();

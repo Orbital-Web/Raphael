@@ -113,7 +113,7 @@ public:
                         printf("Eval: -#\n");
                 #endif
                 #else
-                    if (whiteturn == (eval>0))
+                    if (eval>0)
                         printf("info depth %d nodes %d score mate %d\n", depth-1, nodes, depth-1);
                     else
                         printf("info depth %d nodes %d score mate %d\n", depth-1, nodes, -depth+1);
@@ -122,10 +122,10 @@ public:
                 return toPlay;
             }
         }
-        // get absolute evaluation (i.e, set to white's perspective)
-        if (!whiteturn) eval *= -1;
         #ifndef UCI
         #ifndef MUTEEVAL
+            // get absolute evaluation (i.e, set to white's perspective)
+            if (!whiteturn) eval *= -1;
             printf("Eval: %.2f\tDepth: %d\tNodes: %d\n", eval/100.0f, depth-1, nodes);
         #endif
         #else
@@ -224,12 +224,11 @@ public:
 private:
     // Estimates the time (ms) it should spend on searching a move
     static int search_time(const chess::Board& board, const int t_remain) {
-        // ratio: a function within [0, 1]
-        // uses 0.5~4% of the remaining time (max at 11 pieces left)
         float n = chess::builtin::popcount(board.occ());
-        float ratio = 0.0138f*(32-n)*(n/32)*pow(2.5f - n/32, 3);
-        // use 0.5~4% of the remaining time based on the ratio
-        int duration = t_remain * (0.005f + 0.035f*ratio);
+        // [0, 1] (max at 20 pieces left)
+        float ratio = 0.0044f*(n-32)*(-n/32)*pow(2.5f + n/32, 3);
+        // use 1~5% of the remaining time based on the ratio
+        int duration = t_remain * (0.01f + 0.04f*ratio);
         return duration;
     }
 

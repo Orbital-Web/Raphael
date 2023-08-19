@@ -132,15 +132,17 @@ void search(const std::vector<std::string>& tokens) {
     // find best move
     int ntokens = tokens.size();
     int i=1;
-    int64_t t_remain;
+    int t_remain=0, t_inc=0;
     while (i<ntokens) {
         if ((whiteturn && tokens[i]=="wtime") || (!whiteturn && tokens[i]=="btime"))
-            t_remain = std::stof(tokens[i+1]);
+            t_remain = std::stoi(tokens[i+1]);
+        else if ((whiteturn && tokens[i]=="winc") || (!whiteturn && tokens[i]=="binc"))
+            t_inc = std::stoi(tokens[i+1]);
         i += 2;
     }
     // search best move
     sf::Event nullevent;
-    auto toPlay = engine.get_move(board, t_remain, nullevent, halt);
+    auto toPlay = engine.get_move(board, t_remain, t_inc, nullevent, halt);
     std::cout << "bestmove " << chess::uci::moveToUci(toPlay) << "\n";
 }
 

@@ -15,7 +15,7 @@ public:
 
 
     // Asks the human to return a move using the UI. Should return immediately if halt becomes true
-    chess::Move get_move(chess::Board board, int t_remain, sf::Event& event, bool& halt) {
+    chess::Move get_move(chess::Board board, const int t_remain, const int t_inc, sf::Event& event, bool& halt) {
         auto sq_from = chess::NO_SQ;
         auto sq_to = chess::NO_SQ;
 

@@ -51,6 +51,7 @@ public:
         bool p1_is_white = true;
         std::string start_fen = chess::STARTPOS;
         std::vector<int64_t> t_remain = {600000, 600000};
+        int t_inc = 0;
         bool interactive = true;
         std::string pgn_file = "";
     };
@@ -99,6 +100,7 @@ public:
         // set time
         bool timeout = false;
         t_remain = options.t_remain;
+        int t_inc = options.t_inc;
 
         interactive = options.interactive;
         if (interactive)
@@ -113,7 +115,7 @@ public:
             // ask player for move in seperate thread so that we can keep rendering
             bool halt = false;
             auto movereceiver = std::async(&GamePlayer::get_move, cur_player,
-                                        board, cur_t_remain, std::ref(event), std::ref(halt));
+                                        board, cur_t_remain, t_inc, std::ref(event), std::ref(halt));
             auto status = std::future_status::timeout;
 
             // allow other player to ponder
@@ -162,6 +164,7 @@ public:
             move(toPlay);
             turn = !turn;
             game_result = board.isGameOver().second;
+            if (nmoves != 1) cur_t_remain += t_inc;
             nmoves++;
         }
 

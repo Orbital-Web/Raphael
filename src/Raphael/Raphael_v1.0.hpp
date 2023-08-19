@@ -28,7 +28,7 @@ public:
 
     // Uses iterative deepening on Negamax to find best move
     // Should return immediately if halt becomes true
-    chess::Move get_move(chess::Board board, int t_remain, sf::Event& event, bool& halt) {
+    chess::Move get_move(chess::Board board, const int t_remain, const int t_inc, sf::Event& event, bool& halt) {
         tt.clear();
         int depth = 1;
         int eval = 0;
@@ -36,7 +36,7 @@ public:
         itermove = chess::Move::NO_MOVE;
 
         // stop search after an appropriate duration
-        int duration = search_time(board, t_remain);
+        int duration = search_time(board, t_remain, t_inc);
         auto _ = std::async(manage_time, std::ref(halt), duration);
 
         // begin iterative deepening
@@ -80,14 +80,14 @@ public:
 
 private:
     // Estimates the time (ms) it should spend on searching a move
-    int search_time(const chess::Board& board, const int t_remain) {
+    int search_time(const chess::Board& board, const int t_remain, const int t_inc) {
         // ratio: a function within [0, 1]
         // uses 0.5~4% of the remaining time (max at 11 pieces left)
         float n = chess::builtin::popcount(board.occ());
         float ratio = 0.0138f*(32-n)*(n/32)*pow(2.5f - n/32, 3);
-        // use 0.5~4% of the remaining time based on the ratio
-        int duration = t_remain * (0.005f + 0.035f*ratio);
-        return duration;
+        // use 0.5~4% of the remaining time based on the ratio + buffered increment
+        int duration = t_remain * (0.005f + 0.035f*ratio) + std::max(t_inc-30, 0);
+        return std::min(duration, t_remain);
     }
 
 

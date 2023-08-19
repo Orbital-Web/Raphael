@@ -41,6 +41,7 @@ void print_usage() {
               << "  -c\tComparison mode (options will be ignored)\n\n"
               << "Options:\n"
               << "  -t <int> <int>\tTime (sec) for white and black (defaults to 10min each)\n"
+              << "  -t <int> <int>\tTime increment (sec) (defaults to 0sec)\n"
               << "  -f <FENstring>\tStarting position FEN (defaults to standard chess board)\n"
               << "  -s <filename> \tFilename for saving as pgn (saves inside /logs folder)\n\n";
 }
@@ -90,7 +91,7 @@ int main(int argc, char** argv) {
             bool p1_is_white = true;
             // create 400 matches with alterating color
             while (std::getline(pgns, pgn)) {
-                gameoptions.push_back({p1_is_white, pgn, {20000, 20000}, false, "./logs/compare.pgn"});
+                gameoptions.push_back({p1_is_white, pgn, {20000, 20000}, 0, false, "./logs/compare.pgn"});
                 p1_is_white = !p1_is_white;
             }
             pgns.close();
@@ -126,6 +127,13 @@ int main(int argc, char** argv) {
                 gopt.t_remain[0] = t_white*1000;
                 gopt.t_remain[1] = t_black*1000;
             }
+        }
+
+        // time increment
+        else if (!strcmp(argv[i], "-i")) {
+            float t_inc = (float)atof(argv[++i]);
+            for (auto& gopt : gameoptions)
+                gopt.t_inc = t_inc*1000;
         }
 
         // fen

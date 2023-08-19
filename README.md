@@ -1,11 +1,11 @@
 # Raphael
-Both a UCI Chess Engine (Raphael) and a Chess GUI (to play against Raphael or to make Raphael play itself), coded in C++, using [SFML](https://www.sfml-dev.org/) and [Disservin's Chess Library](https://github.com/Disservin/chess-library).
+Both a UCI Chess Engine (**Raphael**) and a Chess GUI (to play against **Raphael** or to make **Raphael** play itself), coded in C++, using [SFML](https://www.sfml-dev.org/) and [Disservin's Chess Library](https://github.com/Disservin/chess-library).
 
-Raphael is still a work in progress and will be updated as time goes by (though it's already quite competent). [Scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-engine) to see a list of features currently implemented.
+**Raphael** is still a work in progress and will be updated as time goes by (though it's already quite competent). [Scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-engine) to see a list of features currently implemented.
 
-Raphael is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python. 
+**Raphael** is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python. 
 
-*Note: v1.6 will be the last of the minor releases to Raphael. The next major release will be v2.0 using a custom NNUE evaluation function.*
+*Note: v1.6 will be the last of the minor releases to **Raphael**. The next major release will be v2.0 using a custom NNUE evaluation function.*
 
 <p align="center">
     <img src="https://github.com/Orbital-Web/Raphael/blob/8667a6f6db60c5cacce297145246f89a22fa5333/Demo.png" alt="demo of Raphael" width=400/>
@@ -29,9 +29,9 @@ Raphael is largely inspired by [Sebastian Lague's Coding Adventure series on imp
     ```
 5. Try out other features (check out `main.exe -help`)
 
-The compilation process should be similar for Linux and macOS, though setting up SFML may be slightly different. Please refer to the [official SFML documentation](https://www.sfml-dev.org/tutorials/2.6/).
+The compilation process should be similar for Linux and macOS, though the process of setting up SFML may be slightly different. Please refer to the [official SFML documentation](https://www.sfml-dev.org/tutorials/2.6/).
 
-To compile and run the uci engine, follow steps 1~2 and use the commands (consider also increasing the `TABLE_SIZE` to `2^24`)
+To compile and run the uci engine, follow steps 1~2, and use the following commands (consider also increasing the `TABLE_SIZE` to `2^24`)
 ```
 g++ -c uci.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
 g++ -o uci uci.o -LSFML-2.6.0/lib -lsfml-graphics-s
@@ -51,7 +51,7 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 
 
 ### Raphael (Engine)
-Raphael is a UCI-compliant chess engine that comes with this project. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows). The UCI engine currently supports the following commands: `uci`, `ready`, `ucinewgame`, `position`, and `go`. Pondering is not implemented yet. The engine contains the following features:
+**Raphael** is a UCI-compliant chess engine that comes with this project. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows). The UCI engine currently supports the following commands: `uci`, `ready`, `ucinewgame`, `position`, and `go`. Pondering is not implemented yet. The engine contains the following features:
 
 #### General
 - [x] Alpha-beta pruning        (`v1.0+`)
@@ -92,7 +92,7 @@ Raphael is a UCI-compliant chess engine that comes with this project. To use it 
 
 
 
-## ELO (CEGT) and Comparisons
+## ELO and Comparisons
 
 Different versions of the engine were put against each other in 400 matches (20 seconds each), starting from a different  position (within a ±300 centipawn stockfish evaluation) and alternating between playing as white and black. 
 - `v1.0` 🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥🟥🟥🟥 `v1.0` [177 / 34 / 189]
@@ -101,47 +101,48 @@ Different versions of the engine were put against each other in 400 matches (20 
 - `v1.3` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥🟥🟥 `v1.0` [301 / 23 / 76]
 - `v1.4` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [333 / 25 / 42]
 - `v1.5` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [344 / 23 / 43]
+- `v1.5` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥 `v1.0` [360 / 20 / 20]
 
-To estimate Raphael's [ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability), I paired Raphaelv1.6 (the newest version at the time of testing) against [Shallow Blue](https://github.com/GunshipPenguin/shallow-blue) (a C++ chess engine written by Rhys Rustad-Elliott) inside of [Arena](http://www.playwitharena.de) in a 10 rounds gauntlet tournament with random starting positions. 
+To estimate **Raphael's** [ELO](http://ccrl.chessdom.com/ccrl/402.archive/), I paired **Raphaelv1.6** (the newest version at the time of testing) against [**Shallow Blue**](https://github.com/GunshipPenguin/shallow-blue) (a C++ chess engine written by Rhys Rustad-Elliott) inside of [Arena](http://www.playwitharena.de) in a 10 rounds gauntlet tournament with random starting positions. 
 
-The results came out as 6 wins, 4 losses, and 0 draws, putting Raphaelv1.6 at a CEGT ELO of around 1550 (though I believe Shallow Blue performs better in longer time controls and worse on lower time controls than Raphaelv1.6). 
+The results came out as 6 wins, 4 losses, and 0 draws, putting **Raphaelv1.6** at a CCRL 40/2 ELO of around 1734. From that, I estimated the ELOs of the other versions using the approximate relations between [win probability and ELO differnece](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability). 
 
-From that, I estimated the ELOs of the other versions using the approxiamte relationship between [win probability and ELO differnece](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability).
+One thing I noticed was that **Shallow Blue** tended to have a stronger position for most of the game, but would lose their advantage completely in the endgame after a few tactical checks by **Raphael**. This is most likely due to the different implementations of check extensions, combined with **Shallow Blue** having significantly less time on the clock in the endgame. 
 
-Note that this method of ELO estimation is very crude, with only 10 rounds against one other engine. In the future, I will conduct a more thorough comparison (maybe once v2.0 is out). 
+Note that this method of ELO estimation is very crude, as it only only compares the reuslt against one engine in just 10 rounds. In the future, I will conduct a more thorough comparison (maybe once v2.0 is out). Nonetheless, here are the estimated ELOs of each version.
 <table>
     <tr align="center">
         <th>Version</th>
-        <th>CEGT ELO</th>
+        <th>CCRL 40/2</th>
     </tr>
     <!--Results-->
     <tr align="center">
         <td>v1.0</td>
-        <td>1113</td>
+        <td>1297</td>
     <tr>
     <tr align="center">
         <td>v1.1</td>
-        <td>1230</td>
+        <td>1414</td>
     <tr>
     <tr align="center">
         <td>v1.2</td>
-        <td>1240</td>
+        <td>1424</td>
     <tr>
     <tr align="center">
         <td>v1.3</td>
-        <td>1334</td>
+        <td>1518</td>
     <tr>
     <tr align="center">
         <td>v1.4</td>
-        <td>1434</td>
+        <td>1618</td>
     <tr>
     <tr align="center">
         <td>v1.5</td>
-        <td>1474</td>
+        <td>1658</td>
     <tr>
     <tr align="center">
         <td>v1.6</td>
-        <td>1550</td>
+        <td>1734</td>
     <tr>
 </table>
 

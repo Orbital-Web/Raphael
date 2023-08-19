@@ -108,9 +108,9 @@ public:
                 #ifndef MUTEEVAL
                     // get absolute evaluation (i.e, set to white's perspective)
                     if (whiteturn == (eval>0))
-                        printf("Eval: +#\tNodes: %d\n", nodes);
+                        printf("Eval: +%d#\tNodes: %d\n", depth-1, nodes);
                     else
-                        printf("Eval: -#\n");
+                        printf("Eval: -%d#\tNodes: %d\n", depth-1, nodes);
                 #endif
                 #else
                     if (eval>0)

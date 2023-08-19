@@ -92,61 +92,28 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 
 
 
-## ELO and Comparisons
+## ELO
+**[Estimated CCRL 40/2 ELO](http://ccrl.chessdom.com/ccrl/402.archive/): 1764**
 
-Different versions of the engine were put against each other in 400 matches (20 seconds each), starting from a different  position (within a ±300 centipawn stockfish evaluation) and alternating between playing as white and black. 
+To estimate **Raphael's** [ELO](http://ccrl.chessdom.com/ccrl/402.archive/), I paired **Raphaelv1.6** (the newest version at the time of testing) against [**Shallow Blue**](https://github.com/GunshipPenguin/shallow-blue) (1734 ELO) and [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1838 ELO) inside of [Arena](http://www.playwitharena.de) in a 10 rounds 40/2 gauntlet tournament with random starting positions. 
+
+It scored a WDL of 6-2-2 against **Shallow Blue** and 2-1-7 against **Sayuri**. I then used the approximate relation between [win probability and ELO difference](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability) to calculate the ELO difference against the 2 engines, and averaged the resulting ELO to get the final estimated ELO of 1764.    
+
+Note that this method of ELO estimation is very crude, as it only only compares against two other engines in just 10 rounds each. In the future, I will conduct a more thorough comparison (maybe once v2.0 is out).
+
+
+
+## Comparisons
+Below is the result of each new version against `v1.0` out of 400 matches (20 seconds each), starting from a different  position (within a ±300 centipawn stockfish evaluation) and alternating between playing as white and black. 
 - `v1.0` 🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥🟥🟥🟥 `v1.0` [177 / 34 / 189]
 - `v1.1` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥 `v1.0` [245 / 39 / 116]
 - `v1.2` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥 `v1.0` [253 / 34 / 113]
 - `v1.3` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥🟥🟥 `v1.0` [301 / 23 / 76]
 - `v1.4` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [333 / 25 / 42]
 - `v1.5` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [344 / 23 / 43]
-- `v1.5` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥 `v1.0` [360 / 20 / 20]
+- `v1.6` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥 `v1.0` [360 / 20 / 20]
 
-To estimate **Raphael's** [ELO](http://ccrl.chessdom.com/ccrl/402.archive/), I paired **Raphaelv1.6** (the newest version at the time of testing) against [**Shallow Blue**](https://github.com/GunshipPenguin/shallow-blue) (a C++ chess engine written by Rhys Rustad-Elliott) inside of [Arena](http://www.playwitharena.de) in a 10 rounds gauntlet tournament with random starting positions. 
-
-The results came out as 6 wins, 4 losses, and 0 draws, putting **Raphaelv1.6** at a CCRL 40/2 ELO of around 1734. From that, I estimated the ELOs of the other versions using the approximate relations between [win probability and ELO differnece](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability). 
-
-One thing I noticed was that **Shallow Blue** tended to have a stronger position for most of the game, but would lose their advantage completely in the endgame after a few tactical checks by **Raphael**. This is most likely due to the different implementations of check extensions, combined with **Shallow Blue** having significantly less time on the clock in the endgame. 
-
-Note that this method of ELO estimation is very crude, as it only only compares the reuslt against one engine in just 10 rounds. In the future, I will conduct a more thorough comparison (maybe once v2.0 is out). Nonetheless, here are the estimated ELOs of each version.
-<table>
-    <tr align="center">
-        <th>Version</th>
-        <th>CCRL 40/2</th>
-    </tr>
-    <!--Results-->
-    <tr align="center">
-        <td>v1.0</td>
-        <td>1297</td>
-    <tr>
-    <tr align="center">
-        <td>v1.1</td>
-        <td>1414</td>
-    <tr>
-    <tr align="center">
-        <td>v1.2</td>
-        <td>1424</td>
-    <tr>
-    <tr align="center">
-        <td>v1.3</td>
-        <td>1518</td>
-    <tr>
-    <tr align="center">
-        <td>v1.4</td>
-        <td>1618</td>
-    <tr>
-    <tr align="center">
-        <td>v1.5</td>
-        <td>1658</td>
-    <tr>
-    <tr align="center">
-        <td>v1.6</td>
-        <td>1734</td>
-    <tr>
-</table>
-
-**Detailed Results**
+And below is the more detailed comparison.
 <table>
     <tr align="center">
         <th rowspan="2">Player</th>

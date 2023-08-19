@@ -33,7 +33,7 @@ with open("../../logs/compare.pgn", "r") as pgn:
             else:               # black won, raise score of black player
                 results["black wins"][~p1_is_white] += 1
         else:
-            if outcome.termination == chess.Termination.FIVEFOLD_REPETITION:
+            if outcome.termination == chess.Termination.THREEFOLD_REPETITION:
                 results["repetition draws"] += 1
             elif outcome.termination == chess.Termination.STALEMATE:
                 results["stalemate draws"] += 1

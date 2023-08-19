@@ -108,9 +108,9 @@ public:
                 #ifndef MUTEEVAL
                     // get absolute evaluation (i.e, set to white's perspective)
                     if (whiteturn == (eval>0))
-                        printf("Eval: +%d#\tNodes: %d\n", depth-1, nodes);
+                        printf("Eval: +#%d\tNodes: %d\n", depth-1, nodes);
                     else
-                        printf("Eval: -%d#\tNodes: %d\n", depth-1, nodes);
+                        printf("Eval: -#%d\tNodes: %d\n", depth-1, nodes);
                 #endif
                 #else
                     if (eval>0)
@@ -137,8 +137,8 @@ public:
 
     // Think during opponent's turn. Should return immediately if halt becomes true
     void ponder(chess::Board board, bool& halt) {
-        pondereval = 0;
         ponderdepth = 1;
+        pondereval = 0;
         int depth = 1;
         itermove = chess::Move::NO_MOVE;    // opponent's best move
         history.clear();
@@ -251,6 +251,16 @@ private:
         // timeout
         if (halt) return 0;
         nodes++;
+
+        // prevent draw in winning positions
+        if (board.isRepetition() || board.isHalfMoveDraw())
+            return 0;
+        
+        // mate distance pruning
+        alpha = std::max(alpha, -MATE_EVAL + ply);
+        beta = std::min(beta, MATE_EVAL - ply);
+        if (alpha >= beta)
+            return alpha;
         
         // transposition lookup
         int alphaorig = alpha;
@@ -349,13 +359,13 @@ private:
 
 
     // Quiescence search for all captures
-    int quiescence(chess::Board& board, int alpha, int beta, bool& halt) const {
-        int eval = evaluate(board);
-
+    int quiescence(chess::Board& board, int alpha, int beta, bool& halt) {
         // timeout
-        if (halt) return eval;
+        if (halt) return 0;
+        nodes++;
 
         // prune
+        int eval = evaluate(board);
         if (eval>=beta) return beta;
         alpha = std::max(alpha, eval);
         

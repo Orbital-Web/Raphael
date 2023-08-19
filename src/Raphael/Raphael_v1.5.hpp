@@ -87,20 +87,24 @@ public:
             // checkmate, no need to continue
             if (tt.isMate(eval)) {
                 #ifndef UCI
+                #ifndef MUTEEVAL
                 // get absolute evaluation (i.e, set to white's perspective)
                 if (whiteturn == (eval>0))
                     printf("Eval: +#\n");
                 else
                     printf("Eval: -#\n");
                 #endif
+                #endif
                 halt = true;
                 return toPlay;
             }
         }
         #ifndef UCI
+        #ifndef MUTEEVAL
         // get absolute evaluation (i.e, set to white's perspective)
         if (!whiteturn) eval *= -1;
         printf("Eval: %.2f\tDepth: %d\n", eval/100.0f, depth-1);
+        #endif
         #endif
         return toPlay;
     }
@@ -208,6 +212,16 @@ private:
     int negamax(chess::Board& board, unsigned int depth, int ply, int ext, int alpha, int beta, bool& halt) {
         // timeout
         if (halt) return 0;
+
+        // prevent draw in winning positions
+        if (board.isRepetition() || board.isHalfMoveDraw())
+            return 0;
+        
+        // mate distance pruning
+        alpha = std::max(alpha, -MATE_EVAL + ply);
+        beta = std::min(beta, MATE_EVAL - ply);
+        if (alpha >= beta)
+            return alpha;
         
         // transposition lookup
         int alphaorig = alpha;

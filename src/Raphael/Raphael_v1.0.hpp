@@ -52,11 +52,13 @@ public:
             // checkmate, no need to continue
             if (tt.isMate(eval)) {
                 #ifndef UCI
+                #ifndef MUTEEVAL
                 // get absolute evaluation (i.e, set to white's perspective)
                 if (whiteturn == (eval > 0))
                     printf("Eval: +#\n", depth);
                 else
                     printf("Eval: -#\n", depth);
+                #endif
                 #endif
                 halt = true;
                 return toPlay;
@@ -64,10 +66,12 @@ public:
             depth++;
         }
         #ifndef UCI
+        #ifndef MUTEEVAL
         // get absolute evaluation (i.e, set to white's perspective)
         if (!whiteturn)
             eval *= -1;
         printf("Eval: %.2f\tDepth: %d\n", eval/100.0, depth-1);
+        #endif
         #endif
         return toPlay;
     }
@@ -107,7 +111,10 @@ private:
     // The Negamax search algorithm to search for the best move
     int negamax(chess::Board& board, unsigned int depth, int ply, int alpha, int beta, bool& halt) {
         // timeout
-        if (halt)
+        if (halt) return 0;
+        
+        // prevent draw in winning positions
+        if (board.isRepetition() || board.isHalfMoveDraw())
             return 0;
         
         // transposition lookup

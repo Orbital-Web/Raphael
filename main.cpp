@@ -37,13 +37,13 @@ cge::GamePlayer* player_factory(char* playertype, char* name) {
 void print_usage() {
     std::cout << "Usage: main.exe <p1type> <p1name> <p2type> <p2name> [mode] [options]\n\n"
               << "Modes:\n"
-              << "  [int]\tNumber of matches (defaults to 1 if not specified)\n"
-              << "  -c\tComparison mode (options will be ignored)\n\n"
+              << "  [int]  Number of matches (defaults to 1 if not specified)\n"
+              << "  -c     Comparison mode (options will be ignored)\n\n"
               << "Options:\n"
-              << "  -t <int> <int>\tTime (sec) for white and black (defaults to 10min each)\n"
-              << "  -t <int> <int>\tTime increment (sec) (defaults to 0sec)\n"
-              << "  -f <FENstring>\tStarting position FEN (defaults to standard chess board)\n"
-              << "  -s <filename> \tFilename for saving as pgn (saves inside /logs folder)\n\n";
+              << "  -t <int> <int>  Time (sec) for white and black (defaults to 10min each)\n"
+              << "  -t <int>        Time increment (sec) (defaults to 0sec)\n"
+              << "  -f <FENstring>  Starting position FEN (defaults to standard chess board)\n"
+              << "  -s <filename>   Filename for saving as pgn (saves inside /logs folder)\n\n";
 }
 
 

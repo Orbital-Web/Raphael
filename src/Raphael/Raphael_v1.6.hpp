@@ -6,7 +6,7 @@
 #include <Raphael/Killers.hpp>
 #include <Raphael/History.hpp>
 #include <GameEngine/GamePlayer.hpp>
-#include <future>
+#include <chrono>
 
 
 
@@ -29,8 +29,8 @@ private:
     // info
     uint32_t nodes;             // number of nodes visited
     // timing
-    std::chrono::system_clock::time_point start_t;
-    int64_t search_t;
+    std::chrono::system_clock::time_point start_t;  // search start time
+    int64_t search_t;           // search duration (ms)
 
 
 
@@ -118,16 +118,16 @@ public:
                 #endif
                 halt = true;
                 return itermove;
+            } else {
+                #ifdef UCI
+                    printf("info depth %d nodes %d score cp %d pv %s\n", depth-1, nodes, eval, get_pv_line(board, depth-1).c_str());
+                #endif
             }
         }
-        #ifndef UCI
-        #ifndef MUTEEVAL
+        #if !defined(UCI) && !defined(MUTEEVAL)
             // get absolute evaluation (i.e, set to white's perspective)
             if (!whiteturn) eval *= -1;
             printf("Eval: %.2f\tDepth: %d\tNodes: %d\n", eval/100.0f, depth-1, nodes);
-        #endif
-        #else
-            printf("info depth %d nodes %d score cp %d\n", depth-1, nodes, eval);
         #endif
         return itermove;
     }
@@ -137,38 +137,30 @@ public:
     void ponder(chess::Board board, bool& halt) {
         ponderdepth = 1;
         pondereval = 0;
-        int depth = 1;
-        itermove = chess::Move::NO_MOVE;    // opponent's best move
-        history.clear();
+        itermove = chess::Move::NO_MOVE;
         search_t = 0;   // infinite time
 
-        // begin iterative deepening up to depth 4 for opponent's best move
-        while (!halt && depth<=4) {
-            int eval = negamax(board, depth, 0, MAX_EXTENSIONS, -INT_MAX, INT_MAX, halt);
-            
-            // checkmate, no need to continue
-            if (tt.isMate(eval))
-                break;
-            depth++;
-        }
+        // predict opponent's move from pv
+        auto ttkey = board.hash();
+        auto ttentry = tt.get(ttkey, 0);
 
-        // not enough time to continue
-        if (halt || itermove==chess::Move::NO_MOVE) {
+        // no valid response in pv or timeout
+        if (halt || !tt.valid(ttentry, ttkey, 0)) {
             consecutives = 1;
             return;
         }
 
-        // store move to check for ponderhit on our turn
-        board.makeMove(itermove);
+        // play opponent's move and store key to check for ponderhit
+        board.makeMove(ttentry.move);
         ponderkey = board.hash();
         history.clear();
 
         int alpha = -INT_MAX;
         int beta = INT_MAX;
-
-        // begin iterative deepening for our best response
         nodes = 0;
         consecutives = 1;
+
+        // begin iterative deepening for our best response
         while (!halt && ponderdepth<=MAX_DEPTH) {
             int itereval = negamax(board, ponderdepth, 0, MAX_EXTENSIONS, alpha, beta, halt);
 
@@ -203,10 +195,32 @@ public:
     }
 
 
+    // Returns the PV from
+    std::string get_pv_line(chess::Board board, int depth) {
+        // get first move
+        auto ttkey = board.hash();
+        auto ttentry = tt.get(ttkey, 0);
+        chess::Move pvmove;
+
+        std::string pvline = "";
+
+        while (depth && tt.valid(ttentry, ttkey, 0)) {
+            pvmove = ttentry.move;
+            pvline += chess::uci::moveToUci(pvmove) + " ";
+            board.makeMove(pvmove);
+            ttkey = board.hash();
+            ttentry = tt.get(ttkey, 0);
+            depth--;
+        }
+        return pvline;
+    }
+
+
     // Resets the player
     void reset() {
         tt.clear();
         killers.clear();
+        history.clear();
         itermove = chess::Move::NO_MOVE;
         prevPlay = chess::Move::NO_MOVE;
         consecutives = 0;

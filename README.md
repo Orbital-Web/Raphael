@@ -70,6 +70,7 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 - [x] Promotion extensions      (`v1.4+`)
 - [ ] Recapture extensions
 - [x] Late move reductions      (`v1.5+`)
+- [x] Mate distance pruning     (`v1.6+`)
 
 #### Evaluation
 - [x] Materials                 (`v1.0+`)

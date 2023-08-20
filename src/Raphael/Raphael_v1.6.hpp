@@ -28,6 +28,9 @@ private:
     History history;            // history score for each move
     // info
     uint32_t nodes;             // number of nodes visited
+    // timing
+    std::chrono::system_clock::time_point start_t;
+    int64_t search_t;
 
 
 
@@ -63,8 +66,7 @@ public:
         }
 
         // stop search after an appropriate duration
-        int duration = search_time(board, t_remain, t_inc);
-        auto _ = std::async(manage_time, std::ref(halt), duration);
+        startSearchTimer(board, t_remain, t_inc);
 
         // begin iterative deepening
         while (!halt && depth<=MAX_DEPTH) {
@@ -138,6 +140,7 @@ public:
         int depth = 1;
         itermove = chess::Move::NO_MOVE;    // opponent's best move
         history.clear();
+        search_t = 0;   // infinite time
 
         // begin iterative deepening up to depth 4 for opponent's best move
         while (!halt && depth<=4) {
@@ -211,33 +214,36 @@ public:
 
 private:
     // Estimates the time (ms) it should spend on searching a move
-    static int search_time(const chess::Board& board, const int t_remain, const int t_inc) {
+    // Call this at the start before using isTimeOver
+    void startSearchTimer(const chess::Board& board, const int t_remain, const int t_inc) {
         float n = chess::builtin::popcount(board.occ());
-        // [0, 1] (max at 20 pieces left)
+        // 0~1, higher the more time it uses (max at 20 pieces left)
         float ratio = 0.0044f*(n-32)*(-n/32)*pow(2.5f + n/32, 3);
         // use 1~5% of the remaining time based on the ratio + buffered increment
-        int duration = t_remain * (0.01f + 0.04f*ratio) + std::max(t_inc-30, 0);
-        return std::min(duration, t_remain);
+        int duration = t_remain * (0.01f + 0.04f*ratio) + std::max(t_inc - 30, 0);
+        search_t = std::min(duration, t_remain);
+        start_t = std::chrono::high_resolution_clock::now();
     }
 
 
-    // Sets halt to true if duration (ms) passes
-    // Must be called asynchronously
-    static void manage_time(bool& halt, const int duration) {
-        auto start = std::chrono::high_resolution_clock::now();
-        while (!halt) {
+    // Checks if duration (ms) has passed and modifies halt
+    // Runs infinitely if search_t is 0
+    bool isTimeOver(bool& halt) const {
+        // check every 2048 nodes
+        if (search_t && !(nodes & 2047)) {
             auto now = std::chrono::high_resolution_clock::now();
-            auto dtime = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
-            if (dtime >= duration)
+            auto dtime = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_t).count();
+            if (dtime >= search_t)
                 halt = true;
         }
+        return halt;
     }
 
 
     // The Negamax search algorithm to search for the best move
     int negamax(chess::Board& board, unsigned int depth, int ply, int ext, int alpha, int beta, bool& halt) {
         // timeout
-        if (halt) return 0;
+        if (isTimeOver(halt)) return 0;
         nodes++;
 
         if (ply) {

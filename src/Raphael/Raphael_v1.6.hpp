@@ -88,10 +88,8 @@ public:
                 alpha = eval - ASPIRATION_WINDOW;
                 beta = eval + ASPIRATION_WINDOW;
                 depth++;
-            }
 
-            if (itermove != chess::Move::NO_MOVE) {
-                // count how many times we get the same bestmove in a row
+                // count consecutive bestmove
                 if (itermove == prevPlay)
                     consecutives++;
                 else {
@@ -106,15 +104,15 @@ public:
                 #ifndef MUTEEVAL
                     // get absolute evaluation (i.e, set to white's perspective)
                     if (whiteturn == (eval>0))
-                        printf("Eval: +#%d\tNodes: %d\n", depth-1, nodes);
+                        printf("Eval: +#%d\tNodes: %d\n", MATE_EVAL - abs(eval), nodes);
                     else
-                        printf("Eval: -#%d\tNodes: %d\n", depth-1, nodes);
+                        printf("Eval: -#%d\tNodes: %d\n", MATE_EVAL - abs(eval), nodes);
                 #endif
                 #else
                     if (eval>0)
-                        printf("info depth %d nodes %d score mate %d\n", depth-1, nodes, depth-1);
+                        printf("info depth %d nodes %d score mate %d\n", depth-1, nodes, MATE_EVAL - abs(eval));
                     else
-                        printf("info depth %d nodes %d score mate %d\n", depth-1, nodes, -depth+1);
+                        printf("info depth %d nodes %d score mate -%d\n", depth-1, nodes, MATE_EVAL - abs(eval));
                 #endif
                 halt = true;
                 return itermove;
@@ -185,9 +183,8 @@ public:
                 alpha = pondereval - ASPIRATION_WINDOW;
                 beta = pondereval + ASPIRATION_WINDOW;
                 ponderdepth++;
-            }
 
-            if (itermove != chess::Move::NO_MOVE) {
+                // count consecutive bestmove
                 if (itermove == prevPlay)
                     consecutives++;
                 else {
@@ -243,11 +240,18 @@ private:
         if (halt) return 0;
         nodes++;
 
-        // prevent draw in winning positions
-        // technically this ignores checkmate on 50th move (mate > draw)
-        if (ply)
+        if (ply) {
+            // prevent draw in winning positions
+            // technically this ignores checkmate on the 50th move
             if (board.isRepetition(1) || board.isHalfMoveDraw())
                 return 0;
+            
+            // mate distance pruning
+            alpha = std::max(alpha, -MATE_EVAL + ply);
+            beta = std::min(beta, MATE_EVAL - ply);
+            if (alpha >= beta)
+                return alpha;
+        }
         
         // transposition lookup
         int alphaorig = alpha;
@@ -288,6 +292,7 @@ private:
         // search
         order_moves(movelist, board, ply);
         chess::Move bestmove = movelist[0]; // best move in this position
+        if (!ply) itermove = bestmove;      // set itermove in case time runs out here
         int movei = 0;
 
         for (const auto& move : movelist) {

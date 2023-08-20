@@ -253,6 +253,7 @@ private:
         chess::Movelist movelist;
         order_moves(movelist, board, ply);
         chess::Move bestmove = movelist[0]; // best move in this position
+        if (!ply) itermove = bestmove;
         int movei = 0;
 
         for (const auto& move : movelist) {

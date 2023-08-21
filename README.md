@@ -22,7 +22,7 @@ I then used each match results to incrementally update the starting ELO of 1764 
 
 The match results were a WDL of 4-4-2 against **Shallow Blue**, 5-3-2 against **Sayuri**, and 1-1-8 against **Claudia**, thus yielding an estimated ELO of 1797.
 
-Note that this method of ELO estimation is very crude, as it only only compares against two other engines in just 10 rounds each. In the future, I will conduct a more thorough comparison (maybe once v2.0 is out).
+Note that this method of ELO estimation is very crude, as it only only compares against a few other engines with only 10 rounds. In the future, I will conduct a more thorough comparison (maybe once v2.0 is out).
 <br/><br/>
 
 

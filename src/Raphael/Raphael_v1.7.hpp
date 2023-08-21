@@ -6,31 +6,38 @@
 #include <Raphael/Killers.hpp>
 #include <Raphael/History.hpp>
 #include <GameEngine/GamePlayer.hpp>
-#include <future>
+#include <chrono>
 
 
 
 namespace Raphael {
-class v1_5: public cge::GamePlayer {
+class v1_7: public cge::GamePlayer {
 // Raphael vars
 private:
-    TranspositionTable tt;
-    chess::Move itermove;       // best move from previous iteration
-    uint64_t ponderkey = 0;     // hashed board after ponder move
+    // search
+    chess::Move itermove;       // current iteration's bestmove
+    chess::Move prevPlay;       // previous iteration's bestmove
+    int consecutives;           // number of consecutive bestmoves
+    // ponder
+    uint64_t ponderkey = 0;     // hash after opponent's best response
     int pondereval = 0;         // eval we got during ponder
     int ponderdepth = 1;        // depth we searched to during ponder
-    Killers killers;            // killer moves at each ply
-    History history;            // history score
-    const int OLDPASSEDBONUS[7] = {     // bonus for passed pawn based on distance to promotion line
-        0, 85, 60, 40, 20, 15, 10
-    };
+    // storage
+    TranspositionTable tt;      // table with position, eval, and bestmove
+    Killers killers;            // 2 killer moves at each ply
+    History history;            // history score for each move
+    // info
+    uint32_t nodes;             // number of nodes visited
+    // timing
+    std::chrono::system_clock::time_point start_t;  // search start time
+    int64_t search_t;           // search duration (ms)
 
 
 
 // Raphael methods
 public:
     // Initializes Raphael with a name
-    v1_5(std::string name_in): GamePlayer(name_in), tt(TABLE_SIZE) {
+    v1_7(std::string name_in): GamePlayer(name_in), tt(TABLE_SIZE) {
         PST::init_pst();
         PMASK::init_pawnmask();
     }
@@ -43,13 +50,15 @@ public:
         int eval = 0;
         int alpha = -INT_MAX;
         int beta = INT_MAX;
-        chess::Move toPlay = chess::Move::NO_MOVE;  // overall best move
         history.clear();
 
         // if ponderhit, start with ponder result and depth
-        if (board.hash() != ponderkey)
+        if (board.hash() != ponderkey) {
             itermove = chess::Move::NO_MOVE;
-        else {
+            prevPlay = chess::Move::NO_MOVE;
+            consecutives = 1;
+            nodes = 0;
+        } else {
             depth = ponderdepth;
             eval = pondereval;
             alpha = eval - ASPIRATION_WINDOW;
@@ -57,11 +66,13 @@ public:
         }
 
         // stop search after an appropriate duration
-        int duration = search_time(board, t_remain, t_inc);
-        auto _ = std::async(manage_time, std::ref(halt), duration);
+        startSearchTimer(board, t_remain, t_inc);
 
         // begin iterative deepening
         while (!halt && depth<=MAX_DEPTH) {
+            // stable pv, skip
+            if (consecutives >= PV_STABLE_COUNT)
+                halt = true;
             int itereval = negamax(board, depth, 0, MAX_EXTENSIONS, alpha, beta, halt);
 
             // not timeout
@@ -79,66 +90,75 @@ public:
                 alpha = eval - ASPIRATION_WINDOW;
                 beta = eval + ASPIRATION_WINDOW;
                 depth++;
-            }
 
-            if (itermove != chess::Move::NO_MOVE)
-                toPlay = itermove;
+                // count consecutive bestmove
+                if (itermove == prevPlay)
+                    consecutives++;
+                else {
+                    prevPlay = itermove;
+                    consecutives = 1;
+                }
+            }
             
             // checkmate, no need to continue
             if (tt.isMate(eval)) {
                 #ifndef UCI
                 #ifndef MUTEEVAL
-                // get absolute evaluation (i.e, set to white's perspective)
-                if (whiteturn == (eval>0))
-                    printf("Eval: +#\n");
-                else
-                    printf("Eval: -#\n");
+                    // get absolute evaluation (i.e, set to white's perspective)
+                    if (whiteturn == (eval>0))
+                        printf("Eval: +#%d\tNodes: %d\n", MATE_EVAL - abs(eval), nodes);
+                    else
+                        printf("Eval: -#%d\tNodes: %d\n", MATE_EVAL - abs(eval), nodes);
                 #endif
+                #else
+                    if (eval>0)
+                        printf("info depth %d nodes %d score mate %d\n", depth-1, nodes, MATE_EVAL - abs(eval));
+                    else
+                        printf("info depth %d nodes %d score mate -%d\n", depth-1, nodes, MATE_EVAL - abs(eval));
                 #endif
                 halt = true;
-                return toPlay;
+                return itermove;
+            } else {
+                #ifdef UCI
+                    printf("info depth %d nodes %d score cp %d pv %s\n", depth-1, nodes, eval, get_pv_line(board, depth-1).c_str());
+                #endif
             }
         }
-        #ifndef UCI
-        #ifndef MUTEEVAL
-        // get absolute evaluation (i.e, set to white's perspective)
-        if (!whiteturn) eval *= -1;
-        printf("Eval: %.2f\tDepth: %d\n", eval/100.0f, depth-1);
+        #if !defined(UCI) && !defined(MUTEEVAL)
+            // get absolute evaluation (i.e, set to white's perspective)
+            if (!whiteturn) eval *= -1;
+            printf("Eval: %.2f\tDepth: %d\tNodes: %d\n", eval/100.0f, depth-1, nodes);
         #endif
-        #endif
-        return toPlay;
+        return itermove;
     }
 
 
     // Think during opponent's turn. Should return immediately if halt becomes true
     void ponder(chess::Board board, bool& halt) {
-        pondereval = 0;
         ponderdepth = 1;
-        int depth = 1;
-        itermove = chess::Move::NO_MOVE;    // opponent's best move
-        history.clear();
+        pondereval = 0;
+        itermove = chess::Move::NO_MOVE;
+        search_t = 0;   // infinite time
 
-        // begin iterative deepening up to depth 4 for opponent's best move
-        while (!halt && depth<=4) {
-            int eval = negamax(board, depth, 0, MAX_EXTENSIONS, -INT_MAX, INT_MAX, halt);
-            
-            // checkmate, no need to continue
-            if (tt.isMate(eval))
-                break;
-            depth++;
+        // predict opponent's move from pv
+        auto ttkey = board.hash();
+        auto ttentry = tt.get(ttkey, 0);
+
+        // no valid response in pv or timeout
+        if (halt || !tt.valid(ttentry, ttkey, 0)) {
+            consecutives = 1;
+            return;
         }
 
-        // not enough time to continue
-        if (halt || itermove==chess::Move::NO_MOVE) return;
-
-        // store move to check for ponderhit on our turn
-        board.makeMove(itermove);
+        // play opponent's move and store key to check for ponderhit
+        board.makeMove(ttentry.move);
         ponderkey = board.hash();
-        chess::Move toPlay = chess::Move::NO_MOVE;  // our best response
         history.clear();
 
         int alpha = -INT_MAX;
         int beta = INT_MAX;
+        nodes = 0;
+        consecutives = 1;
 
         // begin iterative deepening for our best response
         while (!halt && ponderdepth<=MAX_DEPTH) {
@@ -158,19 +178,41 @@ public:
                 alpha = pondereval - ASPIRATION_WINDOW;
                 beta = pondereval + ASPIRATION_WINDOW;
                 ponderdepth++;
-            }
 
-            // store into toPlay to prevent NO_MOVE
-            if (itermove != chess::Move::NO_MOVE)
-                toPlay = itermove;
+                // count consecutive bestmove
+                if (itermove == prevPlay)
+                    consecutives++;
+                else {
+                    prevPlay = itermove;
+                    consecutives = 1;
+                }
+            }
             
             // checkmate, no need to continue (but don't edit halt)
             if (tt.isMate(pondereval))
                 break;
         }
+    }
 
-        // override in case of NO_MOVE
-        itermove = toPlay;
+
+    // Returns the PV from
+    std::string get_pv_line(chess::Board board, int depth) {
+        // get first move
+        auto ttkey = board.hash();
+        auto ttentry = tt.get(ttkey, 0);
+        chess::Move pvmove;
+
+        std::string pvline = "";
+
+        while (depth && tt.valid(ttentry, ttkey, 0)) {
+            pvmove = ttentry.move;
+            pvline += chess::uci::moveToUci(pvmove) + " ";
+            board.makeMove(pvmove);
+            ttkey = board.hash();
+            ttentry = tt.get(ttkey, 0);
+            depth--;
+        }
+        return pvline;
     }
 
 
@@ -178,44 +220,58 @@ public:
     void reset() {
         tt.clear();
         killers.clear();
+        history.clear();
         itermove = chess::Move::NO_MOVE;
+        prevPlay = chess::Move::NO_MOVE;
+        consecutives = 0;
     }
 
 private:
     // Estimates the time (ms) it should spend on searching a move
-    int search_time(const chess::Board& board, const int t_remain, const int t_inc) {
-        // ratio: a function within [0, 1]
-        // uses 0.5~4% of the remaining time (max at 11 pieces left)
+    // Call this at the start before using isTimeOver
+    void startSearchTimer(const chess::Board& board, const int t_remain, const int t_inc) {
         float n = chess::builtin::popcount(board.occ());
-        float ratio = 0.0138f*(32-n)*(n/32)*pow(2.5f - n/32, 3);
-        // use 0.5~4% of the remaining time based on the ratio + buffered increment
-        int duration = t_remain * (0.005f + 0.035f*ratio) + std::max(t_inc-30, 0);
-        return std::min(duration, t_remain);
+        // 0~1, higher the more time it uses (max at 20 pieces left)
+        float ratio = 0.0044f*(n-32)*(-n/32)*pow(2.5f + n/32, 3);
+        // use 1~5% of the remaining time based on the ratio + buffered increment
+        int duration = t_remain * (0.01f + 0.04f*ratio) + std::max(t_inc - 30, 0);
+        search_t = std::min(duration, t_remain);
+        start_t = std::chrono::high_resolution_clock::now();
     }
 
 
-    // Sets halt to true if duration (ms) passes
-    // Must be called asynchronously
-    static void manage_time(bool& halt, const int duration) {
-        auto start = std::chrono::high_resolution_clock::now();
-        while (!halt) {
+    // Checks if duration (ms) has passed and modifies halt
+    // Runs infinitely if search_t is 0
+    bool isTimeOver(bool& halt) const {
+        // check every 2048 nodes
+        if (search_t && !(nodes & 2047)) {
             auto now = std::chrono::high_resolution_clock::now();
-            auto dtime = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
-            if (dtime >= duration)
+            auto dtime = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_t).count();
+            if (dtime >= search_t)
                 halt = true;
         }
+        return halt;
     }
 
 
     // The Negamax search algorithm to search for the best move
     int negamax(chess::Board& board, unsigned int depth, int ply, int ext, int alpha, int beta, bool& halt) {
         // timeout
-        if (halt) return 0;
+        if (isTimeOver(halt)) return 0;
+        nodes++;
 
-        // prevent draw in winning positions
-        if (ply)
+        if (ply) {
+            // prevent draw in winning positions
+            // technically this ignores checkmate on the 50th move
             if (board.isRepetition(1) || board.isHalfMoveDraw())
                 return 0;
+            
+            // mate distance pruning
+            alpha = std::max(alpha, -MATE_EVAL + ply);
+            beta = std::min(beta, MATE_EVAL - ply);
+            if (alpha >= beta)
+                return alpha;
+        }
         
         // transposition lookup
         int alphaorig = alpha;
@@ -239,21 +295,24 @@ private:
         }
 
         // terminal analysis
-        auto result = board.isGameOver().second;
-        if (result == chess::GameResult::DRAW)
+        if (board.isInsufficientMaterial())
             return 0;
-        else if (result == chess::GameResult::LOSE)
-            return -MATE_EVAL + ply;    // reward faster checkmate
-        
+        chess::Movelist movelist;
+        chess::movegen::legalmoves<chess::MoveGenType::ALL>(movelist, board);
+        if (movelist.empty()) {
+            if (board.inCheck())
+                return -MATE_EVAL + ply;    // reward faster checkmate
+            return 0;
+        }
+
         // terminal depth
         if (depth <= 0)
             return quiescence(board, alpha, beta, halt);
         
         // search
-        chess::Movelist movelist;
         order_moves(movelist, board, ply);
         chess::Move bestmove = movelist[0]; // best move in this position
-        if (!ply) itermove = bestmove;
+        if (!ply) itermove = bestmove;      // set itermove in case time runs out here
         int movei = 0;
 
         for (const auto& move : movelist) {
@@ -315,19 +374,20 @@ private:
 
 
     // Quiescence search for all captures
-    int quiescence(chess::Board& board, int alpha, int beta, bool& halt) const {
-        int eval = evaluate(board);
-
+    int quiescence(chess::Board& board, int alpha, int beta, bool& halt) {
         // timeout
-        if (halt) return eval;
+        if (halt) return 0;
+        nodes++;
 
         // prune
+        int eval = evaluate(board);
         if (eval>=beta) return beta;
         alpha = std::max(alpha, eval);
         
         // search
         chess::Movelist movelist;
-        order_moves(movelist, board, -1);
+        chess::movegen::legalmoves<chess::MoveGenType::CAPTURE>(movelist, board);
+        order_moves(movelist, board, 0);
         
         for (const auto& move : movelist) {
             board.makeMove(move);
@@ -344,12 +404,7 @@ private:
 
 
     // Modifies movelist to contain a list of moves, ordered from best to worst
-    // Generates capture moves only if ply = -1 for quiescence search
     void order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const {
-        if (ply >= 0)
-            chess::movegen::legalmoves<chess::MoveGenType::ALL>(movelist, board);
-        else
-            chess::movegen::legalmoves<chess::MoveGenType::CAPTURE>(movelist, board);
         for (auto& move : movelist)
             score_move(move, board, ply);
         movelist.sort();
@@ -359,7 +414,7 @@ private:
     // Assigns a score to the given move
     void score_move(chess::Move& move, const chess::Board& board, const int ply) const {
         // prioritize best move from previous iteraton
-        if (move == itermove) {
+        if (move == tt.get(board.hash(), 0).move) {
             move.setScore(INT16_MAX);
             return;
         }
@@ -390,8 +445,7 @@ private:
 
 
     // Evaluates the current position (from the current player's perspective)
-public:
-    int evaluate(const chess::Board& board) const {
+    static int evaluate(const chess::Board& board) {
         int eval = 0;
         auto pieces = board.occ();
         int n_pieces_left = chess::builtin::popcount(pieces);
@@ -423,7 +477,7 @@ public:
                 case 0:
                     // passed (+ for white) (more important in endgame)
                     if ((PMASK::WPASSED[sqi] & bpawns) == 0) 
-                        eval += OLDPASSEDBONUS[7 - (sqi/8)] * eg_weight;
+                        eval += PMASK::PASSEDBONUS[7 - (sqi/8)] * eg_weight;
                     // isolated (- for white)
                     if ((PMASK::ISOLATED[sqi] & wpawns) == 0)
                         eval -= PMASK::ISOLATION_WEIGHT;
@@ -431,7 +485,7 @@ public:
                 case 6:
                     // passed (- for white) (more important in endgame)
                     if ((PMASK::BPASSED[sqi] & wpawns) == 0)
-                        eval -= OLDPASSEDBONUS[(sqi/8)] * eg_weight;
+                        eval -= PMASK::PASSEDBONUS[(sqi/8)] * eg_weight;
                     // isolated (+ for white)
                     if ((PMASK::ISOLATED[sqi] & bpawns) == 0)
                         eval += PMASK::ISOLATION_WEIGHT;

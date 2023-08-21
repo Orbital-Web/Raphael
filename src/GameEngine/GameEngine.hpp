@@ -151,6 +151,7 @@ public:
             // play move
             auto toPlay = movereceiver.get();
             if (toPlay == chess::Move::NO_MOVE) {
+                printf("Warning, no move returned. Remaining time of player: %.2fs\n", cur_t_remain/1000.0f);
                 timeout = true;
                 timeoutwins[(p1_is_white!=turn)]++;
                 game_result = chess::GameResult::LOSE;

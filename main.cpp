@@ -1,8 +1,8 @@
 #include <GameEngine/GameEngine.hpp>
 #include <GameEngine/HumanPlayer.hpp>
 #include <Raphael/Raphael_v1.0.hpp>
-#include <Raphael/Raphael_v1.5.hpp>
 #include <Raphael/Raphael_v1.6.hpp>
+#include <Raphael/Raphael_v1.7.hpp>
 #include <string.h>
 #include <fstream>
 
@@ -10,25 +10,25 @@
 
 // Creates the specified player
 cge::GamePlayer* player_factory(char* playertype, char* name) {
-    if (!strcmp(playertype, "human"))
+    if (!strcmp(playertype, "human") || !strcmp(playertype, "Human"))
         return new cge::HumanPlayer(name);
     else if (!strcmp(playertype, "Raphaelv1.0"))
         return new Raphael::v1_0(name);
-    else if (!strcmp(playertype, "Raphaelv1.5"))
-        return new Raphael::v1_5(name);
     else if (!strcmp(playertype, "Raphaelv1.6"))
         return new Raphael::v1_6(name);
+    else if (!strcmp(playertype, "Raphaelv1.7"))
+        return new Raphael::v1_7(name);
     else if (!strcmp(playertype, "Raphael"))
-        return new Raphael::v1_6(name);
+        return new Raphael::v1_7(name);
     
     // invalid
     printf("Invalid player type: %s\n", playertype);
     printf("Valid player types are:\n");
     printf("   human:\t cge::HumanPlayer\n");
-    printf("   Raphael:\t Raphael::v1_5\n");
+    printf("   Raphael:\t Raphael::v1_7\n");
     printf("   Raphaelv1.0:\t Raphael::v1_0\n");
-    printf("   Raphaelv1.5:\t Raphael::v1_5\n");
     printf("   Raphaelv1.6:\t Raphael::v1_6\n");
+    printf("   Raphaelv1.7:\t Raphael::v1_7\n");
     return nullptr;
 }
 
@@ -61,8 +61,11 @@ main.exe human "Adam" human "Bob" -t 60 60
 main.exe Raphael "Raphael" Human "Bob" 3 -f "8/8/2q5/2k5/8/5K2/8/8 w - - 0 1"
     3 rapid matches with set starting position, Raphael vs human (human plays white 1 time)
 
-main.exe Raphael "Raph1" Raphael "Raph2" 3 -f "8/8/2q5/2k5/8/5K2/8/8 w - - 0 1" -t 300 300
-    3 blitz matches with set starting position, both Raphael
+main.exe Raphael "Raph1" Raphael "Raph2" 3 -f "8/8/2q5/2k5/8/5K2/8/8 w - - 0 1" -t 120 120 -i 1
+    3 2|1 blitz matches with set starting position, both Raphael\
+
+main.exe Raphael "new" Raphaelv1.0 "old" -c
+    400 comparison matches between the newest version of Raphael and Raphaelv1.0
 */
 int main(int argc, char** argv) {
     cge::GamePlayer* p1;

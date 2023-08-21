@@ -5,7 +5,7 @@ Both a UCI Chess Engine (**Raphael**) and a Chess GUI (to play against **Raphael
 
 **Raphael** is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python. 
 
-*Note: v1.6 will be the last of the minor releases to **Raphael**. The next major release will be v2.0 using a custom NNUE evaluation function.*
+*Note: v1.7 will be the last of the minor releases to **Raphael**. The next major release will be v2.0 using a custom NNUE evaluation function.*
 
 <p align="center">
     <img src="https://github.com/Orbital-Web/Raphael/blob/8667a6f6db60c5cacce297145246f89a22fa5333/Demo.png" alt="demo of Raphael" width=400/>
@@ -66,6 +66,7 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 - [x] Time management           (`v1.0+`)
 - [x] Skip search on stable pv  (`v1.6+`)
 - [x] Pondering                 (`v1.2+`)
+- [x] Pondering with pv         (`v1.6+`)
 - [x] Check extensions          (`v1.4+`)
 - [x] Promotion extensions      (`v1.4+`)
 - [ ] Recapture extensions
@@ -112,7 +113,7 @@ Below is the result of each new version against `v1.0` out of 400 matches (20 se
 - `v1.3` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥🟥🟥 `v1.0` [301 / 23 / 76]
 - `v1.4` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [333 / 25 / 42]
 - `v1.5` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [344 / 23 / 43]
-- `v1.6` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥 `v1.0` [360 / 20 / 20]
+- `v1.6` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥 `v1.0` [355 / 27 / 18]
 
 And below is the more detailed comparison.
 <table>
@@ -241,6 +242,28 @@ And below is the more detailed comparison.
         <td>60</td>
         <td>6</td>
         <td>v1.4</td>
+    </tr>
+    <tr align="center">
+        <td>v1.6</td>
+        <td>169</td>
+        <td>178</td>
+        <td>8</td>
+        <td>27</td>
+        <td>5</td>
+        <td>13</td>
+        <td>0</td>
+        <td>v1.0</td>
+    </tr>
+    <tr align="center">
+        <td>v1.6</td>
+        <td>122</td>
+        <td>127</td>
+        <td>2</td>
+        <td>77</td>
+        <td>33</td>
+        <td>39</td>
+        <td>0</td>
+        <td>v1.5</td>
     </tr>
 </table>
 

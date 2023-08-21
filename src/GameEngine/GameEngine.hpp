@@ -151,8 +151,6 @@ public:
             // play move
             auto toPlay = movereceiver.get();
             if (toPlay == chess::Move::NO_MOVE) {
-                printf("Hmm ");
-                std::cout << cur_t_remain << " " << t_remain[!turn] << "\n";
                 timeout = true;
                 timeoutwins[(p1_is_white!=turn)]++;
                 game_result = chess::GameResult::LOSE;

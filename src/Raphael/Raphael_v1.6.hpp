@@ -414,7 +414,7 @@ private:
     // Assigns a score to the given move
     void score_move(chess::Move& move, const chess::Board& board, const int ply) const {
         // prioritize best move from previous iteraton
-        if (move == itermove) {
+        if (move == tt.get(board.hash(), 0).move) {
             move.setScore(INT16_MAX);
             return;
         }

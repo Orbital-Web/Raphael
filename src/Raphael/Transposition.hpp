@@ -29,7 +29,7 @@ private:
 // TranspositionTable methods
 public:
     // Initializes the Transposition Table (TranspositionTable<size>)
-    TranspositionTable(const unsigned int size_in): size(size_in), _table(size, {.flag = INVALID}) {
+    TranspositionTable(const unsigned int size_in): size(size_in), _table(size, {.flag=INVALID, .move=chess::Move::NO_MOVE}) {
         assert((size>0 && size<=MAX_TABLE_SIZE));   // size is within (0, MAX_TABLE_SIZE]
         assert(((size & (size-1)) == 0));           // size is a power of 2
     }
@@ -57,7 +57,7 @@ public:
 
     // Clears the table
     void clear() {
-        std::fill(_table.begin(), _table.end(), (Entry){.flag = INVALID});
+        std::fill(_table.begin(), _table.end(), (Entry){.flag=INVALID, .move=chess::Move::NO_MOVE});
     }
 
 

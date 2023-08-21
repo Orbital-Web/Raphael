@@ -325,8 +325,14 @@ private:
         if (depth <= 0)
             return quiescence(board, alpha, beta, halt);
         
+        // one reply extension
+        int extension = 0;
+        if (movelist.size()>1)
+            order_moves(movelist, board, ply);
+        else if (ext>0)
+            extension++;
+        
         // search
-        order_moves(movelist, board, ply);
         chess::Move bestmove = movelist[0]; // best move in this position
         if (!ply) itermove = bestmove;      // set itermove in case time runs out here
         int movei = 0;
@@ -334,20 +340,19 @@ private:
         for (const auto& move : movelist) {
             bool istactical = board.isCapture(move) || move.typeOf()==chess::Move::PROMOTION;
             board.makeMove(move);
-            // check and promotion extension
-            int extension = 0;
-            if (ext) {
+            // check and passed pawn extension
+            if (ext>0) {
                 if (board.inCheck())
-                    extension = 1;
+                    extension++;
                 else {
                     auto sqrank = chess::utils::squareRank(move.to());
                     auto piece = board.at(move.to());
                     if ((sqrank==chess::Rank::RANK_2 && piece==chess::Piece::BLACKPAWN) ||
                         (sqrank==chess::Rank::RANK_7 && piece==chess::Piece::WHITEPAWN))
-                        extension = 1;
+                        extension++;
                 }
             }
-            // late move reduction for quiet moves
+            // late move reduction with zero window for certain quiet moves
             bool fullwindow = true;
             int eval;
             if (extension==0 && depth>=3 && movei>=REDUCTION_FROM && !istactical) {
@@ -356,6 +361,7 @@ private:
             }
             if (fullwindow)
                 eval = -negamax(board, depth-1+extension, ply+1, ext-extension, -beta, -alpha, halt);
+            extension = 0;
             movei++;
             board.unmakeMove(move);
 
@@ -403,7 +409,8 @@ private:
         // search
         chess::Movelist movelist;
         chess::movegen::legalmoves<chess::MoveGenType::CAPTURE>(movelist, board);
-        order_moves(movelist, board, 0);
+        if (movelist.size() > 1)
+            order_moves(movelist, board, 0);
         
         for (const auto& move : movelist) {
             board.makeMove(move);

@@ -16,7 +16,7 @@ Both a UCI Chess Engine (**Raphael**) and a Chess GUI (to play against **Raphael
 ## ELO
 **[Estimated CCRL 40/2 ELO](http://ccrl.chessdom.com/ccrl/402.archive/): 1797**
 
-To estimate **Raphael's** [ELO](http://ccrl.chessdom.com/ccrl/402.archive/), I paired the newest version of **Raphael** against [**Shallow Blue**](https://github.com/GunshipPenguin/shallow-blue) (1734 ELO), [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1838 ELO), and [**Claudia**](https://github.com/antoniogarro/Claudia) (1908 ELO) inside of [Arena](http://www.playwitharena.de) in a 10 rounds 40/2 gauntlet tournament with random starting positions. 
+To estimate **Raphael's** [ELO](http://ccrl.chessdom.com/ccrl/402.archive/), I paired the **Raphaelv1.6** against [**Shallow Blue**](https://github.com/GunshipPenguin/shallow-blue) (1734 ELO), [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1838 ELO), and [**Claudia**](https://github.com/antoniogarro/Claudia) (1908 ELO) inside of [Arena](http://www.playwitharena.de) in a 10 rounds 40/2 gauntlet tournament with random starting positions. 
 
 I then used each match results to incrementally update the starting ELO of 1764 (based on previous tests) using [this calculator](https://www.omnicalculator.com/sports/elo#a-detailed-analysis-the-meaning-of-elo-coefficients), which calculates ELO changes based on the approximate relation between [win probability and ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability).
 
@@ -83,8 +83,8 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 - [x] Pondering                 (`v1.2+`)
 - [x] Pondering with pv         (`v1.6+`)
 - [x] Check extensions          (`v1.4+`)
-- [x] Promotion extensions      (`v1.4+`)
-- [ ] Recapture extensions
+- [x] Passed pawn extensions    (`v1.4+`)
+- [x] One reply extensions      (`v1.7+`)
 - [x] Late move reductions      (`v1.5+`)
 - [x] Mate distance pruning     (`v1.6+`)
 

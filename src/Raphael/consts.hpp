@@ -1,4 +1,8 @@
 #pragma once
+#include <cstdint>
+
+
+
 namespace Raphael {
     // should remain largely unchanged
     const int MAX_DEPTH = 128;

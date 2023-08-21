@@ -157,11 +157,10 @@ public:
                 game_result = chess::GameResult::LOSE;
                 goto game_end;
             }
-            // pgn
-            if (savepgn)
-                pgn << nmoves << ". " << chess::uci::moveToSan(board, toPlay) << " ";
-            // play move
             halt = true;    // force stop pondering
+            // pgn saving
+            if (savepgn) pgn << nmoves << ". " << chess::uci::moveToSan(board, toPlay) << " ";
+            // play move and update everything
             move(toPlay);
             turn = !turn;
             game_result = board.isGameOver().second;

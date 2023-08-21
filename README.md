@@ -13,6 +13,18 @@ Both a UCI Chess Engine (**Raphael**) and a Chess GUI (to play against **Raphael
 
 
 
+## ELO
+**[Estimated CCRL 40/2 ELO](http://ccrl.chessdom.com/ccrl/402.archive/): 1764**
+
+To estimate **Raphael's** [ELO](http://ccrl.chessdom.com/ccrl/402.archive/), I paired **Raphaelv1.6** (the newest version at the time of testing) against [**Shallow Blue**](https://github.com/GunshipPenguin/shallow-blue) (1734 ELO) and [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1838 ELO) inside of [Arena](http://www.playwitharena.de) in a 10 rounds 40/2 gauntlet tournament with random starting positions. 
+
+It scored a WDL of 6-2-2 against **Shallow Blue** and 2-1-7 against **Sayuri**. I then used the approximate relation between [win probability and ELO difference](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability) to calculate the ELO difference against the 2 engines, and averaged the resulting ELO to get the final estimated ELO of 1764.    
+
+Note that this method of ELO estimation is very crude, as it only only compares against two other engines in just 10 rounds each. In the future, I will conduct a more thorough comparison (maybe once v2.0 is out).
+<br/><br/>
+
+
+
 ## Getting started (Windows)
 1. Clone the repository (*make sure to use `--recurse-submodules` when pulling too*)
     ```
@@ -38,6 +50,7 @@ g++ -o Raphael uci.o -LSFML-2.6.0/lib -lsfml-graphics-s
 del uci.o
 Raphael.exe
 ```
+<br/><br/>
 
 
 
@@ -91,17 +104,7 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 - [x] Killer heuristics         (`v1.3+`)
 - [x] History heuristics        (`v1.5+`)
 - [ ] SEE
-
-
-
-## ELO
-**[Estimated CCRL 40/2 ELO](http://ccrl.chessdom.com/ccrl/402.archive/): 1764**
-
-To estimate **Raphael's** [ELO](http://ccrl.chessdom.com/ccrl/402.archive/), I paired **Raphaelv1.6** (the newest version at the time of testing) against [**Shallow Blue**](https://github.com/GunshipPenguin/shallow-blue) (1734 ELO) and [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1838 ELO) inside of [Arena](http://www.playwitharena.de) in a 10 rounds 40/2 gauntlet tournament with random starting positions. 
-
-It scored a WDL of 6-2-2 against **Shallow Blue** and 2-1-7 against **Sayuri**. I then used the approximate relation between [win probability and ELO difference](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability) to calculate the ELO difference against the 2 engines, and averaged the resulting ELO to get the final estimated ELO of 1764.    
-
-Note that this method of ELO estimation is very crude, as it only only compares against two other engines in just 10 rounds each. In the future, I will conduct a more thorough comparison (maybe once v2.0 is out).
+<br/><br/>
 
 
 

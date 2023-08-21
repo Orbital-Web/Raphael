@@ -14,11 +14,13 @@ Both a UCI Chess Engine (**Raphael**) and a Chess GUI (to play against **Raphael
 
 
 ## ELO
-**[Estimated CCRL 40/2 ELO](http://ccrl.chessdom.com/ccrl/402.archive/): 1764**
+**[Estimated CCRL 40/2 ELO](http://ccrl.chessdom.com/ccrl/402.archive/): 1797**
 
-To estimate **Raphael's** [ELO](http://ccrl.chessdom.com/ccrl/402.archive/), I paired **Raphaelv1.6** (the newest version at the time of testing) against [**Shallow Blue**](https://github.com/GunshipPenguin/shallow-blue) (1734 ELO) and [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1838 ELO) inside of [Arena](http://www.playwitharena.de) in a 10 rounds 40/2 gauntlet tournament with random starting positions. 
+To estimate **Raphael's** [ELO](http://ccrl.chessdom.com/ccrl/402.archive/), I paired the newest version of **Raphael** against [**Shallow Blue**](https://github.com/GunshipPenguin/shallow-blue) (1734 ELO), [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1838 ELO), and [**Claudia**](https://github.com/antoniogarro/Claudia) (1908 ELO) inside of [Arena](http://www.playwitharena.de) in a 10 rounds 40/2 gauntlet tournament with random starting positions. 
 
-It scored a WDL of 6-2-2 against **Shallow Blue** and 2-1-7 against **Sayuri**. I then used the approximate relation between [win probability and ELO difference](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability) to calculate the ELO difference against the 2 engines, and averaged the resulting ELO to get the final estimated ELO of 1764.    
+I then used each match results to incrementally update the starting ELO of 1764 (based on previous tests) using [this calculator](https://www.omnicalculator.com/sports/elo#a-detailed-analysis-the-meaning-of-elo-coefficients), which calculates ELO changes based on the approximate relation between [win probability and ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability).
+
+The match results were a WDL of 4-4-2 against **Shallow Blue**, 5-3-2 against **Sayuri**, and 1-1-8 against **Claudia**, thus yielding an estimated ELO of 1797.
 
 Note that this method of ELO estimation is very crude, as it only only compares against two other engines in just 10 rounds each. In the future, I will conduct a more thorough comparison (maybe once v2.0 is out).
 <br/><br/>
@@ -100,7 +102,7 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 #### Move Ordering
 - [x] MVV-LVA                   (`v1.0+`)
 - [x] Promotions                (`v1.0+`)
-- [x] Previous iteration        (`v1.0+`)
+- [x] Hash move                 (`v1.6+`)
 - [x] Killer heuristics         (`v1.3+`)
 - [x] History heuristics        (`v1.5+`)
 - [ ] SEE

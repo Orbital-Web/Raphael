@@ -1,7 +1,7 @@
 # Raphael
 Both a UCI Chess Engine (**Raphael**) and a Chess GUI (to play against **Raphael** or to make **Raphael** play itself), coded in C++, using [SFML](https://www.sfml-dev.org/) and [Disservin's Chess Library](https://github.com/Disservin/chess-library).
 
-**Raphael** is still a work in progress and will be updated as time goes by (though it's already quite competent). [Scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-engine) to see a list of features currently implemented.
+**Raphael** is a hobby project that is still a work in progress, but it will be updated as time goes by. It is nowhere near as competitive as some of the other chess engines out there, but it is strong enough to beat most humans with ease. Please [scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-engine) to see a list of features currently implemented
 
 **Raphael** is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python. 
 
@@ -43,14 +43,14 @@ Note that this method of ELO estimation is very crude, as it only only compares 
 
 The compilation process should be similar for Linux and macOS, though the process of setting up SFML may be slightly different. Please refer to the [official SFML documentation](https://www.sfml-dev.org/tutorials/2.6/).
 
-To compile and run the uci engine, follow steps 1~2, and use the following commands (consider also increasing the `TABLE_SIZE` to `2^24`)
+To compile and run the uci engine, follow steps 1~2, and use the following commands
 ```
 g++ -c uci.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
 g++ -o Raphael uci.o -LSFML-2.6.0/lib -lsfml-graphics-s
 del uci.o
 Raphael.exe
 ```
-<br/><br/>
+<br/>
 
 
 

@@ -11,6 +11,11 @@
 namespace Raphael {
 class v1_0: public cge::GamePlayer {
 // Raphael vars
+public:
+    struct EngineOptions {
+        uint32_t tablesize = DEF_TABLE_SIZE;    // number of entries in tt
+    };
+
 private:
     TranspositionTable tt;
     chess::Move toPlay;     // overall best move
@@ -21,8 +26,18 @@ private:
 // Raphael methods
 public:
     // Initializes Raphael with a name
-    v1_0(std::string name_in): GamePlayer(name_in), tt(TABLE_SIZE) {
+    v1_0(std::string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {
         PST::init_pst();
+    }
+    // and with options
+    v1_0(std::string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {
+        PST::init_pst();
+    }
+    
+
+    // Set options
+    void set_options(EngineOptions options) {
+        tt = TranspositionTable(options.tablesize);
     }
 
 

@@ -1,6 +1,7 @@
 #define UCI
 #include <chess.hpp>
-#include <Raphael/Raphael_v1.6.hpp>
+#include <Raphael/Raphael_v1.7.hpp>
+#include <Raphael/Transposition.hpp>
 #include <SFML/Graphics.hpp>
 #include <future>
 #include <string>
@@ -16,7 +17,7 @@
 
 // global vars
 chess::Board board;
-Raphael::v1_6 engine("Raphael");
+Raphael::v1_7 engine("Raphael");
 bool halt = false;
 bool quit = false;
 
@@ -32,6 +33,20 @@ std::vector<std::string> splitstr(const std::string& str, const char delim) {
         tokens.push_back(token);
 
     return tokens;
+}
+
+
+// Sets options such as tt size
+void setoption(const std::vector<std::string>& tokens) {
+    if (tokens.size() != 5)
+        return;
+
+    if (tokens[2] == "Hash") {
+        int tablesize_mb = std::stoi(tokens[4]);
+        uint32_t tablesize = (tablesize_mb*1024U*1024) / sizeof(Raphael::TranspositionTable::Entry);
+        engine.set_options({.tablesize=tablesize});
+        printf("Set table size to %jumb (%ju entries)\n", tablesize_mb, tablesize);
+    }
 }
 
 
@@ -150,6 +165,7 @@ void search(const std::vector<std::string>& tokens) {
 
 int main() {
     std::string uci;
+    Raphael::v1_7::EngineOptions engine_opt;
 
     // handle uci commands
     while (!quit) {
@@ -161,8 +177,12 @@ int main() {
         if (keyword == "uci") {
             printf("id name Raphael\n");
             printf("id author Rei Meguro\n");
+            printf("option name Hash type spin default 192 min 1 max 2560\n");
             printf("uciok\n");
         }
+
+        else if (keyword == "setoption")
+            setoption(tokens);
 
         else if (keyword == "ready")
             printf("readyok\n");

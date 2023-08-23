@@ -5,6 +5,7 @@
 #include <Raphael/Transposition.hpp>
 #include <Raphael/Killers.hpp>
 #include <Raphael/History.hpp>
+#include <Raphael/SEE.hpp>
 #include <GameEngine/GamePlayer.hpp>
 #include <chrono>
 
@@ -398,10 +399,10 @@ private:
     // Quiescence search for all captures
     int quiescence(chess::Board& board, int alpha, int beta, bool& halt) {
         // timeout
-        if (halt) return 0;
+        if (isTimeOver(halt)) return 0;
         nodes++;
 
-        // prune
+        // prune with standing pat
         int eval = evaluate(board);
         if (eval>=beta) return beta;
         alpha = std::max(alpha, eval);
@@ -410,7 +411,7 @@ private:
         chess::Movelist movelist;
         chess::movegen::legalmoves<chess::MoveGenType::CAPTURE>(movelist, board);
         if (movelist.size() > 1)
-            order_moves(movelist, board, 0);
+            order_moves(movelist, board, -1);
         
         for (const auto& move : movelist) {
             board.makeMove(move);
@@ -427,9 +428,14 @@ private:
 
 
     // Sorts movelist from best to worst using score_move as its heuristic
+    // Use ply = -1 to sort quiescence moves with SEE
     void order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const {
-        for (auto& move : movelist)
-            score_move(move, board, ply);
+        if (ply != -1)
+            for (auto& move : movelist)
+                score_move(move, board, ply);
+        else
+            for (auto& move : movelist)
+                move.setScore(SEE::evaluate(move, board));
         movelist.sort();
     }
 
@@ -516,15 +522,15 @@ private:
 
                 // bishop mobility (xrays queens)
                 case 2:
-                    bishmob += chess::builtin::popcount(chess::movegen::attacks::bishop(sq, wbishx));break;
+                    bishmob += chess::builtin::popcount(chess::attacks::bishop(sq, wbishx));break;
                 case 8:
-                    bishmob -= chess::builtin::popcount(chess::movegen::attacks::bishop(sq, bbishx));break;
+                    bishmob -= chess::builtin::popcount(chess::attacks::bishop(sq, bbishx));break;
 
                 // rook mobility (xrays rooks and queens)
                 case 3:
-                    rookmob += chess::builtin::popcount(chess::movegen::attacks::rook(sq, wrookx));break;
+                    rookmob += chess::builtin::popcount(chess::attacks::rook(sq, wrookx));break;
                 case 9:
-                    rookmob -= chess::builtin::popcount(chess::movegen::attacks::rook(sq, brookx));break;
+                    rookmob -= chess::builtin::popcount(chess::attacks::rook(sq, brookx));break;
 
                 // king proximity
                 case 5:

@@ -509,15 +509,15 @@ private:
 
                 // bishop mobility (xrays queens)
                 case 2:
-                    bishmob += chess::builtin::popcount(chess::movegen::attacks::bishop(sq, wbishx));break;
+                    bishmob += chess::builtin::popcount(chess::attacks::bishop(sq, wbishx));break;
                 case 8:
-                    bishmob -= chess::builtin::popcount(chess::movegen::attacks::bishop(sq, bbishx));break;
+                    bishmob -= chess::builtin::popcount(chess::attacks::bishop(sq, bbishx));break;
 
                 // rook mobility (xrays rooks and queens)
                 case 3:
-                    rookmob += chess::builtin::popcount(chess::movegen::attacks::rook(sq, wrookx));break;
+                    rookmob += chess::builtin::popcount(chess::attacks::rook(sq, wrookx));break;
                 case 9:
-                    rookmob -= chess::builtin::popcount(chess::movegen::attacks::rook(sq, brookx));break;
+                    rookmob -= chess::builtin::popcount(chess::attacks::rook(sq, brookx));break;
 
                 // king proximity
                 case 5:

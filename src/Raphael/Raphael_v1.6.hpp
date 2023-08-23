@@ -271,7 +271,7 @@ private:
 
 
     // The Negamax search algorithm to search for the best move
-    int negamax(chess::Board& board, unsigned int depth, int ply, int ext, int alpha, int beta, bool& halt) {
+    int negamax(chess::Board& board, int depth, int ply, int ext, int alpha, int beta, bool& halt) {
         // timeout
         if (isTimeOver(halt)) return 0;
         nodes++;

@@ -271,7 +271,7 @@ private:
 
 
     // The Negamax search algorithm to search for the best move
-    int negamax(chess::Board& board, unsigned int depth, int ply, int ext, int alpha, int beta, bool& halt) {
+    int negamax(chess::Board& board, const int depth, const int ply, const int ext, int alpha, int beta, bool& halt) {
         // timeout
         if (isTimeOver(halt)) return 0;
         nodes++;
@@ -426,7 +426,7 @@ private:
     }
 
 
-    // Modifies movelist to contain a list of moves, ordered from best to worst
+    // Sorts movelist from best to worst using score_move as its heuristic
     void order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const {
         for (auto& move : movelist)
             score_move(move, board, ply);

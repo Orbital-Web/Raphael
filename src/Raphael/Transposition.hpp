@@ -6,7 +6,7 @@
 
 namespace Raphael {
 class TranspositionTable {
-static constexpr unsigned int MAX_TABLE_SIZE = 134217728;   // 3GB
+static constexpr uint32_t MAX_TABLE_SIZE = 134217728;   // 3GB
 
 // TranspositionTable vars
 public:
@@ -14,14 +14,14 @@ public:
     // storage type (size = 24 bytes)
     struct Entry {
         uint64_t key;       // 8 bytes (8 bytes)
-        uint32_t depth: 30; // 4 bytes (8 bytes)
+        int depth: 30;      // 4 bytes (8 bytes)
         Flag flag: 2;           
         int eval;           // 4 bytes (8 bytes)
         chess::Move move;   // 4 bytes
     };
 
 private:
-    unsigned int size;
+    uint32_t size;
     std::vector<Entry> _table;
 
 
@@ -29,7 +29,7 @@ private:
 // TranspositionTable methods
 public:
     // Initializes the Transposition Table (TranspositionTable<size>)
-    TranspositionTable(const unsigned int size_in): size(size_in), _table(size, {.flag=INVALID, .move=chess::Move::NO_MOVE}) {
+    TranspositionTable(const uint32_t size_in): size(size_in), _table(size, {.flag=INVALID, .move=chess::Move::NO_MOVE}) {
         assert((size>0 && size<=MAX_TABLE_SIZE));   // size is within (0, MAX_TABLE_SIZE]
         //assert(((size & (size-1)) == 0));           // size is a power of 2
     }

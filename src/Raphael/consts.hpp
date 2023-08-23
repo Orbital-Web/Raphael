@@ -265,5 +265,5 @@ namespace MOBILITY {
     const int BISH_END = 3;
     const int ROOK_MID = 1;
     const int ROOK_END = 2;
-}
+}   // MOBILITY
 }   // namespace Raphael

@@ -456,7 +456,7 @@ private:
 
         // enemy piece captured
         if (board.isCapture(move))
-            score += abs(PVAL::VALS[to]) - abs(PVAL::VALS[from]) + 13;  // small bias to encourage trades
+            score += abs(PVAL::VALS[to]) - (from%6);    // MVV/LVA
         else {
             // killer move
             if (ply>0 && killers.isKiller(move, ply))

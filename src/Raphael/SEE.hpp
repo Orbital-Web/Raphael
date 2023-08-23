@@ -75,5 +75,11 @@ namespace SEE {
             gain[n_captures-1] = -std::max(-gain[n_captures-1], gain[n_captures]);
         return gain[0];
     }
+
+
+    // A quicker version for computing whether a capture is good or bad
+    bool quick(const chess::Move& move, const chess::Board& board, const int threshold) {
+
+    }
 }   // namespace SEE
 }   // namespace Raphael

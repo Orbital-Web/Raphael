@@ -4,6 +4,7 @@
 #include <SFML/Audio.hpp>
 #include <GameEngine/utils.hpp>
 #include <GameEngine/GamePlayer.hpp>
+#include <Raphael/SEE.hpp>
 #include <future>
 #include <fstream>
 
@@ -416,6 +417,7 @@ private:
 
     // Updates the board with a move
     void move(chess::Move move_in) {
+        printf("see: %d\n", Raphael::SEE::evaluate(move_in, board));
         sq_from = move_in.from();
         sq_to = move_in.to();
         selectedtiles.clear();

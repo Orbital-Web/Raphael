@@ -415,6 +415,11 @@ private:
         
         for (const auto& move : movelist) {
             board.makeMove(move);
+            // SEE pruning
+            if (move.score()<0 && !board.inCheck()) {
+                board.unmakeMove(move);
+                continue;
+            }
             eval = -quiescence(board, -beta, -alpha, halt);
             board.unmakeMove(move);
 

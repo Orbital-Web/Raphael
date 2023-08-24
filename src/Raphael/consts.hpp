@@ -16,6 +16,7 @@ namespace Raphael {
     const int PV_STABLE_COUNT = 6;              // number of consecutive bestmoves to consider pv as stable and halt search
     const int KING_DIST_WEIGHT = 20;            // how important king proximity is for the evaluation at endgame
     const int KILLER_WEIGHT = 50;               // move ordering priority for killer moves
+    const int GOOD_CAPTURE_WEIGHT = 5000;       // move ordering priority for good captures
 
 
 // Value of each piece

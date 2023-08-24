@@ -87,6 +87,7 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 - [x] One reply extensions      (`v1.7+`)
 - [x] Late move reductions      (`v1.5+`)
 - [x] Mate distance pruning     (`v1.6+`)
+- [ ] Lazy SMP 
 
 #### Evaluation
 - [x] Materials                 (`v1.0+`)
@@ -105,7 +106,7 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 - [x] Hash move                 (`v1.6+`)
 - [x] Killer heuristics         (`v1.3+`)
 - [x] History heuristics        (`v1.5+`)
-- [ ] SEE
+- [x] SEE                       (`v1.7+`)
 <br/><br/>
 
 

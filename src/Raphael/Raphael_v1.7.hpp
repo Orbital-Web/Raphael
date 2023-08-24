@@ -410,13 +410,12 @@ private:
         // search
         chess::Movelist movelist;
         chess::movegen::legalmoves<chess::MoveGenType::CAPTURE>(movelist, board);
-        if (movelist.size() > 1)
-            order_moves(movelist, board, -1);
+        order_moves(movelist, board, 0);
         
         for (const auto& move : movelist) {
             board.makeMove(move);
-            // SEE pruning
-            if (move.score()<0 && !board.inCheck()) {
+            // SEE pruning for losing captures
+            if (move.score()<GOOD_CAPTURE_WEIGHT && !board.inCheck()) {
                 board.unmakeMove(move);
                 continue;
             }
@@ -433,14 +432,9 @@ private:
 
 
     // Sorts movelist from best to worst using score_move as its heuristic
-    // Use ply = -1 to sort quiescence moves with SEE
     void order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const {
-        if (ply != -1)
-            for (auto& move : movelist)
-                score_move(move, board, ply);
-        else
-            for (auto& move : movelist)
-                move.setScore(SEE::evaluate(move, board));
+        for (auto& move : movelist)
+            score_move(move, board, ply);
         movelist.sort();
     }
 
@@ -460,9 +454,10 @@ private:
         int to = (int)board.at(move.to());
 
         // enemy piece captured
-        if (board.isCapture(move))
+        if (board.isCapture(move)) {
             score += abs(PVAL::VALS[to]) - (from%6);    // MVV/LVA
-        else {
+            score += SEE::goodCapture(move, board, -12) * GOOD_CAPTURE_WEIGHT;
+        } else {
             // killer move
             if (ply>0 && killers.isKiller(move, ply))
                 score += KILLER_WEIGHT;

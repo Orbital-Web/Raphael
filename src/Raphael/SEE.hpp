@@ -65,7 +65,7 @@ namespace SEE {
         all_attackers |= (chess::attacks::king(to) & board.pieces(chess::PieceType::KING));
 
         // first simulate a series of captures on the same square
-        do {
+        while (true) {
             n_captures++;
             gain[n_captures] = pieceval(victim, board) - gain[n_captures-1];    // assume defended
             //if (std::max(-gain[n_captures-1], gain[n_captures]) < 0) break;
@@ -80,7 +80,7 @@ namespace SEE {
             occ ^= (1ULL<<victim);    // remove capturer from occ
             all_attackers |= chess::attacks::bishop(to, occ) & bqs;
             all_attackers |= chess::attacks::rook(to, occ) & rqs;
-        } while (true);
+        }
 
         // evaluate the final material (dis)advantage if we both trade smartly
         while (--n_captures)

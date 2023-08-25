@@ -33,7 +33,7 @@ private:
     Killers killers;            // 2 killer moves at each ply
     History history;            // history score for each move
     // info
-    uint32_t nodes;             // number of nodes visited
+    uint64_t nodes;             // number of nodes visited
     // timing
     std::chrono::system_clock::time_point start_t;  // search start time
     int64_t search_t;           // search duration (ms)
@@ -122,29 +122,33 @@ public:
                 #ifndef UCI
                 #ifndef MUTEEVAL
                     // get absolute evaluation (i.e, set to white's perspective)
-                    if (whiteturn == (eval>0))
-                        printf("Eval: +#%d\tNodes: %d\n", MATE_EVAL - abs(eval), nodes);
-                    else
-                        printf("Eval: -#%d\tNodes: %d\n", MATE_EVAL - abs(eval), nodes);
+                    printf("Eval: %c", (whiteturn == (eval>0)) ? '\0' : '-');
+                    printf("#%d\tNodes: %jd\n", MATE_EVAL - abs(eval), nodes);
                 #endif
                 #else
-                    if (eval>0)
-                        printf("info depth %d nodes %d score mate %d\n", depth-1, nodes, MATE_EVAL - abs(eval));
-                    else
-                        printf("info depth %d nodes %d score mate -%d\n", depth-1, nodes, MATE_EVAL - abs(eval));
+                    auto now = std::chrono::high_resolution_clock::now();
+                    auto dtime = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_t).count();
+                    auto nps = (dtime) ? nodes*1000/dtime : 0;
+                    printf("info depth %d time %jd nodes %jd ", depth-1, dtime, nodes);
+                    printf("score mate %c%d ", (eval>=0) ? '\0' : '-', MATE_EVAL - abs(eval));
+                    printf("nps %jd pv %s\n", nps, get_pv_line(board, depth-1).c_str());
                 #endif
                 halt = true;
                 return itermove;
             } else {
                 #ifdef UCI
-                    printf("info depth %d nodes %d score cp %d pv %s\n", depth-1, nodes, eval, get_pv_line(board, depth-1).c_str());
+                    auto now = std::chrono::high_resolution_clock::now();
+                    auto dtime = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_t).count();
+                    auto nps = (dtime) ? nodes*1000/dtime : 0;
+                    printf("info depth %d time %jd nodes %jd score cp %d ", depth-1, dtime, nodes, eval);
+                    printf("nps %jd pv %s\n", nps, get_pv_line(board, depth-1).c_str());
                 #endif
             }
         }
         #if !defined(UCI) && !defined(MUTEEVAL)
             // get absolute evaluation (i.e, set to white's perspective)
             if (!whiteturn) eval *= -1;
-            printf("Eval: %.2f\tDepth: %d\tNodes: %d\n", eval/100.0f, depth-1, nodes);
+            printf("Eval: %.2f\tDepth: %d\tNodes: %jd\n", eval/100.0f, depth-1, nodes);
         #endif
         return itermove;
     }
@@ -328,9 +332,9 @@ private:
         
         // one reply extension
         int extension = 0;
-        if (movelist.size()>1)
+        if (movelist.size() > 1)
             order_moves(movelist, board, ply);
-        else if (ext>0)
+        else if (ext > 0)
             extension++;
         
         // search
@@ -342,7 +346,7 @@ private:
             bool istactical = board.isCapture(move) || move.typeOf()==chess::Move::PROMOTION;
             board.makeMove(move);
             // check and passed pawn extension
-            if (ext>0) {
+            if (ext > extension) {
                 if (board.inCheck())
                     extension++;
                 else {

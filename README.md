@@ -87,6 +87,7 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 - [x] One reply extensions      (`v1.7+`)
 - [x] Late move reductions      (`v1.5+`)
 - [x] Mate distance pruning     (`v1.6+`)
+- [x] SEE pruning               (`v1.7+`)
 - [ ] Lazy SMP 
 
 #### Evaluation

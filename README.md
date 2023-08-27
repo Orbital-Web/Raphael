@@ -16,13 +16,22 @@ Both a UCI Chess Engine (**Raphael**) and a Chess GUI (to play against **Raphael
 ## ELO
 **[Estimated CCRL 40/2 ELO](http://ccrl.chessdom.com/ccrl/402.archive/): 1797**
 
-To estimate **Raphael's** [ELO](http://ccrl.chessdom.com/ccrl/402.archive/), I paired the **Raphaelv1.6** against [**Shallow Blue**](https://github.com/GunshipPenguin/shallow-blue) (1734 ELO), [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1838 ELO), and [**Claudia**](https://github.com/antoniogarro/Claudia) (1908 ELO) inside of [Arena](http://www.playwitharena.de) in a 10 rounds 40/2 gauntlet tournament with random starting positions. 
+To estimate **Raphael's** [ELO](http://ccrl.chessdom.com/ccrl/402.archive/), I paired it up against several other engines in a 10 rounds 40/2 gauntlet tournament inside of [Arena](http://www.playwitharena.de), incrementally updating **Raphael's** ELO using the [this calculator](https://www.omnicalculator.com/sports/elo#a-detailed-analysis-the-meaning-of-elo-coefficients), which is based on the statistical model between [win probability and ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability).
 
-I then used each match results to incrementally update the starting ELO of 1764 (based on previous tests) using [this calculator](https://www.omnicalculator.com/sports/elo#a-detailed-analysis-the-meaning-of-elo-coefficients), which calculates ELO changes based on the approximate relation between [win probability and ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability).
-
-The match results were a WDL of 4-4-2 against **Shallow Blue**, 5-3-2 against **Sayuri**, and 1-1-8 against **Claudia**, thus yielding an estimated ELO of 1797.
+**Raphaelv1.7** was matched against [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1838), [**Claudia**](https://github.com/antoniogarro/Claudia) (1908), and [**BeLL**](https://github.com/Dany1962/BeLL) (1939), and the results were a WDL of 8-1-1 (+81), 4-1-5 (-1), and 3-2-5 (-12), respectively. Previously, the ELO of **Raphaelv1.6** was estimated to be around 1797, thus the estimated ELO of **Raphaelv1.7** is around 1000. 
 
 Note that this method of ELO estimation is very crude, as it only only compares against a few other engines with only 10 rounds. In the future, I will conduct a more thorough comparison (maybe once v2.0 is out).
+
+Past ELOs
+<table>
+    <tr align="center">
+        <th>Version</th>
+        <th>CCRL 40/2</th>
+    </tr>
+    <tr align="center"><td>1.7</td><td>1865</td></tr>
+    <tr align="center"><td>1.6</td><td>1797</td></tr>
+    <tr align="center"><td>1.5</td><td>1764</td></tr>
+</table>
 <br/><br/>
 
 
@@ -121,6 +130,7 @@ Below is the result of each new version against `v1.0` out of 400 matches (20 se
 - `v1.4` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [333 / 25 / 42]
 - `v1.5` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [344 / 23 / 43]
 - `v1.6` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥 `v1.0` [355 / 27 / 18]
+- `v1.7` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜ `v1.0` [374 / 20 / 6]
 
 And below is the more detailed comparison.
 <table>
@@ -271,6 +281,28 @@ And below is the more detailed comparison.
         <td>39</td>
         <td>0</td>
         <td>v1.5</td>
+    </tr>
+    <tr align="center">
+        <td>v1.7</td>
+        <td>182</td>
+        <td>187</td>
+        <td>5</td>
+        <td>20</td>
+        <td>2</td>
+        <td>4</td>
+        <td>0</td>
+        <td>v1.0</td>
+    </tr>
+    <tr align="center">
+        <td>v1.7</td>
+        <td>92</td>
+        <td>98</td>
+        <td>0</td>
+        <td>108</td>
+        <td>53</td>
+        <td>49</td>
+        <td>0</td>
+        <td>v1.6</td>
     </tr>
 </table>
 

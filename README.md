@@ -14,11 +14,11 @@ Both a UCI Chess Engine (**Raphael**) and a Chess GUI (to play against **Raphael
 
 
 ## ELO
-**[Estimated CCRL 40/2 ELO](http://ccrl.chessdom.com/ccrl/402.archive/): 1797**
+**[Estimated CCRL 40/2 ELO](http://ccrl.chessdom.com/ccrl/402.archive/): 1865**
 
 To estimate **Raphael's** [ELO](http://ccrl.chessdom.com/ccrl/402.archive/), I paired it up against several other engines in a 10 rounds 40/2 gauntlet tournament inside of [Arena](http://www.playwitharena.de), incrementally updating **Raphael's** ELO using the [this calculator](https://www.omnicalculator.com/sports/elo#a-detailed-analysis-the-meaning-of-elo-coefficients), which is based on the statistical model between [win probability and ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability).
 
-**Raphaelv1.7** was matched against [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1838), [**Claudia**](https://github.com/antoniogarro/Claudia) (1908), and [**BeLL**](https://github.com/Dany1962/BeLL) (1939), and the results were a WDL of 8-1-1 (+81), 4-1-5 (-1), and 3-2-5 (-12), respectively. Previously, the ELO of **Raphaelv1.6** was estimated to be around 1797, thus the estimated ELO of **Raphaelv1.7** is around 1000. 
+**Raphaelv1.7** was matched against [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1838), [**Claudia**](https://github.com/antoniogarro/Claudia) (1908), and [**BeLL**](https://github.com/Dany1962/BeLL) (1939), and the results were a WDL of 8-1-1 (+81), 4-1-5 (-1), and 3-2-5 (-12), respectively. Previously, the ELO of **Raphaelv1.6** was estimated to be around 1797, thus the estimated ELO of **Raphaelv1.7** is around 1865. 
 
 Note that this method of ELO estimation is very crude, as it only only compares against a few other engines with only 10 rounds. In the future, I will conduct a more thorough comparison (maybe once v2.0 is out).
 

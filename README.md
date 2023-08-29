@@ -32,36 +32,40 @@ Past ELOs
     <tr align="center"><td>1.6</td><td>1797</td></tr>
     <tr align="center"><td>1.5</td><td>1764</td></tr>
 </table>
-<br/><br/>
+<br/>
 
 
 
 ## Getting started (Windows)
-1. Clone the repository (*make sure to use `--recurse-submodules` when pulling too*)
+#### UCI Engine
+
+Builds for Windows are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page. To compile it on your own, run
+```
+g++ -c uci.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
+g++ -o Raphael uci.o -LSFML-2.6.0/lib -lsfml-graphics-s & del uci.o
+```
+
+
+#### GUI and Engine
+
+Follow these steps to compile **Raphael** along with the GUI. This is recommended as you do not need an external UCI-compliant GUI to run **Raphael**.
+
+1. Clone the repository with 
     ```
     git clone https://github.com/Orbital-Web/Raphael.git --recurse-submodules
     ```
-2. Download [SFML-2.6.0 (GCC MinGW Version)](https://www.sfml-dev.org/download/sfml/2.6.0/) and add it to the root directory
+2. Download [SFML-2.6.0](https://www.sfml-dev.org/download/sfml/2.6.0/) and add it to the root directory
 3. Copy `openal32.dll` from `SFML-2.6.0/bin/` and add it to the root directory
 4. Compile and run `main.exe` with the following commands (optionally, compile with the `-DMUTEEVAL` flag to mute evaluations)
     ```
     g++ -c main.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
-    g++ -o main main.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
-    del main.o
+    g++ -o main main.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg & del main.o
     main.exe human "Human" Raphael "Raphael" -s "game.pgn"
     ```
-5. Try out other features (check out `main.exe -help`)
+5. See other features with `main.exe -help`
 
-The compilation process should be similar for Linux and macOS, though the process of setting up SFML may be slightly different. Please refer to the [official SFML documentation](https://www.sfml-dev.org/tutorials/2.6/).
-
-To compile and run the uci engine, follow steps 1~2, and use the following commands
-```
-g++ -c uci.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
-g++ -o Raphael uci.o -LSFML-2.6.0/lib -lsfml-graphics-s
-del uci.o
-Raphael.exe
-```
-<br/>
+*Note: the compilation process should be similar for other OS, though **Raphael** was built primarily for Windows, and thus the code has not been tested on other OS. Nonetheless, please refer to the [official SFML documentation](https://www.sfml-dev.org/tutorials/2.6/) on how to download SFML for your OS*
+<br/><br/>
 
 
 
@@ -75,7 +79,7 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 
 
 ### Raphael (Engine)
-**Raphael** is a UCI-compliant chess engine that comes with this project. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows). The UCI engine currently supports the following commands: `uci`, `ready`, `ucinewgame`, `position`, and `go`. Pondering is not implemented yet. The engine contains the following features:
+**Raphael** is a UCI-compliant chess engine that comes with this project. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows). The UCI engine currently supports the following commands: `uci`, `ready`, `ucinewgame`, `position`, `go`, `stop`, and `quit`. Pondering is not implemented yet. The engine contains the following features:
 
 #### General
 - [x] Alpha-beta pruning        (`v1.0+`)

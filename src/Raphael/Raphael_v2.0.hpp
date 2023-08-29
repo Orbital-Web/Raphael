@@ -5,13 +5,14 @@
 #include <Raphael/Transposition.hpp>
 #include <Raphael/Killers.hpp>
 #include <Raphael/History.hpp>
+#include <Raphael/SEE.hpp>
 #include <GameEngine/GamePlayer.hpp>
 #include <chrono>
 
 
 
 namespace Raphael {
-class v1_6: public cge::GamePlayer {
+class v2_0: public cge::GamePlayer {
 // Raphael vars
 public:
     struct EngineOptions {
@@ -32,7 +33,7 @@ private:
     Killers killers;            // 2 killer moves at each ply
     History history;            // history score for each move
     // info
-    uint32_t nodes;             // number of nodes visited
+    uint64_t nodes;             // number of nodes visited
     // timing
     std::chrono::system_clock::time_point start_t;  // search start time
     int64_t search_t;           // search duration (ms)
@@ -42,16 +43,16 @@ private:
 // Raphael methods
 public:
     // Initializes Raphael with a name
-    v1_6(std::string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {
+    v2_0(std::string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {
         PST::init_pst();
         PMASK::init_pawnmask();
     }
     // and with options
-    v1_6(std::string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {
+    v2_0(std::string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {
         PST::init_pst();
         PMASK::init_pawnmask();
     }
-    
+
 
     // Set options
     void set_options(EngineOptions options) {
@@ -121,29 +122,33 @@ public:
                 #ifndef UCI
                 #ifndef MUTEEVAL
                     // get absolute evaluation (i.e, set to white's perspective)
-                    if (whiteturn == (eval>0))
-                        printf("Eval: +#%d\tNodes: %d\n", MATE_EVAL - abs(eval), nodes);
-                    else
-                        printf("Eval: -#%d\tNodes: %d\n", MATE_EVAL - abs(eval), nodes);
+                    printf("Eval: %c", (whiteturn == (eval>0)) ? '\0' : '-');
+                    printf("#%d\tNodes: %jd\n", MATE_EVAL - abs(eval), nodes);
                 #endif
                 #else
-                    if (eval>0)
-                        printf("info depth %d nodes %d score mate %d\n", depth-1, nodes, MATE_EVAL - abs(eval));
-                    else
-                        printf("info depth %d nodes %d score mate -%d\n", depth-1, nodes, MATE_EVAL - abs(eval));
+                    auto now = std::chrono::high_resolution_clock::now();
+                    auto dtime = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_t).count();
+                    auto nps = (dtime) ? nodes*1000/dtime : 0;
+                    printf("info depth %d time %jd nodes %jd ", depth-1, dtime, nodes);
+                    printf("score mate %c%d ", (eval>=0) ? '\0' : '-', MATE_EVAL - abs(eval));
+                    printf("nps %jd pv %s\n", nps, get_pv_line(board, depth-1).c_str());
                 #endif
                 halt = true;
                 return itermove;
             } else {
                 #ifdef UCI
-                    printf("info depth %d nodes %d score cp %d pv %s\n", depth-1, nodes, eval, get_pv_line(board, depth-1).c_str());
+                    auto now = std::chrono::high_resolution_clock::now();
+                    auto dtime = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_t).count();
+                    auto nps = (dtime) ? nodes*1000/dtime : 0;
+                    printf("info depth %d time %jd nodes %jd score cp %d ", depth-1, dtime, nodes, eval);
+                    printf("nps %jd pv %s\n", nps, get_pv_line(board, depth-1).c_str());
                 #endif
             }
         }
         #if !defined(UCI) && !defined(MUTEEVAL)
             // get absolute evaluation (i.e, set to white's perspective)
             if (!whiteturn) eval *= -1;
-            printf("Eval: %.2f\tDepth: %d\tNodes: %d\n", eval/100.0f, depth-1, nodes);
+            printf("Eval: %.2f\tDepth: %d\tNodes: %jd\n", eval/100.0f, depth-1, nodes);
         #endif
         return itermove;
     }
@@ -271,7 +276,7 @@ private:
 
 
     // The Negamax search algorithm to search for the best move
-    int negamax(chess::Board& board, int depth, int ply, int ext, int alpha, int beta, bool& halt) {
+    int negamax(chess::Board& board, const int depth, const int ply, const int ext, int alpha, int beta, bool& halt) {
         // timeout
         if (isTimeOver(halt)) return 0;
         nodes++;
@@ -325,8 +330,14 @@ private:
         if (depth <= 0)
             return quiescence(board, alpha, beta, halt);
         
+        // one reply extension
+        int extension = 0;
+        if (movelist.size() > 1)
+            order_moves(movelist, board, ply);
+        else if (ext > 0)
+            extension++;
+        
         // search
-        order_moves(movelist, board, ply);
         chess::Move bestmove = movelist[0]; // best move in this position
         if (!ply) itermove = bestmove;      // set itermove in case time runs out here
         int movei = 0;
@@ -334,20 +345,19 @@ private:
         for (const auto& move : movelist) {
             bool istactical = board.isCapture(move) || move.typeOf()==chess::Move::PROMOTION;
             board.makeMove(move);
-            // check and promotion extension
-            int extension = 0;
-            if (ext) {
+            // check and passed pawn extension
+            if (ext > extension) {
                 if (board.inCheck())
-                    extension = 1;
+                    extension++;
                 else {
                     auto sqrank = chess::utils::squareRank(move.to());
                     auto piece = board.at(move.to());
                     if ((sqrank==chess::Rank::RANK_2 && piece==chess::Piece::BLACKPAWN) ||
                         (sqrank==chess::Rank::RANK_7 && piece==chess::Piece::WHITEPAWN))
-                        extension = 1;
+                        extension++;
                 }
             }
-            // late move reduction for quiet moves
+            // late move reduction with zero window for certain quiet moves
             bool fullwindow = true;
             int eval;
             if (extension==0 && depth>=3 && movei>=REDUCTION_FROM && !istactical) {
@@ -356,6 +366,7 @@ private:
             }
             if (fullwindow)
                 eval = -negamax(board, depth-1+extension, ply+1, ext-extension, -beta, -alpha, halt);
+            extension = 0;
             movei++;
             board.unmakeMove(move);
 
@@ -392,10 +403,10 @@ private:
     // Quiescence search for all captures
     int quiescence(chess::Board& board, int alpha, int beta, bool& halt) {
         // timeout
-        if (halt) return 0;
+        if (isTimeOver(halt)) return 0;
         nodes++;
 
-        // prune
+        // prune with standing pat
         int eval = evaluate(board);
         if (eval>=beta) return beta;
         alpha = std::max(alpha, eval);
@@ -407,6 +418,11 @@ private:
         
         for (const auto& move : movelist) {
             board.makeMove(move);
+            // SEE pruning for losing captures
+            if (move.score()<GOOD_CAPTURE_WEIGHT && !board.inCheck()) {
+                board.unmakeMove(move);
+                continue;
+            }
             eval = -quiescence(board, -beta, -alpha, halt);
             board.unmakeMove(move);
 
@@ -419,7 +435,7 @@ private:
     }
 
 
-    // Modifies movelist to contain a list of moves, ordered from best to worst
+    // Sorts movelist from best to worst using score_move as its heuristic
     void order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const {
         for (auto& move : movelist)
             score_move(move, board, ply);
@@ -442,9 +458,10 @@ private:
         int to = (int)board.at(move.to());
 
         // enemy piece captured
-        if (board.isCapture(move))
-            score += abs(PVAL::VALS[to]) - abs(PVAL::VALS[from]) + 13;  // small bias to encourage trades
-        else {
+        if (board.isCapture(move)) {
+            score += abs(PVAL::VALS[to]) - (from%6);    // MVV/LVA
+            score += SEE::goodCapture(move, board, -12) * GOOD_CAPTURE_WEIGHT;
+        } else {
             // killer move
             if (ply>0 && killers.isKiller(move, ply))
                 score += KILLER_WEIGHT;

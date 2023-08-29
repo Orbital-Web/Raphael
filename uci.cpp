@@ -1,6 +1,6 @@
 #define UCI
 #include <chess.hpp>
-#include <Raphael/Raphael_v1.7.hpp>
+#include <Raphael/Raphael_v2.0.hpp>
 #include <Raphael/Transposition.hpp>
 #include <SFML/Graphics.hpp>
 #include <future>
@@ -17,7 +17,7 @@
 
 // global vars
 chess::Board board;
-Raphael::v1_7 engine("Raphael");
+Raphael::v2_0 engine("Raphael");
 bool halt = false;
 bool quit = false;
 
@@ -165,7 +165,7 @@ void search(const std::vector<std::string>& tokens) {
 
 int main() {
     std::string uci;
-    Raphael::v1_7::EngineOptions engine_opt;
+    Raphael::v2_0::EngineOptions engine_opt;
 
     // handle uci commands
     while (!quit) {

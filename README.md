@@ -127,16 +127,17 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 
 ## Comparisons
 Below is the result of each new version against `v1.0` out of 400 matches (20 seconds each), starting from a different  position (within a ±300 centipawn stockfish evaluation) and alternating between playing as white and black. 
-- `v1.0` 🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥🟥🟥🟥 `v1.0` [177 / 34 / 189]
-- `v1.1` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥 `v1.0` [245 / 39 / 116]
-- `v1.2` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜🟥🟥🟥🟥🟥🟥 `v1.0` [253 / 34 / 113]
-- `v1.3` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥🟥🟥 `v1.0` [301 / 23 / 76]
-- `v1.4` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [333 / 25 / 42]
-- `v1.5` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥🟥 `v1.0` [344 / 23 / 43]
-- `v1.6` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜🟥 `v1.0` [355 / 27 / 18]
-- `v1.7` 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜ `v1.0` [374 / 20 / 6]
 
-And below is the more detailed comparison.
+`v1.0` ![Winrate](https://progress-bar.dev/49/?width=500) `v1.0` [177 / 34 / 189]<br>
+`v1.1` ![Winrate](https://progress-bar.dev/66/?width=500) `v1.0` [245 / 39 / 116]<br>
+`v1.2` ![Winrate](https://progress-bar.dev/68/?width=500) `v1.0` [253 / 34 / 113]<br>
+`v1.3` ![Winrate](https://progress-bar.dev/78/?width=500) `v1.0` [301 / 23 / 76]<br>
+`v1.4` ![Winrate](https://progress-bar.dev/86/?width=500) `v1.0` [333 / 25 / 42]<br>
+`v1.5` ![Winrate](https://progress-bar.dev/89/?width=500) `v1.0` [344 / 23 / 43]<br>
+`v1.6` ![Winrate](https://progress-bar.dev/92/?width=500) `v1.0` [355 / 27 / 18]<br>
+`v1.7` ![Winrate](https://progress-bar.dev/96/?width=500) `v1.0` [374 / 20 / 6]<br>
+
+And below are the more detailed comparisons.
 <table>
     <tr align="center">
         <th rowspan="2">Player</th>

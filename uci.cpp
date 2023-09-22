@@ -144,7 +144,7 @@ void search(const std::vector<std::string>& tokens) {
     // look for quit/stop in separate thread
     auto _ = std::async(&handle_quit, std::ref(halt));
 
-    // find best move
+    // get arguments
     int ntokens = tokens.size();
     int i=1;
     int t_remain=0, t_inc=0;
@@ -155,6 +155,7 @@ void search(const std::vector<std::string>& tokens) {
             t_inc = std::stoi(tokens[i+1]);
         i += 2;
     }
+
     // search best move
     sf::Event nullevent;
     auto toPlay = engine.get_move(board, t_remain, t_inc, nullevent, halt);
@@ -175,7 +176,7 @@ int main() {
         auto keyword = tokens[0];
 
         if (keyword == "uci") {
-            printf("id name Raphael\n");
+            printf("id name Raphael 1.7\n");
             printf("id author Rei Meguro\n");
             printf("option name Hash type spin default 192 min 1 max 2560\n");
             printf("uciok\n");

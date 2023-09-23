@@ -108,6 +108,7 @@ void search(const std::vector<std::string>& tokens) {
     sf::Event nullevent;
     std::thread movereceiver(&Raphael::v2_0::get_move, engine, board, t_remain, t_inc, std::ref(nullevent), std::ref(halt));
     movereceiver.detach();
+    //engine.get_move(board, t_remain, t_inc, nullevent, halt);
 }
 
 

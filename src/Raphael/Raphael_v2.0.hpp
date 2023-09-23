@@ -135,19 +135,20 @@ public:
             
             // checkmate, no need to continue
             if (tt.isMate(eval)) {
-                #ifndef UCI
-                #ifndef MUTEEVAL
-                    // get absolute evaluation (i.e, set to white's perspective)
-                    printf("Eval: %c", (whiteturn == (eval>0)) ? '\0' : '-');
-                    printf("#%d\tNodes: %jd\n", MATE_EVAL - abs(eval), nodes);
-                #endif
-                #else
+                #ifdef UCI
                     auto now = std::chrono::high_resolution_clock::now();
                     auto dtime = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_t).count();
                     auto nps = (dtime) ? nodes*1000/dtime : 0;
                     printf("info depth %d time %jd nodes %jd ", depth-1, dtime, nodes);
                     printf("score mate %c%d ", (eval>=0) ? '\0' : '-', MATE_EVAL - abs(eval));
                     printf("nps %jd pv %s\n", nps, get_pv_line(board, depth-1).c_str());
+                    std::cout.flush();
+                #else
+                #ifndef MUTEEVAL
+                    // get absolute evaluation (i.e, set to white's perspective)
+                    printf("Eval: %c", (whiteturn == (eval>0)) ? '\0' : '-');
+                    printf("#%d\tNodes: %jd\n", MATE_EVAL - abs(eval), nodes);
+                #endif
                 #endif
                 halt = true;
                 return itermove;
@@ -158,11 +159,13 @@ public:
                     auto nps = (dtime) ? nodes*1000/dtime : 0;
                     printf("info depth %d time %jd nodes %jd score cp %d ", depth-1, dtime, nodes, eval);
                     printf("nps %jd pv %s\n", nps, get_pv_line(board, depth-1).c_str());
+                    std::cout.flush();
                 #endif
             }
         }
         #ifdef UCI
             printf("bestmove %s\n", chess::uci::moveToUci(itermove).c_str());
+            std::cout.flush();
         #else
         #ifndef MUTEEVAL
             // get absolute evaluation (i.e, set to white's perspective)

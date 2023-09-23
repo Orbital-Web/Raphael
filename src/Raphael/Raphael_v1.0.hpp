@@ -80,12 +80,13 @@ public:
             }
             depth++;
         }
-        #ifndef UCI
+        #ifdef UCI
+            printf("bestmove %s\n", chess::uci::moveToUci(itermove).c_str());
+        #else
         #ifndef MUTEEVAL
-        // get absolute evaluation (i.e, set to white's perspective)
-        if (!whiteturn)
-            eval *= -1;
-        printf("Eval: %.2f\tDepth: %d\n", eval/100.0, depth-1);
+            // get absolute evaluation (i.e, set to white's perspective)
+            if (!whiteturn) eval *= -1;
+            printf("Eval: %.2f\tDepth: %d\n", eval/100.0, depth-1);
         #endif
         #endif
         return toPlay;

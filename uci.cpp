@@ -76,8 +76,26 @@ void search(const std::vector<std::string>& tokens) {
     int ntokens = tokens.size();
     int i=1;
     int t_remain=0, t_inc=0;
+    Raphael::v2_0::SearchOptions searchopt;
+
     while (i<ntokens) {
-        if ((whiteturn && tokens[i]=="wtime") || (!whiteturn && tokens[i]=="btime"))
+        if (tokens[i]=="depth") {
+            searchopt.maxdepth = std::stoi(tokens[i+1]);
+            break;
+        }
+        else if (tokens[i]=="nodes") {
+            searchopt.maxnodes = std::stoi(tokens[i+1]);
+            break;
+        }
+        else if (tokens[i]=="movetime") {
+            searchopt.movetime = std::stoi(tokens[i+1]);
+            break;
+        }
+        else if (tokens[i]=="infinite") {
+            searchopt.infinite = true;
+            break;
+        }
+        else if ((whiteturn && tokens[i]=="wtime") || (!whiteturn && tokens[i]=="btime"))
             t_remain = std::stoi(tokens[i+1]);
         else if ((whiteturn && tokens[i]=="winc") || (!whiteturn && tokens[i]=="binc"))
             t_inc = std::stoi(tokens[i+1]);
@@ -86,6 +104,7 @@ void search(const std::vector<std::string>& tokens) {
 
     // search best move in separate thread
     halt = false;
+    engine.set_searchoptions(searchopt);
     sf::Event nullevent;
     std::thread movereceiver(&Raphael::v2_0::get_move, engine, board, t_remain, t_inc, std::ref(nullevent), std::ref(halt));
     movereceiver.detach();
@@ -115,7 +134,7 @@ int main() {
         else if (keyword == "setoption")
             setoption(tokens);
 
-        else if (keyword == "ready")
+        else if (keyword == "isready")
             printf("readyok\n");
 
         else if (keyword == "ucinewgame\n")

@@ -79,7 +79,7 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 
 
 ### Raphael (Engine)
-**Raphael** is a UCI-compliant chess engine that comes with this project. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows). The UCI engine currently supports the following commands: `uci`, `ready`, `ucinewgame`, `position`, `go`, `stop`, and `quit`. Pondering is not implemented yet. The engine contains the following features:
+**Raphael** is a UCI-compliant chess engine that comes with this project. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows). The UCI engine currently supports the following commands: `uci`, `isready`, `ucinewgame`, `stop`, `quit`, `position`, and `go [wtime|btime|winc|binc|depth|nodes|movetime|infinite]`. Pondering is not implemented yet. The engine contains the following features:
 
 #### General
 - [x] Alpha-beta pruning        (`v1.0+`)

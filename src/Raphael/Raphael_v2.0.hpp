@@ -19,11 +19,19 @@ public:
         uint32_t tablesize = DEF_TABLE_SIZE;    // number of entries in tt
     };
 
+    struct SearchOptions {
+        int maxdepth = -1;
+        int maxnodes = -1;
+        int movetime = -1;
+        bool infinite = false;
+    };
+
 private:
     // search
     chess::Move itermove;       // current iteration's bestmove
     chess::Move prevPlay;       // previous iteration's bestmove
     int consecutives;           // number of consecutive bestmoves
+    SearchOptions searchopt;    // limit depth, nodes, or movetime
     // ponder
     uint64_t ponderkey = 0;     // hash after opponent's best response
     int pondereval = 0;         // eval we got during ponder
@@ -47,16 +55,21 @@ public:
         PST::init_pst();
         PMASK::init_pawnmask();
     }
-    // and with options
+    // and with engine options
     v2_0(std::string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {
         PST::init_pst();
         PMASK::init_pawnmask();
     }
 
 
-    // Set options
+    // Set engine options
     void set_options(EngineOptions options) {
         tt = TranspositionTable(options.tablesize);
+    }
+
+    // Set search options
+    void set_searchoptions(SearchOptions options) {
+        searchopt = options;
     }
 
 
@@ -87,8 +100,11 @@ public:
 
         // begin iterative deepening
         while (!halt && depth<=MAX_DEPTH) {
+            // max depth override
+            if (searchopt.maxdepth!=-1 && depth>searchopt.maxdepth) break;
+
             // stable pv, skip
-            if (consecutives >= PV_STABLE_COUNT)
+            if (consecutives>=PV_STABLE_COUNT && !searchopt.infinite)
                 halt = true;
             int itereval = negamax(board, depth, 0, MAX_EXTENSIONS, alpha, beta, halt);
 
@@ -249,12 +265,26 @@ public:
         itermove = chess::Move::NO_MOVE;
         prevPlay = chess::Move::NO_MOVE;
         consecutives = 0;
+        searchopt = SearchOptions();
     }
 
 private:
     // Estimates the time (ms) it should spend on searching a move
     // Call this at the start before using isTimeOver
     void startSearchTimer(const chess::Board& board, const int t_remain, const int t_inc) {
+        // if movetime is specified, use that instead
+        if (searchopt.movetime != -1) {
+            search_t = searchopt.movetime;
+            start_t = std::chrono::high_resolution_clock::now();
+            return;
+        }
+
+        // set to infinite if other searchoptions are specified
+        if (searchopt.maxdepth!=-1 || searchopt.maxnodes!=-1 || searchopt.infinite) {
+            search_t = 0;
+            return;
+        }
+
         float n = chess::builtin::popcount(board.occ());
         // 0~1, higher the more time it uses (max at 20 pieces left)
         float ratio = 0.0044f*(n-32)*(-n/32)*pow(2.5f + n/32, 3);
@@ -268,8 +298,13 @@ private:
     // Checks if duration (ms) has passed and modifies halt
     // Runs infinitely if search_t is 0
     bool isTimeOver(bool& halt) const {
-        // check every 2048 nodes
-        if (search_t && !(nodes & 2047)) {
+        // if max nodes is specified, check that instead
+        if (searchopt.maxnodes != -1) {
+            if (nodes >= searchopt.maxnodes)
+                halt = true;
+
+        // otherwise, check timeover every 2048 nodes
+        } else if (search_t && !(nodes & 2047)) {
             auto now = std::chrono::high_resolution_clock::now();
             auto dtime = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_t).count();
             if (dtime >= search_t)

@@ -7,13 +7,6 @@
 #include <string>
 #include <vector>
 
-#ifdef WIN32
-#include <io.h>
-#include "windows.h"
-#else
-#include "sys/select.h"
-#endif
-
 
 // global vars
 chess::Board board;
@@ -74,64 +67,22 @@ void setposition(const std::string& uci, const std::vector<std::string>& tokens)
 
 
 
-// Checks if an input has been entered
-int InputWaiting() {
-#ifndef WIN32
-    fd_set readfds;
-    struct timeval tv;
-    FD_ZERO (&readfds);
-    FD_SET (fileno(stdin), &readfds);
-    tv.tv_sec=0; tv.tv_usec=0;
-    select(16, &readfds, 0, 0, &tv);
-
-    return (FD_ISSET(fileno(stdin), &readfds));
-#else
-    static int init = 0, pipe;
-    static HANDLE inh;
-    DWORD dw;
-
-    if (!init) {
-        init = 1;
-        inh = GetStdHandle(STD_INPUT_HANDLE);
-        pipe = !GetConsoleMode(inh, &dw);
-        if (!pipe) {
-            SetConsoleMode(inh, dw & ~(ENABLE_MOUSE_INPUT|ENABLE_WINDOW_INPUT));
-            FlushConsoleInputBuffer(inh);
-        }
-    }
-    if (pipe) {
-        if (!PeekNamedPipe(inh, NULL, 0, NULL, &dw, NULL)) return 1;
-        return dw;
-    } else {
-        GetNumberOfConsoleInputEvents(inh, &dw);
-        return dw <= 1 ? 0 : dw;
-    }
-#endif
-}
-
-
-
 // Checks if quit was called and modifies halt
 void handle_quit(bool& halt) {
-    int bytes;
-    char input[256] = "";
-    char* endc;
-    fd_set readset;
+    const int BUFFER = 2048;
+    setvbuf(stdin, 0, _IONBF, 0);
+    setvbuf(stdout, 0, _IONBF, 0);
+    fflush(NULL);
+    char input[BUFFER];
 
-    while (!halt) {
-        if (InputWaiting()) {
-            do { bytes = read(STDIN_FILENO, input, 256);
-            } while (bytes < 0);
-
-            endc = strchr(input,'\n');
-            if (endc) *endc=0;
-            if (strlen(input) > 0)
-                if (!strncmp(input, "quit", 4)) {
-                    halt = true;
-                    quit = true;
-                } else if (!strncmp(input, "stop", 4))
-                    halt = true;
-        }
+    while (!halt && fgets(input, BUFFER, stdin)) {
+        if (!strncmp(input, "quit", 4)) {
+            halt = true;
+            quit = true;
+        } else if (!strncmp(input, "stop", 4))
+            halt = true;
+        
+        memset(input, 0, BUFFER);
     }
 }
 
@@ -141,9 +92,6 @@ void handle_quit(bool& halt) {
 // uci >> "go wtime {wtime} btime {btime}"
 // uci << "uci << "bestmove {move}"
 void search(const std::vector<std::string>& tokens) {
-    // look for quit/stop in separate thread
-    auto _ = std::async(&handle_quit, std::ref(halt));
-
     // get arguments
     int ntokens = tokens.size();
     int i=1;
@@ -156,10 +104,13 @@ void search(const std::vector<std::string>& tokens) {
         i += 2;
     }
 
-    // search best move
+    // search best move in separate thread
     sf::Event nullevent;
-    auto toPlay = engine.get_move(board, t_remain, t_inc, nullevent, halt);
-    std::cout << "bestmove " << chess::uci::moveToUci(toPlay) << "\n";
+    auto movereceiver = std::async(&Raphael::v2_0::get_move, engine, board, t_remain, t_inc, std::ref(nullevent), std::ref(halt));
+
+    // check for "stop" or "quit"
+    handle_quit(halt);
+    std::cout << "bestmove " << chess::uci::moveToUci(movereceiver.get()) << "\n";
 }
 
 

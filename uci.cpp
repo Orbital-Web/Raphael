@@ -3,7 +3,7 @@
 #include <Raphael/Raphael_v2.0.hpp>
 #include <Raphael/Transposition.hpp>
 #include <SFML/Graphics.hpp>
-#include <future>
+#include <thread>
 #include <string>
 #include <vector>
 
@@ -30,6 +30,7 @@ std::vector<std::string> splitstr(const std::string& str, const char delim) {
 
 
 // Sets options such as tt size
+// uci >> "setoption name Hash value [size(mb)]"
 void setoption(const std::vector<std::string>& tokens) {
     if (tokens.size() != 5)
         return;
@@ -67,28 +68,6 @@ void setposition(const std::string& uci, const std::vector<std::string>& tokens)
 
 
 
-// Checks if quit was called and modifies halt
-void handle_quit() {
-    // thanks https://github.com/antoniogarro/Claudia/blob/master/main.c
-    const int BUFFER = 2048;
-    setvbuf(stdin, 0, _IONBF, 0);
-    setvbuf(stdout, 0, _IONBF, 0);
-    fflush(NULL);
-    char input[BUFFER];
-
-    while (!halt && fgets(input, BUFFER, stdin)) {
-        if (!strncmp(input, "quit", 4)) {
-            halt = true;
-            quit = true;
-        } else if (!strncmp(input, "stop", 4))
-            halt = true;
-        
-        memset(input, 0, BUFFER);
-    }
-}
-
-
-
 // Handles the go command
 // uci >> "go wtime {wtime} btime {btime}"
 // uci << "uci << "bestmove {move}"
@@ -106,12 +85,10 @@ void search(const std::vector<std::string>& tokens) {
     }
 
     // search best move in separate thread
+    halt = false;
     sf::Event nullevent;
-    auto movereceiver = std::async(&Raphael::v2_0::get_move, engine, board, t_remain, t_inc, std::ref(nullevent), std::ref(halt));
-
-    // check for "stop" or "quit"
-    handle_quit();
-    std::cout << "bestmove " << chess::uci::moveToUci(movereceiver.get()) << "\n";
+    std::thread movereceiver(&Raphael::v2_0::get_move, engine, board, t_remain, t_inc, std::ref(nullevent), std::ref(halt));
+    movereceiver.detach();
 }
 
 
@@ -120,13 +97,14 @@ int main() {
     std::string uci;
     Raphael::v2_0::EngineOptions engine_opt;
 
-    // handle uci commands
     while (!quit) {
-        halt = false;
+        // get input
         getline(std::cin, uci);
         auto tokens = splitstr(uci, ' ');
         auto keyword = tokens[0];
 
+
+        // parse input
         if (keyword == "uci") {
             printf("id name Raphael 1.7\n");
             printf("id author Rei Meguro\n");
@@ -146,11 +124,18 @@ int main() {
         else if (keyword == "position")
             setposition(uci, tokens);
         
-        else if (keyword == "go")
+        else if (keyword == "go") {
+            halt = false;
             search(tokens);
+        }
         
-        else if (keyword == "quit")
+        else if (keyword == "stop")
+            halt =  true;
+        
+        else if (keyword == "quit") {
+            halt = true;
             quit = true;
+        }
     }
 
     return 0;

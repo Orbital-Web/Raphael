@@ -68,7 +68,8 @@ void setposition(const std::string& uci, const std::vector<std::string>& tokens)
 
 
 // Checks if quit was called and modifies halt
-void handle_quit(bool& halt) {
+void handle_quit() {
+    // thanks https://github.com/antoniogarro/Claudia/blob/master/main.c
     const int BUFFER = 2048;
     setvbuf(stdin, 0, _IONBF, 0);
     setvbuf(stdout, 0, _IONBF, 0);
@@ -109,7 +110,7 @@ void search(const std::vector<std::string>& tokens) {
     auto movereceiver = std::async(&Raphael::v2_0::get_move, engine, board, t_remain, t_inc, std::ref(nullevent), std::ref(halt));
 
     // check for "stop" or "quit"
-    handle_quit(halt);
+    handle_quit();
     std::cout << "bestmove " << chess::uci::moveToUci(movereceiver.get()) << "\n";
 }
 

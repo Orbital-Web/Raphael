@@ -124,6 +124,8 @@ public:
                     // get absolute evaluation (i.e, set to white's perspective)
                     printf("Eval: %c", (whiteturn == (eval>0)) ? '\0' : '-');
                     printf("#%d\tNodes: %jd\n", MATE_EVAL - abs(eval), nodes);
+                    printf("bestmove %s\n", chess::uci::moveToUci(itermove).c_str());
+                    std::cout.flush();
                 #endif
                 #else
                     auto now = std::chrono::high_resolution_clock::now();
@@ -132,6 +134,7 @@ public:
                     printf("info depth %d time %jd nodes %jd ", depth-1, dtime, nodes);
                     printf("score mate %c%d ", (eval>=0) ? '\0' : '-', MATE_EVAL - abs(eval));
                     printf("nps %jd pv %s\n", nps, get_pv_line(board, depth-1).c_str());
+                    std::cout.flush();
                 #endif
                 halt = true;
                 return itermove;
@@ -142,16 +145,19 @@ public:
                     auto nps = (dtime) ? nodes*1000/dtime : 0;
                     printf("info depth %d time %jd nodes %jd score cp %d ", depth-1, dtime, nodes, eval);
                     printf("nps %jd pv %s\n", nps, get_pv_line(board, depth-1).c_str());
+                    std::cout.flush();
                 #endif
             }
         }
         #ifdef UCI
             printf("bestmove %s\n", chess::uci::moveToUci(itermove).c_str());
+            std::cout.flush();
         #else
         #ifndef MUTEEVAL
             // get absolute evaluation (i.e, set to white's perspective)
             if (!whiteturn) eval *= -1;
             printf("Eval: %.2f\tDepth: %d\tNodes: %jd\n", eval/100.0f, depth-1, nodes);
+            std::cout.flush();
         #endif
         #endif
         return itermove;

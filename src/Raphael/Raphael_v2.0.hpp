@@ -142,6 +142,7 @@ public:
                     printf("info depth %d time %jd nodes %jd ", depth-1, dtime, nodes);
                     printf("score mate %c%d ", (eval>=0) ? '\0' : '-', MATE_EVAL - abs(eval));
                     printf("nps %jd pv %s\n", nps, get_pv_line(board, depth-1).c_str());
+                    printf("bestmove %s\n", chess::uci::moveToUci(itermove).c_str());
                     std::cout.flush();
                 #else
                 #ifndef MUTEEVAL

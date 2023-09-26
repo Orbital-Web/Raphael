@@ -7,6 +7,9 @@
 #include <string>
 #include <vector>
 
+char* VERSION = "1.7";
+
+
 
 // global vars
 chess::Board board;
@@ -125,7 +128,7 @@ int main() {
 
         // parse input
         if (keyword == "uci") {
-            printf("id name Raphael 1.7\n");
+            printf("id name Raphael %s\n", VERSION);
             printf("id author Rei Meguro\n");
             printf("option name Hash type spin default 192 min 1 max 2560\n");
             printf("uciok\n");

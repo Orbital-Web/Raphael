@@ -1,9 +1,10 @@
 # Raphael
+
 Both a UCI Chess Engine (**Raphael**) and a Chess GUI (to play against **Raphael** or to make **Raphael** play itself), coded in C++, using [SFML](https://www.sfml-dev.org/) and [Disservin's Chess Library](https://github.com/Disservin/chess-library).
 
 **Raphael** is a hobby project that is still a work in progress, but it will be updated as time goes by. It is nowhere near as competitive as some of the other chess engines out there, but it is strong enough to beat most humans with ease. Please [scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-engine) to see a list of features currently implemented
 
-**Raphael** is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python. 
+**Raphael** is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python.
 
 *Note: v1.7 will be the last of the minor releases to **Raphael**. The next major release will be v2.0 using a custom NNUE evaluation function.*
 
@@ -11,14 +12,13 @@ Both a UCI Chess Engine (**Raphael**) and a Chess GUI (to play against **Raphael
     <img src="https://github.com/Orbital-Web/Raphael/blob/8667a6f6db60c5cacce297145246f89a22fa5333/Demo.png" alt="demo of Raphael" width=400/>
 </p>
 
-
-
 ## ELO
+
 **[Estimated CCRL 40/2 ELO](http://ccrl.chessdom.com/ccrl/402.archive/): 1865**
 
 To estimate **Raphael's** [ELO](http://ccrl.chessdom.com/ccrl/402.archive/), I paired it up against several other engines in a 10 rounds 40/2 gauntlet tournament inside of [Arena](http://www.playwitharena.de), incrementally updating **Raphael's** ELO using the [this calculator](https://www.omnicalculator.com/sports/elo#a-detailed-analysis-the-meaning-of-elo-coefficients), which is based on the statistical model between [win probability and ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability).
 
-**Raphaelv1.7** was matched against [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1838), [**Claudia**](https://github.com/antoniogarro/Claudia) (1908), and [**BeLL**](https://github.com/Dany1962/BeLL) (1939), and the results were a WDL of 8-1-1 (+81), 4-1-5 (-1), and 3-2-5 (-12), respectively. Previously, the ELO of **Raphaelv1.6** was estimated to be around 1797, thus the estimated ELO of **Raphaelv1.7** is around 1865. 
+**Raphaelv1.7** was matched against [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1838), [**Claudia**](https://github.com/antoniogarro/Claudia) (1908), and [**BeLL**](https://github.com/Dany1962/BeLL) (1939), and the results were a WDL of 8-1-1 (+81), 4-1-5 (-1), and 3-2-5 (-12), respectively. Previously, the ELO of **Raphaelv1.6** was estimated to be around 1797, thus the estimated ELO of **Raphaelv1.7** is around 1865.
 
 Note that this method of ELO estimation is very crude, as it only only compares against a few other engines with only 10 rounds. In the future, I will conduct a more thorough comparison (maybe once v2.0 is out).
 
@@ -34,54 +34,58 @@ Past ELOs
 </table>
 <br/>
 
-
-
 ## Getting started (Windows)
+
 #### UCI Engine
 
 Builds for Windows are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page. To compile it on your own, run
+
 ```
 g++ -c uci.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
 g++ -o Raphael uci.o -LSFML-2.6.0/lib -lsfml-graphics-s & del uci.o
 ```
 
-
 #### GUI and Engine
 
 Follow these steps to compile **Raphael** along with the GUI. This is recommended as you do not need an external UCI-compliant GUI to run **Raphael**.
 
-1. Clone the repository with 
+1. Clone the repository with
+
     ```
     git clone https://github.com/Orbital-Web/Raphael.git --recurse-submodules
     ```
+
 2. Download [SFML-2.6.0](https://www.sfml-dev.org/download/sfml/2.6.0/) and add it to the root directory
 3. Copy `openal32.dll` from `SFML-2.6.0/bin/` and add it to the root directory
 4. Compile and run `main.exe` with the following commands (optionally, compile with the `-DMUTEEVAL` flag to mute evaluations)
+
     ```
     g++ -c main.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
     g++ -o main main.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg & del main.o
     main.exe human "Human" Raphael "Raphael" -s "game.pgn"
     ```
+
 5. See other features with `main.exe -help`
 
 *Note: the compilation process should be similar for other OS, though **Raphael** was built primarily for Windows, and thus the code has not been tested on other OS. Nonetheless, please refer to the [official SFML documentation](https://www.sfml-dev.org/tutorials/2.6/) on how to download SFML for your OS*
 <br/><br/>
 
-
-
 ## Features
+
 ### Game Engine (GUI)
-The game engine is a combination of `GameEngine.hpp`, `GamePlayer.hpp`, and `HumanPlayer.hpp`. It is a GUI-based chess game engine (not to be confused with a chess engine) which lets the user interactively play chess. 
 
-If using a human player, the user may annotate the board with arrows and select/play moves similarly to other chess GUIs. The user may also specify the number of rounds, different time controls, starting positions (with fens), and even swap out the players (e.g., with different versions of Raphael). 
+The game engine is a combination of `GameEngine.hpp`, `GamePlayer.hpp`, and `HumanPlayer.hpp`. It is a GUI-based chess game engine (not to be confused with a chess engine) which lets the user interactively play chess.
 
-To use it, refer to the [setup instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows), and run the command `main.exe -help` in the command line. 
+If using a human player, the user may annotate the board with arrows and select/play moves similarly to other chess GUIs. The user may also specify the number of rounds, different time controls, starting positions (with fens), and even swap out the players (e.g., with different versions of Raphael).
 
+To use it, refer to the [setup instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows), and run the command `main.exe -help` in the command line.
 
 ### Raphael (Engine)
+
 **Raphael** is a UCI-compliant chess engine that comes with this project. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows). The UCI engine currently supports the following commands: `uci`, `isready`, `ucinewgame`, `stop`, `quit`, `position`, and `go [wtime|btime|winc|binc|depth|nodes|movetime|infinite]`. Pondering is not implemented yet. The engine contains the following features:
 
 #### General
+
 - [x] Alpha-beta pruning        (`v1.0+`)
 - [x] Move ordering             (`v1.0+`)
 - [x] Transposition table (fix) (`v1.1+`)
@@ -101,9 +105,10 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 - [x] Late move reductions      (`v1.5+`)
 - [x] Mate distance pruning     (`v1.6+`)
 - [x] SEE pruning               (`v1.7+`)
-- [ ] Lazy SMP 
+- [ ] Lazy SMP
 
 #### Evaluation
+
 - [x] Materials                 (`v1.0+`)
 - [x] Piece-square tables       (`v1.0+`)
 - [ ] Midgame King safety
@@ -115,6 +120,7 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 - [ ] NNUE
 
 #### Move Ordering
+
 - [x] MVV-LVA                   (`v1.0+`)
 - [x] Promotions                (`v1.0+`)
 - [x] Hash move                 (`v1.6+`)
@@ -123,19 +129,82 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 - [x] SEE                       (`v1.7+`)
 <br/><br/>
 
-
-
 ## Comparisons
-Below is the result of each new version against `v1.0` out of 400 matches (20 seconds each), starting from a different  position (within a ±300 centipawn stockfish evaluation) and alternating between playing as white and black. 
 
-`v1.0` ![Winrate](https://progress-bar.dev/49/?width=500) `v1.0` [177 / 34 / 189]<br>
-`v1.1` ![Winrate](https://progress-bar.dev/66/?width=500) `v1.0` [245 / 39 / 116]<br>
-`v1.2` ![Winrate](https://progress-bar.dev/68/?width=500) `v1.0` [253 / 34 / 113]<br>
-`v1.3` ![Winrate](https://progress-bar.dev/78/?width=500) `v1.0` [301 / 23 / 76]<br>
-`v1.4` ![Winrate](https://progress-bar.dev/86/?width=500) `v1.0` [333 / 25 / 42]<br>
-`v1.5` ![Winrate](https://progress-bar.dev/89/?width=500) `v1.0` [344 / 23 / 43]<br>
-`v1.6` ![Winrate](https://progress-bar.dev/92/?width=500) `v1.0` [355 / 27 / 18]<br>
-`v1.7` ![Winrate](https://progress-bar.dev/96/?width=500) `v1.0` [374 / 20 / 6]<br>
+Below is the result of each new version against `v1.0` out of 400 matches (20 seconds each), starting from a different  position (within a ±300 centipawn stockfish evaluation) and alternating between playing as white and black.
+
+<div style="display: flex; gap: 10px;">
+    <p>v1.0</p>
+    <svg width="400" height="30">
+        <rect y="5" x="0"   width="177" height="20" style="fill:#4CAF50" />
+        <rect y="5" x="177" width="34"  height="20" style="fill:#FFC107" />
+        <rect y="5" x="211" width="189" height="20" style="fill:#F44336" />
+    </svg>
+    <p>v1.0 [177 / 34 / 189]</p>
+</div>
+<div style="display: flex; gap: 10px;">
+    <p>v1.1</p>
+    <svg width="400" height="30">
+        <rect y="5" x="0"   width="245" height="20" style="fill:#4CAF50" />
+        <rect y="5" x="245" width="39"  height="20" style="fill:#FFC107" />
+        <rect y="5" x="284" width="116" height="20" style="fill:#F44336" />
+    </svg>
+    <p>v1.0 [245 / 39 / 116]</p>
+</div>
+<div style="display: flex; gap: 10px;">
+    <p>v1.2</p>
+    <svg width="400" height="30">
+        <rect y="5" x="0"   width="253" height="20" style="fill:#4CAF50" />
+        <rect y="5" x="253" width="34"  height="20" style="fill:#FFC107" />
+        <rect y="5" x="287" width="113" height="20" style="fill:#F44336" />
+    </svg>
+    <p>v1.0 [253 / 34 / 113]</p>
+</div>
+<div style="display: flex; gap: 10px;">
+    <p>v1.3</p>
+    <svg width="400" height="30">
+        <rect y="5" x="0"   width="301" height="20" style="fill:#4CAF50" />
+        <rect y="5" x="301" width="23"  height="20" style="fill:#FFC107" />
+        <rect y="5" x="324" width="76"  height="20" style="fill:#F44336" />
+    </svg>
+    <p>v1.0 [301 / 23 / 76]</p>
+</div>
+<div style="display: flex; gap: 10px;">
+    <p>v1.4</p>
+    <svg width="400" height="30">
+        <rect y="5" x="0"   width="333" height="20" style="fill:#4CAF50" />
+        <rect y="5" x="333" width="25"  height="20" style="fill:#FFC107" />
+        <rect y="5" x="358" width="42"  height="20" style="fill:#F44336" />
+    </svg>
+    <p>v1.0 [333 / 25 / 42]</p>
+</div>
+<div style="display: flex; gap: 10px;">
+    <p>v1.5</p>
+    <svg width="400" height="30">
+        <rect y="5" x="0"   width="344" height="20" style="fill:#4CAF50" />
+        <rect y="5" x="344" width="23"  height="20" style="fill:#FFC107" />
+        <rect y="5" x="367" width="33"  height="20" style="fill:#F44336" />
+    </svg>
+    <p>v1.0 [344 / 23 / 33]</p>
+</div>
+<div style="display: flex; gap: 10px;">
+    <p>v1.6</p>
+    <svg width="400" height="30">
+        <rect y="5" x="0"   width="355" height="20" style="fill:#4CAF50" />
+        <rect y="5" x="355" width="27"  height="20" style="fill:#FFC107" />
+        <rect y="5" x="382" width="18"  height="20" style="fill:#F44336" />
+    </svg>
+    <p>v1.0 [355 / 27 / 18]</p>
+</div>
+<div style="display: flex; gap: 10px;">
+    <p>v1.7</p>
+    <svg width="400" height="30">
+        <rect y="5" x="0"   width="374" height="20" style="fill:#4CAF50" />
+        <rect y="5" x="374" width="20"  height="20" style="fill:#FFC107" />
+        <rect y="5" x="394" width="6"   height="20" style="fill:#F44336" />
+    </svg>
+    <p>v1.0 [374 / 20 / 6]</p>
+</div>
 
 And below are the more detailed comparisons.
 <table>

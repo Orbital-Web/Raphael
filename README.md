@@ -87,15 +87,17 @@ If Ubuntu/WSL does not work for you, or you would like to compile the code stati
 4. Compile `main.exe` with the following commands (optionally, compile with the `-DMUTEEVAL` flag to mute evaluations)
 
     ```shell
-    g++ -c main.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
-    g++ -o main main.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg & del main.o
+    g++ -c main.cpp -Isrc -Ichess-library/src -I"SFML-2.6.0/include" -DSFML_STATIC
+    g++ -o main main.o -L"SFML-2.6.0/lib" -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
+    del main.o
     ```
 
 5. Compile the UCI engine with the following commands
 
     ```shell
-    g++ -c uci.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
-    g++ -o Raphael uci.o -LSFML-2.6.0/lib -lsfml-graphics-s & del uci.o
+    g++ -c uci.cpp -Isrc -Ichess-library/src -I"SFML-2.6.0/include" -DSFML_STATIC
+    g++ -o uci uci.o -L"SFML-2.6.0/lib" -lsfml-graphics-s
+    del uci.o
     ```
 
 <br/><br/>

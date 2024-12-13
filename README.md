@@ -1,12 +1,12 @@
 # Raphael
 
-Both a UCI Chess Engine (**Raphael**) and a Chess GUI (to play against **Raphael** or to make **Raphael** play itself), coded in C++, using [SFML](https://www.sfml-dev.org/) and [Disservin's Chess Library](https://github.com/Disservin/chess-library).
+**Raphael** is a UCI Chess Engine built using C++ and [Disservin's Chess Library](https://github.com/Disservin/chess-library). It also comes with a GUI built using [SFML](https://www.sfml-dev.org/).
 
-**Raphael** is a hobby project that is still a work in progress, but it will be updated as time goes by. It is nowhere near as competitive as some of the other chess engines out there, but it is strong enough to beat most humans with ease. Please [scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-engine) to see a list of features currently implemented
+**Raphael** is a hobby project that is still a work in progress, but it will be updated as time goes by. It is nowhere near as competitive as some of the other chess engines out there, but it is strong enough to beat most human players with ease. Please [scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-engine) to see a list of features currently implemented.
 
 **Raphael** is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python.
 
-*Note: v1.7 will be the last of the minor releases to **Raphael**. The next major release will be v2.0 using a custom NNUE evaluation function.*
+*Note: v1.7 will be the last of the minor releases to **Raphael**. The next major release will be v2.0 using a custom NNUE evaluator currently in the works of being trained on evaluations from my own engine.*
 
 <p align="center">
     <img src="https://github.com/Orbital-Web/Raphael/blob/8667a6f6db60c5cacce297145246f89a22fa5333/Demo.png" alt="demo of Raphael" width=400/>
@@ -32,42 +32,72 @@ Past ELOs
     <tr align="center"><td>1.6</td><td>1797</td></tr>
     <tr align="center"><td>1.5</td><td>1764</td></tr>
 </table>
-<br/>
+<br/><br/>
 
-## Getting started (Windows)
+## Getting Started
 
-#### UCI Engine
+Builds for Windows and Ubuntu are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page. Please note that the build for Ubuntu is dynamically linked. Please see the sections below on how to compile the code yourself if the executables do not work for you.
 
-Builds for Windows are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page. To compile it on your own, run
+You can start a quick GUI match against yourself and **Raphael** as follows:
 
+```shell
+main.exe human "Human" Raphael "Raphael" -s "game.pgn"  # Windows
+./main human "Human" Raphael "Raphael" -s "game.pgn"    # Ubuntu/WSL
 ```
-g++ -c uci.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
-g++ -o Raphael uci.o -LSFML-2.6.0/lib -lsfml-graphics-s & del uci.o
-```
 
-#### GUI and Engine
+You can see other command-line arguments by running `main.exe -h`. The UCI script has no command-line arguments.
 
-Follow these steps to compile **Raphael** along with the GUI. This is recommended as you do not need an external UCI-compliant GUI to run **Raphael**.
+### Compiling on Ubuntu/WSL (Recommended)
+
+This is the recommended way of compiling **Raphael**. If you are on Windows, you can install [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) to follow these steps (it may be easier than the compilation steps described in the Windows portion).
 
 1. Clone the repository with
 
+    ```shell
+    git clone https://github.com/Orbital-Web/Raphael.git --recurse-submodules
     ```
+
+2. Ensure you have Make and g++ installed. You can do so by running
+
+   ```shell
+   sudo apt-get install build-essential
+   sudo apt-get install g++
+   ```
+
+3. Compile as follows:
+
+    ```shell
+    make packages    # install dependencies (SFML)
+    make main        # compile Raphael + GUI
+    make Rapahel1.7  # compile Raphael UCI engine
+    ```
+
+### Compiling on Windows
+
+If Ubuntu/WSL does not work for you, or you would like to compile the code statically, you can follow these steps:
+
+1. Clone the repository with
+
+    ```shell
     git clone https://github.com/Orbital-Web/Raphael.git --recurse-submodules
     ```
 
 2. Download [SFML-2.6.0](https://www.sfml-dev.org/download/sfml/2.6.0/) and add it to the root directory
 3. Copy `openal32.dll` from `SFML-2.6.0/bin/` and add it to the root directory
-4. Compile and run `main.exe` with the following commands (optionally, compile with the `-DMUTEEVAL` flag to mute evaluations)
+4. Compile `main.exe` with the following commands (optionally, compile with the `-DMUTEEVAL` flag to mute evaluations)
 
-    ```
+    ```shell
     g++ -c main.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
     g++ -o main main.o -LSFML-2.6.0/lib -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg & del main.o
-    main.exe human "Human" Raphael "Raphael" -s "game.pgn"
     ```
 
-5. See other features with `main.exe -help`
+5. Compile the UCI engine with the following commands
 
-*Note: the compilation process should be similar for other OS, though **Raphael** was built primarily for Windows, and thus the code has not been tested on other OS. Nonetheless, please refer to the [official SFML documentation](https://www.sfml-dev.org/tutorials/2.6/) on how to download SFML for your OS*
+    ```shell
+    g++ -c uci.cpp -Isrc -Ichess-library/src -ISFML-2.6.0/include -DSFML_STATIC
+    g++ -o Raphael uci.o -LSFML-2.6.0/lib -lsfml-graphics-s & del uci.o
+    ```
+
 <br/><br/>
 
 ## Features

@@ -1,9 +1,10 @@
-#include <GameEngine/GameEngine.hpp>
-#include <GameEngine/HumanPlayer.hpp>
+#include <GameEngine/GameEngine.h>
+#include <GameEngine/HumanPlayer.h>
+#include <string.h>
+
 #include <Raphael/Raphael_v1.0.hpp>
 #include <Raphael/Raphael_v1.7.hpp>
 #include <Raphael/Raphael_v2.0.hpp>
-#include <string.h>
 #include <fstream>
 
 
@@ -20,7 +21,7 @@ cge::GamePlayer* player_factory(char* playertype, char* name) {
         return new Raphael::v2_0(name);
     else if (!strcmp(playertype, "Raphael"))
         return new Raphael::v2_0(name);
-    
+
     // invalid
     printf("Invalid player type: %s\n", playertype);
     printf("Valid player types are:\n");
@@ -41,7 +42,7 @@ void print_usage() {
               << "  -c     Comparison mode (options will be ignored)\n\n"
               << "Options:\n"
               << "  -t <int> <int>  Time (sec) for white and black (defaults to 10min each)\n"
-              << "  -t <int>        Time increment (sec) (defaults to 0sec)\n"
+              << "  -i <int>        Time increment (sec) (defaults to 0sec)\n"
               << "  -f <FENstring>  Starting position FEN (defaults to standard chess board)\n"
               << "  -s <filename>   Filename for saving as pgn (saves inside /logs folder)\n\n";
 }
@@ -73,7 +74,7 @@ int main(int argc, char** argv) {
     std::vector<cge::GameEngine::GameOptions> gameoptions;
 
     // invalid
-    if (argc<5) {
+    if (argc < 5) {
         print_usage();
         return -1;
     }
@@ -81,8 +82,7 @@ int main(int argc, char** argv) {
     // create players
     p1 = player_factory(argv[1], argv[2]);
     p2 = player_factory(argv[3], argv[4]);
-    if (!p1 || !p2)
-        return -1;
+    if (!p1 || !p2) return -1;
 
     // parse mode
     int i = 5;
@@ -94,11 +94,18 @@ int main(int argc, char** argv) {
             bool p1_is_white = true;
             // create 400 matches with alterating color
             while (std::getline(pgns, pgn)) {
-                gameoptions.push_back({p1_is_white, pgn, {20000, 20000}, 0, false, "./logs/compare.pgn"});
+                gameoptions.push_back({
+                    .p1_is_white = p1_is_white,
+                    .interactive = false,
+                    .t_inc = 0,
+                    .t_remain = {20000, 20000},
+                    .start_fen = pgn,
+                    .pgn_file = "./logs/compare.pgn"
+                });
                 p1_is_white = !p1_is_white;
             }
             pgns.close();
-            i = INT_MAX;    // ignore all options
+            i = INT_MAX;  // ignore all options
         }
 
         // number of games
@@ -107,8 +114,8 @@ int main(int argc, char** argv) {
             int n_matches = atoi(argv[i]);
             if (n_matches) {
                 bool p1_is_white = true;
-                for (int n=0; n<n_matches; n++) {
-                    gameoptions.push_back({.p1_is_white=p1_is_white});
+                for (int n = 0; n < n_matches; n++) {
+                    gameoptions.push_back({.p1_is_white = p1_is_white});
                     p1_is_white = !p1_is_white;
                 }
                 i++;
@@ -117,40 +124,37 @@ int main(int argc, char** argv) {
         }
     } else
         gameoptions.push_back({});  // defaults to 1 match
-    
+
 
     // parse arguments
     while (i < argc) {
         // time
-        if(!strcmp(argv[i], "-t")) {
+        if (!strcmp(argv[i], "-t")) {
             // set the time for every match
             float t_white = (float)atof(argv[++i]);
             float t_black = (float)atof(argv[++i]);
             for (auto& gopt : gameoptions) {
-                gopt.t_remain[0] = t_white*1000;
-                gopt.t_remain[1] = t_black*1000;
+                gopt.t_remain[0] = t_white * 1000;
+                gopt.t_remain[1] = t_black * 1000;
             }
         }
 
         // time increment
         else if (!strcmp(argv[i], "-i")) {
             float t_inc = (float)atof(argv[++i]);
-            for (auto& gopt : gameoptions)
-                gopt.t_inc = t_inc*1000;
+            for (auto& gopt : gameoptions) gopt.t_inc = t_inc * 1000;
         }
 
         // fen
         else if (!strcmp(argv[i], "-f") || !strcmp(argv[i], "-fen")) {
             i++;
-            for (auto& gopt : gameoptions)
-                gopt.start_fen = argv[i];
+            for (auto& gopt : gameoptions) gopt.start_fen = argv[i];
         }
 
         // pgn save
         else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "-save")) {
             std::string pgn_file = "./logs/" + (std::string)argv[++i];
-            for (auto& gopt : gameoptions)
-                gopt.pgn_file = pgn_file;
+            for (auto& gopt : gameoptions) gopt.pgn_file = pgn_file;
         }
 
         else {

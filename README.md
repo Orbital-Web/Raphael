@@ -84,20 +84,28 @@ If Ubuntu/WSL does not work for you, or you would like to compile the code stati
 
 2. Download [SFML-2.6.0](https://www.sfml-dev.org/download/sfml/2.6.0/) and add it to the root directory
 3. Copy `openal32.dll` from `SFML-2.6.0/bin/` and add it to the root directory
-4. Compile `main.exe` with the following commands (optionally, compile with the `-DMUTEEVAL` flag to mute evaluations)
+4. Compile dependencies with the following commands (in the root directory)
+
+    ```shell
+    cd src/GameEngine
+    g++ -c consts.cpp GameEngine.cpp GamePlayer.cpp HumanPlayer.cpp utils.cpp -I"../../src" -I"../../chess-library/src" -I"../../SFML-2.6.0/include" -DSFML_STATIC
+    cd ../../src/Raphael
+    g++ -c consts.cpp History.cpp Killers.cpp SEE.cpp Transposition.cpp -Isrc -Ichess-library/src -I"../../src" -I"../../chess-library/src" -I"../../SFML-2.6.0/include" -DSFML_STATIC
+    cd ../../
+    ```
+
+5. Compile `main.exe` with the following commands (optionally, compile with the `-DMUTEEVAL` flag to mute evaluations)
 
     ```shell
     g++ -c main.cpp -Isrc -Ichess-library/src -I"SFML-2.6.0/include" -DSFML_STATIC
-    g++ -o main main.o -L"SFML-2.6.0/lib" -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
-    del main.o
+    g++ -o main main.o src/GameEngine/consts.o src/GameEngine/GameEngine.o src/GameEngine/GamePlayer.o src/GameEngine/HumanPlayer.o src/GameEngine/utils.o src/Raphael/consts.o src/Raphael/History.o src/Raphael/Killers.o src/Raphael/See.o src/Raphael/Transposition.o -L"SFML-2.6.0/lib" -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
     ```
 
-5. Compile the UCI engine with the following commands
+6. Compile the UCI engine with the following commands
 
     ```shell
     g++ -c uci.cpp -Isrc -Ichess-library/src -I"SFML-2.6.0/include" -DSFML_STATIC
-    g++ -o uci uci.o -L"SFML-2.6.0/lib" -lsfml-graphics-s
-    del uci.o
+    g++ -o uci uci.o src/GameEngine/consts.o src/GameEngine/GameEngine.o src/GameEngine/GamePlayer.o src/GameEngine/HumanPlayer.o src/GameEngine/utils.o src/Raphael/consts.o src/Raphael/History.o src/Raphael/Killers.o src/Raphael/See.o src/Raphael/Transposition.o -L"SFML-2.6.0/lib" -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
     ```
 
 <br/><br/>
@@ -106,7 +114,7 @@ If Ubuntu/WSL does not work for you, or you would like to compile the code stati
 
 ### Game Engine (GUI)
 
-The game engine is a combination of `GameEngine.hpp`, `GamePlayer.hpp`, and `HumanPlayer.hpp`. It is a GUI-based chess game engine (not to be confused with a chess engine) which lets the user interactively play chess.
+The game engine is a combination of `GameEngine.h`, `GamePlayer.h`, and `HumanPlayer.h`. It is a GUI-based chess game engine (not to be confused with a chess engine) which lets the user interactively play chess.
 
 If using a human player, the user may annotate the board with arrows and select/play moves similarly to other chess GUIs. The user may also specify the number of rounds, different time controls, starting positions (with fens), and even swap out the players (e.g., with different versions of Raphael).
 

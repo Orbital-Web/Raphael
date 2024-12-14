@@ -3,20 +3,26 @@ CC = g++
 CCFLAGS = -Wall -fno-builtin -std=c++20 -Isrc -Ichess-library/src
 LDFLAGS = -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
 
+# sources
+MAIN_SOURCES = ${wildcard src/GameEngine/*.cpp} ${wildcard src/Raphael/*.cpp} main.cpp
+UCI_SOURCES = ${wildcard src/GameEngine/*.cpp} ${wildcard src/Raphael/*.cpp} uci.cpp
 
+
+
+# obj files
+MAIN_OBJS = ${MAIN_SOURCES:.cpp=.o}
+UCI_OBJS = ${UCI_SOURCES:.cpp=.o}
 
 # Default rule
-all: packages main
+all: packages main uci
 
 # Linking the main executable
-main: main.o
+main: ${MAIN_OBJS}
 	$(CC) -o $@ $^ $(LDFLAGS)
-	rm -f main.o
 
 # Linking the UCI executable
-uci: uci.o
-	$(CC) -o $@ $^ -lsfml-graphics
-	rm -f uci.o
+uci: ${UCI_OBJS}
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 # Generic rules for compiling a source file to an object file
 %.o: %.cpp
@@ -33,4 +39,7 @@ packages:
 
 # Clean rule
 clean:
-	rm -f main.o uci.o main uci
+	rm -f ${MAIN_OBJS} ${UCI_OBJS}
+
+clean_all:
+	rm -f ${MAIN_OBJS} ${UCI_OBJS} main uci

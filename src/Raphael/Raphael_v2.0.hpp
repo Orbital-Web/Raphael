@@ -1,17 +1,28 @@
 #pragma once
-#include <GameEngine/GamePlayer.hpp>
-#include <GameEngine/utils.hpp>
-#include <Raphael/History.hpp>
-#include <Raphael/Killers.hpp>
-#include <Raphael/SEE.hpp>
-#include <Raphael/Transposition.hpp>
-#include <Raphael/consts.hpp>
+#include <GameEngine/GamePlayer.h>
+#include <GameEngine/consts.h>
+#include <GameEngine/utils.h>
+#include <Raphael/History.h>
+#include <Raphael/Killers.h>
+#include <Raphael/SEE.h>
+#include <Raphael/Transposition.h>
+#include <Raphael/consts.h>
+#include <math.h>
+
 #include <chess.hpp>
 #include <chrono>
 #include <climits>
+#include <iomanip>
+#include <iostream>
+
+using std::cout;
+using std::fixed;
+using std::setprecision;
+
+
 
 namespace Raphael {
-class v2_0 : public cge::GamePlayer {
+class v2_0: public cge::GamePlayer {
     // Raphael vars
 public:
     struct EngineOptions {
@@ -20,7 +31,7 @@ public:
 
     struct SearchOptions {
         int maxdepth = -1;
-        int maxnodes = -1;
+        int64_t maxnodes = -1;
         int movetime = -1;
         bool infinite = false;
     };
@@ -40,7 +51,7 @@ private:
     Killers killers;        // 2 killer moves at each ply
     History history;        // history score for each move
     // info
-    uint64_t nodes;  // number of nodes visited
+    int64_t nodes;  // number of nodes visited
     // timing
     std::chrono::system_clock::time_point start_t;  // search start time
     int64_t search_t;                               // search duration (ms)
@@ -48,12 +59,12 @@ private:
     // Raphael methods
 public:
     // Initializes Raphael with a name
-    v2_0(std::string name_in) : GamePlayer(name_in), tt(DEF_TABLE_SIZE) {
+    v2_0(std::string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {
         PST::init_pst();
         PMASK::init_pawnmask();
     }
     // and with engine options
-    v2_0(std::string name_in, EngineOptions options) : GamePlayer(name_in), tt(options.tablesize) {
+    v2_0(std::string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {
         PST::init_pst();
         PMASK::init_pawnmask();
     }
@@ -132,17 +143,23 @@ public:
                 auto dtime
                     = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_t).count();
                 auto nps = (dtime) ? nodes * 1000 / dtime : 0;
-                printf("info depth %d time %jd nodes %jd ", depth - 1, dtime, nodes);
-                printf("score mate %c%d ", (eval >= 0) ? '\0' : '-', MATE_EVAL - abs(eval));
-                printf("nps %jd pv %s\n", nps, get_pv_line(board, depth - 1).c_str());
-                printf("bestmove %s\n", chess::uci::moveToUci(itermove).c_str());
-                std::cout.flush();
+                char sign = (eval >= 0) ? '\0' : '-';
+                {
+                    lock_guard<mutex> lock(cout_mutex);
+                    cout << "info depth " << depth - 1 << " time " << dtime << " nodes " << nodes
+                         << " score mate " << sign << MATE_EVAL - abs(eval) << " nps " << nps
+                         << " pv " << get_pv_line(board, depth - 1) << "\n";
+                    cout << "bestmove " << chess::uci::moveToUci(itermove) << "\n";
+                }
 #else
     #ifndef MUTEEVAL
                 // get absolute evaluation (i.e, set to white's perspective)
-                printf("Eval: %c", (whiteturn == (eval > 0)) ? '\0' : '-');
-                printf("#%d\tNodes: %jd\n", MATE_EVAL - abs(eval), nodes);
-                std::cout.flush();
+                {
+                    lock_guard<mutex> lock(cout_mutex);
+                    char sign = (whiteturn == (eval > 0)) ? '\0' : '-';
+                    cout << "Eval: " << sign << "#" << MATE_EVAL - abs(eval) << "\tNodes: " << nodes
+                         << "\n";
+                }
     #endif
 #endif
                 halt = true;
@@ -153,23 +170,29 @@ public:
                 auto dtime
                     = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_t).count();
                 auto nps = (dtime) ? nodes * 1000 / dtime : 0;
-                printf(
-                    "info depth %d time %jd nodes %jd score cp %d ", depth - 1, dtime, nodes, eval
-                );
-                printf("nps %jd pv %s\n", nps, get_pv_line(board, depth - 1).c_str());
-                std::cout.flush();
+                {
+                    lock_guard<mutex> lock(cout_mutex);
+                    cout << "info depth " << depth - 1 << " time " << dtime << " nodes " << nodes
+                         << " score cp " << eval << " nps " << nps << " pv "
+                         << get_pv_line(board, depth - 1) << "\n";
+                }
 #endif
             }
         }
 #ifdef UCI
-        printf("bestmove %s\n", chess::uci::moveToUci(itermove).c_str());
-        std::cout.flush();
+        {
+            lock_guard<mutex> lock(cout_mutex);
+            cout << "bestmove " << chess::uci::moveToUci(itermove) << "\n";
+        }
 #else
     #ifndef MUTEEVAL
         // get absolute evaluation (i.e, set to white's perspective)
         if (!whiteturn) eval *= -1;
-        printf("Eval: %.2f\tDepth: %d\tNodes: %jd\n", eval / 100.0f, depth - 1, nodes);
-        std::cout.flush();
+        {
+            lock_guard<mutex> lock(cout_mutex);
+            cout << "Eval: " << fixed << setprecision(2) << eval / 100.0f
+                 << "\tDepth: " << depth - 1 << "\tNodes: " << nodes << "\n";
+        }
     #endif
 #endif
         return itermove;
@@ -311,7 +334,12 @@ private:
 
     // The Negamax search algorithm to search for the best move
     int negamax(
-        chess::Board& board, const int depth, const int ply, const int ext, int alpha, int beta,
+        chess::Board& board,
+        const int depth,
+        const int ply,
+        const int ext,
+        int alpha,
+        int beta,
         bool& halt
     ) {
         // timeout

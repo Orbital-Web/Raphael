@@ -1,8 +1,9 @@
 #define UCI
+#include <GameEngine/consts.h>
+
 #include <Raphael/Raphael_v2.0.hpp>
 #include <atomic>
 #include <iostream>
-#include <mutex>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -10,9 +11,9 @@
 
 using std::cin;
 using std::cout;
-using std::lock_guard;
-using std::mutex;
+using std::ref;
 using std::stoi;
+using std::stoll;
 using std::string;
 using std::stringstream;
 using std::thread;
@@ -26,8 +27,6 @@ chess::Board board;
 Raphael::v2_0 engine("Raphael");
 bool halt = false;
 bool quit = false;
-
-mutex cout_mutex;
 
 
 
@@ -100,7 +99,7 @@ void search(const vector<string>& tokens) {
             searchopt.maxdepth = stoi(tokens[i + 1]);
             break;
         } else if (tokens[i] == "nodes") {
-            searchopt.maxnodes = stoi(tokens[i + 1]);
+            searchopt.maxnodes = stoll(tokens[i + 1]);
             break;
         } else if (tokens[i] == "movetime") {
             searchopt.movetime = stoi(tokens[i + 1]);
@@ -119,13 +118,13 @@ void search(const vector<string>& tokens) {
     halt = false;
     engine.set_searchoptions(searchopt);
     sf::Event nullevent;
-    engine.get_move(board, t_remain, t_inc, std::ref(nullevent), std::ref(halt));
+    engine.get_move(board, t_remain, t_inc, ref(nullevent), ref(halt));
 }
 
 
 void process_command(const string& uci_command) {
     // tokenize command
-    vector<std::string> tokens;
+    vector<string> tokens;
     stringstream ss(uci_command);
     string token;
     while (getline(ss, token, ' ')) tokens.push_back(token);
@@ -148,7 +147,7 @@ int main() {
     Raphael::v2_0::EngineOptions engine_opt;
 
     while (!quit) {
-        getline(std::cin, uci_command);
+        getline(cin, uci_command);
 
         if (uci_command == "uci") {
             lock_guard<mutex> lock(cout_mutex);

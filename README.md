@@ -36,7 +36,12 @@ Past ELOs
 
 ## Getting Started
 
-Builds for Windows and Ubuntu are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page. Please note that the build for Ubuntu is dynamically linked. Please see the sections below on how to compile the code yourself if the executables do not work for you.
+Builds for Windows and Ubuntu are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page.
+
+If you are on Windows, you will need to copy `openal32.dll` from `SFML-2.6.0/bin/` and add it to the same directory as `main.exe` to be able to run it.
+If you are on Ubuntu, you will need to run `sudo apt install libsfml-dev` as the build is dynamically linked.
+
+Please see the sections below on how to compile the code yourself if the executables do not work for you.
 
 You can start a quick GUI match against yourself and **Raphael** as follows:
 
@@ -67,9 +72,9 @@ This is the recommended way of compiling **Raphael**. If you are on Windows, you
 3. Compile as follows:
 
     ```shell
-    make packages    # install dependencies (SFML)
-    make main        # compile Raphael + GUI
-    make Rapahel1.7  # compile Raphael UCI engine
+    make packages  # install dependencies (SFML)
+    make main      # compile Raphael + GUI
+    make uci       # compile Raphael UCI engine
     ```
 
 ### Compiling on Windows
@@ -98,7 +103,7 @@ If Ubuntu/WSL does not work for you, or you would like to compile the code stati
 
     ```shell
     g++ -c main.cpp -Isrc -Ichess-library/src -I"SFML-2.6.0/include" -DSFML_STATIC
-    g++ -o main main.o src/GameEngine/consts.o src/GameEngine/GameEngine.o src/GameEngine/GamePlayer.o src/GameEngine/HumanPlayer.o src/GameEngine/utils.o src/Raphael/consts.o src/Raphael/History.o src/Raphael/Killers.o src/Raphael/See.o src/Raphael/Transposition.o -L"SFML-2.6.0/lib" -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
+    g++ -o main main.o src/GameEngine/consts.o src/GameEngine/GameEngine.o src/GameEngine/GamePlayer.o src/GameEngine/HumanPlayer.o src/GameEngine/utils.o src/Raphael/consts.o src/Raphael/History.o src/Raphael/Killers.o src/Raphael/See.o src/Raphael/Transposition.o -L"SFML-2.6.0/lib" -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -l"openal32.a" -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
     ```
 
 6. Compile the UCI engine with the following commands
@@ -146,6 +151,7 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 - [x] Mate distance pruning     (`v1.6+`)
 - [x] SEE pruning               (`v1.7+`)
 - [ ] Lazy SMP
+- [ ] Parameter Tuning
 
 #### Evaluation
 

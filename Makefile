@@ -5,7 +5,7 @@ LDFLAGS = -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
 
 # sources
 MAIN_SOURCES = ${wildcard src/GameEngine/*.cpp} ${wildcard src/Raphael/*.cpp} main.cpp
-UCI_SOURCES = ${wildcard src/GameEngine/*.cpp} ${wildcard src/Raphael/*.cpp} uci.cpp
+UCI_SOURCES = src/GameEngine/consts.cpp src/GameEngine/GamePlayer.cpp ${wildcard src/Raphael/*.cpp} uci.cpp
 
 
 

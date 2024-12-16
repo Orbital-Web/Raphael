@@ -13,7 +13,10 @@
 
 using std::cout;
 using std::fixed;
+using std::max;
+using std::min;
 using std::setprecision;
+using std::string;
 
 
 
@@ -35,9 +38,9 @@ private:
     // Raphael methods
 public:
     // Initializes Raphael with a name
-    v1_0(std::string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) { PST::init_pst(); }
+    v1_0(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) { PST::init_pst(); }
     // and with options
-    v1_0(std::string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {
+    v1_0(string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {
         PST::init_pst();
     }
 
@@ -121,8 +124,8 @@ private:
         float n = chess::builtin::popcount(board.occ());
         float ratio = 0.0138f * (32 - n) * (n / 32) * pow(2.5f - n / 32, 3);
         // use 0.5~4% of the remaining time based on the ratio + buffered increment
-        int duration = t_remain * (0.005f + 0.035f * ratio) + std::max(t_inc - 30, 0);
-        return std::min(duration, t_remain);
+        int duration = t_remain * (0.005f + 0.035f * ratio) + max(t_inc - 30, 0);
+        return min(duration, t_remain);
     }
 
 
@@ -156,9 +159,9 @@ private:
                 if (!ply) itermove = entry.move;
                 return entry.eval;
             } else if (entry.flag == tt.LOWER)
-                alpha = std::max(alpha, entry.eval);
+                alpha = max(alpha, entry.eval);
             else
-                beta = std::min(beta, entry.eval);
+                beta = min(beta, entry.eval);
 
             // prune
             if (alpha >= beta) {
@@ -223,7 +226,7 @@ private:
         if (halt) return eval;
 
         // prune
-        alpha = std::max(alpha, eval);
+        alpha = max(alpha, eval);
         if (alpha >= beta) return alpha;
 
         // search
@@ -236,7 +239,7 @@ private:
             board.unmakeMove(move);
 
             // prune
-            alpha = std::max(alpha, eval);
+            alpha = max(alpha, eval);
             if (alpha >= beta) break;
         }
 
@@ -297,7 +300,7 @@ private:
     int evaluate(const chess::Board& board) const {
         int eval = 0;
         int n_pieces_left = chess::builtin::popcount(board.occ());
-        double eg_weight = std::min(1.0, double(32 - n_pieces_left) / (32 - N_PIECES_END));
+        double eg_weight = min(1.0, double(32 - n_pieces_left) / (32 - N_PIECES_END));
         int wkr, bkr, wkf, bkf;
 
         // count pieces and added their values (material + pst)

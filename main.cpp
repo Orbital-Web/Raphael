@@ -7,6 +7,11 @@
 #include <Raphael/Raphael_v2.0.hpp>
 #include <fstream>
 
+using std::cout;
+using std::ifstream;
+using std::string;
+using std::vector;
+
 
 
 // Creates the specified player
@@ -36,15 +41,15 @@ cge::GamePlayer* player_factory(char* playertype, char* name) {
 
 // Prints usage comment
 void print_usage() {
-    std::cout << "Usage: main.exe <p1type> <p1name> <p2type> <p2name> [mode] [options]\n\n"
-              << "Modes:\n"
-              << "  [int]  Number of matches (defaults to 1 if not specified)\n"
-              << "  -c     Comparison mode (options will be ignored)\n\n"
-              << "Options:\n"
-              << "  -t <int> <int>  Time (sec) for white and black (defaults to 10min each)\n"
-              << "  -i <int>        Time increment (sec) (defaults to 0sec)\n"
-              << "  -f <FENstring>  Starting position FEN (defaults to standard chess board)\n"
-              << "  -s <filename>   Filename for saving as pgn (saves inside /logs folder)\n\n";
+    cout << "Usage: main.exe <p1type> <p1name> <p2type> <p2name> [mode] [options]\n\n"
+         << "Modes:\n"
+         << "  [int]  Number of matches (defaults to 1 if not specified)\n"
+         << "  -c     Comparison mode (options will be ignored)\n\n"
+         << "Options:\n"
+         << "  -t <int> <int>  Time (sec) for white and black (defaults to 10min each)\n"
+         << "  -i <int>        Time increment (sec) (defaults to 0sec)\n"
+         << "  -f <FENstring>  Starting position FEN (defaults to standard chess board)\n"
+         << "  -s <filename>   Filename for saving as pgn (saves inside /logs folder)\n\n";
 }
 
 
@@ -71,7 +76,7 @@ main.exe Raphael "new" Raphaelv1.0 "old" -c
 int main(int argc, char** argv) {
     cge::GamePlayer* p1;
     cge::GamePlayer* p2;
-    std::vector<cge::GameEngine::GameOptions> gameoptions;
+    vector<cge::GameEngine::GameOptions> gameoptions;
 
     // invalid
     if (argc < 5) {
@@ -89,11 +94,11 @@ int main(int argc, char** argv) {
     if (argc >= 6) {
         // comparison mode
         if (!strcmp(argv[i], "-c")) {
-            std::ifstream pgns("src/Games/randomGames.txt");
-            std::string pgn;
+            ifstream pgns("src/Games/randomGames.txt");
+            string pgn;
             bool p1_is_white = true;
             // create 400 matches with alterating color
-            while (std::getline(pgns, pgn)) {
+            while (getline(pgns, pgn)) {
                 gameoptions.push_back({
                     .p1_is_white = p1_is_white,
                     .interactive = false,
@@ -153,7 +158,7 @@ int main(int argc, char** argv) {
 
         // pgn save
         else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "-save")) {
-            std::string pgn_file = "./logs/" + (std::string)argv[++i];
+            string pgn_file = "./logs/" + (string)argv[++i];
             for (auto& gopt : gameoptions) gopt.pgn_file = pgn_file;
         }
 
@@ -167,7 +172,7 @@ int main(int argc, char** argv) {
 
 
     // Initialize GameEngine
-    std::vector<cge::GamePlayer*> players = {p1, p2};
+    vector<cge::GamePlayer*> players = {p1, p2};
     cge::GameEngine ge(players);
 
     // Play Matches

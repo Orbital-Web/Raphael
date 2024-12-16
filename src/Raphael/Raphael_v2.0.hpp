@@ -17,7 +17,10 @@
 
 using std::cout;
 using std::fixed;
+using std::max;
+using std::min;
 using std::setprecision;
+using std::string;
 
 
 
@@ -53,18 +56,18 @@ private:
     // info
     int64_t nodes;  // number of nodes visited
     // timing
-    std::chrono::system_clock::time_point start_t;  // search start time
-    int64_t search_t;                               // search duration (ms)
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_t;  // search start time
+    int64_t search_t;                                                     // search duration (ms)
 
     // Raphael methods
 public:
     // Initializes Raphael with a name
-    v2_0(std::string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {
+    v2_0(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {
         PST::init_pst();
         PMASK::init_pawnmask();
     }
     // and with engine options
-    v2_0(std::string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {
+    v2_0(string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {
         PST::init_pst();
         PMASK::init_pawnmask();
     }
@@ -259,13 +262,13 @@ public:
     }
 
     // Returns the PV from
-    std::string get_pv_line(chess::Board board, int depth) {
+    string get_pv_line(chess::Board board, int depth) {
         // get first move
         auto ttkey = board.hash();
         auto ttentry = tt.get(ttkey, 0);
         chess::Move pvmove;
 
-        std::string pvline = "";
+        string pvline = "";
 
         while (depth && tt.valid(ttentry, ttkey, 0)) {
             pvmove = ttentry.move;
@@ -303,6 +306,7 @@ private:
         // set to infinite if other searchoptions are specified
         if (searchopt.maxdepth != -1 || searchopt.maxnodes != -1 || searchopt.infinite) {
             search_t = 0;
+            start_t = std::chrono::high_resolution_clock::now();
             return;
         }
 
@@ -310,8 +314,8 @@ private:
         // 0~1, higher the more time it uses (max at 20 pieces left)
         float ratio = 0.0044f * (n - 32) * (-n / 32) * pow(2.5f + n / 32, 3);
         // use 1~5% of the remaining time based on the ratio + buffered increment
-        int duration = t_remain * (0.01f + 0.04f * ratio) + std::max(t_inc - 30, 0);
-        search_t = std::min(duration, t_remain);
+        int duration = t_remain * (0.01f + 0.04f * ratio) + max(t_inc - 30, 0);
+        search_t = min(duration, t_remain);
         start_t = std::chrono::high_resolution_clock::now();
     }
 
@@ -352,8 +356,8 @@ private:
             if (board.isRepetition(1) || board.isHalfMoveDraw()) return 0;
 
             // mate distance pruning
-            alpha = std::max(alpha, -MATE_EVAL + ply);
-            beta = std::min(beta, MATE_EVAL - ply);
+            alpha = max(alpha, -MATE_EVAL + ply);
+            beta = min(beta, MATE_EVAL - ply);
             if (alpha >= beta) return alpha;
         }
 
@@ -366,9 +370,9 @@ private:
                 if (!ply) itermove = entry.move;
                 return entry.eval;
             } else if (entry.flag == tt.LOWER)
-                alpha = std::max(alpha, entry.eval);
+                alpha = max(alpha, entry.eval);
             else
-                beta = std::min(beta, entry.eval);
+                beta = min(beta, entry.eval);
 
             // prune
             if (alpha >= beta) {
@@ -469,7 +473,7 @@ private:
         // prune with standing pat
         int eval = evaluate(board);
         if (eval >= beta) return beta;
-        alpha = std::max(alpha, eval);
+        alpha = max(alpha, eval);
 
         // search
         chess::Movelist movelist;
@@ -488,7 +492,7 @@ private:
 
             // prune
             if (eval >= beta) return beta;
-            alpha = std::max(alpha, eval);
+            alpha = max(alpha, eval);
         }
 
         return alpha;
@@ -537,7 +541,7 @@ private:
         int eval = 0;
         auto pieces = board.occ();
         int n_pieces_left = chess::builtin::popcount(pieces);
-        float eg_weight = std::min(
+        float eg_weight = min(
             1.0f, float(32 - n_pieces_left) / (32 - N_PIECES_END)
         );  // 0~1 as pieces left decreases
 

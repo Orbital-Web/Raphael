@@ -1,5 +1,7 @@
 #include <Raphael/SEE.h>
 
+using std::max;
+
 
 
 namespace Raphael {
@@ -53,7 +55,7 @@ int evaluate(const chess::Move& move, const chess::Board& board) {
     while (true) {
         n_captures++;
         gain[n_captures] = pieceval(victim, board) - gain[n_captures - 1];  // assume defended
-        // if (std::max(-gain[n_captures-1], gain[n_captures]) < 0) break;
+        // if (max(-gain[n_captures-1], gain[n_captures]) < 0) break;
 
         all_attackers &= occ;
         auto attackers = all_attackers & board.us(color);
@@ -68,7 +70,7 @@ int evaluate(const chess::Move& move, const chess::Board& board) {
     }
 
     // evaluate the final material (dis)advantage if we both trade smartly
-    while (--n_captures) gain[n_captures - 1] = -std::max(-gain[n_captures - 1], gain[n_captures]);
+    while (--n_captures) gain[n_captures - 1] = -max(-gain[n_captures - 1], gain[n_captures]);
     return gain[0];
 }
 

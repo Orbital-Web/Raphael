@@ -24,4 +24,4 @@ int History::get(const chess::Move move, const int side) const {
 }
 
 
-void History::clear() { std::memset(_history, 0, sizeof(_history)); }
+void History::clear() { memset(_history, 0, sizeof(_history)); }

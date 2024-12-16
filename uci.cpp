@@ -125,32 +125,9 @@ void search(const vector<string>& tokens) {
     engine.set_searchoptions(searchopt);
     halt = false;
     sf::Event nullevent;
-    engine.get_move(board, t_remain, t_inc, nullevent, halt);
+    thread(&Raphael::v2_0::get_move, engine, board, t_remain, t_inc, ref(nullevent), ref(halt))
+        .detach();
 }
-
-
-void process_command(const string& uci_command) {
-    // tokenize command
-    vector<string> tokens;
-    stringstream ss(uci_command);
-    string token;
-    while (getline(ss, token, ' ')) tokens.push_back(token);
-    if (tokens.empty()) return;
-
-    string& keyword = tokens[0];
-
-    if (keyword == "setoption")
-        return setoption(tokens);
-    else if (keyword == "position")
-        return setposition(tokens);
-    else if (keyword == "go")
-        return search(tokens);
-    else if (keyword == "ucinewgame") {
-        lock_guard<mutex> engine_lock(engine_mutex);
-        engine.reset();
-    }
-}
-
 
 
 int main() {
@@ -180,8 +157,34 @@ int main() {
             halt = true;
             quit = true;
 
-        } else
-            thread(process_command, uci_command).detach();
+        } else if (uci_command == "ucinewgame") {
+            halt = true;
+            lock_guard<mutex> engine_lock(engine_mutex);
+            engine.reset();
+
+        } else {
+            // tokenize command
+            vector<string> tokens;
+            stringstream ss(uci_command);
+            string token;
+            while (getline(ss, token, ' ')) tokens.push_back(token);
+            if (tokens.empty()) continue;
+
+            string& keyword = tokens[0];
+
+            if (keyword == "setoption") {
+                halt = true;
+                setoption(tokens);
+
+            } else if (keyword == "position") {
+                halt = true;
+                setposition(tokens);
+
+            } else if (keyword == "go") {
+                halt = true;
+                search(tokens);
+            }
+        }
     }
 
     return 0;

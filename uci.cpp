@@ -11,6 +11,7 @@
 
 using std::cin;
 using std::cout;
+using std::flush;
 using std::ref;
 using std::stoi;
 using std::stoll;
@@ -27,6 +28,7 @@ chess::Board board;
 Raphael::v2_0 engine("Raphael");
 bool halt = false;
 bool quit = false;
+mutex engine_mutex;
 
 
 
@@ -43,10 +45,14 @@ void setoption(const vector<string>& tokens) {
         if (tablesize_mb < 1 || tablesize_mb > 2560) return;
 
         uint32_t tablesize = (tablesize_mb * 1024U * 1024) / Raphael::TranspositionTable::entrysize;
-        engine.set_options({.tablesize = tablesize});
+        {
+            lock_guard<mutex> engine_lock(engine_mutex);
+            engine.set_options({.tablesize = tablesize});
+        }
 
         lock_guard<mutex> lock(cout_mutex);
-        cout << "Set table size to " << tablesize_mb << "mb (" << tablesize << " entries)\n";
+        cout << "Set table size to " << tablesize_mb << "mb (" << tablesize << " entries)\n"
+             << flush;
     }
 }
 
@@ -61,6 +67,7 @@ void setposition(const vector<string>& tokens) {
     if (ntokens < 2) return;
 
     // starting position
+    lock_guard<mutex> engine_lock(engine_mutex);
     int i = 2;
     if (tokens[1] == "startpos")
         board.setFen(chess::STARTPOS);
@@ -114,10 +121,11 @@ void search(const vector<string>& tokens) {
     }
 
     // search best move
-    halt = false;
+    lock_guard<mutex> engine_lock(engine_mutex);
     engine.set_searchoptions(searchopt);
+    halt = false;
     sf::Event nullevent;
-    engine.get_move(board, t_remain, t_inc, ref(nullevent), ref(halt));
+    engine.get_move(board, t_remain, t_inc, nullevent, halt);
 }
 
 
@@ -137,11 +145,16 @@ void process_command(const string& uci_command) {
         return setposition(tokens);
     else if (keyword == "go")
         return search(tokens);
+    else if (keyword == "ucinewgame") {
+        lock_guard<mutex> engine_lock(engine_mutex);
+        engine.reset();
+    }
 }
 
 
 
 int main() {
+    std::ios::sync_with_stdio(false);
     string uci_command;
     Raphael::v2_0::EngineOptions engine_opt;
 
@@ -153,16 +166,14 @@ int main() {
             cout << "id name Raphael " << version << "\n"
                  << "id author Rei Meguro\n"
                  << "option name Hash type spin default 192 min 1 max 2560\n"
-                 << "uciok\n";
+                 << "uciok\n"
+                 << flush;
 
         } else if (uci_command == "isready") {
             lock_guard<mutex> lock(cout_mutex);
-            cout << "readyok\n";
+            cout << "readyok\n" << flush;
 
-        } else if (uci_command == "ucinewgame")
-            engine.reset();
-
-        else if (uci_command == "stop")
+        } else if (uci_command == "stop")
             halt = true;
 
         else if (uci_command == "quit") {

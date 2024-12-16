@@ -17,6 +17,7 @@
 
 using std::cout;
 using std::fixed;
+using std::flush;
 using std::max;
 using std::min;
 using std::setprecision;
@@ -152,7 +153,7 @@ public:
                     cout << "info depth " << depth - 1 << " time " << dtime << " nodes " << nodes
                          << " score mate " << sign << MATE_EVAL - abs(eval) << " nps " << nps
                          << " pv " << get_pv_line(board, depth - 1) << "\n";
-                    cout << "bestmove " << chess::uci::moveToUci(itermove) << "\n";
+                    cout << "bestmove " << chess::uci::moveToUci(itermove) << "\n" << flush;
                 }
 #else
     #ifndef MUTEEVAL
@@ -161,7 +162,8 @@ public:
                     lock_guard<mutex> lock(cout_mutex);
                     char sign = (whiteturn == (eval > 0)) ? '\0' : '-';
                     cout << "Eval: " << sign << "#" << MATE_EVAL - abs(eval) << "\tNodes: " << nodes
-                         << "\n";
+                         << "\n"
+                         << flush;
                 }
     #endif
 #endif
@@ -177,7 +179,8 @@ public:
                     lock_guard<mutex> lock(cout_mutex);
                     cout << "info depth " << depth - 1 << " time " << dtime << " nodes " << nodes
                          << " score cp " << eval << " nps " << nps << " pv "
-                         << get_pv_line(board, depth - 1) << "\n";
+                         << get_pv_line(board, depth - 1) << "\n"
+                         << flush;
                 }
 #endif
             }
@@ -185,7 +188,7 @@ public:
 #ifdef UCI
         {
             lock_guard<mutex> lock(cout_mutex);
-            cout << "bestmove " << chess::uci::moveToUci(itermove) << "\n";
+            cout << "bestmove " << chess::uci::moveToUci(itermove) << "\n" << flush;
         }
 #else
     #ifndef MUTEEVAL
@@ -194,7 +197,8 @@ public:
         {
             lock_guard<mutex> lock(cout_mutex);
             cout << "Eval: " << fixed << setprecision(2) << eval / 100.0f
-                 << "\tDepth: " << depth - 1 << "\tNodes: " << nodes << "\n";
+                 << "\tDepth: " << depth - 1 << "\tNodes: " << nodes << "\n"
+                 << flush;
         }
     #endif
 #endif

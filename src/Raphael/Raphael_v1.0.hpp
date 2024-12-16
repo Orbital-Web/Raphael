@@ -13,6 +13,7 @@
 
 using std::cout;
 using std::fixed;
+using std::flush;
 using std::max;
 using std::min;
 using std::setprecision;
@@ -82,9 +83,9 @@ public:
                 {
                     lock_guard<mutex> lock(cout_mutex);
                     if (whiteturn == (eval > 0))
-                        cout << "Eval: #\n";
+                        cout << "Eval: #\n" << flush;
                     else
-                        cout << "Eval: -#\n";
+                        cout << "Eval: -#\n" << flush;
                 }
     #endif
 #endif
@@ -96,7 +97,7 @@ public:
 #ifdef UCI
         {
             lock_guard<mutex> lock(cout_mutex);
-            cout << "bestmove " << chess::uci::moveToUci(itermove) << "\n";
+            cout << "bestmove " << chess::uci::moveToUci(itermove) << "\n" << flush;
         }
 #else
     #ifndef MUTEEVAL
@@ -105,7 +106,8 @@ public:
         {
             lock_guard<mutex> lock(cout_mutex);
             cout << "Eval: " << fixed << setprecision(2) << eval / 100.0f
-                 << "\tDepth: " << depth - 1 << "\n";
+                 << "\tDepth: " << depth - 1 << "\n"
+                 << flush;
         }
     #endif
 #endif

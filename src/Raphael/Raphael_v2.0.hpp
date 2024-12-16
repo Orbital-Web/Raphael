@@ -446,7 +446,7 @@ private:
                     history.update(move, depth, whiteturn);
                 }
                 // update transposition
-                tt.set({ttkey, depth, tt.LOWER, alpha, move}, ply);
+                tt.set({ttkey, depth, tt.LOWER, move, alpha}, ply);
                 return beta;
             }
 
@@ -460,7 +460,7 @@ private:
 
         // update transposition
         auto flag = (alpha <= alphaorig) ? tt.UPPER : tt.EXACT;
-        tt.set({ttkey, depth, flag, alpha, bestmove}, ply);
+        tt.set({ttkey, depth, flag, bestmove, alpha}, ply);
         return alpha;
     }
 

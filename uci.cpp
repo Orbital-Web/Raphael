@@ -42,8 +42,7 @@ void setoption(const vector<string>& tokens) {
         int tablesize_mb = stoi(tokens[4]);
         if (tablesize_mb < 1 || tablesize_mb > 2560) return;
 
-        uint32_t tablesize
-            = (tablesize_mb * 1024U * 1024) / sizeof(Raphael::TranspositionTable::Entry);
+        uint32_t tablesize = (tablesize_mb * 1024U * 1024) / Raphael::TranspositionTable::entrysize;
         engine.set_options({.tablesize = tablesize});
 
         lock_guard<mutex> lock(cout_mutex);

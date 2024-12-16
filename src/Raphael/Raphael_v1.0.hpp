@@ -212,7 +212,7 @@ private:
             flag = tt.LOWER;
         else
             flag = tt.EXACT;
-        tt.set({ttkey, depth, flag, alpha, bestmove}, ply);
+        tt.set({ttkey, depth, flag, bestmove, alpha}, ply);
 
         return alpha;
     }
@@ -301,7 +301,7 @@ private:
         int eval = 0;
         int n_pieces_left = chess::builtin::popcount(board.occ());
         double eg_weight = min(1.0, double(32 - n_pieces_left) / (32 - N_PIECES_END));
-        int wkr, bkr, wkf, bkf;
+        int wkr = 0, bkr = 0, wkf = 0, bkf = 0;
 
         // count pieces and added their values (material + pst)
         for (int sqi = 0; sqi < 64; sqi++) {

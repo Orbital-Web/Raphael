@@ -9,25 +9,34 @@ using std::vector;
 
 namespace Raphael {
 class TranspositionTable {
-    static constexpr uint32_t MAX_TABLE_SIZE = 134217728;  // 3GB
+    static constexpr uint32_t MAX_TABLE_SIZE = 201326592;  // 3GB
 
 public:
-    enum Flag { INVALID = -2, LOWER, EXACT, UPPER };
-    // storage type (size = 24 bytes)
+    enum Flag { INVALID = 0, LOWER, EXACT, UPPER };
+
+    // table entry interface
     struct Entry {
-        uint64_t key;   // 8 bytes (8 bytes)
-        int depth: 30;  // 4 bytes (8 bytes)
-        Flag flag: 2;
-        int eval;          // 4 bytes (8 bytes)
-        chess::Move move;  // 4 bytes
+        uint64_t key;      // zobrist hash of move
+        int depth;         // max 2^14 (16384)
+        Flag flag;         // invalid, lower, exact, or upper
+        chess::Move move;  // score is ignored
+        int eval;          // evaluation of the move
     };
 
 private:
+    // table entry storage type (16 bytes)
+    struct EntryStorage {
+        uint64_t key;
+        uint64_t val;  // 63-32: eval, 31-16: move, 15-14: flag, 13-0: depth
+    };
+
     uint32_t size;
-    vector<Entry> _table;
+    vector<EntryStorage> _table;
 
 
 public:
+    static constexpr size_t entrysize = sizeof(EntryStorage);
+
     /** Initializes the Transposition Table
      *
      * \param size_in the number of entries the table holds
@@ -47,7 +56,7 @@ public:
      * \param entry the entry to store
      * \param ply number of half moves made
      */
-    void set(const Entry entry, const int ply);
+    void set(const Entry& entry, const int ply);
 
     /** Clears the table */
     void clear();

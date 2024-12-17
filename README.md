@@ -14,13 +14,13 @@
 
 ## ELO
 
-**[Estimated CCRL 40/2 ELO](https://www.computerchess.org.uk/ccrl/404/): 1865**
+**[Estimated CCRL 40/2 ELO](https://www.computerchess.org.uk/ccrl/404/): 1966**
 
-To estimate **Raphael's** [ELO](https://www.computerchess.org.uk/ccrl/404/), I paired it up against several other engines in a 10 rounds 40/2 gauntlet tournament inside of [Arena](http://www.playwitharena.de), incrementally updating **Raphael's** ELO using the [this calculator](https://www.omnicalculator.com/sports/elo#a-detailed-analysis-the-meaning-of-elo-coefficients), which is based on the statistical model between [win probability and ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability).
+To estimate **Raphael's** [ELO](https://www.computerchess.org.uk/ccrl/404/), I paired it up against several other engines in a 10 rounds 40/2 gauntlet tournament inside of [Arena](http://www.playwitharena.de), incrementally updating **Raphael's** ELO using the [this calculator](https://www.omnicalculator.com/sports/elo#a-detailed-analysis-the-meaning-of-elo-coefficients) based on the statistical model between [win probability and ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability).
 
-**Raphaelv1.7** was matched against [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1838), [**Claudia**](https://github.com/antoniogarro/Claudia) (1908), and [**BeLL**](https://github.com/Dany1962/BeLL) (1939), and the results were a WDL of 8-1-1 (+81), 4-1-5 (-1), and 3-2-5 (-12), respectively. Previously, the ELO of **Raphaelv1.6** was estimated to be around 1797, thus the estimated ELO of **Raphaelv1.7** is around 1865.
+**Raphaelv1.7.6** was matched against [**BeLL**](https://github.com/Dany1962/BeLL) (1890), [**Claudia**](https://github.com/antoniogarro/Claudia) (1846), and [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1737), and the results were a WDL of 6-3-1 (+57.2), 7-1-2 (+28.5), and 8-1-1 (+15.2), respectively. Previously, the ELO of **Raphaelv1.7** was estimated to be around 1865, thus the estimated ELO of **Raphaelv1.7.6** is around 1966.
 
-Note that this method of ELO estimation is very crude, as it only only compares against a few other engines with only 10 rounds. In the future, I will conduct a more thorough comparison (maybe once v2.0 is out).
+Note that this method of ELO estimation is very crude, as it only only compares against a few other engines with only 10 rounds. In the future, I will conduct a more thorough comparison.
 
 Past ELOs
 <table>
@@ -28,9 +28,10 @@ Past ELOs
         <th>Version</th>
         <th>CCRL 40/2</th>
     </tr>
-    <tr align="center"><td>1.7</td><td>1865</td></tr>
-    <tr align="center"><td>1.6</td><td>1797</td></tr>
-    <tr align="center"><td>1.5</td><td>1764</td></tr>
+    <tr align="center"><td>1.7.6</td><td>1966</td></tr>
+    <tr align="center"><td>1.7.0</td><td>1865</td></tr>
+    <tr align="center"><td>1.6.0</td><td>1797</td></tr>
+    <tr align="center"><td>1.5.0</td><td>1764</td></tr>
 </table>
 <br/><br/>
 
@@ -38,7 +39,7 @@ Past ELOs
 
 Builds for Windows and Ubuntu are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page.
 
-If you are on Windows, you will need to copy `openal32.dll` from `SFML-2.6.0/bin/` and add it to the same directory as `main.exe` to be able to run it (you can skip this step if you only intend to use the UCI engine).
+If you are on Windows, you will need to download [SFML-2.6.0 GCC 13.1.0 MinGW 64-bit](https://www.sfml-dev.org/download/sfml/2.6.0/) and copy `openal32.dll` from `SFML-2.6.0/bin/` into the same directory as `main.exe` to be able to run it (you can skip this step if you only intend to use the UCI engine).
 If you are on Ubuntu, you will need to run `sudo apt install libsfml-dev` as the build is dynamically linked.
 
 Please see the sections below on how to compile the code yourself if the executables do not work for you.
@@ -87,7 +88,7 @@ If Ubuntu/WSL does not work for you, or you would like to compile the code stati
     git clone https://github.com/Orbital-Web/Raphael.git --recurse-submodules
     ```
 
-2. Download [SFML-2.6.0](https://www.sfml-dev.org/download/sfml/2.6.0/) and add it to the root directory
+2. Download [SFML-2.6.0 GCC 13.1.0 MinGW 64-bit](https://www.sfml-dev.org/download/sfml/2.6.0/) and add it to the root directory
 3. Copy `openal32.dll` from `SFML-2.6.0/bin/` and add it to the root directory
 4. Compile dependencies with the following commands (in the root directory)
 
@@ -103,14 +104,14 @@ If Ubuntu/WSL does not work for you, or you would like to compile the code stati
 
     ```shell
     g++ -c -O3 -DNDEBUG main.cpp -Isrc -Ichess-library/src -I"SFML-2.6.0/include" -DSFML_STATIC
-    g++ -o main main.o src/GameEngine/consts.o src/GameEngine/GameEngine.o src/GameEngine/GamePlayer.o src/GameEngine/HumanPlayer.o src/GameEngine/utils.o src/Raphael/consts.o src/Raphael/History.o src/Raphael/Killers.o src/Raphael/See.o src/Raphael/Transposition.o -L"SFML-2.6.0/lib" -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg
+    g++ -o main main.o src/GameEngine/consts.o src/GameEngine/GameEngine.o src/GameEngine/GamePlayer.o src/GameEngine/HumanPlayer.o src/GameEngine/utils.o src/Raphael/consts.o src/Raphael/History.o src/Raphael/Killers.o src/Raphael/See.o src/Raphael/Transposition.o -L"SFML-2.6.0/lib" -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg -static
     ```
 
 6. Compile the UCI engine with the following commands
 
     ```shell
     g++ -c -O3 -DNDEBUG uci.cpp -Isrc -Ichess-library/src -I"SFML-2.6.0/include" -DSFML_STATIC
-    g++ -o uci uci.o src/GameEngine/consts.o src/GameEngine/GamePlayer.o src/Raphael/consts.o src/Raphael/History.o src/Raphael/Killers.o src/Raphael/See.o src/Raphael/Transposition.o -L"SFML-2.6.0/lib" -lsfml-graphics-s
+    g++ -o uci uci.o src/GameEngine/consts.o src/GameEngine/GamePlayer.o src/Raphael/consts.o src/Raphael/History.o src/Raphael/Killers.o src/Raphael/See.o src/Raphael/Transposition.o -L"SFML-2.6.0/lib" -lsfml-graphics-s -static
     ```
 
 <br/><br/>

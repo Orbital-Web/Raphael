@@ -23,7 +23,7 @@ using std::vector;
 
 
 // global vars
-const char version[4] = "1.7";
+const char version[8] = "1.7.6.3";
 chess::Board board;
 Raphael::v2_0 engine("Raphael");
 bool halt = false;

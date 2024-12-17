@@ -34,9 +34,10 @@ public:
     };
 
     struct SearchOptions {
-        int maxdepth = -1;
         int64_t maxnodes = -1;
+        int maxdepth = -1;
         int movetime = -1;
+        int movestogo = 0;
         bool infinite = false;
     };
 
@@ -319,6 +320,8 @@ private:
         float ratio = 0.0044f * (n - 32) * (-n / 32) * pow(2.5f + n / 32, 3);
         // use 1~5% of the remaining time based on the ratio + buffered increment
         int duration = t_remain * (0.01f + 0.04f * ratio) + max(t_inc - 30, 0);
+        // try to use all of our time if timer resets after movestogo (unless it's 1, then be fast)
+        if (searchopt.movestogo > 1) duration += (t_remain - duration) / searchopt.movestogo;
         search_t = min(duration, t_remain);
         start_t = std::chrono::high_resolution_clock::now();
     }

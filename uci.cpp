@@ -112,11 +112,12 @@ void search(const vector<string>& tokens) {
             break;
         } else if (tokens[i] == "infinite") {
             searchopt.infinite = true;
-            break;
         } else if ((whiteturn && tokens[i] == "wtime") || (!whiteturn && tokens[i] == "btime"))
             t_remain = stoi(tokens[i + 1]);
         else if ((whiteturn && tokens[i] == "winc") || (!whiteturn && tokens[i] == "binc"))
             t_inc = stoi(tokens[i + 1]);
+        else if (tokens[i] == "movestogo")
+            searchopt.movestogo = stoi(tokens[i + 1]);
         i += 2;
     }
 

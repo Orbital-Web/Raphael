@@ -37,10 +37,9 @@ Past ELOs
 
 ## Getting Started
 
-Builds for Windows and Ubuntu are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page.
+Builds for Windows and Ubuntu/WSL are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page.
 
-If you are on Windows, you will need to download [SFML-2.6.0 GCC 13.1.0 MinGW 64-bit](https://www.sfml-dev.org/download/sfml/2.6.0/) and copy `openal32.dll` from `SFML-2.6.0/bin/` into the same directory as `main.exe` to be able to run it (you can skip this step if you only intend to use the UCI engine).
-If you are on Ubuntu, you will need to run `sudo apt install libsfml-dev` as the build is dynamically linked.
+Please make sure to keep `main.exe` in the same folder as the `src/` folder and `openal32.dll` (dll only needed for Windows) so that it may load textures, sounds, and fonts correctly. If you are on Ubuntu, please run `sudo apt install libsfml-dev` as the build is dynamically linked.
 
 Please see the sections below on how to compile the code yourself if the executables do not work for you.
 

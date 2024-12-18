@@ -1,4 +1,5 @@
 #include <GameEngine/HumanPlayer.h>
+#include <GameEngine/consts.h>
 
 using namespace cge;
 
@@ -8,7 +9,11 @@ HumanPlayer::HumanPlayer(string name_in): GamePlayer(name_in) {}
 
 
 chess::Move HumanPlayer::get_move(
-    chess::Board board, const int t_remain, const int t_inc, sf::Event& event, bool& halt
+    chess::Board board,
+    const int t_remain,
+    const int t_inc,
+    volatile sf::Event& event,
+    volatile bool& halt
 ) {
     auto sq_from = chess::NO_SQ;
     auto sq_to = chess::NO_SQ;
@@ -47,7 +52,7 @@ chess::Move HumanPlayer::get_move(
         }
         if (rmbdown) sq_from = chess::NO_SQ;
     }
-    return chess::Move::NO_MOVE;
+    return chess::Move::make(chess::SQ_E2, chess::SQ_E4);
 }
 
 

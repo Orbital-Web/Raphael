@@ -32,7 +32,11 @@ public:
      * \returns the best move it found
      */
     virtual chess::Move get_move(
-        chess::Board board, const int t_remain, const int t_inc, sf::Event& event, bool& halt
+        chess::Board board,
+        const int t_remain,
+        const int t_inc,
+        volatile sf::Event& event,
+        volatile bool& halt
     ) = 0;
 
     /** Think during opponent's turn. Should return immediately if halt becomes true
@@ -40,7 +44,7 @@ public:
      * \param board current board
      * \param halt bool reference which will turn false to indicate search should stop
      */
-    virtual void ponder(chess::Board board, bool& halt);
+    virtual void ponder(chess::Board board, volatile bool& halt);
 
     /** Resets the player */
     virtual void reset();

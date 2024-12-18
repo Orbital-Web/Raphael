@@ -53,7 +53,11 @@ public:
     // Uses iterative deepening on Negamax to find best move
     // Should return immediately if halt becomes true
     chess::Move get_move(
-        chess::Board board, const int t_remain, const int t_inc, sf::Event& event, bool& halt
+        chess::Board board,
+        const int t_remain,
+        const int t_inc,
+        volatile sf::Event& event,
+        volatile bool& halt
     ) {
         tt.clear();
         int depth = 1;
@@ -133,7 +137,7 @@ private:
 
     // Sets halt to true if duration (ms) passes
     // Must be called asynchronously
-    static void manage_time(bool& halt, const int duration) {
+    static void manage_time(volatile bool& halt, const int duration) {
         auto start = std::chrono::high_resolution_clock::now();
         while (!halt) {
             auto now = std::chrono::high_resolution_clock::now();
@@ -144,7 +148,7 @@ private:
 
 
     // The Negamax search algorithm to search for the best move
-    int negamax(chess::Board& board, int depth, int ply, int alpha, int beta, bool& halt) {
+    int negamax(chess::Board& board, int depth, int ply, int alpha, int beta, volatile bool& halt) {
         // timeout
         if (halt) return 0;
 
@@ -221,7 +225,7 @@ private:
 
 
     // Quiescence search for all captures
-    int quiescence(chess::Board& board, int alpha, int beta, bool& halt) const {
+    int quiescence(chess::Board& board, int alpha, int beta, volatile bool& halt) const {
         int eval = evaluate(board);
 
         // timeout

@@ -83,7 +83,11 @@ public:
     // Uses iterative deepening on Negamax to find best move
     // Should return immediately if halt becomes true
     chess::Move get_move(
-        chess::Board board, const int t_remain, const int t_inc, sf::Event& event, bool& halt
+        chess::Board board,
+        const int t_remain,
+        const int t_inc,
+        volatile sf::Event& event,
+        volatile bool& halt
     ) {
         int depth = 1;
         int eval = 0;
@@ -207,7 +211,7 @@ public:
     }
 
     // Think during opponent's turn. Should return immediately if halt becomes true
-    void ponder(chess::Board board, bool& halt) {
+    void ponder(chess::Board board, volatile bool& halt) {
         ponderdepth = 1;
         pondereval = 0;
         itermove = chess::Move::NO_MOVE;
@@ -328,7 +332,7 @@ private:
 
     // Checks if duration (ms) has passed and modifies halt
     // Runs infinitely if search_t is 0
-    bool isTimeOver(bool& halt) const {
+    bool isTimeOver(volatile bool& halt) const {
         // if max nodes is specified, check that instead
         if (searchopt.maxnodes != -1) {
             if (nodes >= searchopt.maxnodes) halt = true;
@@ -351,7 +355,7 @@ private:
         const int ext,
         int alpha,
         int beta,
-        bool& halt
+        volatile bool& halt
     ) {
         // timeout
         if (isTimeOver(halt)) return 0;
@@ -472,7 +476,7 @@ private:
     }
 
     // Quiescence search for all captures
-    int quiescence(chess::Board& board, int alpha, int beta, bool& halt) {
+    int quiescence(chess::Board& board, int alpha, int beta, volatile bool& halt) {
         // timeout
         if (isTimeOver(halt)) return 0;
         nodes++;

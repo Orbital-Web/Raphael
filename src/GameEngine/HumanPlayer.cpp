@@ -1,5 +1,4 @@
 #include <GameEngine/HumanPlayer.h>
-#include <GameEngine/consts.h>
 
 using namespace cge;
 
@@ -52,7 +51,7 @@ chess::Move HumanPlayer::get_move(
         }
         if (rmbdown) sq_from = chess::NO_SQ;
     }
-    return chess::Move::make(chess::SQ_E2, chess::SQ_E4);
+    return chess::Move::NO_MOVE;
 }
 
 

@@ -14,7 +14,12 @@ using std::vector;
 
 
 
-// Creates the specified player
+/** Creates a specified GamePlayer
+ *
+ * \param playertype player type as a null-terminated cstring
+ * \param name name of player as a null-terminated cstring
+ * \returns a dynamically allocated player
+ */
 cge::GamePlayer* player_factory(char* playertype, char* name) {
     if (!strcmp(playertype, "human") || !strcmp(playertype, "Human"))
         return new cge::HumanPlayer(name);
@@ -39,12 +44,14 @@ cge::GamePlayer* player_factory(char* playertype, char* name) {
 }
 
 
-// Prints usage comment
+/* Prints help/usage text */
 void print_usage() {
     cout << "Usage: main.exe <p1type> <p1name> <p2type> <p2name> [mode] [options]\n\n"
          << "Modes:\n"
          << "  [int]  Number of matches (defaults to 1 if not specified)\n"
-         << "  -c     Comparison mode (options will be ignored)\n\n"
+         << "  -c     Comparison mode (options will be ignored)\n"  // comparing 2 engines
+         << "  -r     Results mode (options will be ignored)\n\n"   // records fen + wdl
+         //  << "  -e     Evaluation mode (options will be ignored)\n\n"  // records fen + eval
          << "Options:\n"
          << "  -t <int> <int>  Time (sec) for white and black (defaults to 10min each)\n"
          << "  -i <int>        Time increment (sec) (defaults to 0sec)\n"
@@ -106,6 +113,26 @@ int main(int argc, char** argv) {
                     .t_remain = {20000, 20000},
                     .start_fen = pgn,
                     .pgn_file = "./logs/compare.pgn"
+                });
+                p1_is_white = !p1_is_white;
+            }
+            pgns.close();
+            i = INT_MAX;  // ignore all options
+        }
+
+        else if (!strcmp(argv[i], "-r")) {
+            ifstream pgns("src/Games/randomGamesBig.txt");
+            string pgn;
+            bool p1_is_white = true;
+            // create 400 matches with alterating color
+            while (getline(pgns, pgn)) {
+                gameoptions.push_back({
+                    .p1_is_white = p1_is_white,
+                    .interactive = false,
+                    .t_inc = 20,
+                    .t_remain = {1000, 1000},
+                    .start_fen = pgn,
+                    .pgn_file = "./logs/results.pgn"
                 });
                 p1_is_white = !p1_is_white;
             }

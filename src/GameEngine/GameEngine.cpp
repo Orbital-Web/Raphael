@@ -5,15 +5,20 @@
 #include <future>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 using namespace cge;
 using std::async;
 using std::cout;
 using std::fixed;
 using std::future_status;
+using std::min;
 using std::ofstream;
 using std::ref;
 using std::setprecision;
+using std::string;
+using std::stringstream;
 
 
 
@@ -44,11 +49,14 @@ void GameEngine::run_match(const GameOptions& options) {
     // initialize pgn
     bool savepgn = (options.pgn_file != "");
     ofstream pgn;
+    stringstream pgn_moves;
     if (savepgn) {
+        string fen = options.start_fen;
+        fen = fen.substr(0, min(fen.find('\r'), fen.find('\n')) - 1);
         pgn.open(options.pgn_file, std::ios_base::app);
         pgn << "[White \"" << players[!p1_is_white]->name << "\"]\n"
             << "[Black \"" << players[p1_is_white]->name << "\"]\n"
-            << "[FEN \"" << options.start_fen << "\"]\n\n";
+            << "[FEN \"" << fen << "\"]\n";
     }
     int nmoves = 1;
 
@@ -119,7 +127,7 @@ void GameEngine::run_match(const GameOptions& options) {
         }
         halt = true;  // force stop pondering
         // pgn saving
-        if (savepgn) pgn << nmoves << ". " << chess::uci::moveToSan(board, toPlay) << " ";
+        if (savepgn) pgn_moves << nmoves << ". " << chess::uci::moveToSan(board, toPlay) << " ";
         // play move and update everything
         move(toPlay);
         turn = !turn;
@@ -150,7 +158,11 @@ game_end:
     sq_to = chess::NO_SQ;
     movelist.clear();
     event.type = sf::Event::MouseMoved;
-    if (savepgn) pgn << "\n\n";
+    if (savepgn) {
+        string pgn_result = "1/2-1/2";
+        if (game_result != chess::GameResult::DRAW) pgn_result = (!whiteturn) ? "1-0" : "0-1";
+        pgn << "[Result \"" << pgn_result << "\"]\n\n" << pgn_moves.str() << "\n\n";
+    };
     pgn.close();
 }
 

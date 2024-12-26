@@ -14,7 +14,7 @@ if OUTFILE == "randomGames.txt":
     N_GAMES = 400
     MAX_ADV = 200
 elif OUTFILE == "randomGamesBig.txt":
-    N_GAMES = 12000
+    N_GAMES = 120_000
     MAX_ADV = 500
 
 # download stockfish from https://stockfishchess.org/download/ and add it to the current directory
@@ -23,7 +23,7 @@ engine = chess.engine.SimpleEngine.popen_uci(
 )
 
 
-with open("randomGamesBig.txt", "a") as out:
+with open(OUTFILE, "a") as out:
     with open("lichess_db_standard_rated_2015-07.pgn") as pgn:
         n_saved = 0
         avg_eval = 0

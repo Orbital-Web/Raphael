@@ -6,7 +6,7 @@
 
 **Raphael** is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python.
 
-*Note: v1.7 will be the last of the minor releases to **Raphael**. The next major release will be v2.0 using a custom NNUE evaluator currently in the works of being trained on evaluations from my own engine.*
+*Note: v1.8 will be the last of the minor releases to **Raphael**. The next major release will be v2.0 using a custom NNUE evaluator currently in the works of being trained on evaluations from my own engine.*
 
 <p align="center">
     <img src="https://github.com/Orbital-Web/Raphael/blob/8667a6f6db60c5cacce297145246f89a22fa5333/Demo.png" alt="demo of Raphael" width=400/>
@@ -14,11 +14,11 @@
 
 ## ELO
 
-**[Estimated CCRL 40/2 ELO](https://www.computerchess.org.uk/ccrl/404/): 1966**
+**[Estimated CCRL 40/2 ELO](https://www.computerchess.org.uk/ccrl/404/): 2084**
 
 To estimate **Raphael's** [ELO](https://www.computerchess.org.uk/ccrl/404/), I paired it up against several other engines in a 10 rounds 40/2 gauntlet tournament inside of [Arena](http://www.playwitharena.de), incrementally updating **Raphael's** ELO using the [this calculator](https://www.omnicalculator.com/sports/elo#a-detailed-analysis-the-meaning-of-elo-coefficients) based on the statistical model between [win probability and ELO](https://www.chessprogramming.org/Match_Statistics#Elo-Rating_.26_Win-Probability).
 
-**Raphaelv1.7.6** was matched against [**BeLL**](https://github.com/Dany1962/BeLL) (1890), [**Claudia**](https://github.com/antoniogarro/Claudia) (1846), and [**Sayuri**](https://github.com/MetalPhaeton/sayuri) (1737), and the results were a WDL of 6-3-1 (+57.2), 7-1-2 (+28.5), and 8-1-1 (+15.2), respectively. Previously, the ELO of **Raphaelv1.7** was estimated to be around 1865, thus the estimated ELO of **Raphaelv1.7.6** is around 1966.
+**Raphaelv1.8** was matched against [**Claudia**](https://github.com/antoniogarro/Claudia) (1846), [**Monarch 1.7**](http://www.monarchchess.com/index.html) (2008), and [**BBChess 1.1**](https://github.com/maksimKorzh/bbc) (2024), and the results were a WDL of 7-3-0 (+36.8), 6-0-4 (+21.5), and 7-2-1 (+59.9), respectively. Previously, the ELO of **Raphaelv1.7.6** was estimated to be around 1966, thus the estimated ELO of **Raphaelv1.8** is around 2084.
 
 Note that this method of ELO estimation is very crude, as it only only compares against a few other engines with only 10 rounds. In the future, I will conduct a more thorough comparison.
 
@@ -28,6 +28,7 @@ Past ELOs
         <th>Version</th>
         <th>CCRL 40/2</th>
     </tr>
+    <tr align="center"><td>1.8.0</td><td>2084</td></tr>
     <tr align="center"><td>1.7.6</td><td>1966</td></tr>
     <tr align="center"><td>1.7.0</td><td>1865</td></tr>
     <tr align="center"><td>1.6.0</td><td>1797</td></tr>
@@ -127,7 +128,7 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 
 ### Raphael (Engine)
 
-**Raphael** is a UCI-compliant chess engine that comes with this project. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows). The UCI engine currently supports the following commands: `uci`, `isready`, `ucinewgame`, `stop`, `quit`, `position`, and `go [wtime|btime|winc|binc|depth|nodes|movetime|infinite]`. Pondering is not implemented yet. The engine contains the following features:
+**Raphael** is a UCI-compliant chess engine that comes with this project. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows). The UCI engine currently supports the following commands: `uci`, `isready`, `ucinewgame`, `stop`, `quit`, `position`, and `go [wtime|btime|winc|binc|depth|nodes|movestogo|movetime|infinite]`. Pondering is not implemented yet. The engine contains the following features:
 
 #### General
 
@@ -151,18 +152,22 @@ To use it, refer to the [setup instructions above](https://github.com/Orbital-We
 - [x] Mate distance pruning     (`v1.6+`)
 - [x] SEE pruning               (`v1.7+`)
 - [ ] Lazy SMP
-- [ ] Parameter Tuning
 
 #### Evaluation
 
 - [x] Materials                 (`v1.0+`)
 - [x] Piece-square tables       (`v1.0+`)
 - [ ] Midgame King safety
+- [ ] Endgame King opposition
 - [x] Endgame King proximity    (`v1.0+`)
 - [x] Evaluation tapering       (`v1.0+`)
 - [x] Passed Pawn               (`v1.3+`)
 - [x] Isolated Pawn             (`v1.3+`)
 - [x] Mobility                  (`v1.5+`)
+- [x] Bishop pair               (`v1.8+`)
+- [x] Bishop-colored corner     (`v1.8+`)
+- [x] Draw evaluation           (`v1.8+`)
+- [x] Evaluation tuning         (`v1.8+`)
 - [ ] NNUE
 
 #### Move Ordering
@@ -250,6 +255,15 @@ Below is the result of each new version against `v1.0` out of 400 matches (20 se
         <rect y="5" x="394" width="6"   height="20" style="fill:#F44336" />
     </svg>
     <p>v1.0 [374 / 20 / 6]</p>
+</div>
+<div style="display: flex; gap: 10px;">
+    <p>v1.8</p>
+    <svg width="400" height="30">
+        <rect y="5" x="0"   width="380" height="20" style="fill:#4CAF50" />
+        <rect y="5" x="380" width="16"  height="20" style="fill:#FFC107" />
+        <rect y="5" x="396" width="4"   height="20" style="fill:#F44336" />
+    </svg>
+    <p>v1.0 [380 / 16 / 4]</p>
 </div>
 
 And below are the more detailed comparisons.
@@ -423,6 +437,28 @@ And below are the more detailed comparisons.
         <td>49</td>
         <td>0</td>
         <td>v1.6</td>
+    </tr>
+    <tr align="center">
+        <td>v1.8</td>
+        <td>187</td>
+        <td>191</td>
+        <td>2</td>
+        <td>16</td>
+        <td>2</td>
+        <td>2</td>
+        <td>0</td>
+        <td>v1.0</td>
+    </tr>
+    <tr align="center">
+        <td>v1.8</td>
+        <td>99</td>
+        <td>98</td>
+        <td>0</td>
+        <td>100</td>
+        <td>45</td>
+        <td>53</td>
+        <td>5</td>
+        <td>v1.7</td>
     </tr>
 </table>
 

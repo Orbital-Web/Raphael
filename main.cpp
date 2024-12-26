@@ -4,7 +4,7 @@
 
 #include <Raphael/Raphael_v1.0.hpp>
 #include <Raphael/Raphael_v1.7.hpp>
-#include <Raphael/Raphael_v2.0.hpp>
+#include <Raphael/Raphael_v1.8.hpp>
 #include <fstream>
 
 using std::cout;
@@ -27,19 +27,19 @@ cge::GamePlayer* player_factory(char* playertype, char* name) {
         return new Raphael::v1_0(name);
     else if (!strcmp(playertype, "Raphaelv1.7"))
         return new Raphael::v1_7(name);
-    else if (!strcmp(playertype, "Raphaelv2.0"))
-        return new Raphael::v2_0(name);
+    else if (!strcmp(playertype, "Raphaelv1.8"))
+        return new Raphael::v1_8(name);
     else if (!strcmp(playertype, "Raphael"))
-        return new Raphael::v2_0(name);
+        return new Raphael::v1_8(name);
 
     // invalid
     printf("Invalid player type: %s\n", playertype);
     printf("Valid player types are:\n");
     printf("   human:\t cge::HumanPlayer\n");
-    printf("   Raphael:\t Raphael::v2_0\n");
+    printf("   Raphael:\t Raphael::v1_8\n");
     printf("   Raphaelv1.0:\t Raphael::v1_0\n");
     printf("   Raphaelv1.7:\t Raphael::v1_7\n");
-    printf("   Raphaelv2.0:\t Raphael::v2_0\n");
+    printf("   Raphaelv1.8:\t Raphael::v1_8\n");
     return nullptr;
 }
 

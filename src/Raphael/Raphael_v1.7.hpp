@@ -9,6 +9,7 @@
 #include <Raphael/consts.h>
 #include <math.h>
 
+#include <Raphael/RaphaelParam_v1.7.hpp>
 #include <chess.hpp>
 #include <chrono>
 #include <iomanip>
@@ -37,6 +38,7 @@ private:
     chess::Move itermove;  // current iteration's bestmove
     chess::Move prevPlay;  // previous iteration's bestmove
     int consecutives;      // number of consecutive bestmoves
+    v1_7_params params;    // search parameters
     // ponder
     uint64_t ponderkey = 0;  // hash after opponent's best response
     int pondereval = 0;      // eval we got during ponder
@@ -54,13 +56,9 @@ private:
     // Raphael methods
 public:
     // Initializes Raphael with a name
-    v1_7(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {
-        PST::init_pst();
-        PMASK::init_pawnmask();
-    }
+    v1_7(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) { PMASK::init_pawnmask(); }
     // and with options
     v1_7(string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {
-        PST::init_pst();
         PMASK::init_pawnmask();
     }
 
@@ -91,8 +89,8 @@ public:
         } else {
             depth = ponderdepth;
             eval = pondereval;
-            alpha = eval - ASPIRATION_WINDOW;
-            beta = eval + ASPIRATION_WINDOW;
+            alpha = eval - params.ASPIRATION_WINDOW;
+            beta = eval + params.ASPIRATION_WINDOW;
         }
 
         // stop search after an appropriate duration
@@ -101,8 +99,8 @@ public:
         // begin iterative deepening
         while (!halt && depth <= MAX_DEPTH) {
             // stable pv, skip
-            if (consecutives >= PV_STABLE_COUNT) halt = true;
-            int itereval = negamax(board, depth, 0, MAX_EXTENSIONS, alpha, beta, halt);
+            if (consecutives >= params.PV_STABLE_COUNT) halt = true;
+            int itereval = negamax(board, depth, 0, params.MAX_EXTENSIONS, alpha, beta, halt);
 
             // not timeout
             if (!halt) {
@@ -116,8 +114,8 @@ public:
                 }
 
                 // narrow window
-                alpha = eval - ASPIRATION_WINDOW;
-                beta = eval + ASPIRATION_WINDOW;
+                alpha = eval - params.ASPIRATION_WINDOW;
+                beta = eval + params.ASPIRATION_WINDOW;
                 depth++;
 
                 // count consecutive bestmove
@@ -223,7 +221,7 @@ public:
 
         // begin iterative deepening for our best response
         while (!halt && ponderdepth <= MAX_DEPTH) {
-            int itereval = negamax(board, ponderdepth, 0, MAX_EXTENSIONS, alpha, beta, halt);
+            int itereval = negamax(board, ponderdepth, 0, params.MAX_EXTENSIONS, alpha, beta, halt);
 
             if (!halt) {
                 pondereval = itereval;
@@ -236,8 +234,8 @@ public:
                 }
 
                 // narrow window
-                alpha = pondereval - ASPIRATION_WINDOW;
-                beta = pondereval + ASPIRATION_WINDOW;
+                alpha = pondereval - params.ASPIRATION_WINDOW;
+                beta = pondereval + params.ASPIRATION_WINDOW;
                 ponderdepth++;
 
                 // count consecutive bestmove
@@ -397,7 +395,7 @@ private:
             // late move reduction with zero window for certain quiet moves
             bool fullwindow = true;
             int eval;
-            if (extension == 0 && depth >= 3 && movei >= REDUCTION_FROM && !istactical) {
+            if (extension == 0 && depth >= 3 && movei >= params.REDUCTION_FROM && !istactical) {
                 eval = -negamax(board, depth - 2, ply + 1, ext, -alpha - 1, -alpha, halt);
                 fullwindow = eval > alpha;
             }
@@ -457,7 +455,7 @@ private:
         for (const auto& move : movelist) {
             board.makeMove(move);
             // SEE pruning for losing captures
-            if (move.score() < GOOD_CAPTURE_WEIGHT && !board.inCheck()) {
+            if (move.score() < params.GOOD_CAPTURE_WEIGHT && !board.inCheck()) {
                 board.unmakeMove(move);
                 continue;
             }
@@ -494,46 +492,38 @@ private:
 
         // enemy piece captured
         if (board.isCapture(move)) {
-            score += abs(PVAL::VALS[to]) - (from % 6);  // MVV/LVA
-            score += SEE::goodCapture(move, board, -12) * GOOD_CAPTURE_WEIGHT;
+            score += abs(params.PVAL[to]) - (from % 6);  // MVV/LVA
+            score += SEE::goodCapture(move, board, -12) * params.GOOD_CAPTURE_WEIGHT;
         } else {
             // killer move
-            if (ply > 0 && killers.isKiller(move, ply)) score += KILLER_WEIGHT;
+            if (ply > 0 && killers.isKiller(move, ply)) score += params.KILLER_WEIGHT;
             // history
             score += history.get(move, whiteturn);
         }
 
         // promotion
         if (move.typeOf() == chess::Move::PROMOTION)
-            score += abs(PVAL::VALS[(int)move.promotionType()]);
+            score += abs(params.PVAL[(int)move.promotionType()]);
 
         move.setScore(score);
     }
 
     // Evaluates the current position (from the current player's perspective)
-    static int evaluate(const chess::Board& board) {
+    int evaluate(const chess::Board& board) const {
         int eval = 0;
         auto pieces = board.occ();
         int n_pieces_left = chess::builtin::popcount(pieces);
         float eg_weight = min(
-            1.0f, float(32 - n_pieces_left) / (32 - N_PIECES_END)
+            1.0f, float(32 - n_pieces_left) / (32 - params.N_PIECES_END)
         );  // 0~1 as pieces left decreases
 
         // mobility
         int krd = 0, kfd = 0;  // king rank and file distance
         int bishmob = 0, rookmob = 0;
-        auto wbishx
-            = pieces & ~board.pieces(chess::PieceType::QUEEN, chess::Color::WHITE);  // occ - wqueen
-        auto bbishx
-            = pieces & ~board.pieces(chess::PieceType::QUEEN, chess::Color::BLACK);  // occ - bqueen
-        auto wrookx = wbishx
-                      & ~board.pieces(
-                          chess::PieceType::ROOK, chess::Color::WHITE
-                      );  // occ - (wqueen | wrook)
-        auto brookx = bbishx
-                      & ~board.pieces(
-                          chess::PieceType::ROOK, chess::Color::BLACK
-                      );  // occ - (bqueen | brook)
+        auto wbishx = pieces & ~board.pieces(chess::PieceType::QUEEN, chess::Color::WHITE);
+        auto bbishx = pieces & ~board.pieces(chess::PieceType::QUEEN, chess::Color::BLACK);
+        auto wrookx = wbishx & ~board.pieces(chess::PieceType::ROOK, chess::Color::WHITE);
+        auto brookx = bbishx & ~board.pieces(chess::PieceType::ROOK, chess::Color::BLACK);
         auto wpawns = board.pieces(chess::PieceType::PAWN, chess::Color::WHITE);
         auto bpawns = board.pieces(chess::PieceType::PAWN, chess::Color::BLACK);
 
@@ -544,26 +534,26 @@ private:
             int piece = (int)board.at(sq);
 
             // add material value
-            eval += PVAL::VALS[piece];
+            eval += params.PVAL[piece];
             // add positional value
-            eval
-                += PST::MID[piece][sqi] + eg_weight * (PST::END[piece][sqi] - PST::MID[piece][sqi]);
+            eval += params.PST[piece][sqi][0]
+                    + eg_weight * (params.PST[piece][sqi][1] - params.PST[piece][sqi][0]);
 
             switch (piece) {
                 // pawn structure
                 case 0:
                     // passed (+ for white) (more important in endgame)
                     if ((PMASK::WPASSED[sqi] & bpawns) == 0)
-                        eval += PMASK::PASSEDBONUS[7 - (sqi / 8)] * eg_weight;
+                        eval += params.PAWN_PASSED_WEIGHT[7 - (sqi / 8)] * eg_weight;
                     // isolated (- for white)
-                    if ((PMASK::ISOLATED[sqi] & wpawns) == 0) eval -= PMASK::ISOLATION_WEIGHT;
+                    if ((PMASK::ISOLATED[sqi] & wpawns) == 0) eval -= params.PAWN_ISOLATION_WEIGHT;
                     break;
                 case 6:
                     // passed (- for white) (more important in endgame)
                     if ((PMASK::BPASSED[sqi] & wpawns) == 0)
-                        eval -= PMASK::PASSEDBONUS[(sqi / 8)] * eg_weight;
+                        eval -= params.PAWN_PASSED_WEIGHT[(sqi / 8)] * eg_weight;
                     // isolated (+ for white)
-                    if ((PMASK::ISOLATED[sqi] & bpawns) == 0) eval += PMASK::ISOLATION_WEIGHT;
+                    if ((PMASK::ISOLATED[sqi] & bpawns) == 0) eval += params.PAWN_ISOLATION_WEIGHT;
                     break;
 
                 // bishop mobility (xrays queens)
@@ -596,15 +586,17 @@ private:
 
         // mobility
         eval += bishmob
-                * (MOBILITY::BISH_MID + eg_weight * (MOBILITY::BISH_END - MOBILITY::BISH_MID));
+                * (params.MOBILITY_BISHOP[0]
+                   + eg_weight * (params.MOBILITY_BISHOP[1] - params.MOBILITY_BISHOP[0]));
         eval += rookmob
-                * (MOBILITY::ROOK_MID + eg_weight * (MOBILITY::ROOK_END - MOBILITY::ROOK_MID));
+                * (params.MOBILITY_ROOK[0]
+                   + eg_weight * (params.MOBILITY_ROOK[1] - params.MOBILITY_ROOK[0]));
 
         // convert perspective
         if (!whiteturn) eval *= -1;
 
         // King proximity bonus (if winning)
-        if (eval >= 0) eval += (14 - abs(krd) - abs(kfd)) * KING_DIST_WEIGHT * eg_weight;
+        if (eval >= 0) eval += (14 - abs(krd) - abs(kfd)) * params.KING_DIST_WEIGHT * eg_weight;
 
         return eval;
     }

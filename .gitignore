@@ -31,8 +31,8 @@
 *.out
 *.app
 main
-Raphael*
-!Raphael/
+Raphael1.*
+Raphael2.*
 
 # SFML
 SFML-2.6.0/
@@ -43,6 +43,7 @@ SFML-2.6.0/
 # Position Gen
 stockfish/
 *.pgn
+src/Games/*.epd
 
 # UCI
 *.uci_options

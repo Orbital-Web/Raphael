@@ -1,7 +1,7 @@
 #define UCI
 #include <GameEngine/consts.h>
 
-#include <Raphael/Raphael_v2.0.hpp>
+#include <Raphael/Raphael_v1.8.hpp>
 #include <atomic>
 #include <iostream>
 #include <sstream>
@@ -23,9 +23,9 @@ using std::vector;
 
 
 // global vars
-const char version[8] = "1.7.6.5";
+const char version[8] = "1.8.0.0";
 chess::Board board;
-Raphael::v2_0 engine("Raphael");
+Raphael::v1_8 engine("Raphael");
 bool halt = false;
 bool quit = false;
 mutex engine_mutex;
@@ -98,7 +98,7 @@ void search(const vector<string>& tokens) {
     int ntokens = tokens.size();
     int i = 1;
     int t_remain = 0, t_inc = 0;
-    Raphael::v2_0::SearchOptions searchopt;
+    Raphael::v1_8::SearchOptions searchopt;
 
     while (i < ntokens) {
         if (tokens[i] == "depth") {
@@ -126,7 +126,7 @@ void search(const vector<string>& tokens) {
     engine.set_searchoptions(searchopt);
     halt = false;
     sf::Event nullevent;
-    thread(&Raphael::v2_0::get_move, engine, board, t_remain, t_inc, ref(nullevent), ref(halt))
+    thread(&Raphael::v1_8::get_move, engine, board, t_remain, t_inc, ref(nullevent), ref(halt))
         .detach();
 }
 
@@ -134,7 +134,7 @@ void search(const vector<string>& tokens) {
 int main() {
     std::ios::sync_with_stdio(false);
     string uci_command;
-    Raphael::v2_0::EngineOptions engine_opt;
+    Raphael::v1_8::EngineOptions engine_opt;
 
     while (!quit) {
         getline(cin, uci_command);

@@ -6,6 +6,7 @@
 #include <Raphael/consts.h>
 #include <math.h>
 
+#include <Raphael/RaphaelParam_v1.0.hpp>
 #include <chess.hpp>
 #include <future>
 #include <iomanip>
@@ -33,17 +34,16 @@ private:
     TranspositionTable tt;
     chess::Move toPlay;    // overall best move
     chess::Move itermove;  // best move from previous iteration
+    v1_0_params params;    // search parameters
 
 
 
     // Raphael methods
 public:
     // Initializes Raphael with a name
-    v1_0(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) { PST::init_pst(); }
+    v1_0(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {}
     // and with options
-    v1_0(string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {
-        PST::init_pst();
-    }
+    v1_0(string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {}
 
 
     // Set options
@@ -291,12 +291,11 @@ private:
 
         // enemy piece captured
         if (board.isCapture(move))
-            score += abs(PVAL::VALS[to]) - abs(PVAL::VALS[from])
-                     + 13;  // small bias to encourage trades
+            score += abs(params.PVAL[to]) - abs(params.PVAL[from]) + 13;  // bias encourage trades
 
         // promotion
         if (move.typeOf() == chess::Move::PROMOTION)
-            score += abs(PVAL::VALS[(int)move.promotionType()]);
+            score += abs(params.PVAL[(int)move.promotionType()]);
 
         move.setScore(score);
     }
@@ -306,7 +305,7 @@ private:
     int evaluate(const chess::Board& board) const {
         int eval = 0;
         int n_pieces_left = chess::builtin::popcount(board.occ());
-        double eg_weight = min(1.0, double(32 - n_pieces_left) / (32 - N_PIECES_END));
+        double eg_weight = min(1.0, double(32 - n_pieces_left) / (32 - params.N_PIECES_END));
         int wkr = 0, bkr = 0, wkf = 0, bkf = 0;
 
         // count pieces and added their values (material + pst)
@@ -317,10 +316,10 @@ private:
             // non-empty
             if (piece != 12) {
                 // add material value
-                eval += PVAL::VALS[piece];
+                eval += params.PVAL[piece];
                 // add positional value
-                eval += PST::MID[piece][sqi]
-                        + eg_weight * (PST::END[piece][sqi] - PST::MID[piece][sqi]);
+                eval += params.PST[piece][sqi][0]
+                        + eg_weight * (params.PST[piece][sqi][1] - params.PST[piece][sqi][0]);
             }
 
             // King proximity
@@ -339,7 +338,7 @@ private:
         // King proximity (if winning)
         if (eval >= 0) {
             int kingdist = abs(wkr - bkr) + abs(wkf - bkf);
-            eval += (14 - kingdist) * KING_DIST_WEIGHT * eg_weight;
+            eval += (14 - kingdist) * params.KING_DIST_WEIGHT * eg_weight;
         }
 
         return eval;

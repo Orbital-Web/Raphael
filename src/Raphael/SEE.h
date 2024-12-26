@@ -9,11 +9,11 @@ namespace Raphael {
 // Static Exchange Evaluation
 namespace SEE {
 const int VAL[6] = {
-    PVAL::PAWN,
-    PVAL::KNIGHT,
-    PVAL::BISHOP,
-    PVAL::ROOK,
-    PVAL::QUEEN,
+    100,
+    316,
+    328,
+    493,
+    983,
     10000,
 };
 

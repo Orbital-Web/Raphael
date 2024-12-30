@@ -2,7 +2,7 @@
 
 **Raphael** is a UCI Chess Engine built using C++ and [Disservin's Chess Library](https://github.com/Disservin/chess-library). It also comes with a GUI built using [SFML](https://www.sfml-dev.org/).
 
-**Raphael** is a hobby project that is still a work in progress, but it will be updated as time goes by. It is nowhere near as competitive as some of the other chess engines out there, but it is strong enough to beat most human players with ease. Please [scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-engine) to see a list of features currently implemented.
+**Raphael** is a hobby project that is still a work in progress, but it will be updated as time goes by. It has comparable strengths to a human candidate, FIDE, or international master, and performs decently against other [CCRL-ranked](https://www.computerchess.org.uk/ccrl/404/) chess engines. You can [scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-engine) to see a list of features currently implemented.
 
 **Raphael** is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python.
 
@@ -40,7 +40,7 @@ Past ELOs
 
 Builds for Windows and Ubuntu/WSL are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page.
 
-Please make sure to keep `main.exe` in the same folder as the `src/` folder and `openal32.dll` (dll only needed for Windows) so that it may load textures, sounds, and fonts correctly. If you are on Ubuntu, please run `sudo apt install libsfml-dev` as the build is dynamically linked.
+The UCI engine is a standalone executable. The GUI is in `main.zip` and should be extracted and kept in the `main` folder to ensure the executable can correctly find its dependencies (you may rename the folder). If you are on Ubuntu, please run `sudo apt install libsfml-dev` as the build is dynamically linked.
 
 Please see the sections below on how to compile the code yourself if the executables do not work for you.
 
@@ -51,7 +51,7 @@ main.exe human "Human" Raphael "Raphael" -s "game.pgn"  # Windows
 ./main human "Human" Raphael "Raphael" -s "game.pgn"    # Ubuntu/WSL
 ```
 
-You can see other command-line arguments by running `main.exe -h`. The UCI script has no command-line arguments.
+You can see other command-line arguments by running `main.exe -h`. The UCI engine has no command-line arguments.
 
 ### Compiling on Ubuntu/WSL (Recommended)
 
@@ -74,8 +74,8 @@ This is the recommended way of compiling **Raphael**. If you are on Windows, you
 
     ```shell
     make packages  # install dependencies (SFML)
-    make main      # compile Raphael + GUI
-    make uci       # compile Raphael UCI engine
+    make main      # build GUI
+    make uci       # build UCI engine
     ```
 
 ### Compiling on Windows
@@ -118,17 +118,17 @@ If Ubuntu/WSL does not work for you, or you would like to compile the code stati
 
 ## Features
 
-### Game Engine (GUI)
+### Graphics User Interface (GUI)
 
-The game engine is a combination of `GameEngine.h`, `GamePlayer.h`, and `HumanPlayer.h`. It is a GUI-based chess game engine (not to be confused with a chess engine) which lets the user interactively play chess.
+The GUI is a quick and easy way to start engine battles or play against Raphael interactively. You can play against Raphael by starting a match against a human player and Raphael engine in the command line (see `main.exe -h`).
 
-If using a human player, the user may annotate the board with arrows and select/play moves similarly to other chess GUIs. The user may also specify the number of rounds, different time controls, starting positions (with fens), and even swap out the players (e.g., with different versions of Raphael).
+The human player can move a piece by either dragging and dropping a piece to the destination square, or by clicking a piece and clicking the destination square. Castling can be done by clicking the destination square of the king after castling. Only promotion by queening is currently supported. You can also annotate the board with arrows by holding and dragging the right mouse button.
 
-To use it, refer to the [setup instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows), and run the command `main.exe -help` in the command line.
+You can also play with different time controls, increments, and player combinations. Again, please refer to `main.exe -h` and the [setup instructions above](https://github.com/Orbital-Web/Raphael#getting-started) for a more in-depth guide.
 
 ### Raphael (Engine)
 
-**Raphael** is a UCI-compliant chess engine that comes with this project. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](https://github.com/Orbital-Web/Raphael#getting-started-windows). The UCI engine currently supports the following commands: `uci`, `isready`, `ucinewgame`, `stop`, `quit`, `position`, and `go [wtime|btime|winc|binc|depth|nodes|movestogo|movetime|infinite]`. Pondering is not implemented yet. The engine contains the following features:
+**Raphael** is a UCI-compliant chess engine. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](https://github.com/Orbital-Web/Raphael#getting-started). The UCI engine currently supports the following commands: `uci`, `isready`, `ucinewgame`, `stop`, `quit`, `position`, and `go [wtime|btime|winc|binc|depth|nodes|movestogo|movetime|infinite]`. Pondering is not implemented yet in the UCI engine, though it does come in the GUI version. The engine contains the following features:
 
 #### General
 

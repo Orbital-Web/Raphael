@@ -1,6 +1,6 @@
 # Compiler & flags
 CC = g++
-CCFLAGS = -Wall -O3 -DNDEBUG -fno-builtin -std=c++20 -Isrc -Ichess-library/src
+CCFLAGS = -Wall -O3 -march=native -DNDEBUG -fno-builtin -std=c++20 -Isrc -Ichess-library/src
 LDFLAGS = -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
 
 # sources

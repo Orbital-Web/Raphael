@@ -5,9 +5,9 @@
 
 namespace Raphael {
 // should remain largely unchanged
-const int MAX_DEPTH = 128;
-const int MATE_EVAL = 2000000000;          // evaluation for immediate mate
-const uint32_t DEF_TABLE_SIZE = 12582912;  // default no. entries in TranspositionTable (192mb)
+static constexpr int MAX_DEPTH = 128;
+static constexpr int MATE_EVAL = 2000000000;          // evaluation for immediate mate
+static constexpr uint32_t DEF_TABLE_SIZE = 12582912;  // default no. entries in tt (192mb)
 
 
 

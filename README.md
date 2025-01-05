@@ -94,23 +94,23 @@ If Ubuntu/WSL does not work for you, or you would like to compile the code stati
 
     ```shell
     cd src/GameEngine
-    g++ -c -O3 -DNDEBUG consts.cpp GameEngine.cpp GamePlayer.cpp HumanPlayer.cpp utils.cpp -I"../../src" -I"../../chess-library/src" -I"../../SFML-2.6.0/include" -DSFML_STATIC
+    g++ -c -O3 -march=native -DNDEBUG consts.cpp GameEngine.cpp GamePlayer.cpp HumanPlayer.cpp utils.cpp -I"../../src" -I"../../chess-library/src" -I"../../SFML-2.6.0/include" -DSFML_STATIC
     cd ../../src/Raphael
-    g++ -c -O3 -DNDEBUG consts.cpp History.cpp Killers.cpp SEE.cpp Transposition.cpp -Isrc -Ichess-library/src -I"../../src" -I"../../chess-library/src" -I"../../SFML-2.6.0/include" -DSFML_STATIC
+    g++ -c -O3 -march=native -DNDEBUG consts.cpp History.cpp Killers.cpp SEE.cpp Transposition.cpp -Isrc -Ichess-library/src -I"../../src" -I"../../chess-library/src" -I"../../SFML-2.6.0/include" -DSFML_STATIC
     cd ../../
     ```
 
 5. Compile `main.exe` with the following commands (optionally, compile with the `-DMUTEEVAL` flag to mute evaluations)
 
     ```shell
-    g++ -c -O3 -DNDEBUG main.cpp -Isrc -Ichess-library/src -I"SFML-2.6.0/include" -DSFML_STATIC
+    g++ -c -O3 -march=native -DNDEBUG main.cpp -Isrc -Ichess-library/src -I"SFML-2.6.0/include" -DSFML_STATIC
     g++ -o main main.o src/GameEngine/consts.o src/GameEngine/GameEngine.o src/GameEngine/GamePlayer.o src/GameEngine/HumanPlayer.o src/GameEngine/utils.o src/Raphael/consts.o src/Raphael/History.o src/Raphael/Killers.o src/Raphael/See.o src/Raphael/Transposition.o -L"SFML-2.6.0/lib" -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg -static
     ```
 
 6. Compile the UCI engine with the following commands
 
     ```shell
-    g++ -c -O3 -DNDEBUG uci.cpp -Isrc -Ichess-library/src -I"SFML-2.6.0/include" -DSFML_STATIC
+    g++ -c -O3 -march=native -DNDEBUG uci.cpp -Isrc -Ichess-library/src -I"SFML-2.6.0/include" -DSFML_STATIC
     g++ -o uci uci.o src/GameEngine/consts.o src/GameEngine/GamePlayer.o src/Raphael/consts.o src/Raphael/History.o src/Raphael/Killers.o src/Raphael/See.o src/Raphael/Transposition.o -L"SFML-2.6.0/lib" -lsfml-graphics-s -static
     ```
 

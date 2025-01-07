@@ -169,6 +169,8 @@ You can also play with different time controls, increments, and player combinati
 - [x] Draw evaluation           (`v1.8+`)
 - [x] Evaluation tuning         (`v1.8+`)
 - [ ] NNUE
+- [ ] NNUE feature factorization
+- [ ] NNUE PSQT factorization
 
 #### Move Ordering
 

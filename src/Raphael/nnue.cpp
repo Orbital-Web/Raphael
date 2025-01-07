@@ -46,11 +46,11 @@ int32_t Nnue::evaluate(int ply, bool side) {
     crelu(acc, buf_relu, 2 * N_HIDDEN0);
 
     // layer 1: 2 * N_HIDDEN0 -> N_HIDDEN1
-    linear(params.W1, params.b1, buf_relu, buf_linear, 2 * N_HIDDEN0, N_HIDDEN1, QLEVEL_1);
+    linear(params.W1, params.b1, buf_relu, buf_linear, 2 * N_HIDDEN0, N_HIDDEN1, QLEVEL1);
     crelu(buf_linear, buf_relu, N_HIDDEN1);
 
     // layer 2: N_HIDDEN1 -> N_HIDDEN2
-    linear(params.W2, params.b2, buf_relu, buf_linear, N_HIDDEN1, N_HIDDEN2, QLEVEL_2);
+    linear(params.W2, params.b2, buf_relu, buf_linear, N_HIDDEN1, N_HIDDEN2, QLEVEL2);
     crelu(buf_linear, buf_relu, N_HIDDEN1);
 
     // layer 3: N_HIDDEN2 -> 1, can't use linear() as that requires output size be a multiple of 4
@@ -66,7 +66,7 @@ int32_t Nnue::evaluate(int ply, bool side) {
 #else
     for (int i = 0; i < N_HIDDEN2; i++) eval += params.W3[i] * buf_relu[i];
 #endif
-    return eval >> QLEVEL_3;
+    return eval >> QLEVEL3;
 }
 
 int16_t* Nnue::NnueAccumulator::operator[](bool side) { return v[side]; }

@@ -22,9 +22,9 @@ private:
     static constexpr int N_HIDDEN0 = 256;                   // accumulator size
     static constexpr int N_HIDDEN1 = 32;
     static constexpr int N_HIDDEN2 = 32;
-    static constexpr int QLEVEL_1 = 6;  // quantize w1 by scaling weights by 2^6 = 64
-    static constexpr int QLEVEL_2 = 6;  // quantize w2 by scaling weights by 2^6 = 64
-    static constexpr int QLEVEL_3 = 5;  // quantize w3 by scaling weights by 2^5 = 32
+    static constexpr int QLEVEL1 = 6;  // quantize w1 by scaling weights by 2^6 = 64
+    static constexpr int QLEVEL2 = 6;  // quantize w2 by scaling weights by 2^6 = 64
+    static constexpr int QLEVEL3 = 5;  // quantize w3 by scaling weights by 2^5 = 32
 
     // based on https://github.com/rafid-dev/rice/blob/main/src/nnue.h
     static constexpr int KING_BUCKETS[64] = {

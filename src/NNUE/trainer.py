@@ -2,12 +2,12 @@ import os
 from datetime import datetime
 
 import matplotlib.pyplot as plt
+import pandas as pd
 import torch
 import torch.nn as nn
+from dataloader import NNUEDataSet
+from net import NNUE, NNUEOptimizer, NNUEParams
 from torch.utils.data import DataLoader, random_split
-
-from .dataloader import NNUEDataSet
-from .net import NNUE, NNUEOptimizer, NNUEParams
 
 
 def train(
@@ -20,8 +20,9 @@ def train(
     train_dataset,
     test_dataset,
 ):
-    outfolder = datetime.now().strftime("%Y.%m.%d-%H:%M")
+    outfolder = datetime.now().strftime("train-%Y-%m-%d-%H-%M-%S")
     os.mkdir(outfolder)
+    print(f"Starting Training. Output in /{outfolder}")
 
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
@@ -41,10 +42,10 @@ def train(
         model.train()
         total_loss = 0.0
 
-        for i, ((wdata, bdata), labels) in enumerate(train_loader):
+        for i, ((wdata, bdata, side), labels) in enumerate(train_loader):
             optimizer.zero_grad()
-            outputs = model(wdata, bdata)
-            loss = criterion(outputs / params.WDL_SCALE, labels)
+            outputs = model(wdata, bdata, side)
+            loss = criterion(outputs / params.WDL_SCALE, labels.unsqueeze(1))
             total_loss += loss.item()
             loss.backward()
             optimizer.step()
@@ -78,15 +79,23 @@ def train(
         ax.plot(range(1, epoch + 2), test_losses, "g-", label="Test")
         ax.legend()
         plt.draw()
+        plt.pause(0.001)
 
         if epochs_without_improvement >= patience:
             print("Stopping early")
             break
 
-    # show final plot
+    # show final plot and save losses
     plt.ioff()
     plt.show()
     fig.savefig(f"{outfolder}/loss.png")
+    pd.DataFrame(
+        {
+            "Epoch": range(1, len(train_losses) + 1),
+            "Train Loss": train_losses,
+            "Test Loss": test_losses,
+        }
+    ).to_csv(f"{outfolder}/loss.csv", sep=",", index=False)
 
 
 def test(model: NNUE, criterion, test_loader) -> float:
@@ -94,33 +103,34 @@ def test(model: NNUE, criterion, test_loader) -> float:
     total_loss = 0.0
 
     with torch.no_grad():
-        for (wdata, bdata), labels in test_loader:
-            outputs = model(wdata, bdata)
-            loss = criterion(outputs, labels)
+        for (wdata, bdata, side), labels in test_loader:
+            outputs = model(wdata, bdata, side)
+            loss = criterion(outputs, labels.unsqueeze(1))
             total_loss += loss.item()
 
-    avg_loss = total_loss / len(test_loader)
-    return avg_loss
+    return total_loss / len(test_loader)
 
 
 if __name__ == "__main__":
     # TODO: ask load checkpoint
     # TODO: ask traindata filepath or use default
+    in_filepath = "traindata.csv"
+    out_filepath = "traindata_processed.csv"
+    optimize = True
+    epochs = 50
+    patience = 5
 
     params = NNUEParams()
     model = NNUE(params)
 
-    optimizer = NNUEOptimizer(model.parameters(), lr=0.001)
+    optimizer = NNUEOptimizer(params, model.parameters(), lr=0.001)
     criterion = nn.BCEWithLogitsLoss()
 
-    dataset = NNUEDataSet(params, "TODO:.csv", optimize=True)
+    dataset = NNUEDataSet(params, in_filepath, out_filepath, optimize)
     train_dataset, test_dataset = random_split(
         dataset, [0.8, 0.2], generator=torch.Generator().manual_seed(42)
     )
-    params = dataset.params
 
-    epochs = 20
-    patience = 5
     train(
         params,
         model,

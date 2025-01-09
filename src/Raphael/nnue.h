@@ -18,7 +18,7 @@ namespace Raphael {
 class Nnue {
 private:
     static constexpr int N_BUCKETS = 16;                    // number of king buckets
-    static constexpr int N_INPUTS = (N_BUCKETS * 10 * 64);  // half-kp features
+    static constexpr int N_INPUTS = (N_BUCKETS * 12 * 64);  // half-kp features
     static constexpr int N_HIDDEN0 = 256;                   // accumulator size
     static constexpr int N_HIDDEN1 = 32;
     static constexpr int N_HIDDEN2 = 32;
@@ -28,14 +28,14 @@ private:
 
     // based on https://github.com/rafid-dev/rice/blob/main/src/nnue.h
     static constexpr int KING_BUCKETS[64] = {
-        0,  1,  2,  3,  3,  2,  1,  0,   //
+        0,  1,  2,  3,  3,  2,  1,  0,   // A1, B1, ...
         4,  5,  6,  7,  7,  6,  5,  4,   //
         8,  9,  10, 11, 11, 10, 9,  8,   //
         8,  9,  10, 11, 11, 10, 9,  8,   //
         12, 12, 13, 13, 13, 13, 12, 12,  //
         12, 12, 13, 13, 13, 13, 12, 12,  //
         14, 14, 15, 15, 15, 15, 14, 14,  //
-        14, 14, 15, 15, 15, 15, 14, 14,  //
+        14, 14, 15, 15, 15, 15, 14, 14,  // A8, B8, ...
     };
 
 

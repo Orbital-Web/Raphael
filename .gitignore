@@ -51,3 +51,8 @@ src/Games/*.epd
 # Saved games
 logs/
 *.log
+
+# NNUE
+src/NNUE/traindata.csv
+src/NNUE/traindata_processed.csv
+src/NNUE/train-*

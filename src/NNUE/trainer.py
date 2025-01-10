@@ -1,3 +1,4 @@
+import argparse
 import os
 from datetime import datetime
 
@@ -22,7 +23,7 @@ def train(
 ):
     outfolder = datetime.now().strftime("train-%Y-%m-%d-%H-%M-%S")
     os.mkdir(outfolder)
-    print(f"Starting Training. Output in /{outfolder}")
+    print(f"Starting Training. Output in {outfolder}/")
 
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
@@ -30,6 +31,8 @@ def train(
     best_loss = float("inf")
     train_losses, test_losses = [], []
     epochs_without_improvement = 0
+    if patience == 0:
+        patience = float("inf")
 
     # set up real-time plot
     plt.ion()
@@ -112,21 +115,61 @@ def test(model: NNUE, criterion, test_loader) -> float:
 
 
 if __name__ == "__main__":
-    # TODO: ask load checkpoint
-    # TODO: ask traindata filepath or use default
-    in_filepath = "traindata.csv"
-    out_filepath = "traindata_processed.csv"
-    optimize = True
-    epochs = 50
-    patience = 5
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "-i",
+        "--in_filename",
+        type=str,
+        help="Input csv with fen, wdl (absolute), and eval (relative). Will use -o as input instead if not provided",
+    )
+    parser.add_argument(
+        "-o",
+        "--out_filename",
+        type=str,
+        help="Output csv of processed data. Will use as input if -i is not provided (leads to faster data loading)",
+    )
+    parser.add_argument(
+        "-d",
+        "--data_optimize",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Whether to optimzie the dataset for potentially faster and better training",
+    )
+    parser.add_argument(
+        "-e",
+        "--epoch",
+        type=int,
+        default=50,
+        help="Number of epochs to train for. May stop training earlier if -p > 0",
+    )
+    parser.add_argument(
+        "-p",
+        "--patience",
+        type=int,
+        default=5,
+        help="Number of consecutive epochs without improvement to stop training. Will be ignored if 0",
+    )
+    parser.add_argument(
+        "-f",
+        "--feature_factorize",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Whether to enable feature factorization. May lead to faster training",
+    )
+    args = parser.parse_args()
 
-    params = NNUEParams()
+    # set up model
+    params = NNUEParams(FEATURE_FACTORIZE=args.feature_factorize)
     model = NNUE(params)
-
     optimizer = NNUEOptimizer(params, model.parameters(), lr=0.001)
     criterion = nn.BCEWithLogitsLoss()
 
-    dataset = NNUEDataSet(params, in_filepath, out_filepath, optimize)
+    # set up data loader
+    dataset = NNUEDataSet(
+        params, args.in_filename, args.out_filename, args.data_optimize
+    )
     train_dataset, test_dataset = random_split(
         dataset, [0.8, 0.2], generator=torch.Generator().manual_seed(42)
     )
@@ -136,8 +179,8 @@ if __name__ == "__main__":
         model,
         optimizer,
         criterion,
-        epochs,
-        patience,
+        args.epoch,
+        args.patience,
         train_dataset,
         test_dataset,
     )

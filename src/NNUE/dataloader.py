@@ -1,3 +1,4 @@
+import json
 from random import uniform
 
 import matplotlib.pyplot as plt
@@ -64,6 +65,8 @@ class NNUEDataSet(Dataset):
                 - set(self.data.columns)
             ):
                 print(f"{out_filepath} is missing columns: {diff}")
+            self.data["widx"] = self.data["widx"].apply(lambda x: json.loads(x))
+            self.data["bidx"] = self.data["bidx"].apply(lambda x: json.loads(x))
 
         # optimize dataset
         if optimize:

@@ -4,13 +4,8 @@
 #include <stdint.h>
 
 #include <chess.hpp>
-#include <fstream>
 #include <string>
 #include <vector>
-
-
-using std::string;
-using std::vector;
 
 
 
@@ -59,7 +54,7 @@ private:
      *
      * \param filepath filepath of nnue file
      */
-    void load(string filepath);
+    void load(std::string filepath);
 
 
     struct NnueAccumulator {
@@ -76,7 +71,7 @@ private:
      * \param features indicies of active features (King * 640, piece * 64, square)
      * \param side which side accumulator to refresh
      */
-    void refresh_accumulator(NnueAccumulator& new_acc, const vector<int>& features, bool side);
+    void refresh_accumulator(NnueAccumulator& new_acc, const std::vector<int>& features, bool side);
 
     /** Updates the accumulator as new_acc = old_acc + W1[add_features] - W1[rem_features]
      *
@@ -89,8 +84,8 @@ private:
     void update_accumulator(
         NnueAccumulator& new_acc,
         const NnueAccumulator& old_acc,
-        const vector<int>& add_features,
-        const vector<int>& rem_features,
+        const std::vector<int>& add_features,
+        const std::vector<int>& rem_features,
         bool side
     );
 
@@ -124,7 +119,7 @@ private:
     void crelu(const int16_t* input, int8_t* output, int size);
 
 public:
-    Nnue(string filepath);
+    Nnue(std::string filepath);
 
     /** Evaluates the current board from the specified side and ply
      *

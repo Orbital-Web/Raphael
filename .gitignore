@@ -41,14 +41,14 @@ SFML-2.6.0/
 .vscode/
 
 # Position Gen
-stockfish/
-*.pgn
+src/Games/stockfish/
+src/Games/*.pgn
 src/Games/*.epd
 
 # UCI
 *.uci_options
 
-# Saved games
+# Saved gamelogs
 logs/
 *.log
 
@@ -56,3 +56,5 @@ logs/
 src/NNUE/traindata.csv
 src/NNUE/traindata_processed.csv
 src/NNUE/train-*
+src/NNUE/traingen
+src/NNUE/wdl_fit.png

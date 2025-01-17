@@ -4,8 +4,6 @@
 #include <SFML/Graphics.hpp>
 #include <chess.hpp>
 
-using std::string;
-
 
 
 namespace cge {  // chess game engine
@@ -15,7 +13,7 @@ public:
      *
      * \param name_in name of player
      */
-    UCIPlayer(string name_in);
+    UCIPlayer(std::string name_in);
 
     /** Asks the UCI Engine to make a valid move. Should return immediately if halt becomes true.
      *
@@ -31,6 +29,6 @@ public:
     );
 
 private:
-    void load_uci_engine(string uci_filepath);
+    void load_uci_engine(std::string uci_filepath);
 };
 }  // namespace cge

@@ -1,15 +1,16 @@
 #include <Raphael/nnue.h>
 
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 
 using namespace Raphael;
 using std::copy;
-using std::cout;
-using std::flush;
+using std::cout, std::flush;
 using std::invalid_argument;
-using std::max;
-using std::min;
+using std::max, std::min;
+using std::string;
+using std::vector;
 
 
 

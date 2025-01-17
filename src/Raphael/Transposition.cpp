@@ -2,6 +2,7 @@
 
 using namespace Raphael;
 using std::fill;
+using std::vector;
 
 
 

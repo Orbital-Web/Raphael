@@ -1,6 +1,7 @@
 #include <GameEngine/UCIPlayer.h>
 
 using namespace cge;
+using std::string;
 
 
 

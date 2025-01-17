@@ -2,8 +2,6 @@
 #include <GameEngine/GamePlayer.h>
 #include <GameEngine/utils.h>
 
-using std::string;
-
 
 
 namespace cge {  // chess game engine
@@ -13,7 +11,7 @@ public:
      *
      * \param name_in name of player
      */
-    HumanPlayer(string name_in);
+    HumanPlayer(std::string name_in);
 
     /** Asks the human to make a valid move. Should return immediately if halt becomes true.
      *

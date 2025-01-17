@@ -7,12 +7,9 @@
 #include <iomanip>
 
 using namespace cge;
-using std::fixed;
-using std::setfill;
-using std::setprecision;
-using std::setw;
+using std::fixed, std::setprecision, std::setfill, std::setw;
+using std::string, std::to_string;
 using std::stringstream;
-using std::to_string;
 
 
 

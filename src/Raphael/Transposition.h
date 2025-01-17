@@ -3,8 +3,6 @@
 
 #include <chess.hpp>
 
-using std::vector;
-
 
 
 namespace Raphael {
@@ -31,7 +29,7 @@ private:
     };
 
     uint32_t size;
-    vector<EntryStorage> _table;
+    std::vector<EntryStorage> _table;
 
 
 public:

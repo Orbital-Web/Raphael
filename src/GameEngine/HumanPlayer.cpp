@@ -1,6 +1,7 @@
 #include <GameEngine/HumanPlayer.h>
 
 using namespace cge;
+using std::string;
 
 
 

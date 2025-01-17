@@ -2,14 +2,12 @@
 #include <SFML/Graphics.hpp>
 #include <chess.hpp>
 
-using std::string;
-
 
 
 namespace cge {  // chess game engine
 class GamePlayer {
 public:
-    string name;
+    std::string name;
 
 
 public:
@@ -17,7 +15,7 @@ public:
      *
      * \param name_in name of player
      */
-    GamePlayer(string name_in);
+    GamePlayer(std::string name_in);
 
     /** Destructor of GamePlayer */
     virtual ~GamePlayer();

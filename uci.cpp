@@ -9,15 +9,11 @@
 #include <thread>
 #include <vector>
 
-using std::cin;
-using std::cout;
-using std::flush;
+using std::cin, std::cout, std::flush;
 using std::ref;
-using std::stoi;
-using std::stoll;
-using std::string;
+using std::string, std::stoi, std::stoll;
 using std::stringstream;
-using std::thread;
+using std::thread, std::mutex, std::lock_guard;
 using std::vector;
 
 

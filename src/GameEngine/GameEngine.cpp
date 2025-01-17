@@ -9,16 +9,13 @@
 #include <string>
 
 using namespace cge;
-using std::async;
-using std::cout;
-using std::fixed;
-using std::future_status;
+using std::async, std::future_status, std::mutex, std::lock_guard;
+using std::cout, std::fixed, std::setprecision;
 using std::min;
-using std::ofstream;
+using std::ofstream, std::stringstream;
 using std::ref;
-using std::setprecision;
 using std::string;
-using std::stringstream;
+using std::vector;
 
 
 

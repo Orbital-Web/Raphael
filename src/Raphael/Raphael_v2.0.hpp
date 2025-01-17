@@ -17,12 +17,9 @@
 #include <iomanip>
 #include <iostream>
 
-using std::cout;
-using std::fixed;
-using std::flush;
-using std::max;
-using std::min;
-using std::setprecision;
+using std::cout, std::flush, std::fixed, std::setprecision;
+using std::max, std::min;
+using std::mutex, std::lock_guard;
 using std::string;
 
 

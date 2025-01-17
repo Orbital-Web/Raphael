@@ -3,9 +3,6 @@
 #include <SFML/Graphics.hpp>
 #include <chess.hpp>
 
-using std::string;
-using std::vector;
-
 
 
 // [bool] mouse button states
@@ -61,8 +58,8 @@ public:
 
 class PieceDrawer {  // Class for drawing a piece on screen
 private:
-    vector<sf::Texture> textures;
-    vector<sf::Sprite> sprites;
+    std::vector<sf::Texture> textures;
+    std::vector<sf::Sprite> sprites;
 
 public:
     PieceDrawer();
@@ -80,7 +77,7 @@ public:
 class Timer: public sf::Drawable {  // A timer drawable
 private:
     bool top;
-    string t_disp;
+    std::string t_disp;
     sf::Text timertext;
     sf::RectangleShape timerbox;
 

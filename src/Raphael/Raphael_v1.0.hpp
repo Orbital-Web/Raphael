@@ -27,7 +27,7 @@ public:
         uint32_t tablesize = DEF_TABLE_SIZE;  // number of entries in tt
     };
 
-private:
+protected:
     TranspositionTable tt;
     chess::Move toPlay;    // overall best move
     chess::Move itermove;  // best move from previous iteration
@@ -119,7 +119,7 @@ public:
     // Resets the player
     void reset() { tt.clear(); }
 
-private:
+protected:
     // Estimates the time (ms) it should spend on searching a move
     int search_time(const chess::Board& board, const int t_remain, const int t_inc) {
         // ratio: a function within [0, 1]

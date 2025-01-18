@@ -99,8 +99,8 @@ class NNUEDataSet(Dataset):
                 + 2 * abs(stats["eval_median"])
                 + 2000 * abs(stats["side"] - 0.5)  # 0 - 1000
                 + 100 * abs(stats["eval_skew"])  # 0 - 1000
-                + 100 * max(0, 50 - stats["eval_low"])  # 0 - 5000
-                + 100 * max(0, 40 - stats["eval_high"])  # 0 - 4000
+                + 400 * max(0, 50 - stats["eval_low"])  # 0 - 20000
+                + 400 * max(0, 40 - stats["eval_high"])  # 0 - 16000
                 + 1000 * (len(self.data) - stats["size"]) / len(self.data)  # 0 - 1000
             )
 

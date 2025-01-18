@@ -39,7 +39,7 @@ public:
         bool infinite = false;
     };
 
-private:
+protected:
     // search
     chess::Move itermove;     // current iteration's bestmove
     chess::Move prevPlay;     // previous iteration's bestmove
@@ -298,7 +298,7 @@ public:
         searchopt = SearchOptions();
     }
 
-private:
+protected:
     // Estimates the time (ms) it should spend on searching a move
     // Call this at the start before using isTimeOver
     void startSearchTimer(const chess::Board& board, const int t_remain, const int t_inc) {

@@ -137,6 +137,9 @@ bool generate_one(
     string fen = line.substr(0, split - 1);
     string wdl = line.substr(split + 1, line.find("]") - split - 1);
 
+    // TODO: use the quiescene position instead as that is what will actually get used in the engine
+    // make sure to add a -q flag and add documentation to nnue.md
+
     // exclude checks if requested and get eval
     chess::Board board(fen);
     if (!args.include_checks && board.inCheck()) return false;

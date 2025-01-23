@@ -11,6 +11,10 @@ from scipy.stats import trim_mean
 from torch.utils.data import Dataset
 
 
+def sigmoid_k(eval, k):
+    return 1 / (1 + np.exp(-eval / k))
+
+
 class NNUEDataSet(Dataset):
     def __init__(
         self,
@@ -82,13 +86,13 @@ class NNUEDataSet(Dataset):
             print(f"Saving processed dataset to {out_filepath}...")
             self.data.to_csv(out_filepath, sep=",", index=False)
 
-        # output data statistics
+        # compute and print data WDL scale and statistics
+        self.params.WDL_SCALE = self.compute_wdl(self.data, plot=True)
         self.stats = self.compute_stats(self.data)
         self.print_stats()
 
-        # convert labels to WDL scale
-        self.compute_wdl()
-        self.data["eval"] = self.sigmoid_k(self.data["eval"], self.params.WDL_SCALE)
+        # convert eval to WDL scale
+        self.data["eval"] = sigmoid_k(self.data["eval"], self.params.WDL_SCALE)
 
     def optimize(self):
         print("Optimizing dataset...")
@@ -105,51 +109,56 @@ class NNUEDataSet(Dataset):
             )
 
         best_data = self.data
-        best_stats = self.stats or self.compute_stats(self.data)
+        best_stats = self.stats or self.compute_stats(self.data, recompute_wdl=True)
         best_cost = get_cost(best_stats)
+        last_improvement = 0
 
-        for _ in range(100):
+        for _ in range(1000):
             data = self.data.sample(frac=uniform(0.8, 1.0))
-            stats = self.compute_stats(data)
+            stats = self.compute_stats(data, recompute_wdl=True)
             cost = get_cost(stats)
 
             if cost < best_cost:
                 best_data = data
                 best_stats = stats
                 best_cost = cost
+                last_improvement = 0
+
+            last_improvement += 1
+            if last_improvement > 10:
+                break
 
         self.data = best_data.reset_index(drop=True)
         self.stats = best_stats
 
-    def compute_stats(self, data: pd.DataFrame) -> dict:
+    def compute_stats(self, data: pd.DataFrame, recompute_wdl: bool = False) -> dict:
+        ws = self.params.WDL_SCALE if not recompute_wdl else self.compute_wdl(data)
+        n = 100 / len(data)
+
         return {
             "size": len(data),
             "side": np.mean(data["side"]),
             "eval_mean": trim_mean(data["eval"], 0.1),
             "eval_median": np.median(data["eval"]),
-            "eval_skew": (np.sum(data["eval"] >= 50) - np.sum(data["eval"] <= -50))
-            * 100
-            / len(data),
-            "eval_low": np.sum(np.abs(data["eval"]) <= 100) * 100 / len(data),
-            "eval_high": np.sum(np.abs(data["eval"]) > 100) * 100 / len(data),
+            "eval_skew": (np.sum(data["eval"] >= 50) - np.sum(data["eval"] <= -50)) * n,
+            "eval_low": np.sum(np.abs(data["eval"]) <= ws) * n,
+            "eval_high": np.sum(np.abs(data["eval"]) > ws) * n,
         }
 
     def print_stats(self):
-        if not self.stats:
-            self.stats = self.compute_stats(self.data)
-
+        ws = self.params.WDL_SCALE
         print("Loaded dataset with:")
         print(f"    Dataset size: {self.stats['size']}")
         print(f"    Average side to move: {self.stats['side']:.2f}")
         print(f"    Trimmed mean eval: {self.stats['eval_mean']:.2f}")
         print(f"    Median eval: {self.stats['eval_median']:.2f}")
         print(f"    Eval +:- skew: {self.stats['eval_skew']:.2f}%")
-        print(f"    Perentage of eval between ±100: {self.stats['eval_low']:.2f}%")
-        print(f"    Percentage of eval outside ±100: {self.stats['eval_high']:.2f}%")
+        print(f"    Eval between ±{ws:.2f}: {self.stats['eval_low']:.2f}%")
+        print(f"    Eval outside ±{ws:.2f}: {self.stats['eval_high']:.2f}%")
         print("")
 
-    def compute_wdl(self):
-        data = self.data[["eval", "wdl", "side"]].copy()
+    def compute_wdl(self, data: pd.DataFrame, plot: bool = False) -> float:
+        data = data[["eval", "wdl", "side"]].copy()
         data.loc[data["side"] == 0, "eval"] *= -1  # make perspective absolute
         data["eval_bucket"] = (data["eval"] // 50) * 50
         data = data.groupby("eval_bucket")["wdl"].mean().reset_index()
@@ -157,27 +166,28 @@ class NNUEDataSet(Dataset):
         x = data["eval_bucket"]
         y = data["wdl"]
 
-        params, _ = curve_fit(self.sigmoid_k, x, y, p0=self.params.WDL_SCALE)
-        self.params.WDL_SCALE = params[0]
-        print(f"Found optimum WDL_SCALE: {self.params.WDL_SCALE:.2f}")
+        params, _ = curve_fit(sigmoid_k, x, y, p0=self.params.WDL_SCALE)
+        wdl_scale = params[0]
 
-        # save graph of fit
-        x_fit = np.linspace(x.min(), x.max(), 500)
-        y_fit = self.sigmoid_k(x_fit, self.params.WDL_SCALE)
-        plt.scatter(x, y, c="blue", label="Train Data")
-        plt.plot(
-            x_fit, y_fit, "r-", label=f"Fitted with scale={self.params.WDL_SCALE:.2f}"
-        )
-        plt.xlabel("Eval")
-        plt.ylabel("WDL")
-        plt.legend()
-        plt.title("Eval vs WDL")
-        plt.savefig("wdl_fit.png")
-        plt.close()
+        if plot:
+            print(f"Found optimum WDL_SCALE: {wdl_scale:.2f}")
+            x_fit = np.linspace(x.min(), x.max(), 500)
+            y_fit = sigmoid_k(x_fit, wdl_scale)
+            plt.scatter(x, y, c="blue", label="Train Data")
+            plt.plot(
+                x_fit,
+                y_fit,
+                "r-",
+                label=f"Fitted with scale={wdl_scale:.2f}",
+            )
+            plt.xlabel("Eval")
+            plt.ylabel("WDL")
+            plt.legend()
+            plt.title("Eval vs WDL")
+            plt.savefig("wdl_fit.png")
+            plt.close()
 
-    @staticmethod
-    def sigmoid_k(eval, k):
-        return 1 / (1 + np.exp(-eval / k))
+        return wdl_scale
 
     def __getitem__(self, index: int):
         """Returns the features and labels

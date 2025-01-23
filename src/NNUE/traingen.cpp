@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) {
         float percent = n_added * 100 / n_total;
 
         // print progress bar
-        cout << "\rLine " << iline << "    added: " << n_added << "/" << n_total << " (" << fixed
+        cout << "\rline " << iline << "    added: " << n_added << "/" << n_total << " (" << fixed
              << setprecision(2) << percent << "%)" << flush;
         iline++;
     }

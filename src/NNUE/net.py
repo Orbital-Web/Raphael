@@ -30,7 +30,7 @@ class NNUEParams:
     QLEVEL2: int = 6
     QLEVEL3: int = 5
     OUTPUT_SCALE: int = 300  # scaling applied to output
-    WDL_SCALE: int = 400  # scaling such that sigmoid(eval/WDL_SCALE) ≈ WDL
+    WDL_SCALE: float = 200  # scaling such that sigmoid(eval/WDL_SCALE) ≈ WDL
     FEATURE_FACTORIZE: bool = False
 
     @property
@@ -184,7 +184,8 @@ class NNUE(nn.Module):
         o0 = torch.clamp(accumulator, 0.0, 1.0)
         o1 = torch.clamp(self.l1(o0), 0.0, 1.0)
         o2 = torch.clamp(self.l2(o1), 0.0, 1.0)
-        return self.l3(o2) * self.params.OUTPUT_SCALE
+        o3 = self.l3(o2) * self.params.OUTPUT_SCALE
+        return torch.sigmoid((o3 / self.params.WDL_SCALE).double())
 
     def parameters(self):
         """Returns overwritten parameters with min and max clamp range to account for
@@ -231,8 +232,8 @@ class NNUE(nn.Module):
                 opt = self.export_options[name]
 
                 # scale weight and bias
-                w = layer.weight.detach().numpy() * opt["wk"]
-                b = layer.bias.detach().numpy() * opt["bk"]
+                w = layer.weight.detach().cpu().numpy() * opt["wk"]
+                b = layer.bias.detach().cpu().numpy() * opt["bk"]
 
                 # remove factorized features
                 if self.params.FEATURE_FACTORIZE and name == "ft":

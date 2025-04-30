@@ -54,13 +54,13 @@ void Nnue::load(string filepath) {
 
 int32_t Nnue::evaluate(int ply, bool side) {
     // stack accumulators based on perspective
-    int16_t acc[2 * N_HIDDEN0];
+    alignas(ALIGNMENT) int16_t acc[2 * N_HIDDEN0];
     copy(accumulators[ply][side], accumulators[ply][side] + N_HIDDEN0, acc);
     copy(accumulators[ply][!side], accumulators[ply][!side] + N_HIDDEN0, acc + N_HIDDEN0);
 
     // make buffer for relu and linear output (reuse for all layers)
-    int8_t buf_relu[2 * N_HIDDEN0];
-    int32_t buf_linear[N_HIDDEN1];
+    alignas(ALIGNMENT) int8_t buf_relu[2 * N_HIDDEN0];
+    alignas(ALIGNMENT) int32_t buf_linear[N_HIDDEN1];
     static_assert(2 * N_HIDDEN0 >= N_HIDDEN1);
     static_assert(N_HIDDEN1 >= N_HIDDEN2);
 

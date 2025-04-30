@@ -241,7 +241,7 @@ void Nnue::crelu(const int32_t* input, int8_t* output, int size) {
         STORE256(&output[i * out_regw], res);
     }
 #else
-    for (int i = 0; i < size; i++) output[i] = min((int8_t)127, (int8_t)max((int32_t)0, input[i]));
+    for (int i = 0; i < size; i++) output[i] = (int8_t)min((int32_t)127, max((int32_t)0, input[i]));
 #endif
 }
 
@@ -264,7 +264,7 @@ void Nnue::crelu(const int16_t* input, int8_t* output, int size) {
         STORE256(&output[i * out_regw], res);
     }
 #else
-    for (int i = 0; i < size; i++) output[i] = min((int8_t)127, (int8_t)max((int16_t)0, input[i]));
+    for (int i = 0; i < size; i++) output[i] = (int8_t)min((int16_t)127, max((int16_t)0, input[i]));
 #endif
 }
 

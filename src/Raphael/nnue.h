@@ -58,7 +58,7 @@ private:
 
 
     struct NnueAccumulator {
-        alignas(ALIGNMENT) int16_t v[2][N_HIDDEN1];
+        alignas(ALIGNMENT) int16_t v[2][N_HIDDEN0];
 
         int16_t* operator[](bool side);
         const int16_t* operator[](bool side) const;
@@ -138,7 +138,7 @@ public:
      */
     void make_move(int ply, const chess::Move& move, const chess::Board& board);
 
-    /** TODO: Sets accumulator[0] to the board state
+    /** Sets accumulator[0] to the board state
      *
      * \param board the board to set the accumulator to
      */

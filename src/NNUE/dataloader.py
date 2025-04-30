@@ -57,6 +57,7 @@ class NNUEDataSet(Dataset):
             self.data[["side", "widx", "bidx"]] = (
                 self.data["fen"].apply(params.get_features).apply(pd.Series)
             )
+            self.data.dropna(inplace=True)
         else:
             print(f"Loading processed dataset from {out_filepath}...")
             self.data = pd.read_csv(out_filepath)
@@ -150,7 +151,7 @@ class NNUEDataSet(Dataset):
 
     def compute_wdl(self):
         data = self.data[["eval", "wdl", "side"]].copy()
-        data.loc[data["side"] == 0, "eval"] *= -1  # make perspective absolute
+        data.loc[data["side"] == 0, "wdl"] = 1 - data.loc[data["side"] == 0, "wdl"]
         data["eval_bucket"] = (data["eval"] // 50) * 50
         data = data.groupby("eval_bucket")["wdl"].mean().reset_index()
 

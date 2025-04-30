@@ -12,7 +12,7 @@ using namespace cge;
 using std::async, std::future_status, std::mutex, std::lock_guard;
 using std::cout, std::fixed, std::setprecision;
 using std::min;
-using std::ofstream, std::stringstream;
+using std::ofstream, std::stringstream, std::ios_base;
 using std::ref;
 using std::string;
 using std::vector;
@@ -50,7 +50,7 @@ void GameEngine::run_match(const GameOptions& options) {
     if (savepgn) {
         string fen = options.start_fen;
         fen = fen.substr(0, min(fen.find('\r'), fen.find('\n')) - 1);
-        pgn.open(options.pgn_file, std::ios_base::app);
+        pgn.open(options.pgn_file, ios_base::app);
         pgn << "[White \"" << players[!p1_is_white]->name << "\"]\n"
             << "[Black \"" << players[p1_is_white]->name << "\"]\n"
             << "[FEN \"" << fen << "\"]\n";

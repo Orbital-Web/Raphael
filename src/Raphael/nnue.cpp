@@ -7,7 +7,8 @@
 using namespace Raphael;
 using std::copy;
 using std::cout, std::flush;
-using std::invalid_argument;
+using std::ifstream, std::ios;
+using std::invalid_argument, std::runtime_error;
 using std::max, std::min;
 using std::string;
 using std::vector;
@@ -25,6 +26,26 @@ Nnue::Nnue(string filepath) {
 
 void Nnue::load(string filepath) {
     if (filepath.empty()) throw invalid_argument("filepath empty");
+
+    ifstream nnue_file(filepath, ios::binary);
+    if (!nnue_file) throw runtime_error("could not open file");
+
+    auto read_or_throw = [&](void* dest, std::size_t bytes) {
+        if (!nnue_file.read(reinterpret_cast<char*>(dest), bytes))
+            throw std::runtime_error("failed to read weights");
+    };
+
+    read_or_throw(params.W0, sizeof(params.W0));
+    read_or_throw(params.b0, sizeof(params.b0));
+    read_or_throw(params.W1, sizeof(params.W1));
+    read_or_throw(params.b1, sizeof(params.b1));
+    read_or_throw(params.W2, sizeof(params.W2));
+    read_or_throw(params.b2, sizeof(params.b2));
+    read_or_throw(params.W3, sizeof(params.W3));
+    read_or_throw(&params.b3, sizeof(params.b3));
+
+    if (!nnue_file.eof() && nnue_file.peek() != EOF)
+        throw runtime_error("file size does not match nnue size");
 }
 
 
@@ -250,3 +271,26 @@ void Nnue::crelu(const int16_t* input, int8_t* output, int size) {
 
 
 /* ------------------------------- Update ------------------------------- */
+
+void Nnue::set_board(const chess::Board& board) {
+    int wkb = KING_BUCKETS[board.kingSq(chess::Color::WHITE)];
+    int bkb = KING_BUCKETS[board.kingSq(chess::Color::BLACK) ^ 56];
+
+    vector<int> w_features, b_features;
+    w_features.reserve(64);
+    b_features.reserve(64);
+
+    auto pieces = board.occ();
+    while (pieces) {
+        auto sq = chess::builtin::poplsb(pieces);
+        int sqi = (int)sq;
+
+        int wpiece = (int)board.at(sq);  // 0...5, 6...11
+        int bpiece = (wpiece + 6) % 12;  // 6...11, 0...5
+
+        w_features.push_back(12 * 64 * wkb + 64 * wpiece + sqi);
+        b_features.push_back(12 * 64 * bkb + 64 * bpiece + (sqi ^ 56));
+    }
+    refresh_accumulator(accumulators[0], w_features, true);
+    refresh_accumulator(accumulators[0], b_features, false);
+}

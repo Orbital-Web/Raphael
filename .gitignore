@@ -238,4 +238,5 @@ src/NNUE/traindata.csv
 src/NNUE/traindata_processed.csv
 src/NNUE/train-*
 src/NNUE/traingen
+src/NNUE/nnuerun
 src/NNUE/wdl_fit.png

@@ -104,7 +104,7 @@ class NNUE(nn.Module):
                 "bk": 127,
                 "wt": np.int16,
                 "bt": np.int16,
-                "t": True,  # transpose ft.weight to make it N_HIDDEN0 x N_INPUT
+                "t": True,  # transpose ft.weight to make it N_INPUT x N_HIDDEN0
             },
             "l1": {
                 "wk": self.qscale1,
@@ -259,8 +259,8 @@ class NNUE(nn.Module):
                     wc = wc.T
 
                 # flatten and write to file
-                wc.flatten().tofile(f)
-                bc.flatten().tofile(f)
+                np.ascontiguousarray(wc.flatten()).tofile(f)
+                np.ascontiguousarray(bc.flatten()).tofile(f)
 
 
 # https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#accounting-for-quantization-in-the-trainer

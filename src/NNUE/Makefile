@@ -4,18 +4,23 @@ CCFLAGS = -Wall -O3 -march=native -DNDEBUG -fno-builtin -std=c++20 -I../../src -
 LDFLAGS = -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
 
 # sources
-SOURCES = ../GameEngine/consts.cpp ../GameEngine/GamePlayer.cpp ${wildcard ../Raphael/*.cpp} traingen.cpp
+GEN_SOURCES = ../GameEngine/consts.cpp ../GameEngine/GamePlayer.cpp ${wildcard ../Raphael/*.cpp} traingen.cpp
+RUN_SOURCES = ../Raphael/consts.cpp ../Raphael/nnue.cpp ../Raphael/simd.cpp nnuerun.cpp
 
 
 
 # obj files
-OBJS = ${SOURCES:.cpp=.o}
+GEN_OBJS = ${GEN_SOURCES:.cpp=.o}
+RUN_OBJS = ${RUN_SOURCES:.cpp=.o}
 
 # Default rule
-all: packages traingen
+all: packages traingen nnuerun
 
 # Linking the executable
-traingen: ${OBJS}
+traingen: ${GEN_OBJS}
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+nnuerun: ${RUN_OBJS}
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 # Generic rules for compiling a source file to an object file
@@ -33,7 +38,7 @@ packages:
 
 # Clean rule
 clean:
-	rm -f ${OBJS}
+	rm -f ${GEN_OBJS} ${RUN_OBJS}
 
 clean_all:
-	rm -f ${OBJS} traingen
+	rm -f ${GEN_OBJS} ${RUN_OBJS} traingen nnuerun

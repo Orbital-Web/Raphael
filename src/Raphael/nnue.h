@@ -63,13 +63,13 @@ private:
         int16_t* operator[](bool side);
         const int16_t* operator[](bool side) const;
     };
-    NnueAccumulator accumulators[MAX_DEPTH];  // accumulators[ply][side][index]
+    NnueAccumulator accumulators[MAX_DEPTH];  // accumulators[ply][black, white][index]
 
     /** Refreshes the accumulator as new_acc = b1 + W1[features]
      *
      * \param new_acc accumulator to refresh
      * \param features indicies of active features (King * 640, piece * 64, square)
-     * \param side which side accumulator to refresh
+     * \param side which side accumulator to refresh (true for white)
      */
     void refresh_accumulator(NnueAccumulator& new_acc, const std::vector<int>& features, bool side);
 
@@ -79,7 +79,7 @@ private:
      * \param old_acc accumulator to use as base
      * \param add_features indicies of features to activate
      * \param rem_features indicies of features to deactivate
-     * \param side which side accumulator to update
+     * \param side which side accumulator to update (true for white)
      */
     void update_accumulator(
         NnueAccumulator& new_acc,
@@ -124,7 +124,7 @@ public:
     /** Evaluates the current board from the specified side and ply
      *
      * \param ply which ply accumulator to use for evaluation
-     * \param side side to evaluate from
+     * \param side side to evaluate from (true for white)
      * \returns the NNUE evaluation of the position in centipawns
      */
     int32_t evaluate(int ply, bool side);
@@ -136,12 +136,12 @@ public:
      * \param move the move to make
      * \param board the board before making the move
      */
-    void make_move(int ply, const chess::Move& move, const chess::Bitboard board);
+    void make_move(int ply, const chess::Move& move, const chess::Board& board);
 
     /** TODO: Sets accumulator[0] to the board state
      *
      * \param board the board to set the accumulator to
      */
-    void set_board(const chess::Bitboard& board);
+    void set_board(const chess::Board& board);
 };
 }  // namespace Raphael

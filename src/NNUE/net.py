@@ -242,8 +242,8 @@ class NNUE(nn.Module):
                 # clamp and convert type
                 wt = opt["wt"]
                 bt = opt["bt"]
-                wc = np.clip(w, np.iinfo(wt).min, np.iinfo(wt).max).astype(wt)
-                bc = np.clip(b, np.iinfo(bt).min, np.iinfo(bt).max).astype(bt)
+                wc = np.clip(w.round(), np.iinfo(wt).min, np.iinfo(wt).max).astype(wt)
+                bc = np.clip(b.round(), np.iinfo(bt).min, np.iinfo(bt).max).astype(bt)
                 wclipped = np.sum(wc != w.astype(wt))
                 bclipped = np.sum(bc != b.astype(bt))
                 if wclipped > 0:

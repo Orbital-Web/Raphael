@@ -232,13 +232,26 @@ class NNUE(nn.Module):
             for name, layer in self.named_children():
                 opt = self.export_options[name]
 
-                # scale weight and bias
-                w = layer.weight.detach().cpu().numpy() * opt["wk"]
-                b = layer.bias.detach().cpu().numpy() * opt["bk"]
+                # get weight and bias
+                w = layer.weight.detach().cpu().numpy().copy()
+                b = layer.bias.detach().cpu().numpy().copy()
 
-                # remove factorized features
+                # expand out factorized features
                 if self.params.FEATURE_FACTORIZE and name == "ft":
+                    fact_i = self.params.N_INPUTS
+                    fact = np.zeros((self.params.N_HIDDEN0, 12 * 64))
+                    fact[:, : 5 * 64] = w[:, fact_i : fact_i + 5 * 64]
+                    fact[:, 6 * 64 : 11 * 64] = w[:, fact_i + 5 * 64 :]
+
+                    # add factorized parameter weights
+                    for kb in range(self.params.N_BUCKETS):
+                        w[:, 12 * 64 * kb : 12 * 64 * (kb + 1)] += fact
+
                     w = w[:, : self.params.N_INPUTS]
+
+                # scale weight and bias
+                w *= opt["wk"]
+                b *= opt["bk"]
 
                 # clamp and convert type
                 wt = opt["wt"]
@@ -278,27 +291,7 @@ class NNUEOptimizer(optim.Adam):
 
         with torch.no_grad():
             for group in self.param_groups:
-                # account for feature factorization
-                if (
-                    self.params.FEATURE_FACTORIZE
-                    and group.get("name", None) == "ft.weight"
-                ):
-                    for param in group["params"]:
-                        fact = self.params.N_INPUTS
-                        wfact = param[:, fact : fact + 5 * 64]  # first (white) pnbrq
-                        bfact = param[:, fact + 5 * 64 :]  # second (black) pnbrq
-
-                        # add factorized parameter weights
-                        for b in range(self.params.N_BUCKETS):
-                            wf = 12 * 64 * b
-                            bf = 12 * 64 * b + 6 * 64
-                            param[:, wf : wf + 5 * 64] += wfact
-                            param[:, bf : bf + 5 * 64] += bfact
-
-                        param[:, fact : fact + 5 * 64] = 0
-                        param[:, fact + 5 * 64 :] = 0
-
-                # clamp weights
+                # clamp weights (note: doesn't consider type range)
                 min_weight = group.get("min_weight", None)
                 max_weight = group.get("max_weight", None)
                 if min_weight is not None and max_weight is not None:

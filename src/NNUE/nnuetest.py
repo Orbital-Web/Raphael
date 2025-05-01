@@ -32,8 +32,9 @@ def get_model_output(
 
 
 def get_quantized_model_params(params: NNUEParams, model: NNUE) -> list[np.ndarray]:
-    def round_convert(var: torch.Tensor, dtype: np.dtype) -> np.ndarray:
-        var: np.ndarray = var.detach().numpy()
+    def round_convert(var: torch.Tensor | np.ndarray, dtype: np.dtype) -> np.ndarray:
+        if isinstance(var, torch.Tensor):
+            var = var.detach().numpy()
         var = np.clip(
             var.round(),
             np.iinfo(dtype).min,
@@ -41,7 +42,21 @@ def get_quantized_model_params(params: NNUEParams, model: NNUE) -> list[np.ndarr
         )
         return var.astype(dtype)
 
-    w0 = round_convert(model.ft.weight[:, : params.N_INPUTS] * 127, np.int16)
+    # expand out factorized features
+    ft_weight = model.ft.weight.detach().numpy().copy()  # copy because of +=
+    if params.FEATURE_FACTORIZE:
+        fact_i = params.N_INPUTS
+        fact = np.zeros((params.N_HIDDEN0, 12 * 64))
+        fact[:, : 5 * 64] = ft_weight[:, fact_i : fact_i + 5 * 64]
+        fact[:, 6 * 64 : 11 * 64] = ft_weight[:, fact_i + 5 * 64 :]
+
+        # add factorized parameter weights
+        for kb in range(params.N_BUCKETS):
+            ft_weight[:, 12 * 64 * kb : 12 * 64 * (kb + 1)] += fact
+
+        ft_weight = ft_weight[:, : params.N_INPUTS]
+
+    w0 = round_convert(ft_weight * 127, np.int16)
     b0 = round_convert(model.ft.bias * 127, np.int16)
     w1 = round_convert(model.l1.weight * 64, np.int8)
     b1 = round_convert(model.l1.bias * 64 * 127, np.int32)

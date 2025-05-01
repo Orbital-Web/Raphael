@@ -129,17 +129,15 @@ class NNUE(nn.Module):
             },
         }
 
-        # initialize weights
-        torch.nn.init.kaiming_normal_(self.ft.weight, nonlinearity="relu")
-        torch.nn.init.normal_(self.l1.weight, mean=0, std=32 / self.qscale1)
-        torch.nn.init.normal_(self.l2.weight, mean=0, std=32 / self.qscale2)
-        torch.nn.init.normal_(
-            self.l3.weight, mean=0, std=2048 / (self.params.OUTPUT_SCALE * self.qscale3)
-        )
-        torch.nn.init.normal_(self.ft.bias, mean=0, std=0.5)
-        torch.nn.init.normal_(self.l1.bias, mean=0, std=0.5)
-        torch.nn.init.normal_(self.l2.bias, mean=0, std=0.5)
-        torch.nn.init.normal_(self.l3.bias, mean=0, std=0.5)
+        # initialize with xavier (assume around 32 features are on for ft layer)
+        nn.init.normal_(self.ft.weight, std=np.sqrt(2 / (32 + self.params.N_HIDDEN1)))
+        nn.init.xavier_normal_(self.l1.weight)
+        nn.init.xavier_normal_(self.l2.weight)
+        nn.init.xavier_normal_(self.l3.weight)
+        nn.init.constant_(self.ft.bias, 0.0)
+        nn.init.constant_(self.l1.bias, 0.0)
+        nn.init.constant_(self.l2.bias, 0.0)
+        nn.init.constant_(self.l3.bias, 0.0)
 
         # print statistics
         print("Initialized NNUE with:")
@@ -157,7 +155,8 @@ class NNUE(nn.Module):
         print(f"    Q1: {self.params.QLEVEL1} (±{(127 / self.qscale1):.2f})")
         print(f"    Q2: {self.params.QLEVEL2} (±{(127 / self.qscale2):.2f})")
         print(
-            f"    Q3: {self.params.QLEVEL3} (±{(127 * 127 / (self.params.OUTPUT_SCALE * self.qscale3)):.2f})"
+            f"    Q3: {self.params.QLEVEL3} "
+            f"(±{(127 * 127 / (self.params.OUTPUT_SCALE * self.qscale3)):.2f})"
         )
         print("  Training Options:")
         print(f"    Feature Factorization: {self.params.FEATURE_FACTORIZE}")
@@ -244,8 +243,8 @@ class NNUE(nn.Module):
                 bt = opt["bt"]
                 wc = np.clip(w.round(), np.iinfo(wt).min, np.iinfo(wt).max).astype(wt)
                 bc = np.clip(b.round(), np.iinfo(bt).min, np.iinfo(bt).max).astype(bt)
-                wclipped = np.sum(wc != w.astype(wt))
-                bclipped = np.sum(bc != b.astype(bt))
+                wclipped = np.sum(wc != w.round())
+                bclipped = np.sum(bc != b.round())
                 if wclipped > 0:
                     warnings.warn(
                         f"Warning: {wclipped} overflows were clamped in {name}.weights"

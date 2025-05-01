@@ -1,3 +1,6 @@
+import argparse
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import torch
@@ -28,7 +31,7 @@ def get_model_output(
         return float(out[0, 0])
 
 
-def get_quantized_model_params(model: NNUE) -> list[np.ndarray]:
+def get_quantized_model_params(params: NNUEParams, model: NNUE) -> list[np.ndarray]:
     def round_convert(var: torch.Tensor, dtype: np.dtype) -> np.ndarray:
         var: np.ndarray = var.detach().numpy()
         var = np.clip(
@@ -38,7 +41,7 @@ def get_quantized_model_params(model: NNUE) -> list[np.ndarray]:
         )
         return var.astype(dtype)
 
-    w0 = round_convert(model.ft.weight * 127, np.int16)
+    w0 = round_convert(model.ft.weight[:, : params.N_INPUTS] * 127, np.int16)
     b0 = round_convert(model.ft.bias * 127, np.int16)
     w1 = round_convert(model.l1.weight * 64, np.int8)
     b1 = round_convert(model.l1.bias * 64 * 127, np.int32)
@@ -59,8 +62,8 @@ def get_quantized_model_output(
 ) -> float:
     w0, b0, w1, b1, w2, b2, w3, b3 = quantized_params
 
-    w = w0 @ wf.detach().numpy().astype(np.int16) + b0
-    b = w0 @ bf.detach().numpy().astype(np.int16) + b0
+    w = w0 @ wf[: params.N_INPUTS].detach().numpy().astype(np.int16) + b0
+    b = w0 @ bf[: params.N_INPUTS].detach().numpy().astype(np.int16) + b0
     accumulator = np.expand_dims(
         np.concatenate([w, b]) if side else np.concatenate([b, w]), 0
     )
@@ -110,24 +113,57 @@ def evaluate_nnue(params: NNUEParams, model: NNUE, quantized_params: list[np.nda
 
 
 if __name__ == "__main__":
-    params = NNUEParams(FEATURE_FACTORIZE=False)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "path",
+        nargs="?",
+        default="",
+        type=str,
+        help="Path to trained pth file. Defaults to best.pth from the lastest trainining session",
+    )
+    parser.add_argument(
+        "-f",
+        "--feature_factorize",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Whether to the trained model uses feature factorization",
+    )
+    args = parser.parse_args()
+
+    # find last training file
+    if not args.path:
+        for entry in Path(".").iterdir():
+            if entry.is_dir():
+                file = entry / "best.pth"
+                if file.exists() and str(file) > args.path:
+                    args.path = file.as_posix()
+
+    # load model
+    print(
+        f"Loading {args.path} "
+        f"{'(feature factorization enabled)' if args.feature_factorize else ''}"
+    )
+    params = NNUEParams(FEATURE_FACTORIZE=args.feature_factorize)
     model = NNUE(params)
     model.load_state_dict(
         torch.load(
-            "train-2025-01-23-01-19-45/best.pth",
+            args.path,
             weights_only=False,
-            map_location=torch.device("cpu"),
+            map_location=torch.device("cuda"),
         )["model_state_dict"]
     )
-    quantized_params = get_quantized_model_params(model)
+    quantized_params = get_quantized_model_params(params, model)
 
+    print("Enter a FEN to evaluate, 'q' to quit, or 'e' to evaluate the model:")
     while True:
         command = input("")
         if command == "q":
             break
         elif command == "e":
             evaluate_nnue(params, model, quantized_params)
-            break
+            continue
 
         # get outputs
         wf, bf, side = get_features(params, command)
@@ -138,6 +174,5 @@ if __name__ == "__main__":
         q_error = abs(out - out_q)
 
         print(
-            f"  eval: {out}\n  quantized: {out_q}\n"
-            f"  quantization error: {q_error:.4f}"
+            f"  eval: {out}\n  quantized: {out_q}\n  quantization error: {q_error:.4f}"
         )

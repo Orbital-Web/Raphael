@@ -73,7 +73,7 @@ class NNUEParams:
                 wpf = 5 * (pc == chess.BLACK) + pt
                 bpf = 5 * (pc == chess.WHITE) + pt
 
-                widx.append(self.N_BUCKETS + wpf * 64 + sq)
+                widx.append(self.N_INPUTS + wpf * 64 + sq)
                 bidx.append(self.N_INPUTS + bpf * 64 + chess.square_mirror(sq))
         return board.turn == chess.WHITE, widx, bidx
 
@@ -129,8 +129,10 @@ class NNUE(nn.Module):
             },
         }
 
-        # initialize with xavier (assume around 32 features are on for ft layer)
-        nn.init.normal_(self.ft.weight, std=np.sqrt(2 / (32 + self.params.N_HIDDEN1)))
+        # initialize with xavier normal
+        fan_in = 22 + params.FEATURE_FACTORIZE * 20  # expected no. of features (pieces)
+        ft_std = np.sqrt(2 / (fan_in + self.params.N_HIDDEN1))  # std for xavier norm
+        nn.init.normal_(self.ft.weight, std=ft_std)
         nn.init.xavier_normal_(self.l1.weight)
         nn.init.xavier_normal_(self.l2.weight)
         nn.init.xavier_normal_(self.l3.weight)
@@ -283,13 +285,13 @@ class NNUEOptimizer(optim.Adam):
                 ):
                     for param in group["params"]:
                         fact = self.params.N_INPUTS
-                        wfact = param[:, fact : fact + 5 * 64]  # first (white) pnbrqk
-                        bfact = param[:, fact + 5 * 64 :]  # second (black) pnbrqk
+                        wfact = param[:, fact : fact + 5 * 64]  # first (white) pnbrq
+                        bfact = param[:, fact + 5 * 64 :]  # second (black) pnbrq
 
                         # add factorized parameter weights
                         for b in range(self.params.N_BUCKETS):
-                            wf = b * 12 * 64
-                            bf = b * 12 * 64 + 6 * 64
+                            wf = 12 * 64 * b
+                            bf = 12 * 64 * b + 6 * 64
                             param[:, wf : wf + 5 * 64] += wfact
                             param[:, bf : bf + 5 * 64] += bfact
 

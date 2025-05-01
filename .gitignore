@@ -234,8 +234,7 @@ src/Games/*.epd
 logs/
 
 # NNUE Training
-src/NNUE/traindata.csv
-src/NNUE/traindata_processed.csv
+src/NNUE/traindata*.csv
 src/NNUE/train-*
 src/NNUE/traingen
 src/NNUE/nnuerun

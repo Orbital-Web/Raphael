@@ -92,7 +92,7 @@ This is the main script that is used to train the NNUE model. The following is t
 
 ```text
 usage: trainer.py [-h] [-i IN_FILENAME] [-o OUT_FILENAME] [-d | --data_optimize | --no-data_optimize] [-e EPOCH] [-p PATIENCE]
-                  [-f | --feature_factorize | --no-feature_factorize]
+                  [-f | --feature_factorize | --no-feature_factorize] [-c CHECKPOINT]
 
 options:
   -h, --help            show this help message and exit
@@ -108,6 +108,8 @@ options:
                         Number of consecutive epochs without improvement to stop training. Will be ignored if 0 (default: 5)
   -f, --feature_factorize, --no-feature_factorize
                         Whether to enable feature factorization. May lead to faster training (default: False)
+  -c CHECKPOINT, --checkpoint CHECKPOINT
+                        Checkpoint (path to a .pth file) to resume from (default: )
 ```
 
 The input file should be a `csv` file with the rows `fen`, `wdl` (absolute, with 1.0 as white win), and `eval` (relative centipawns from the side to move). The output file is also a `csv` file with the same rows, plus a few extra.
@@ -115,6 +117,43 @@ The input file should be a `csv` file with the rows `fen`, `wdl` (absolute, with
 When the input dataset is first loaded, its fen string is parsed to retrieve the white and black features of the board (based on the functions defined in  `NNUEParams`). The dataset may also undergo optimizations if given the `-d` flag. If you don't want to run this process again in subsequent training runs, it may be a good idea to export the processed dataset using the `-o` flag, and passing in the processed file using the `-o` flag instead of the `-i` flag.
 
 The other command line arguments are pretty self explanatory if you know how training a neural network goes. The `-f` flag is used to enable feature factorization, which is explained in a lot more detail in [this document](https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#feature-factorization) by the Official Stockfish.
+
+## NNUERun
+
+NNUERun is a debug program written in C++ for loading and running the NNUE. The following is the usage guide for `nnuerun`:
+
+```text
+Usage: nnuerun [OPTIONS]
+
+  Outputs nnue evaluation for each input fen
+
+Options:
+  PATH  NNUE file. Defaults to best.nnue from last train output
+  -h    Show this message and exit
+```
+
+Once loaded, you can enter a FEN and it will print the evaluation for that position. To quit, enter 'q'.
+
+## NNUETest
+
+NNUETest is very similar to NNUERun, but it runs on the Python side and loads from a pth file instead of an nnue file.
+It is mainly used as a debugging tool to ensure consistency of the model with the C++ NNUE, and to evaluate the model's accuracy and quantization errors.
+The following is the usage guide:
+
+```text
+usage: nnuetest.py [-h] [-f | --feature_factorize | --no-feature_factorize] [path]
+
+positional arguments:
+  path                  Path to trained pth file. Defaults to best.pth from the lastest trainining session (default: )
+
+options:
+  -h, --help            show this help message and exit
+  -f, --feature_factorize, --no-feature_factorize
+                        Whether to the trained model uses feature factorization (default: False)
+```
+
+Like NNUERun, once loaded, you can enter a FEN to get the raw and quantized evaluation, along with a quantization error.
+To quit, enter 'q', and to get a statistics of the quantization and evaluation error, enter 'e'.
 
 ## Versions
 

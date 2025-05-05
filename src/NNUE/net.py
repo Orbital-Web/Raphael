@@ -190,13 +190,13 @@ class NNUE(nn.Module):
         print(f"    Output Scale: {self.params.OUTPUT_SCALE}")
         print("")
 
-    def forward(self, white_features, black_features, side: bool) -> list[float]:
+    def forward(self, white_features, black_features, side) -> list[float]:
         """Evaluates using the model
 
         Args:
-            white_features: a batch of white features size N_INPUTS_FACTORIZED
-            black_features: a batch of black features size N_INPUTS_FACTORIZED
-            side (bool): True for white, False for black
+            white_features: white features of size N_INPUTS_FACTORIZED
+            black_features: black features of size N_INPUTS_FACTORIZED
+            side: perspective to evaluate from, True for white, False for black
 
         Returns:
             list[float]: a batch of evaluations from the side to move

@@ -136,24 +136,27 @@ Once loaded, you can enter a FEN and it will print the evaluation for that posit
 
 ## NNUETest
 
-NNUETest is very similar to NNUERun, but it runs on the Python side and loads from a pth file instead of an nnue file.
-It is mainly used as a debugging tool to ensure consistency of the model with the C++ NNUE, and to evaluate the model's accuracy and quantization errors.
-The following is the usage guide:
+NNUETest is like NNUERun, but runs on the Python side and loads from a pth file instead of an nnue file.
+It is mainly used as a debugging tool to validate consistency between the C++ and Python NNUE, measure quantization and evaluation errors, and test other behaviors. The script is tuned specifically for Raphael, and a lot of the variables are hardcoded as it is not intended to be used outside of debugging the NNUE during development.
+Nonetheless, the following is the usage guide:
 
 ```text
-usage: nnuetest.py [-h] [-f | --feature_factorize | --no-feature_factorize] [path]
+usage: nnuetest.py [-h] [-f | --feature_factorize | --no-feature_factorize] [-s DATASIZE] [path]
 
 positional arguments:
-  path                  Path to trained pth file. Defaults to best.pth from the lastest trainining session (default: )
+  path                  Path to trained pth file. (default: best.pth from the lastest trainining session)
 
 options:
   -h, --help            show this help message and exit
   -f, --feature_factorize, --no-feature_factorize
                         Whether to the trained model uses feature factorization (default: False)
+  -s DATASIZE, --datasize DATASIZE
+                        Number of positions to use during testing. Greater values provide more coverage but is also slower
+                        (default: 1000)
 ```
 
 Like NNUERun, once loaded, you can enter a FEN to get the raw and quantized evaluation, along with a quantization error.
-To quit, enter 'q', and to get a statistics of the quantization and evaluation error, enter 'e'.
+There are also additional commands for running various tests, which gets printed once the program starts.
 
 ## Versions
 

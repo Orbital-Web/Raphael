@@ -1,5 +1,6 @@
 import warnings
 from dataclasses import dataclass, field
+from typing import TypedDict
 
 import chess
 import numpy as np
@@ -78,6 +79,17 @@ class NNUEParams:
         return board.turn == chess.WHITE, widx, bidx
 
 
+class ExportOption(TypedDict):
+    name: str
+    weight: torch.Tensor
+    bias: torch.Tensor
+    wk: float
+    bk: float
+    wt: type[np.integer]
+    bt: type[np.integer]
+    transpose: bool
+
+
 # https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#training-a-net-with-pytorch
 class NNUE(nn.Module):
     def __init__(self, params: NNUEParams):
@@ -98,40 +110,52 @@ class NNUE(nn.Module):
         # q2 = crelu[[(qscale2*W2)*q1 + (qscale2*127b1)] / qscale2] ≡ 127o2
         # q3 = [(oscale*qscale3*W3/127)*q2 + (oscale*qscale3*b1)] / qscale3 ≡ oscale*o3
 
-        self.export_options = {
-            "ft": {
+        self.export_options: list[ExportOption] = [
+            {
+                "name": "ft",
+                "weight": self.ft.weight,
+                "bias": self.ft.bias,
                 "wk": 127,
                 "bk": 127,
                 "wt": np.int16,
                 "bt": np.int16,
-                "t": True,  # transpose ft.weight to make it N_INPUT x N_HIDDEN0
+                "transpose": True,  # transpose ft.weight to make it N_INPUT x N_HIDDEN0
             },
-            "l1": {
+            {
+                "name": "l1",
+                "weight": self.l1.weight,
+                "bias": self.l1.bias,
                 "wk": self.qscale1,
                 "bk": self.qscale1 * 127,
                 "wt": np.int8,
                 "bt": np.int32,
-                "t": False,
+                "transpose": False,
             },
-            "l2": {
+            {
+                "name": "l2",
+                "weight": self.l2.weight,
+                "bias": self.l2.bias,
                 "wk": self.qscale2,
                 "bk": self.qscale2 * 127,
                 "wt": np.int8,
                 "bt": np.int32,
-                "t": False,
+                "transpose": False,
             },
-            "l3": {
+            {
+                "name": "l3",
+                "weight": self.l3.weight,
+                "bias": self.l3.bias,
                 "wk": self.params.OUTPUT_SCALE * self.qscale3 / 127,
                 "bk": self.params.OUTPUT_SCALE * self.qscale3,
                 "wt": np.int8,
                 "bt": np.int32,
-                "t": False,
+                "transpose": False,
             },
-        }
+        ]
 
         # initialize with xavier normal
         fan_in = 22 + params.FEATURE_FACTORIZE * 20  # expected no. of features (pieces)
-        ft_std = np.sqrt(2 / (fan_in + self.params.N_HIDDEN1))  # std for xavier norm
+        ft_std = np.sqrt(2 / (fan_in + self.params.N_HIDDEN0))  # std for xavier norm
         nn.init.normal_(self.ft.weight, std=ft_std)
         nn.init.xavier_normal_(self.l1.weight)
         nn.init.xavier_normal_(self.l2.weight)
@@ -144,15 +168,16 @@ class NNUE(nn.Module):
         # print statistics
         print("Initialized NNUE with:")
         print("  Layers:")
-        for name, layer in self.named_children():
-            ws1, ws2 = layer.weight.shape
-            bs = layer.bias.shape[0]
-            if self.export_options[name]["t"]:
+        for layer in self.export_options:
+            name = layer["name"]
+            ws1, ws2 = layer["weight"].shape
+            bs = layer["bias"].shape[0]
+            if layer["transpose"]:
                 ws1, ws2 = ws2, ws1
-            wt = self.export_options[name]["wt"]
-            bt = self.export_options[name]["bt"]
-            print(f"    {name}.weight {wt.__name__}_t[{ws1} * {ws2}]")
-            print(f"    {name}.bias   {bt.__name__}_t[{bs}]")
+            wt = layer["wt"].__name__
+            bt = layer["bt"].__name__
+            print(f"    {name}.weight {wt}_t[{ws1} * {ws2}]")
+            print(f"    {name}.bias   {bt}_t[{bs}]")
         print("  Quantization")
         print(f"    Q1: {self.params.QLEVEL1} (±{(127 / self.qscale1):.2f})")
         print(f"    Q2: {self.params.QLEVEL2} (±{(127 / self.qscale2):.2f})")
@@ -219,6 +244,59 @@ class NNUE(nn.Module):
             {"params": [self.l3.bias], "name": "l3.bias"},
         ]
 
+    def get_quantized_parameters(self) -> list[np.ndarray]:
+        """Transforms the model weights and biases as specified by the export options
+        and expands out factorized weights.
+
+        Returns:
+            list[np.ndarray]: weights and biases in order of the export options
+        """
+        parameters = []
+        for layer in self.export_options:
+            name = layer["name"]
+            w = layer["weight"].detach().cpu().numpy().copy()
+            b = layer["bias"].detach().cpu().numpy().copy()
+
+            # expand out factorized features
+            if self.params.FEATURE_FACTORIZE and name == "ft":
+                fact_i = self.params.N_INPUTS
+                fact = np.zeros((self.params.N_HIDDEN0, 12 * 64))
+                fact[:, : 5 * 64] = w[:, fact_i : fact_i + 5 * 64]
+                fact[:, 6 * 64 : 11 * 64] = w[:, fact_i + 5 * 64 :]
+
+                # add factorized parameter weights
+                for kb in range(self.params.N_BUCKETS):
+                    w[:, 12 * 64 * kb : 12 * 64 * (kb + 1)] += fact
+
+                w = w[:, : self.params.N_INPUTS]
+
+            # scale weight and bias and round
+            w = (w * layer["wk"]).round()
+            b = (b * layer["bk"]).round()
+
+            # clamp and convert type
+            wt = layer["wt"]
+            bt = layer["bt"]
+            wc = np.clip(w, np.iinfo(wt).min, np.iinfo(wt).max).astype(wt)
+            bc = np.clip(b, np.iinfo(bt).min, np.iinfo(bt).max).astype(bt)
+            if (wclipped := np.sum(wc != w)) > 0:
+                warnings.warn(
+                    f"Warning: {wclipped} overflows were clamped in {name}.weights"
+                )
+            if (bclipped := np.sum(bc != b)) > 0:
+                warnings.warn(
+                    f"Warning: {bclipped} overflows were clamped in {name}.bias"
+                )
+
+            # transpose weight if necessary
+            if layer["transpose"]:
+                wc = wc.T
+
+            # add to parameters
+            parameters.append(wc)
+            parameters.append(bc)
+        return parameters
+
     def export(self, filepath: str):
         """Exports the model weights to the filepath after applying quantization. Should
         only be used to port the model to C++, and not for saving the training state.
@@ -227,55 +305,11 @@ class NNUE(nn.Module):
             filepath (str): filepath to save model to
         """
         print(f"Exporting model to {filepath}")
+        parameters = self.get_quantized_parameters()
 
         with open(filepath, "wb") as f:
-            for name, layer in self.named_children():
-                opt = self.export_options[name]
-
-                # get weight and bias
-                w = layer.weight.detach().cpu().numpy().copy()
-                b = layer.bias.detach().cpu().numpy().copy()
-
-                # expand out factorized features
-                if self.params.FEATURE_FACTORIZE and name == "ft":
-                    fact_i = self.params.N_INPUTS
-                    fact = np.zeros((self.params.N_HIDDEN0, 12 * 64))
-                    fact[:, : 5 * 64] = w[:, fact_i : fact_i + 5 * 64]
-                    fact[:, 6 * 64 : 11 * 64] = w[:, fact_i + 5 * 64 :]
-
-                    # add factorized parameter weights
-                    for kb in range(self.params.N_BUCKETS):
-                        w[:, 12 * 64 * kb : 12 * 64 * (kb + 1)] += fact
-
-                    w = w[:, : self.params.N_INPUTS]
-
-                # scale weight and bias
-                w *= opt["wk"]
-                b *= opt["bk"]
-
-                # clamp and convert type
-                wt = opt["wt"]
-                bt = opt["bt"]
-                wc = np.clip(w.round(), np.iinfo(wt).min, np.iinfo(wt).max).astype(wt)
-                bc = np.clip(b.round(), np.iinfo(bt).min, np.iinfo(bt).max).astype(bt)
-                wclipped = np.sum(wc != w.round())
-                bclipped = np.sum(bc != b.round())
-                if wclipped > 0:
-                    warnings.warn(
-                        f"Warning: {wclipped} overflows were clamped in {name}.weights"
-                    )
-                if bclipped > 0:
-                    warnings.warn(
-                        f"Warning: {bclipped} overflows were clamped in {name}.bias"
-                    )
-
-                # transpose weight if necessary
-                if opt["t"]:
-                    wc = wc.T
-
-                # flatten and write to file
-                np.ascontiguousarray(wc.flatten()).tofile(f)
-                np.ascontiguousarray(bc.flatten()).tofile(f)
+            for param in parameters:
+                np.ascontiguousarray(param.flatten()).tofile(f)
 
 
 # https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#accounting-for-quantization-in-the-trainer

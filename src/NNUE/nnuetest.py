@@ -31,43 +31,6 @@ def get_model_output(
         return float(out[0, 0])
 
 
-def get_quantized_model_params(params: NNUEParams, model: NNUE) -> list[np.ndarray]:
-    def round_convert(var: torch.Tensor | np.ndarray, dtype: np.dtype) -> np.ndarray:
-        if isinstance(var, torch.Tensor):
-            var = var.detach().numpy()
-        var = np.clip(
-            var.round(),
-            np.iinfo(dtype).min,
-            np.iinfo(dtype).max,
-        )
-        return var.astype(dtype)
-
-    # expand out factorized features
-    ft_weight = model.ft.weight.detach().numpy().copy()  # copy because of +=
-    if params.FEATURE_FACTORIZE:
-        fact_i = params.N_INPUTS
-        fact = np.zeros((params.N_HIDDEN0, 12 * 64))
-        fact[:, : 5 * 64] = ft_weight[:, fact_i : fact_i + 5 * 64]
-        fact[:, 6 * 64 : 11 * 64] = ft_weight[:, fact_i + 5 * 64 :]
-
-        # add factorized parameter weights
-        for kb in range(params.N_BUCKETS):
-            ft_weight[:, 12 * 64 * kb : 12 * 64 * (kb + 1)] += fact
-
-        ft_weight = ft_weight[:, : params.N_INPUTS]
-
-    w0 = round_convert(ft_weight * 127, np.int16)
-    b0 = round_convert(model.ft.bias * 127, np.int16)
-    w1 = round_convert(model.l1.weight * 64, np.int8)
-    b1 = round_convert(model.l1.bias * 64 * 127, np.int32)
-    w2 = round_convert(model.l2.weight * 64, np.int8)
-    b2 = round_convert(model.l2.bias * 64 * 127, np.int32)
-    w3 = round_convert(model.l3.weight * 300 * 32 / 127, np.int8)
-    b3 = round_convert(model.l3.bias * 300 * 32, np.int32)
-
-    return [w0, b0, w1, b1, w2, b2, w3, b3]
-
-
 def get_quantized_model_output(
     params: NNUEParams,
     quantized_params: list[np.ndarray],
@@ -77,8 +40,8 @@ def get_quantized_model_output(
 ) -> float:
     w0, b0, w1, b1, w2, b2, w3, b3 = quantized_params
 
-    w = w0 @ wf[: params.N_INPUTS].detach().numpy().astype(np.int16) + b0
-    b = w0 @ bf[: params.N_INPUTS].detach().numpy().astype(np.int16) + b0
+    w = w0.T @ wf[: params.N_INPUTS].detach().numpy().astype(np.int16) + b0
+    b = w0.T @ bf[: params.N_INPUTS].detach().numpy().astype(np.int16) + b0
     accumulator = np.expand_dims(
         np.concatenate([w, b]) if side else np.concatenate([b, w]), 0
     )
@@ -166,10 +129,10 @@ if __name__ == "__main__":
         torch.load(
             args.path,
             weights_only=False,
-            map_location=torch.device("cuda"),
+            map_location=torch.device("cpu"),
         )["model_state_dict"]
     )
-    quantized_params = get_quantized_model_params(params, model)
+    quantized_params = model.get_quantized_parameters()
 
     print("Enter a FEN to evaluate, 'q' to quit, or 'e' to evaluate the model:")
     while True:

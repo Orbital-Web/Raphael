@@ -21,6 +21,8 @@ using std::max, std::min;
 using std::mutex, std::lock_guard;
 using std::string;
 
+namespace ch = std::chrono;
+
 
 
 namespace Raphael {
@@ -57,8 +59,8 @@ protected:
     // info
     int64_t nodes;  // number of nodes visited
     // timing
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_t;  // search start time
-    int64_t search_t;                                                     // search duration (ms)
+    ch::time_point<ch::high_resolution_clock> start_t;  // search start time
+    int64_t search_t;                                   // search duration (ms)
 
     // Raphael methods
 public:
@@ -145,9 +147,8 @@ public:
             // checkmate, no need to continue
             if (tt.isMate(eval)) {
 #ifdef UCI
-                auto now = std::chrono::high_resolution_clock::now();
-                auto dtime
-                    = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_t).count();
+                auto now = ch::high_resolution_clock::now();
+                auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
                 auto nps = (dtime) ? nodes * 1000 / dtime : 0;
                 char sign = (eval >= 0) ? '\0' : '-';
                 {
@@ -173,9 +174,8 @@ public:
                 return itermove;
             } else {
 #ifdef UCI
-                auto now = std::chrono::high_resolution_clock::now();
-                auto dtime
-                    = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_t).count();
+                auto now = ch::high_resolution_clock::now();
+                auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
                 auto nps = (dtime) ? nodes * 1000 / dtime : 0;
                 {
                     lock_guard<mutex> lock(cout_mutex);
@@ -305,14 +305,14 @@ protected:
         // if movetime is specified, use that instead
         if (searchopt.movetime != -1) {
             search_t = searchopt.movetime;
-            start_t = std::chrono::high_resolution_clock::now();
+            start_t = ch::high_resolution_clock::now();
             return;
         }
 
         // set to infinite if other searchoptions are specified
         if (searchopt.maxdepth != -1 || searchopt.maxnodes != -1 || searchopt.infinite) {
             search_t = 0;
-            start_t = std::chrono::high_resolution_clock::now();
+            start_t = ch::high_resolution_clock::now();
             return;
         }
 
@@ -320,11 +320,11 @@ protected:
         // 0~1, higher the more time it uses (max at 20 pieces left)
         float ratio = 0.0044f * (n - 32) * (-n / 32) * pow(2.5f + n / 32, 3);
         // use 1~5% of the remaining time based on the ratio + buffered increment
-        int duration = t_remain * (0.01f + 0.04f * ratio) + max(t_inc - 30, 0);
+        int duration = t_remain * (0.01f + 0.04f * ratio) + max(t_inc - 30, 1);
         // try to use all of our time if timer resets after movestogo (unless it's 1, then be fast)
         if (searchopt.movestogo > 1) duration += (t_remain - duration) / searchopt.movestogo;
         search_t = min(duration, t_remain);
-        start_t = std::chrono::high_resolution_clock::now();
+        start_t = ch::high_resolution_clock::now();
     }
 
     // Checks if duration (ms) has passed and modifies halt
@@ -336,9 +336,8 @@ protected:
 
             // otherwise, check timeover every 2048 nodes
         } else if (search_t && !(nodes & 2047)) {
-            auto now = std::chrono::high_resolution_clock::now();
-            auto dtime
-                = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_t).count();
+            auto now = ch::high_resolution_clock::now();
+            auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
             if (dtime >= search_t) halt = true;
         }
         return halt;

@@ -3,7 +3,9 @@
 
 #include <Raphael/Raphael_v1.8.hpp>
 #include <atomic>
+#include <condition_variable>
 #include <iostream>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -13,18 +15,56 @@ using std::cin, std::cout, std::flush;
 using std::ref;
 using std::string, std::stoi, std::stoll;
 using std::stringstream;
-using std::thread, std::mutex, std::lock_guard;
+using std::thread, std::mutex, std::unique_lock, std::lock_guard, std::condition_variable;
 using std::vector;
 
 
 
-// global vars
-const char version[8] = "1.8.0.0";
-chess::Board board;
-Raphael::v1_8 engine("Raphael");
+// engine
+mutex engine_mutex;
+Raphael::v1_8 engine("Raphael 1.8.1.0");  // TODO: make sure version is correct
+
+// search globals
+mutex search_mutex;
+condition_variable search_cv;
+struct SearchRequest {
+    chess::Board board;
+    Raphael::v1_8::SearchOptions options;
+    int t_remain;
+    int t_inc;
+    bool go = false;
+};
+SearchRequest pending_request;
+
+// other globals
 bool halt = false;
 bool quit = false;
-mutex engine_mutex;
+
+
+
+/** Thread function for handling search */
+void handle_search() {
+    while (true) {
+        // wait until a search request is made
+        unique_lock<mutex> search_lock(search_mutex);
+        search_cv.wait(search_lock, [] { return quit || pending_request.go; });
+        if (quit) break;
+
+        // get search arguments
+        SearchRequest request = pending_request;  // creates a copy, safe to unlock
+        pending_request.go = false;
+        search_lock.unlock();
+
+        // do search (ignore return value)
+        {
+            lock_guard<mutex> engine_lock(engine_mutex);
+            sf::Event nullevent;
+            halt = false;
+            engine.set_searchoptions(request.options);
+            engine.get_move(request.board, request.t_remain, request.t_inc, nullevent, halt);
+        }
+    }
+}
 
 
 
@@ -62,12 +102,11 @@ void setposition(const vector<string>& tokens) {
     int ntokens = tokens.size();
     if (ntokens < 2) return;
 
-    // starting position
-    lock_guard<mutex> engine_lock(engine_mutex);
+    // set position/fen
+    lock_guard<mutex> search_lock(search_mutex);
     int i = 2;
     if (tokens[1] == "startpos")
-        board.setFen(chess::STARTPOS);
-
+        pending_request.board.setFen(chess::STARTPOS);
     else if (tokens[1] == "fen") {
         string fen = tokens[2];
         i = 3;
@@ -76,11 +115,12 @@ void setposition(const vector<string>& tokens) {
             fen += " " + tokens[i];
             i++;
         }
-        board.setFen(fen);
+        pending_request.board.setFen(fen);
     }
 
     // play moves
-    while (++i < ntokens) board.makeMove(chess::uci::uciToMove(board, tokens[i]));
+    while (++i < ntokens)
+        pending_request.board.makeMove(chess::uci::uciToMove(pending_request.board, tokens[i]));
 }
 
 
@@ -92,52 +132,49 @@ void setposition(const vector<string>& tokens) {
 void search(const vector<string>& tokens) {
     // get arguments
     int ntokens = tokens.size();
-    int i = 1;
-    int t_remain = 0, t_inc = 0;
-    Raphael::v1_8::SearchOptions searchopt;
 
+    lock_guard<mutex> search_lock(search_mutex);
+    bool is_white = pending_request.board.sideToMove() == chess::Color::WHITE;
+    int i = 1;
     while (i < ntokens) {
         if (tokens[i] == "depth") {
-            searchopt.maxdepth = stoi(tokens[i + 1]);
+            pending_request.options.maxdepth = stoi(tokens[i + 1]);
             break;
         } else if (tokens[i] == "nodes") {
-            searchopt.maxnodes = stoll(tokens[i + 1]);
+            pending_request.options.maxnodes = stoll(tokens[i + 1]);
             break;
         } else if (tokens[i] == "movetime") {
-            searchopt.movetime = stoi(tokens[i + 1]);
+            pending_request.options.movetime = stoi(tokens[i + 1]);
             break;
         } else if (tokens[i] == "infinite") {
-            searchopt.infinite = true;
-        } else if ((whiteturn && tokens[i] == "wtime") || (!whiteturn && tokens[i] == "btime"))
-            t_remain = stoi(tokens[i + 1]);
-        else if ((whiteturn && tokens[i] == "winc") || (!whiteturn && tokens[i] == "binc"))
-            t_inc = stoi(tokens[i + 1]);
+            pending_request.options.infinite = true;
+        } else if ((is_white && tokens[i] == "wtime") || (!is_white && tokens[i] == "btime"))
+            pending_request.t_remain = stoi(tokens[i + 1]);
+        else if ((is_white && tokens[i] == "winc") || (!is_white && tokens[i] == "binc"))
+            pending_request.t_inc = stoi(tokens[i + 1]);
         else if (tokens[i] == "movestogo")
-            searchopt.movestogo = stoi(tokens[i + 1]);
+            pending_request.options.movestogo = stoi(tokens[i + 1]);
         i += 2;
     }
-
-    // search best move
-    lock_guard<mutex> engine_lock(engine_mutex);
-    engine.set_searchoptions(searchopt);
-    halt = false;
-    sf::Event nullevent;
-    thread(&Raphael::v1_8::get_move, engine, board, t_remain, t_inc, ref(nullevent), ref(halt))
-        .detach();
+    pending_request.go = true;
+    search_cv.notify_one();
 }
 
 
 int main() {
     std::ios::sync_with_stdio(false);
     string uci_command;
-    Raphael::v1_8::EngineOptions engine_opt;
 
+    // start search handler
+    thread search_handler(handle_search);
+
+    // listen for commands
     while (!quit) {
         getline(cin, uci_command);
 
         if (uci_command == "uci") {
             lock_guard<mutex> lock(cout_mutex);
-            cout << "id name Raphael " << version << "\n"
+            cout << "id name " << engine.name << "\n"
                  << "id author Rei Meguro\n"
                  << "option name Hash type spin default 192 min 1 max 2560\n"
                  << "uciok\n"
@@ -153,6 +190,7 @@ int main() {
         else if (uci_command == "quit") {
             halt = true;
             quit = true;
+            search_cv.notify_one();
 
         } else if (uci_command == "ucinewgame") {
             halt = true;
@@ -168,7 +206,6 @@ int main() {
             if (tokens.empty()) continue;
 
             string& keyword = tokens[0];
-
             if (keyword == "setoption") {
                 halt = true;
                 setoption(tokens);
@@ -184,5 +221,6 @@ int main() {
         }
     }
 
+    search_handler.join();
     return 0;
 }

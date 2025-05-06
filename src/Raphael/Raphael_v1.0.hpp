@@ -17,6 +17,8 @@ using std::max, std::min;
 using std::mutex, std::lock_guard;
 using std::string;
 
+namespace ch = std::chrono;
+
 
 
 namespace Raphael {
@@ -127,7 +129,7 @@ protected:
         float n = chess::builtin::popcount(board.occ());
         float ratio = 0.0138f * (32 - n) * (n / 32) * pow(2.5f - n / 32, 3);
         // use 0.5~4% of the remaining time based on the ratio + buffered increment
-        int duration = t_remain * (0.005f + 0.035f * ratio) + max(t_inc - 30, 0);
+        int duration = t_remain * (0.005f + 0.035f * ratio) + max(t_inc - 30, 1);
         return min(duration, t_remain);
     }
 
@@ -135,10 +137,10 @@ protected:
     // Sets halt to true if duration (ms) passes
     // Must be called asynchronously
     static void manage_time(volatile bool& halt, const int duration) {
-        auto start = std::chrono::high_resolution_clock::now();
+        auto start = ch::high_resolution_clock::now();
         while (!halt) {
-            auto now = std::chrono::high_resolution_clock::now();
-            auto dtime = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
+            auto now = ch::high_resolution_clock::now();
+            auto dtime = ch::duration_cast<ch::milliseconds>(now - start).count();
             if (dtime >= duration) halt = true;
         }
     }

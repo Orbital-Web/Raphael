@@ -1,6 +1,6 @@
 #include <Raphael/consts.h>
 
-#include <NNUE/Raphael_v1.8_traingen.hpp>
+#include <Raphael/Raphael_v1.8.hpp>
 #include <chess.hpp>
 #include <cstdint>
 #include <filesystem>
@@ -13,6 +13,70 @@ using std::cout, std::endl, std::flush, std::fixed, std::setprecision;
 using std::numeric_limits;
 using std::ostream, std::ifstream, std::ofstream, std::ios, std::streamsize, std::getline;
 using std::string, std::stoi, std::stoll, std::to_string;
+
+
+
+namespace Raphael {
+class v1_8_traingen: public v1_8 {
+public:
+    v1_8_traingen(string name_in): v1_8(name_in) {}
+
+    // Returns the relative eval of this position using the get_move logic of the engine
+    int get_eval(chess::Board board) {
+        bool halt = false;
+        int depth = 1;
+        int eval = 0;
+        int alpha = -INT_MAX;
+        int beta = INT_MAX;
+        history.clear();
+        itermove = chess::Move::NO_MOVE;
+        nodes = 0;
+        startSearchTimer(board, 0, 0);
+
+        // begin iterative deepening
+        while (!halt && depth <= MAX_DEPTH) {
+            // max depth override
+            if (searchopt.maxdepth != -1 && depth > searchopt.maxdepth) break;
+
+            int itereval = negamax(board, depth, 0, params.MAX_EXTENSIONS, alpha, beta, halt);
+
+            // not timeout
+            if (!halt) {
+                eval = itereval;
+
+                // re-search required
+                if ((eval <= alpha) || (eval >= beta)) {
+                    alpha = -INT_MAX;
+                    beta = INT_MAX;
+                    continue;
+                }
+
+                // narrow window
+                alpha = eval - params.ASPIRATION_WINDOW;
+                beta = eval + params.ASPIRATION_WINDOW;
+                depth++;
+            }
+
+            // checkmate, no need to continue
+            if (tt.isMate(eval)) return MATE_EVAL;
+        }
+        return eval;
+    }
+
+    // Returns the relative static eval of the board
+    int static_eval(const chess::Board& board) { return evaluate(board); }
+
+    // Returns the relative eval of the board after quiescence
+    int quiescence_eval(chess::Board board) {
+        bool halt = false;
+        history.clear();
+        nodes = 0;
+        startSearchTimer(board, 0, 0);
+
+        return quiescence(board, -INT_MAX, INT_MAX, halt);
+    }
+};  // Raphael
+}  // namespace Raphael
 
 
 
@@ -203,6 +267,9 @@ int main(int argc, char* argv[]) {
         cout << "\rline " << iline << "    added: " << n_added << "/" << n_total << " (" << fixed
              << setprecision(2) << percent << "%)" << flush;
         iline++;
+
+        // flush the output buffer ocassionally so progress isn't lost on program interrupt
+        if (iline % 64 == 0) outfile.flush();
     }
     cout << endl;
 }

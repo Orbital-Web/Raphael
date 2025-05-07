@@ -13,7 +13,7 @@ using std::filesystem::directory_iterator, std::filesystem::exists;
 
 /** Prints help message. */
 void print_help() {
-    cout << "Usage: nnuerun [OPTIONS]\n\n"
+    cout << "Usage: nnuetest [OPTIONS]\n\n"
          << "  Outputs nnue evaluation for each input fen\n\n"
          << "Options:\n"
          << "  PATH  NNUE file. Defaults to best.nnue from last train output\n"

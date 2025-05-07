@@ -237,5 +237,5 @@ logs/
 src/NNUE/traindata*.csv
 src/NNUE/train-*
 src/NNUE/traingen
-src/NNUE/nnuerun
+src/NNUE/nnuetest
 src/NNUE/wdl_fit.png

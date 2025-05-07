@@ -63,21 +63,26 @@ Before using the trainer, you should check that the NNUE model and parameters de
 
 ### net.py: NNUEParams
 
-This defines the parameters for the NNUE model, and most of it should be the same as what's defined in `Raphael/nnue.h`. The WDL scale is not so important as this will be recalculated anyways to adjust to the dataset.
+This defines the parameters for the NNUE model, and most of it should be the same as what's defined in `Raphael/nnue.h`.
 
-If you decide to change any of the network parameters, you will have to update the corresponding functions. You will also want to make sure the network parameter sizes are of the correct multiple, as changing them up may break the SIMD portion of the NNUE. Lastly, you will want to make sure these changes are reflected in the cpp version of the network too.
+`N_INPUTS`, `N_INPUTS_FACTORIZED`, and `get_features()` must be implemented correctly for the trainer to function.
+`WDL_SCALE` and `FEATURE_FACTORIZE` should be left intact. The WDL scale is not so important as this will be recalculated anyways to fit the dataset.
+
+The remaining parameters can be freely modified/added/removed to fit the network architecture, though it should be inline with the cpp implementation. Some parameters may have certain constraints, such as being a multiple of 32, depending on the SIMD implementation of the model.
 
 ### net.py: NNUE
 
-This defines the NNUE model, and it is a relatively simple, shallow neural network. The only portion you should change in this class is the `export_options` dictionary to change the data types of the exported weights (not recommended).
+This defines the NNUE model. `forward()`, `parameters()`, `get_quantized_parameters()`, and `export()` must properly be implemented for the trainer to function. Again, these functions should be inline with the cpp implementation.
 
-The qlevels denote the log2 quantization levels at the respective layers. A larger qlevel will allow the model to represent weights with higher precision but will decrease the range of values the weights can take.
+Things such as the `export_options`, parameter values (some values may have implicit constraints), and weight initialization can be modified relatively safely to adjust the model while keeping its overall architecture. Note that these changes will have to be reflected in the cpp NNUE too.
 
-The output scale, defined in the parameters, also affect quantization. A larger output scale will increase precision but decrease the range of values for the final layer's weights. This output scale is only used during training and it is implicitly added to the model when exported. The output scale scales the output to let it represent numbers in centipawns (which can get quite big) so that weights in the last layers do not have to be massive to scale the previous layer's outputs from 0-1 to the centipawn range.
+Parameters such as the qlevel denote the log2 quantization levels at the respective layers. A larger qlevel will allow the model to represent weights with higher precision but will decrease the range of values the weights can take.
+
+The output scale, defined in the parameters, also affect quantization. A larger output scale will increase precision but decrease the range of values for the final layer's weights. This output scale is only used during training and it is implicitly added to the model when exported. It enables the model to output larger values (evals in centipawns can get quite big) without requiring larger weights.
 
 ### net.py: NNUEOptimizer
 
-The optimizer is used to ensure the weights are clamped during training so that they do not exceed the allowed range for quantization. It also distributes the factorized weights to the individual weights if feature factorization is enabled, and this portion may need to be changed if the feature set is modified.
+The optimizer is used to ensure the weights are clamped during training so that they do not exceed the allowed range for quantization.
 
 ### dataloader.py: NNUEDataSet
 
@@ -122,6 +127,7 @@ If an output path is provided, it will save this dataset with columns `fen`, `wd
 
 The other command line arguments are pretty self explanatory if you know how training a neural network goes. The `-f` flag is used to enable feature factorization, which is explained in a lot more detail in [this document](https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#feature-factorization) by the Official Stockfish.
 
+<!-- FIXME: -->
 ## NNUERun
 
 NNUERun is a debug program written in C++ for loading and running the NNUE. The following is the usage guide for `nnuerun`:

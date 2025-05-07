@@ -91,19 +91,21 @@ This class is also used to calculate the optimum WDL_SCALE as well as the scaled
 This is the main script that is used to train the NNUE model. The following is the usage guide:
 
 ```text
-usage: trainer.py [-h] [-i IN_FILENAME] [-o OUT_FILENAME] [-d | --data_optimize | --no-data_optimize] [-e EPOCH] [-p PATIENCE]
-                  [-f | --feature_factorize | --no-feature_factorize] [-c CHECKPOINT]
+usage: trainer.py [-h] [-o OUT_FILENAME] [-d | --data_optimize | --no-data_optimize] [-e EPOCH] [-p PATIENCE] [-f | --feature_factorize | --no-feature_factorize]
+                  [-c CHECKPOINT]
+                  in_filename
+
+positional arguments:
+  in_filename           Path to input dataset csv with columns fen, wdl (absolute), and eval (relative), optionally with the feature columns (leads to faster loading)
 
 options:
   -h, --help            show this help message and exit
-  -i IN_FILENAME, --in_filename IN_FILENAME
-                        Input csv with fen, wdl (absolute), and eval (relative). Will use -o as input instead if not provided (default: None)
   -o OUT_FILENAME, --out_filename OUT_FILENAME
-                        Output csv of processed data. Will use as input if -i is not provided (leads to faster data loading) (default: None)
+                        Path to save processed dataset with the feature columns (default: None)
   -d, --data_optimize, --no-data_optimize
-                        Whether to optimzie the dataset for potentially faster and better training (default: False)
+                        Whether to optimize the dataset for potentially faster and better training (default: False)
   -e EPOCH, --epoch EPOCH
-                        Number of epochs to train for. May stop training earlier if -p > 0 (default: 50)
+                        Epoch number to stop training on. May stop training earlier if patience > 0 (default: 50)
   -p PATIENCE, --patience PATIENCE
                         Number of consecutive epochs without improvement to stop training. Will be ignored if 0 (default: 5)
   -f, --feature_factorize, --no-feature_factorize
@@ -112,9 +114,11 @@ options:
                         Checkpoint (path to a .pth file) to resume from (default: )
 ```
 
-The input file should be a `csv` file with the rows `fen`, `wdl` (absolute, with 1.0 as white win), and `eval` (relative centipawns from the side to move). The output file is also a `csv` file with the same rows, plus a few extra.
+The input file should be a `csv` file with the rows `fen`, `wdl` (absolute, with 1.0 as white win), and `eval` (relative centipawns from the side to move). The data loader will call `NNUEParams.get_features()` to populate the `side`, `widx`, and `bidx` columns. If the input file already contains these columns, this step will be skipped.
 
-When the input dataset is first loaded, its fen string is parsed to retrieve the white and black features of the board (based on the functions defined in  `NNUEParams`). The dataset may also undergo optimizations if given the `-d` flag. If you don't want to run this process again in subsequent training runs, it may be a good idea to export the processed dataset using the `-o` flag, and passing in the processed file using the `-o` flag instead of the `-i` flag.
+If the `-d` flag is provided, the input dataset will be optimizied by removing outliers and ensuring a balanced dataset.
+
+If an output path is provided, it will save this dataset with columns `fen`, `wdl`, `eval`, `side`, `widx`, and `bidx` to the path.
 
 The other command line arguments are pretty self explanatory if you know how training a neural network goes. The `-f` flag is used to enable feature factorization, which is explained in a lot more detail in [this document](https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#feature-factorization) by the Official Stockfish.
 

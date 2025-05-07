@@ -19,23 +19,20 @@ class NNUEDataSet(Dataset):
     def __init__(
         self,
         params: NNUEParams,
-        in_filepath: str = None,
+        in_filepath: str,
         out_filepath: str = None,
-        optimize: bool = True,
+        optimize: bool = False,
     ):
-        """Loads dataset from filepath and computes the optimum WDL_SCALE, storing it
+        """Loads dataset from in_filepath and computes the optimum WDL_SCALE, storing it
         in self.params.WDL_SCALE.
 
         Args:
-            in_filepath (str, optional). If provided, will load from this file and save
-                the processed data to out_filepath (if provided). Should be a csv file
-                with columns fen (position), wdl (1 white, 0.5 draw, 0 black), and eval
-                (in centipawns, relative to the side to move).
-            out_filepath (str, optional): If in_filepath is provided, the loaded data
-                will be saved to this path. If only out_filepath is provided, it will
-                directly set self.data to the contents of this csv file. The file should
-                be a csv file with columns fen, wdl, eval, side (1 white, 0 black), widx
-                (white feature index), and bidx (black feature index).
+            in_filepath (str). Path to the dataset. Should be a csv file with columns
+                fen, wdl (1 white, 0.5 draw, 0 black), eval (in centipawns, relative to
+                the side to move), and optionally the features side, widx, and bidx.
+            out_filepath (str, optional): Path to save the processed dataset to. The
+                file will be a csv file with columns fen, wdl, eval, side (1 white,
+                0 black), widx (white feature index), and bidx (black feature index).
             optimize (bool, optional): Whether to optimize the training set based on the
                 following criteria. May reduce dataset size.
                     - side should average to around 0.5
@@ -43,35 +40,26 @@ class NNUEDataSet(Dataset):
                     - ratio of eval >= 50 to eval <= 50 should be roughly equal
                     - at least 50% of evaluations should be between -100 and 100
                     - at least 40% of evaluations should be outside -100 and 100
-                Defaults to True.
+                Defaults to False.
         """
-        if in_filepath is None and out_filepath is None:
-            raise ValueError("Either in_filepath or out_filepath must be provided")
-
         self.params = params
         self.stats = {}
 
         # load data
-        self.data: pd.DataFrame = None  # cols: fen, wdl, eval, side, widx, bidx
-        if in_filepath is not None:
-            print(f"Loading dataset from {in_filepath}...")
-            self.data = pd.read_csv(in_filepath)
-            if len(diff := {"fen", "wdl", "eval"} - set(self.data.columns)):
-                print(f"{in_filepath} is missing columns: {diff}")
+        print(f"Loading dataset from {in_filepath}...")
+        self.data = pd.read_csv(in_filepath)  # cols: fen, wdl, eval, side, widx, bidx
+        if len(diff := {"fen", "wdl", "eval"} - set(self.data.columns)):
+            raise KeyError(f"{in_filepath} is missing columns: {diff}")
+        if len({"side", "widx", "bidx"} - set(self.data.columns)):
+            print("Computing features for dataset...")
             self.data[["side", "widx", "bidx"]] = (
                 self.data["fen"].apply(params.get_features).apply(pd.Series)
             )
-            self.data.dropna(inplace=True)
         else:
-            print(f"Loading processed dataset from {out_filepath}...")
-            self.data = pd.read_csv(out_filepath)
-            if len(
-                diff := {"fen", "wdl", "eval", "side", "widx", "bidx"}
-                - set(self.data.columns)
-            ):
-                print(f"{out_filepath} is missing columns: {diff}")
+            print("Found features in dataset, skipping feature computation")
             self.data["widx"] = self.data["widx"].apply(lambda x: json.loads(x))
             self.data["bidx"] = self.data["bidx"].apply(lambda x: json.loads(x))
+        self.data = self.data.dropna()
 
         # optimize dataset
         if optimize:
@@ -80,7 +68,8 @@ class NNUEDataSet(Dataset):
             new_datasize = len(self.data)
             if new_datasize < old_datasize:
                 print(
-                    f"Note: Data optimization reduced dataset size from {old_datasize} to {new_datasize}"
+                    "Note: Data optimization reduced dataset size from "
+                    f"{old_datasize} to {new_datasize}"
                 )
 
         if out_filepath is not None:

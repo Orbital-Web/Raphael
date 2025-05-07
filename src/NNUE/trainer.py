@@ -172,23 +172,25 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
-        "-i",
-        "--in_filename",
+        "in_filename",
         type=str,
-        help="Input csv with fen, wdl (absolute), and eval (relative). Will use -o as input instead if not provided",
+        help=(
+            "Path to input dataset csv with columns fen, wdl (absolute), and eval "
+            "(relative), optionally with the feature columns (leads to faster loading)"
+        ),
     )
     parser.add_argument(
         "-o",
         "--out_filename",
         type=str,
-        help="Output csv of processed data. Will use as input if -i is not provided (leads to faster data loading)",
+        help="Path to save processed dataset with the feature columns",
     )
     parser.add_argument(
         "-d",
         "--data_optimize",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Whether to optimzie the dataset for potentially faster and better training",
+        help="Whether to optimize the dataset for potentially faster and better training",
     )
     parser.add_argument(
         "-e",

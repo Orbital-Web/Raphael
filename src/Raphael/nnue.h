@@ -57,13 +57,14 @@ private:
     void load(std::string filepath);
 
 
+    // nnue_state variables
     struct NnueAccumulator {
         alignas(ALIGNMENT) int16_t v[2][N_HIDDEN0];
 
         int16_t* operator[](bool side);
         const int16_t* operator[](bool side) const;
     };
-    NnueAccumulator accumulators[MAX_DEPTH];  // accumulators[ply][black, white][index]
+    NnueAccumulator accumulators[MAX_DEPTH];  // accumulators[ply][black/white][index]
 
     /** Refreshes the accumulator as new_acc = b1 + W1[features]
      *
@@ -109,7 +110,7 @@ private:
         int quantization_level
     );
 
-    /** Computes output = clamp(input, 0, quantization)
+    /** Computes output = clamp(input, 0, 127)
      *
      * \param input input of size N
      * \param output pre-allocated output of size N
@@ -121,27 +122,26 @@ private:
 public:
     Nnue(std::string filepath);
 
-    /** Evaluates the current board from the specified side and ply
+    /** Evaluates the board specified by nnue_state[ply] from the given side's perspective
      *
-     * \param ply which ply accumulator to use for evaluation
+     * \param ply which ply board to evaluate
      * \param side side to evaluate from (true for white)
      * \returns the NNUE evaluation of the position in centipawns
      */
     int32_t evaluate(int ply, bool side);
 
-    /** TODO: Updates accumulator[ply] based on the move and accumulator[ply - 1].
-     * If ply = 0, accumulator[0] is updated in place.
+    /** Sets nnue_state[ply=0] to reflect the given board
      *
-     * \param ply which ply accumulator to update
-     * \param move the move to make
-     * \param board the board before making the move
-     */
-    void make_move(int ply, const chess::Move& move, const chess::Board& board);
-
-    /** Sets accumulator[0] to the board state
-     *
-     * \param board the board to set the accumulator to
+     * \param board the board to set
      */
     void set_board(const chess::Board& board);
+
+    /** Updates nnue_state[ply] based on the given move and nnue_state[ply-1]
+     *
+     * \param ply which ply state to update, cannot be 0
+     * \param move the move to make
+     * \param board the board to make the move on, should match nnue_state[ply-1]
+     */
+    void make_move(int ply, const chess::Move& move, const chess::Board& board);
 };
 }  // namespace Raphael

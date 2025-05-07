@@ -2,7 +2,6 @@
 #include <GameEngine/consts.h>
 
 #include <Raphael/Raphael_v1.8.hpp>
-#include <atomic>
 #include <condition_variable>
 #include <iostream>
 #include <mutex>
@@ -12,7 +11,6 @@
 #include <vector>
 
 using std::cin, std::cout, std::flush;
-using std::ref;
 using std::string, std::stoi, std::stoll;
 using std::stringstream;
 using std::thread, std::mutex, std::unique_lock, std::lock_guard, std::condition_variable;

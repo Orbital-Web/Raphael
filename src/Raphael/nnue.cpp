@@ -294,3 +294,94 @@ void Nnue::set_board(const chess::Board& board) {
     refresh_accumulator(accumulators[0], w_features, true);
     refresh_accumulator(accumulators[0], b_features, false);
 }
+
+void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board) {
+    assert((ply != 0));
+
+    auto from_sq = move.from();
+    auto to_sq = move.to();
+
+    // update black and white states
+    for (bool side : {false, true}) {
+        // get previous king bucket
+        auto color = (side) ? chess::Color::WHITE : chess::Color::BLACK;
+        auto ksq = board.kingSq(color);
+        auto ksqi = (side) ? (int)ksq : (int)ksq ^ 56;
+        auto kb = KING_BUCKETS[ksqi];
+
+        // check if our king moved
+        if (ksq == from_sq) {
+            // check if king bucket changed (new king square is to_sq)
+            int new_ksqi = (side) ? (int)to_sq : (int)to_sq ^ 56;
+            int new_kb = KING_BUCKETS[new_ksqi];
+            if (new_kb != kb) {
+                // king bucket changed, needs total refresh
+                vector<int> features;
+                features.reserve(64);
+
+                // add new king feature
+                features.push_back(12 * 64 * new_kb + 64 * 5 + new_ksqi);
+
+                // add remaining features except for the previous king and captured piece (if any)
+                auto pieces = board.occ();
+                while (pieces) {
+                    auto sq = chess::builtin::poplsb(pieces);
+                    if (sq == from_sq || sq == to_sq) continue;
+                    int sqi = (side) ? (int)sq : (int)sq ^ 56;
+                    int piece = (side) ? (int)board.at(sq) : ((int)board.at(sq) + 6) % 12;
+                    features.push_back(12 * 64 * new_kb + 64 * piece + sqi);
+                }
+                refresh_accumulator(accumulators[ply], features, side);
+                continue;
+            }
+        }
+
+        // do incremental update
+        vector<int> add_features, rem_features;
+        add_features.reserve(2);  // 2 if castling
+        rem_features.reserve(2);  // 2 if castling/capturing/enpassant
+
+        auto move_type = move.typeOf();
+        int from_sqi = (side) ? (int)from_sq : (int)from_sq ^ 56;
+        int to_sqi = (side) ? (int)to_sq : (int)to_sq ^ 56;
+        auto from_piece = board.at(from_sq);
+        auto to_piece = board.at(to_sq);
+        int from_piecei = (side) ? (int)from_piece : ((int)from_piece + 6) % 12;
+        int to_piecei = (side) ? (int)to_piece : ((int)to_piece + 6) % 12;
+
+        // add moving piece to rem_features
+        rem_features.push_back(12 * 64 * kb + 64 * from_piecei + from_sqi);
+
+        // add moved piece to add_features (making sure to check for promotion)
+        if (move_type == move.PROMOTION) {
+            int promote_piecei = (int)move.promotionType();
+            add_features.push_back(12 * 64 * kb + 64 * promote_piecei + to_sqi);
+        } else
+            add_features.push_back(12 * 64 * kb + 64 * from_piecei + to_sqi);
+
+        // add captured piece to rem_featuress
+        if (to_piece != chess::Piece::NONE)
+            rem_features.push_back(12 * 64 * kb + 64 * to_piecei + to_sqi);
+        else if (move_type == move.ENPASSANT)
+            rem_features.push_back(12 * 64 * kb + 64 * 6 + (to_sqi - 8));
+
+        // add rook to add_features and rem_features if castling
+        if (move_type == move.CASTLING) {
+            int rook_from_sqi, rook_to_sqi;
+            if (to_sqi > from_sqi) {
+                // king side
+                rook_from_sqi = 7;
+                rook_to_sqi = 5;
+            } else {
+                // queen side
+                rook_from_sqi = 0;
+                rook_to_sqi = 3;
+            }
+            rem_features.push_back(12 * 64 * kb + 64 * 3 + rook_from_sqi);
+            add_features.push_back(12 * 64 * kb + 64 * 3 + rook_to_sqi);
+        }
+        update_accumulator(
+            accumulators[ply], accumulators[ply - 1], add_features, rem_features, side
+        );
+    }
+}

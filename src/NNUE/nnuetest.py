@@ -55,7 +55,7 @@ class NNUETester:
 
         # start C++ nnue process
         proc = subprocess.Popen(
-            ["./nnuerun"],
+            ["./nnuetest"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -63,7 +63,7 @@ class NNUETester:
             bufsize=0,
         )
         while True:
-            if "enter a fen" in proc.stdout.readline().lower():
+            if "start typing commands:" in proc.stdout.readline().lower():
                 break
 
         # evaluate with C++ nnue
@@ -137,8 +137,8 @@ class NNUETester:
         print(f"  Cpp NNUE runtime: {self.cpp_runtime:.3f}ms")
         for eval_cpp, eval_py, fen in zip(self.evalq_cpps, self.evalq_pys, self.fens):
             assert eval_cpp == eval_py, (
-                "Inconsistent output between cpp and python NNUE evaluation for fen "
-                f"{fen}: (cpp) {eval_cpp} != {eval_py} (py)"
+                "Fail: inconsistent output between cpp and python NNUE evaluation "
+                f"for fen {fen}: (cpp) {eval_cpp} != {eval_py} (py)"
             )
         print("  Passed\n")
 
@@ -154,7 +154,7 @@ class NNUETester:
         print(f"  Mean error: {abs_errors.mean():.4f}")
         print(f"  Mean percent error: {percent_errors.mean():.4f}%")
         assert percent_errors.mean() < 8, (
-            "Quantization error too large, perhaps there's overflow, "
+            "Fail: quantization error too large, perhaps there's overflow, "
             "incorrect scaling, or an incorrect factorization implementation"
         )
         print("  Passed\n")

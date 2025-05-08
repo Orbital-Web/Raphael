@@ -16,10 +16,12 @@ using std::vector;
 
 
 Nnue::Nnue(string filepath) {
-#ifdef USE_SIMD
+#ifndef NDEBUG
+    #ifdef USE_SIMD
     cout << "Raphael: SIMD AVX-" << USE_SIMD << " available for NNUE\n" << flush;
-#else
+    #else
     cout << "Raphael: SIMD unavailable for NNUE\n" << flush;
+    #endif
 #endif
     load(filepath);
 }
@@ -175,7 +177,7 @@ void Nnue::linear(
 #ifdef USE_SIMD
     constexpr int regw = ALIGNMENT / sizeof(int8_t);
     assert(in_size % regw == 0);
-    assert(out_size % 4);  // unroll by 4
+    assert(out_size % 4 == 0);  // unroll by 4
     const int n_inchunk = in_size / regw;
     const int n_outchunk = out_size / 4;
 

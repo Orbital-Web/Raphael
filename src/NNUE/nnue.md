@@ -68,13 +68,13 @@ This defines the parameters for the NNUE model, and most of it should be the sam
 `N_INPUTS`, `N_INPUTS_FACTORIZED`, and `get_features()` must be implemented correctly for the trainer to function.
 `WDL_SCALE` and `FEATURE_FACTORIZE` should be left intact. The WDL scale is not so important as this will be recalculated anyways to fit the dataset.
 
-The remaining parameters can be freely modified/added/removed to fit the network architecture, though it should be inline with the cpp implementation. Some parameters may have certain constraints, such as being a multiple of 32, depending on the SIMD implementation of the model.
+The remaining parameters can be freely modified/added/removed to fit the network architecture, though it should be inline with the C++ implementation. Some parameters may have certain constraints, such as being a multiple of 32, depending on the SIMD implementation of the model.
 
 ### net.py: NNUE
 
-This defines the NNUE model. `forward()`, `parameters()`, `get_quantized_parameters()`, and `export()` must properly be implemented for the trainer to function. Again, these functions should be inline with the cpp implementation.
+This defines the NNUE model. `forward()`, `parameters()`, `get_quantized_parameters()`, and `export()` must properly be implemented for the trainer to function. Again, these functions should be inline with the C++ implementation.
 
-Things such as the `export_options`, parameter values (some values may have implicit constraints), and weight initialization can be modified relatively safely to adjust the model while keeping its overall architecture. Note that these changes will have to be reflected in the cpp NNUE too.
+Things such as the `export_options`, parameter values (some values may have implicit constraints), and weight initialization can be modified relatively safely to adjust the model while keeping its overall architecture. Note that these changes will have to be reflected in the C++ NNUE too.
 
 Parameters such as the qlevel denote the log2 quantization levels at the respective layers. A larger qlevel will allow the model to represent weights with higher precision but will decrease the range of values the weights can take.
 
@@ -128,12 +128,12 @@ If an output path is provided, it will save this dataset with columns `fen`, `wd
 The other command line arguments are pretty self explanatory if you know how training a neural network goes. The `-f` flag is used to enable feature factorization, which is explained in a lot more detail in [this document](https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#feature-factorization) by the Official Stockfish.
 
 <!-- FIXME: -->
-## NNUERun
+## NNUETest
 
-NNUERun is a debug program written in C++ for loading and running the NNUE. The following is the usage guide for `nnuerun`:
+There are two versions of NNUETest, written in Python and C++. The following are the usage guide for the C++ and Python NNUETest, respectively:
 
 ```text
-Usage: nnuerun [OPTIONS]
+Usage: nnuetest [OPTIONS]
 
   Outputs nnue evaluation for each input fen
 
@@ -141,14 +141,6 @@ Options:
   PATH  NNUE file. Defaults to best.nnue from last train output
   -h    Show this message and exit
 ```
-
-Once loaded, you can enter a FEN and it will print the evaluation for that position. To quit, enter 'q'.
-
-## NNUETest
-
-NNUETest is like NNUERun, but runs on the Python side and loads from a pth file instead of an nnue file.
-It is mainly used as a debugging tool to validate consistency between the C++ and Python NNUE, measure quantization and evaluation errors, and test other behaviors. The script is tuned specifically for Raphael, and a lot of the variables are hardcoded as it is not intended to be used outside of debugging the NNUE during development.
-Nonetheless, the following is the usage guide:
 
 ```text
 usage: nnuetest.py [-h] [-f | --feature_factorize | --no-feature_factorize] [-s DATASIZE] [path]
@@ -165,8 +157,11 @@ options:
                         (default: 1000)
 ```
 
-Like NNUERun, once loaded, you can enter a FEN to get the raw and quantized evaluation, along with a quantization error.
-There are also additional commands for running various tests, which gets printed once the program starts.
+Both programs are used as debugging tools to validate consistency between the C++ and Python NNUE, measure quantization, evaluate errors, and test other behaviors. The two scripts tests different things, some of which are only possible on one or the other.
+
+Note that the script is made specifically for Raphael, and a lot of the variables are hardcoded as it is not intended to be used outside of debugging purposes during development.
+
+Both programs will print out a list of possible commands upon startup and will both accept a FEN and print out the resulting evaluation.
 
 ## Versions
 

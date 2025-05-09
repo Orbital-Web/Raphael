@@ -6,7 +6,7 @@
 
 using namespace Raphael;
 using std::copy;
-using std::cout, std::flush;
+using std::cout, std::endl;
 using std::ifstream, std::ios;
 using std::invalid_argument, std::runtime_error;
 using std::max, std::min;
@@ -18,9 +18,9 @@ using std::vector;
 Nnue::Nnue(string filepath) {
 #ifndef NDEBUG
     #ifdef USE_SIMD
-    cout << "Raphael: SIMD AVX-" << USE_SIMD << " available for NNUE\n" << flush;
+    cout << "Raphael: SIMD AVX-" << USE_SIMD << " available for NNUE" << endl;
     #else
-    cout << "Raphael: SIMD unavailable for NNUE\n" << flush;
+    cout << "Raphael: SIMD unavailable for NNUE" << endl;
     #endif
 #endif
     load(filepath);
@@ -302,20 +302,22 @@ void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board
 
     auto from_sq = move.from();
     auto to_sq = move.to();
+    auto move_type = move.typeOf();
 
     // update black and white states
     for (bool side : {false, true}) {
         // get previous king bucket
-        auto color = (side) ? chess::Color::WHITE : chess::Color::BLACK;
-        auto ksq = board.kingSq(color);
+        auto ksq = board.kingSq((side) ? chess::Color::WHITE : chess::Color::BLACK);
         auto ksqi = (side) ? (int)ksq : (int)ksq ^ 56;
         auto kb = KING_BUCKETS[ksqi];
 
         // check if our king moved
         if (ksq == from_sq) {
-            // check if king bucket changed (new king square is to_sq)
+            // check if king bucket changed (new king square is to_sq, unless we're castling)
             int new_ksqi = (side) ? (int)to_sq : (int)to_sq ^ 56;
+            if (move_type == move.CASTLING) new_ksqi = (new_ksqi == 0) ? 2 : 6;
             int new_kb = KING_BUCKETS[new_ksqi];
+
             if (new_kb != kb) {
                 // king bucket changed, needs total refresh
                 vector<int> features;
@@ -324,7 +326,13 @@ void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board
                 // add new king feature
                 features.push_back(12 * 64 * new_kb + 64 * 5 + new_ksqi);
 
-                // add remaining features except for the previous king and captured piece (if any)
+                // add castled rook feature (if castling)
+                if (move_type == move.CASTLING) {
+                    int new_rsqi = (new_ksqi == 2) ? 3 : 5;
+                    features.push_back(12 * 64 * new_kb + 64 * 3 + new_rsqi);
+                }
+
+                // add remaining features except old king, captured piece (if any/castled rook),
                 auto pieces = board.occ();
                 while (pieces) {
                     auto sq = chess::builtin::poplsb(pieces);
@@ -343,7 +351,7 @@ void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board
         add_features.reserve(2);  // 2 if castling
         rem_features.reserve(2);  // 2 if castling/capturing/enpassant
 
-        auto move_type = move.typeOf();
+        bool moving = (board.sideToMove() == chess::Color::WHITE) == side;
         int from_sqi = (side) ? (int)from_sq : (int)from_sq ^ 56;
         int to_sqi = (side) ? (int)to_sq : (int)to_sq ^ 56;
         auto from_piece = board.at(from_sq);
@@ -354,34 +362,23 @@ void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board
         // add moving piece to rem_features
         rem_features.push_back(12 * 64 * kb + 64 * from_piecei + from_sqi);
 
-        // add moved piece to add_features (making sure to check for promotion)
+        // add moved piece to add_features (handle promotion and enemy castling)
         if (move_type == move.PROMOTION) {
-            int promote_piecei = (int)move.promotionType();
+            int promote_piecei = !moving * 6 + (int)move.promotionType();
             add_features.push_back(12 * 64 * kb + 64 * promote_piecei + to_sqi);
+        } else if (move_type == move.CASTLING) {
+            int new_ksqi = (to_sqi == 63) ? 62 : 58;
+            int new_rsqi = (new_ksqi == 62) ? 61 : 59;
+            add_features.push_back(12 * 64 * kb + 64 * from_piecei + new_ksqi);
+            add_features.push_back(12 * 64 * kb + 64 * 9 + new_rsqi);
         } else
             add_features.push_back(12 * 64 * kb + 64 * from_piecei + to_sqi);
 
-        // add captured piece to rem_featuress
+        // add captured piece (castling is treated as rook capture) to rem_features
         if (to_piece != chess::Piece::NONE)
             rem_features.push_back(12 * 64 * kb + 64 * to_piecei + to_sqi);
         else if (move_type == move.ENPASSANT)
-            rem_features.push_back(12 * 64 * kb + 64 * 6 + (to_sqi - 8));
-
-        // add rook to add_features and rem_features if castling
-        if (move_type == move.CASTLING) {
-            int rook_from_sqi, rook_to_sqi;
-            if (to_sqi > from_sqi) {
-                // king side
-                rook_from_sqi = 7;
-                rook_to_sqi = 5;
-            } else {
-                // queen side
-                rook_from_sqi = 0;
-                rook_to_sqi = 3;
-            }
-            rem_features.push_back(12 * 64 * kb + 64 * 3 + rook_from_sqi);
-            add_features.push_back(12 * 64 * kb + 64 * 3 + rook_to_sqi);
-        }
+            rem_features.push_back(12 * 64 * kb + 64 * 6 * moving + (to_sqi + 8 - moving * 16));
         update_accumulator(
             accumulators[ply], accumulators[ply - 1], add_features, rem_features, side
         );

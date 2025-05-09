@@ -69,7 +69,7 @@ private:
     /** Refreshes the accumulator as new_acc = b1 + W1[features]
      *
      * \param new_acc accumulator to refresh
-     * \param features indicies of active features (King * 640, piece * 64, square)
+     * \param features indicies of active features
      * \param side which side accumulator to refresh (true for white)
      */
     void refresh_accumulator(NnueAccumulator& new_acc, const std::vector<int>& features, bool side);

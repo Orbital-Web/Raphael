@@ -95,6 +95,9 @@ public:
         int beta = INT_MAX;
         history.clear();
 
+        // set up nnue board
+        net.set_board(board);
+
         // if ponderhit, start with ponder result and depth
         if (board.hash() != ponderkey) {
             itermove = chess::Move::NO_MOVE;
@@ -231,6 +234,9 @@ public:
         board.makeMove(ttentry.move);
         ponderkey = board.hash();
         history.clear();
+
+        // set up nnue board
+        net.set_board(board);
 
         int alpha = -INT_MAX;
         int beta = INT_MAX;
@@ -402,7 +408,7 @@ protected:
         }
 
         // terminal depth
-        if (depth <= 0) return quiescence(board, alpha, beta, halt);
+        if (depth <= 0 || ply == MAX_DEPTH - 1) return quiescence(board, alpha, beta, ply, halt);
 
         // one reply extension
         int extension = 0;
@@ -418,6 +424,7 @@ protected:
 
         for (const auto& move : movelist) {
             bool istactical = board.isCapture(move) || move.typeOf() == chess::Move::PROMOTION;
+            net.make_move(ply + 1, move, board);
             board.makeMove(move);
             // check and passed pawn extension
             if (ext > extension) {
@@ -476,15 +483,18 @@ protected:
     }
 
     // Quiescence search for all captures
-    int quiescence(chess::Board& board, int alpha, int beta, volatile bool& halt) {
+    int quiescence(chess::Board& board, int alpha, int beta, const int ply, volatile bool& halt) {
         // timeout
         if (isTimeOver(halt)) return 0;
         nodes++;
 
         // prune with standing pat
-        int eval = evaluate(board);
+        int eval = net.evaluate(ply, whiteturn);
         if (eval >= beta) return beta;
         alpha = max(alpha, eval);
+
+        // terminal depth
+        if (ply == MAX_DEPTH - 1) return alpha;
 
         // search
         chess::Movelist movelist;
@@ -492,13 +502,14 @@ protected:
         order_moves(movelist, board, 0);
 
         for (const auto& move : movelist) {
+            net.make_move(ply + 1, move, board);
             board.makeMove(move);
             // SEE pruning for losing captures
             if (move.score() < params.GOOD_CAPTURE_WEIGHT && !board.inCheck()) {
                 board.unmakeMove(move);
                 continue;
             }
-            eval = -quiescence(board, -beta, -alpha, halt);
+            eval = -quiescence(board, -beta, -alpha, ply + 1, halt);
             board.unmakeMove(move);
 
             // prune

@@ -176,7 +176,6 @@ int main(int argc, char* argv[]) {
     string nnue_file = parse_args(argc, argv);
 
     // load nnue
-    cout << "Loading nnue file " << nnue_file << endl;
     Raphael::Nnue net(nnue_file);
 
     // continuously listen for input

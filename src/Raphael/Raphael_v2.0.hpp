@@ -68,12 +68,9 @@ protected:
     // Raphael methods
 public:
     // Initializes Raphael with a name
-    v2_0(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE), net("net-2.0.0.nnue") {
-        PMASK::init_pawnmask();
-    }
+    v2_0(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE), net() { PMASK::init_pawnmask(); }
     // and with engine options
-    v2_0(string name_in, EngineOptions options)
-        : GamePlayer(name_in), tt(options.tablesize), net("net-2.0.0.nnue") {
+    v2_0(string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize), net() {
         PMASK::init_pawnmask();
     }
 

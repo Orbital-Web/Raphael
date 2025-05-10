@@ -15,21 +15,25 @@ using std::vector;
 
 
 
-Nnue::Nnue(string filepath) {
-#ifndef NDEBUG
+Nnue::NnueWeights Nnue::params;
+bool Nnue::loaded = false;
+
+Nnue::Nnue() { load(default_nnue_path); }
+Nnue::Nnue(const std::string& nnue_path) { load(nnue_path.c_str()); }
+
+void Nnue::load(const char* nnue_path) {
+    if (loaded) return;
+
+#ifndef UCI
     #ifdef USE_SIMD
     cout << "Raphael: SIMD AVX-" << USE_SIMD << " available for NNUE" << endl;
     #else
     cout << "Raphael: SIMD unavailable for NNUE" << endl;
     #endif
+    cout << "Raphael: Loading " << nnue_path << endl;
 #endif
-    load(filepath);
-}
 
-void Nnue::load(string filepath) {
-    if (filepath.empty()) throw invalid_argument("filepath empty");
-
-    ifstream nnue_file(filepath, ios::binary);
+    ifstream nnue_file(nnue_path, ios::binary);
     if (!nnue_file) throw runtime_error("could not open file");
 
     auto read_or_throw = [&](void* dest, std::size_t bytes) {
@@ -48,6 +52,7 @@ void Nnue::load(string filepath) {
 
     if (!nnue_file.eof() && nnue_file.peek() != EOF)
         throw runtime_error("file size does not match nnue size");
+    loaded = true;
 }
 
 

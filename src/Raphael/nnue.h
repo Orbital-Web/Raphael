@@ -48,13 +48,15 @@ private:
         alignas(ALIGNMENT) int8_t W3[N_HIDDEN2];
         int32_t b3;
     };
-    NnueWeights params;  // network weights and biases
+    static NnueWeights params;  // network weights and biases
+    static bool loaded;
+    static constexpr char default_nnue_path[15] = "net-2.0.0.nnue";
 
-    /** Loads the network from file
+    /** Loads the network from nnue_path
      *
-     * \param filepath filepath of nnue file
+     * \param nnue_path the path to load the model from
      */
-    void load(std::string filepath);
+    static void load(const char* nnue_path);
 
 
     // nnue_state variables
@@ -120,7 +122,8 @@ private:
     void crelu(const int16_t* input, int8_t* output, int size);
 
 public:
-    Nnue(std::string filepath);
+    Nnue();
+    Nnue(const std::string& nnue_path);
 
     /** Evaluates the board specified by nnue_state[ply] from the given side's perspective
      *

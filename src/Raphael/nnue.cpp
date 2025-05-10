@@ -13,6 +13,8 @@ using std::max, std::min;
 using std::string;
 using std::vector;
 
+extern const bool UCI;
+
 
 
 Nnue::NnueWeights Nnue::params;
@@ -24,14 +26,14 @@ Nnue::Nnue(const std::string& nnue_path) { load(nnue_path.c_str()); }
 void Nnue::load(const char* nnue_path) {
     if (loaded) return;
 
-#ifndef UCI
-    #ifdef USE_SIMD
-    cout << "Raphael: SIMD AVX-" << USE_SIMD << " available for NNUE" << endl;
-    #else
-    cout << "Raphael: SIMD unavailable for NNUE" << endl;
-    #endif
-    cout << "Raphael: Loading " << nnue_path << endl;
+    if (!UCI) {
+#ifdef USE_SIMD
+        cout << "Raphael: SIMD AVX-" << USE_SIMD << " available for NNUE" << endl;
+#else
+        cout << "Raphael: SIMD unavailable for NNUE" << endl;
 #endif
+        cout << "Raphael: Loading " << nnue_path << endl;
+    }
 
     ifstream nnue_file(nnue_path, ios::binary);
     if (!nnue_file) throw runtime_error("could not open file");

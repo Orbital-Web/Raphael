@@ -12,6 +12,9 @@ using std::string;
 using std::vector;
 using std::filesystem::directory_iterator, std::filesystem::exists;
 
+extern const bool UCI = false;
+
+
 
 /** Prints help message. */
 void print_help() {

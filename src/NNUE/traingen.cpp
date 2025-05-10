@@ -14,6 +14,8 @@ using std::numeric_limits;
 using std::ostream, std::ifstream, std::ofstream, std::ios, std::streamsize, std::getline;
 using std::string, std::stoi, std::stoll, std::to_string;
 
+extern const bool UCI = false;
+
 
 
 namespace Raphael {

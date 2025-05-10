@@ -19,6 +19,8 @@ using std::string;
 
 namespace ch = std::chrono;
 
+extern const bool UCI;
+
 
 
 namespace Raphael {
@@ -80,39 +82,35 @@ public:
 
             // checkmate, no need to continue
             if (tt.isMate(eval)) {
-#ifndef UCI
-    #ifndef MUTEEVAL
-                // get absolute evaluation (i.e, set to white's perspective)
-                {
+#ifndef MUTEEVAL
+                if (!UCI) {
+                    // get absolute evaluation (i.e, set to white's perspective)
                     lock_guard<mutex> lock(cout_mutex);
                     if (whiteturn == (eval > 0))
                         cout << "Eval: #\n" << flush;
                     else
                         cout << "Eval: -#\n" << flush;
                 }
-    #endif
 #endif
                 halt = true;
                 return toPlay;
             }
             depth++;
         }
-#ifdef UCI
-        {
+
+        if (UCI) {
             lock_guard<mutex> lock(cout_mutex);
             cout << "bestmove " << chess::uci::moveToUci(itermove) << "\n" << flush;
         }
-#else
-    #ifndef MUTEEVAL
-        // get absolute evaluation (i.e, set to white's perspective)
-        if (!whiteturn) eval *= -1;
-        {
+#ifndef MUTEEVAL
+        else {
+            // get absolute evaluation (i.e, set to white's perspective)
+            if (!whiteturn) eval *= -1;
             lock_guard<mutex> lock(cout_mutex);
             cout << "Eval: " << fixed << setprecision(2) << eval / 100.0f
                  << "\tDepth: " << depth - 1 << "\n"
                  << flush;
         }
-    #endif
 #endif
         return toPlay;
     }

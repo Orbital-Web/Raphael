@@ -1,4 +1,3 @@
-#define UCI
 #include <GameEngine/consts.h>
 
 #include <Raphael/Raphael_v1.8.hpp>
@@ -15,6 +14,8 @@ using std::string, std::stoi, std::stoll;
 using std::stringstream;
 using std::thread, std::mutex, std::unique_lock, std::lock_guard, std::condition_variable;
 using std::vector;
+
+extern const bool UCI = true;
 
 
 

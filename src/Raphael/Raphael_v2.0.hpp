@@ -24,6 +24,8 @@ using std::string;
 
 namespace ch = std::chrono;
 
+extern const bool UCI;
+
 
 
 namespace Raphael {
@@ -152,63 +154,54 @@ public:
 
             // checkmate, no need to continue
             if (tt.isMate(eval)) {
-#ifdef UCI
-                auto now = ch::high_resolution_clock::now();
-                auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
-                auto nps = (dtime) ? nodes * 1000 / dtime : 0;
-                char sign = (eval >= 0) ? '\0' : '-';
-                {
+                if (UCI) {
+                    auto now = ch::high_resolution_clock::now();
+                    auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
+                    auto nps = (dtime) ? nodes * 1000 / dtime : 0;
+                    char sign = (eval >= 0) ? '\0' : '-';
                     lock_guard<mutex> lock(cout_mutex);
                     cout << "info depth " << depth - 1 << " time " << dtime << " nodes " << nodes
                          << " score mate " << sign << MATE_EVAL - abs(eval) << " nps " << nps
                          << " pv " << get_pv_line(board, depth - 1) << "\n";
                     cout << "bestmove " << chess::uci::moveToUci(itermove) << "\n" << flush;
                 }
-#else
-    #ifndef MUTEEVAL
-                // get absolute evaluation (i.e, set to white's perspective)
-                {
-                    lock_guard<mutex> lock(cout_mutex);
+#ifndef MUTEEVAL
+                else {
+                    // get absolute evaluation (i.e, set to white's perspective)
                     char sign = (whiteturn == (eval > 0)) ? '\0' : '-';
+                    lock_guard<mutex> lock(cout_mutex);
                     cout << "Eval: " << sign << "#" << MATE_EVAL - abs(eval) << "\tNodes: " << nodes
                          << "\n"
                          << flush;
                 }
-    #endif
 #endif
                 halt = true;
                 return itermove;
-            } else {
-#ifdef UCI
+            } else if (UCI) {
                 auto now = ch::high_resolution_clock::now();
                 auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
                 auto nps = (dtime) ? nodes * 1000 / dtime : 0;
-                {
-                    lock_guard<mutex> lock(cout_mutex);
-                    cout << "info depth " << depth - 1 << " time " << dtime << " nodes " << nodes
-                         << " score cp " << eval << " nps " << nps << " pv "
-                         << get_pv_line(board, depth - 1) << "\n"
-                         << flush;
-                }
-#endif
+                lock_guard<mutex> lock(cout_mutex);
+                cout << "info depth " << depth - 1 << " time " << dtime << " nodes " << nodes
+                     << " score cp " << eval << " nps " << nps << " pv "
+                     << get_pv_line(board, depth - 1) << "\n"
+                     << flush;
             }
         }
-#ifdef UCI
-        {
+
+        if (UCI) {
             lock_guard<mutex> lock(cout_mutex);
             cout << "bestmove " << chess::uci::moveToUci(itermove) << "\n" << flush;
         }
-#else
-    #ifndef MUTEEVAL
-        // get absolute evaluation (i.e, set to white's perspective)
-        if (!whiteturn) eval *= -1;
-        {
+#ifndef MUTEEVAL
+        else {
+            // get absolute evaluation (i.e, set to white's perspective)
+            if (!whiteturn) eval *= -1;
             lock_guard<mutex> lock(cout_mutex);
             cout << "Eval: " << fixed << setprecision(2) << eval / 100.0f
                  << "\tDepth: " << depth - 1 << "\tNodes: " << nodes << "\n"
                  << flush;
         }
-    #endif
 #endif
         return itermove;
     }
@@ -556,196 +549,6 @@ protected:
             score += abs(params.PVAL[(int)move.promotionType()][1]);
 
         move.setScore(score);
-    }
-
-    // Evaluates the current position (from the current player's perspective)
-    int evaluate(const chess::Board& board) const {
-        int eval_mid = 0, eval_end = 0;
-        int phase = 0;
-        auto pieces = board.occ();
-
-        // draw evaluation
-        int wbish_on_w = 0, wbish_on_b = 0;  // number of white bishop on light and dark tiles
-        int bbish_on_w = 0, bbish_on_b = 0;  // number of black bishop on light and dark tiles
-        int wbish = 0, bbish = 0;
-        int wknight = 0, bknight = 0;
-        bool minor_only = true;
-
-        // mobility
-        int wkr = 0, bkr = 0;          // king rank
-        int wkf = 0, bkf = 0;          // king file
-        int bishmob = 0, rookmob = 0;  // number of squares bishop and rooks see (white - black)
-        // xray bitboards
-        auto wbishx = pieces & ~board.pieces(chess::PieceType::QUEEN, chess::Color::WHITE);
-        auto bbishx = pieces & ~board.pieces(chess::PieceType::QUEEN, chess::Color::BLACK);
-        auto wrookx = wbishx & ~board.pieces(chess::PieceType::ROOK, chess::Color::WHITE);
-        auto brookx = bbishx & ~board.pieces(chess::PieceType::ROOK, chess::Color::BLACK);
-        auto wpawns = board.pieces(chess::PieceType::PAWN, chess::Color::WHITE);
-        auto bpawns = board.pieces(chess::PieceType::PAWN, chess::Color::BLACK);
-
-        // loop through all pieces
-        while (pieces) {
-            auto sq = chess::builtin::poplsb(pieces);
-            int sqi = (int)sq;
-            int piece = (int)board.at(sq);
-
-            // add material value
-            eval_mid += params.PVAL[piece][0];
-            eval_end += params.PVAL[piece][1];
-            // add positional value
-            eval_mid += params.PST[piece][sqi][0];
-            eval_end += params.PST[piece][sqi][1];
-
-            switch (piece) {
-                // pawn structure
-                case 0:
-                    minor_only = false;
-                    // passed (+ for white)
-                    if ((PMASK::WPASSED[sqi] & bpawns) == 0) {
-                        eval_mid += params.PAWN_PASSED_WEIGHT[7 - (sqi / 8)][0];
-                        eval_end += params.PAWN_PASSED_WEIGHT[7 - (sqi / 8)][1];
-                    }
-                    // isolated (- for white)
-                    if ((PMASK::ISOLATED[sqi] & wpawns) == 0) {
-                        eval_mid -= params.PAWN_ISOLATION_WEIGHT[0];
-                        eval_end -= params.PAWN_ISOLATION_WEIGHT[1];
-                    }
-                    break;
-                case 6:
-                    minor_only = false;
-                    // passed (- for white)
-                    if ((PMASK::BPASSED[sqi] & wpawns) == 0) {
-                        eval_mid -= params.PAWN_PASSED_WEIGHT[sqi / 8][0];
-                        eval_end -= params.PAWN_PASSED_WEIGHT[sqi / 8][1];
-                    }
-                    // isolated (+ for white)
-                    if ((PMASK::ISOLATED[sqi] & bpawns) == 0) {
-                        eval_mid += params.PAWN_ISOLATION_WEIGHT[0];
-                        eval_end += params.PAWN_ISOLATION_WEIGHT[1];
-                    }
-                    break;
-
-                // knight count
-                case 1:
-                    phase++;
-                    wknight++;
-                    break;
-                case 7:
-                    phase++;
-                    bknight++;
-                    break;
-
-                // bishop mobility (xrays queens)
-                case 2:
-                    phase++;
-                    wbish++;
-                    wbish_on_w += lighttile(sqi);
-                    wbish_on_b += !lighttile(sqi);
-                    bishmob += chess::builtin::popcount(chess::attacks::bishop(sq, wbishx));
-                    break;
-                case 8:
-                    phase++;
-                    bbish++;
-                    bbish_on_w += lighttile(sqi);
-                    bbish_on_b += !lighttile(sqi);
-                    bishmob -= chess::builtin::popcount(chess::attacks::bishop(sq, bbishx));
-                    break;
-
-                // rook mobility (xrays rooks and queens)
-                case 3:
-                    phase += 2;
-                    minor_only = false;
-                    rookmob += chess::builtin::popcount(chess::attacks::rook(sq, wrookx));
-                    break;
-                case 9:
-                    phase += 2;
-                    minor_only = false;
-                    rookmob -= chess::builtin::popcount(chess::attacks::rook(sq, brookx));
-                    break;
-
-                // queen count
-                case 4:
-                    phase += 4;
-                    minor_only = false;
-                    break;
-                case 10:
-                    phase += 4;
-                    minor_only = false;
-                    break;
-
-                // king proximity
-                case 5:
-                    wkr = (int)chess::utils::squareRank(sq);
-                    wkf = (int)chess::utils::squareFile(sq);
-                    break;
-                case 11:
-                    bkr = (int)chess::utils::squareRank(sq);
-                    bkf = (int)chess::utils::squareFile(sq);
-                    break;
-            }
-        }
-
-        // mobility
-        eval_mid += bishmob * params.MOBILITY_BISHOP[0];
-        eval_end += bishmob * params.MOBILITY_BISHOP[1];
-        eval_mid += rookmob * params.MOBILITY_ROOK[0];
-        eval_end += rookmob * params.MOBILITY_ROOK[1];
-
-        // bishop pair
-        bool wbish_pair = wbish_on_w && wbish_on_b;
-        bool bbish_pair = bbish_on_w && bbish_on_b;
-        if (wbish_pair) {
-            eval_mid += params.BISH_PAIR_WEIGHT[0];
-            eval_end += params.BISH_PAIR_WEIGHT[1];
-        }
-        if (bbish_pair) {
-            eval_mid -= params.BISH_PAIR_WEIGHT[0];
-            eval_end -= params.BISH_PAIR_WEIGHT[1];
-        }
-
-        // convert perspective
-        if (!whiteturn) {
-            eval_mid *= -1;
-            eval_end *= -1;
-        }
-
-        // King proximity bonus (if winning)
-        int king_dist = abs(wkr - bkr) + abs(wkf - bkf);
-        if (eval_mid >= 0) eval_mid += params.KING_DIST_WEIGHT[0] * (14 - king_dist);
-        if (eval_end >= 0) eval_end += params.KING_DIST_WEIGHT[1] * (14 - king_dist);
-
-        // Bishop corner (if winning)
-        int ourbish_on_w = (whiteturn) ? wbish_on_w : bbish_on_w;
-        int ourbish_on_b = (whiteturn) ? wbish_on_b : bbish_on_b;
-        int ekr = (whiteturn) ? bkr : wkr;
-        int ekf = (whiteturn) ? bkf : wkf;
-        int wtile_dist = min(ekf + (7 - ekr), (7 - ekf) + ekr);  // to A8 and H1
-        int btile_dist = min(ekf + ekr, (7 - ekf) + (7 - ekr));  // to A1 and H8
-        if (eval_mid >= 0) {
-            if (ourbish_on_w) eval_mid += params.BISH_CORNER_WEIGHT[0] * (7 - wtile_dist);
-            if (ourbish_on_b) eval_mid += params.BISH_CORNER_WEIGHT[0] * (7 - btile_dist);
-        }
-        if (eval_end >= 0) {
-            if (ourbish_on_w) eval_end += params.BISH_CORNER_WEIGHT[1] * (7 - wtile_dist);
-            if (ourbish_on_b) eval_end += params.BISH_CORNER_WEIGHT[1] * (7 - btile_dist);
-        }
-
-        // apply phase
-        int eg_weight = 256 * max(0, 24 - phase) / 24;
-        int eval = ((256 - eg_weight) * eval_mid + eg_weight * eval_end) / 256;
-
-        // draw division
-        int wminor = wbish + wknight;
-        int bminor = bbish + bknight;
-        if (minor_only && wminor <= 2 && bminor <= 2) {
-            if ((wminor == 1 && bminor == 1) ||                                      // 1 vs 1
-                ((wbish + bbish == 3) && (wminor + bminor == 3)) ||                  // 2B vs B
-                ((wknight == 2 && bminor <= 1) || (bknight == 2 && wminor <= 1)) ||  // 2N vs 0:1
-                (!wbish_pair && wminor == 2 && bminor == 1) ||  // 2 vs 1, not bishop pair
-                (!bbish_pair && bminor == 2 && wminor == 1))
-                return eval / params.DRAW_DIVIDE_SCALE;
-        }
-        return eval;
     }
 };  // Raphael
 }  // namespace Raphael

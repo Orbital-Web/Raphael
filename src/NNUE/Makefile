@@ -5,13 +5,13 @@ LDFLAGS = -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
 
 # sources
 GEN_SOURCES = ../GameEngine/consts.cpp ../GameEngine/GamePlayer.cpp ${wildcard ../Raphael/*.cpp} traingen.cpp
-RUN_SOURCES = ../Raphael/consts.cpp ../Raphael/nnue.cpp ../Raphael/simd.cpp nnuetest.cpp
+TEST_SOURCES = ../Raphael/consts.cpp ../Raphael/nnue.cpp ../Raphael/simd.cpp nnuetest.cpp
 
 
 
 # obj files
 GEN_OBJS = ${GEN_SOURCES:.cpp=.o}
-RUN_OBJS = ${RUN_SOURCES:.cpp=.o}
+TEST_OBJS = ${TEST_SOURCES:.cpp=.o}
 
 # Default rule
 all: packages traingen nnuetest
@@ -20,7 +20,7 @@ all: packages traingen nnuetest
 traingen: ${GEN_OBJS}
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-nnuetest: ${RUN_OBJS}
+nnuetest: ${TEST_OBJS}
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 # Generic rules for compiling a source file to an object file
@@ -38,7 +38,7 @@ packages:
 
 # Clean rule
 clean:
-	rm -f ${GEN_OBJS} ${RUN_OBJS}
+	rm -f ${GEN_OBJS} ${TEST_OBJS}
 
 clean_all:
-	rm -f ${GEN_OBJS} ${RUN_OBJS} traingen nnuetest
+	rm -f ${GEN_OBJS} ${TEST_OBJS} traingen nnuetest

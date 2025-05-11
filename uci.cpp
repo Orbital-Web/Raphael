@@ -1,6 +1,6 @@
 #include <GameEngine/consts.h>
+#include <Raphael/Raphaelv1.8.h>
 
-#include <Raphael/Raphael_v1.8.hpp>
 #include <condition_variable>
 #include <iostream>
 #include <mutex>

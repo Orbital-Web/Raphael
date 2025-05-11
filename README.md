@@ -96,7 +96,7 @@ If Ubuntu/WSL does not work for you, or you would like to compile the code stati
     cd src/GameEngine
     g++ -c -O3 -march=native -DNDEBUG consts.cpp GameEngine.cpp GamePlayer.cpp HumanPlayer.cpp utils.cpp -I"../../src" -I"../../chess-library/src" -I"../../SFML-2.6.0/include" -DSFML_STATIC
     cd ../../src/Raphael
-    g++ -c -O3 -march=native -DNDEBUG consts.cpp History.cpp Killers.cpp SEE.cpp Transposition.cpp nnue.cpp simd.cpp -Isrc -Ichess-library/src -I"../../src" -I"../../chess-library/src" -I"../../SFML-2.6.0/include" -DSFML_STATIC
+    g++ -c -O3 -march=native -DNDEBUG consts.cpp History.cpp Killers.cpp SEE.cpp Transposition.cpp nnue.cpp simd.cpp Raphaelv1.0.cpp Raphaelv1.8.cpp Raphaelv2.0.cpp -Isrc -Ichess-library/src -I"../../src" -I"../../chess-library/src" -I"../../SFML-2.6.0/include" -DSFML_STATIC
     cd ../../
     ```
 

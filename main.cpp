@@ -1,10 +1,11 @@
 #include <GameEngine/GameEngine.h>
 #include <GameEngine/HumanPlayer.h>
+#include <Raphael/Raphaelv1.0.h>
+#include <Raphael/Raphaelv1.8.h>
+#include <Raphael/Raphaelv2.0.h>
 #include <string.h>
 
-#include <Raphael/Raphael_v1.0.hpp>
-#include <Raphael/Raphael_v1.8.hpp>
-#include <Raphael/Raphael_v2.0.hpp>
+#include <climits>
 #include <fstream>
 
 using std::cout;

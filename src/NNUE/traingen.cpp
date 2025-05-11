@@ -1,7 +1,8 @@
+#include <Raphael/Raphaelv1.8.h>
 #include <Raphael/consts.h>
 
-#include <Raphael/Raphael_v1.8.hpp>
 #include <chess.hpp>
+#include <climits>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -9,7 +10,8 @@
 #include <limits>
 #include <string>
 
-using std::cout, std::endl, std::flush, std::fixed, std::setprecision;
+using std::cout, std::endl, std::flush;
+using std::fixed, std::setprecision;
 using std::numeric_limits;
 using std::ostream, std::ifstream, std::ofstream, std::ios, std::streamsize, std::getline;
 using std::string, std::stoi, std::stoll, std::to_string;

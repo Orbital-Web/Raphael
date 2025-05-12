@@ -2,13 +2,10 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 #include "../base.h"
 #include "../external/chess.hpp"
 
-
-using std::string;
 
 
 namespace Raphael {

@@ -9,9 +9,10 @@
 #include <string>
 
 using namespace cge;
-using std::async, std::future_status, std::mutex, std::lock_guard;
+using std::async, std::future_status;
 using std::cout, std::fixed, std::setprecision;
 using std::min;
+using std::mutex, std::lock_guard;
 using std::ofstream, std::stringstream, std::ios_base;
 using std::ref;
 using std::string;

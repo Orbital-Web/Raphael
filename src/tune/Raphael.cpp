@@ -3,17 +3,17 @@
 
 #include <cmath>
 #include <iomanip>
+#include <vector>
 
 #define TAPERED 1
 
 using namespace Raphael;
-using std::cout;
-using std::endl;
-using std::fixed;
-using std::max;
-using std::min;
+using std::cout, std::endl;
+using std::fixed, std::setprecision;
+using std::max, std::min;
 using std::round;
-using std::setprecision;
+using std::string;
+using std::vector;
 
 
 /* --------------------------- Utils --------------------------- */
@@ -160,7 +160,7 @@ void RaphaelParams::repr(parameters_t parameters) {
     // PST
     assert(i == PST_START);
     cout << endl;
-    std::vector<string> psts = {"PAWN", "KNIGHT", "BISHOP", "ROOK", "QUEEN", "KING"};
+    vector<string> psts = {"PAWN", "KNIGHT", "BISHOP", "ROOK", "QUEEN", "KING"};
     for (string& piece : psts) {
         cout << "PST " << piece << " MID: " << endl << "\t";
         for (int j = 0; j < 64; j++) {
@@ -220,9 +220,7 @@ parameters_t RaphaelEval::get_initial_parameters() {
 
 
 
-EvalResult RaphaelEval::get_fen_eval_result(
-    const std::string& fen, const parameters_t& parameters
-) {
+EvalResult RaphaelEval::get_fen_eval_result(const string& fen, const parameters_t& parameters) {
     chess::Board board(fen);
     return get_external_eval_result(board, parameters);
 }
@@ -234,7 +232,7 @@ EvalResult RaphaelEval::get_external_eval_result(
 ) {
     // return white - black coefficients
     EvalResult result;
-    result.coefficients = std::vector<int16_t>(RaphaelParams::PARAM_SIZE, 0);
+    result.coefficients = vector<int16_t>(RaphaelParams::PARAM_SIZE, 0);
     result.endgame_scale = 1;
 
     int add_score = 0;

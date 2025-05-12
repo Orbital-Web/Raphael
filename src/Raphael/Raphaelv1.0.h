@@ -40,6 +40,7 @@ protected:
         };  // value of each piece
         int PST[12][64][2];  // piece square table for piece, square, and phase
 
+        /** Initializes the PST value for piece, square, and phase (mid/end game) */
         void init_pst();
     };
 
@@ -51,18 +52,37 @@ protected:
 
 
 public:
-    // Initializes Raphael with a name
+    /** Initializes Raphael
+     *
+     * \param name_in player name
+     */
     v1_0(std::string name_in);
-    // and with options
+
+    /** Initializes Raphael
+     *
+     * \param name_in player name
+     * \param options engine options, such as transposition table size
+     */
     v1_0(std::string name_in, EngineOptions options);
 
 
-    // Set options
+    /** Sets Raphael's engine options
+     *
+     * \param options options to set to
+     */
     void set_options(EngineOptions options);
 
 
-    // Uses iterative deepening on Negamax to find best move
-    // Should return immediately if halt becomes true
+    /** Returns the best move found by Raphael. Returns immediately if halt becomes true. Will print
+     * out bestmove and search statistics if UCI is true.
+     *
+     * \param board current board
+     * \param t_remain time remaining in ms
+     * \param t_inc increment after move in ms
+     * \param event there for the human player implementation, ignored
+     * \param halt bool reference which will turn false to indicate search should stop
+     * \returns the best move it found
+     */
     chess::Move get_move(
         chess::Board board,
         const int t_remain,
@@ -72,35 +92,78 @@ public:
     );
 
 
-    // Resets the player
+    /** Resets Raphael */
     void reset();
 
 protected:
-    // Estimates the time (ms) it should spend on searching a move
+    /** Estimates the time in ms Raphael should spent on searching a move
+     *
+     * \param board current board
+     * \param t_remain remaining time in ms
+     * \param t_inc increment after move in ms
+     * \returns the time in ms Raphael should spend on searching
+     */
     int search_time(const chess::Board& board, const int t_remain, const int t_inc);
 
-    // Sets halt to true if duration (ms) passes
-    // Must be called asynchronously
+    /** Checks and sets halt to true if duration ms has passed. Must be called asynchronously to
+     * prevent blocking.
+     *
+     * \param bool reference which will turn false to indicate search should stop
+     * \param duration search duration in ms
+     */
     static void manage_time(volatile bool& halt, const int duration);
 
 
-    // The Negamax search algorithm to search for the best move
+    /** Recursively searches for the best move and eval of the current position assuming optimal
+     * play by both us and the opponent
+     *
+     * \param board current board
+     * \param depth depth to search for
+     * \param ply current ply (half-move) from the root
+     * \param alpha lower bound eval of current position
+     * \param beta upper bound eval of current position
+     * \param halt bool reference which will turn false to indicate search should stop
+     * \returns eval of current board
+     */
     int negamax(chess::Board& board, int depth, int ply, int alpha, int beta, volatile bool& halt);
 
-    // Quiescence search for all captures
+    /** Evaluates the board after all noisy moves are played out
+     *
+     * \param board current board
+     * \param alpha lower bound eval of current position
+     * \param beta upper bound eval of current position
+     * \param halt bool reference which will turn false to indicate search should stop
+     * \returns eval of current board
+     */
     int quiescence(chess::Board& board, int alpha, int beta, volatile bool& halt) const;
 
 
-    // Modifies movelist to contain a list of moves, ordered from best to worst
+    /** Populates the movelist with moves, ordered from best to worst
+     *
+     * \param movelist movelist to populate
+     * \param board current board
+     */
     void order_moves(chess::Movelist& movelist, const chess::Board& board) const;
 
-    // order_moves but for only capture moves
+    /** Populates the movelist with capture moves, ordered from best to worst
+     *
+     * \param movelist movelist to populate
+     * \param board current board
+     */
     void order_cap_moves(chess::Movelist& movelist, const chess::Board& board) const;
 
-    // Assigns a score to the given move
+    /** Assigns a score to a move
+     *
+     * \param move move to score
+     * \param board current board
+     */
     void score_move(chess::Move& move, const chess::Board& board) const;
 
-    // Evaluates the current position (from the current player's perspective)
+    /** Statically evaluates the board from the current player's perspective
+     *
+     * \param board board to evaluate
+     * \returns the static evaluation of the board
+     */
     int evaluate(const chess::Board& board) const;
 };
 }  // namespace Raphael

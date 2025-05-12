@@ -65,7 +65,7 @@ chess::Move v2_0::get_move(
     }
 
     // stop search after an appropriate duration
-    startSearchTimer(board, t_remain, t_inc);
+    start_search_timer(board, t_remain, t_inc);
 
     // begin iterative deepening
     while (!halt && depth <= MAX_DEPTH) {
@@ -251,7 +251,7 @@ void v2_0::reset() {
 }
 
 
-void v2_0::startSearchTimer(const chess::Board& board, const int t_remain, const int t_inc) {
+void v2_0::start_search_timer(const chess::Board& board, const int t_remain, const int t_inc) {
     // if movetime is specified, use that instead
     if (searchopt.movetime != -1) {
         search_t = searchopt.movetime;
@@ -277,7 +277,7 @@ void v2_0::startSearchTimer(const chess::Board& board, const int t_remain, const
     start_t = ch::high_resolution_clock::now();
 }
 
-bool v2_0::isTimeOver(volatile bool& halt) const {
+bool v2_0::is_time_over(volatile bool& halt) const {
     // if max nodes is specified, check that instead
     if (searchopt.maxnodes != -1 && nodes >= searchopt.maxnodes) {
         halt = true;
@@ -303,7 +303,7 @@ int v2_0::negamax(
     volatile bool& halt
 ) {
     // timeout
-    if (isTimeOver(halt)) return 0;
+    if (is_time_over(halt)) return 0;
     nodes++;
 
     if (ply) {
@@ -347,7 +347,7 @@ int v2_0::negamax(
     }
 
     // terminal depth
-    if (depth <= 0 || ply == MAX_DEPTH - 1) return quiescence(board, alpha, beta, ply, halt);
+    if (depth <= 0 || ply == MAX_DEPTH - 1) return quiescence(board, ply, alpha, beta, halt);
 
     // one reply extension
     int extension = 0;
@@ -421,13 +421,13 @@ int v2_0::negamax(
     return alpha;
 }
 
-int v2_0::quiescence(chess::Board& board, int alpha, int beta, const int ply, volatile bool& halt) {
+int v2_0::quiescence(chess::Board& board, const int ply, int alpha, int beta, volatile bool& halt) {
     // timeout
-    if (isTimeOver(halt)) return 0;
+    if (is_time_over(halt)) return 0;
     nodes++;
 
     // prune with standing pat
-    int eval = net.evaluate(ply, whiteturn);
+    int eval = net.evaluate(ply, whiteturn) * (100 - board.halfMoveClock()) / 100;
     if (eval >= beta) return beta;
     alpha = max(alpha, eval);
 
@@ -447,7 +447,7 @@ int v2_0::quiescence(chess::Board& board, int alpha, int beta, const int ply, vo
             board.unmakeMove(move);
             continue;
         }
-        eval = -quiescence(board, -beta, -alpha, ply + 1, halt);
+        eval = -quiescence(board, ply + 1, -beta, -alpha, halt);
         board.unmakeMove(move);
 
         // prune

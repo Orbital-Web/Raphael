@@ -35,7 +35,7 @@ public:
         history.clear();
         itermove = chess::Move::NO_MOVE;
         nodes = 0;
-        startSearchTimer(board, 0, 0);
+        start_search_timer(board, 0, 0);
 
         // begin iterative deepening
         while (!halt && depth <= MAX_DEPTH) {
@@ -75,7 +75,7 @@ public:
         bool halt = false;
         history.clear();
         nodes = 0;
-        startSearchTimer(board, 0, 0);
+        start_search_timer(board, 0, 0);
 
         return quiescence(board, -INT_MAX, INT_MAX, halt);
     }

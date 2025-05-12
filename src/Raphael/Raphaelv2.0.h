@@ -85,21 +85,43 @@ protected:
 
 
 public:
-    // Initializes Raphael with a name
+    /** Initializes Raphael
+     *
+     * \param name_in player name
+     */
     v2_0(std::string name_in);
-    // and with engine options
+
+    /** Initializes Raphael
+     *
+     * \param name_in player name
+     * \param options engine options, such as transposition table size
+     */
     v2_0(std::string name_in, EngineOptions options);
 
 
-    // Set engine options
+    /** Sets Raphael's engine options
+     *
+     * \param options options to set to
+     */
     void set_options(EngineOptions options);
 
-    // Set search options
+    /** Sets Raphael's search options
+     *
+     * \param options options to set to
+     */
     void set_searchoptions(SearchOptions options);
 
 
-    // Uses iterative deepening on Negamax to find best move
-    // Should return immediately if halt becomes true
+    /** Returns the best move found by Raphael. Returns immediately if halt becomes true. Will print
+     * out bestmove and search statistics if UCI is true.
+     *
+     * \param board current board
+     * \param t_remain time remaining in ms
+     * \param t_inc increment after move in ms
+     * \param event there for the human player implementation, ignored
+     * \param halt bool reference which will turn false to indicate search should stop
+     * \returns the best move it found
+     */
     chess::Move get_move(
         chess::Board board,
         const int t_remain,
@@ -108,28 +130,56 @@ public:
         volatile bool& halt
     );
 
-    // Think during opponent's turn. Should return immediately if halt becomes true
+    /** Ponders for best move during opponent's turn. Returns immediately if halt becomes true.
+     *
+     * \param board current board (for opponent)
+     * \param halt bool reference which will turn false to indicate search should stop
+     */
     void ponder(chess::Board board, volatile bool& halt);
 
 
-    // Returns the PV from
+    /** Returns the PV line stored in the transposition table
+     *
+     * \param board board to get PV from
+     * \param depth depth of PV
+     * \returns the PV line of the board of length <= depth
+     */
     std::string get_pv_line(chess::Board board, int depth) const;
 
 
-    // Resets the player
+    /** Resets Raphael */
     void reset();
 
 protected:
-    // Estimates the time (ms) it should spend on searching a move
-    // Call this at the start before using isTimeOver
-    void startSearchTimer(const chess::Board& board, const int t_remain, const int t_inc);
+    /** Estimates the time in ms Raphael should spent on searching a move, and sets search_t. Should
+     * be called at the start before using is_time_over.
+     *
+     * \param board current board
+     * \param t_remain remaining time in ms
+     * \param t_inc increment after move in ms
+     */
+    void start_search_timer(const chess::Board& board, const int t_remain, const int t_inc);
 
-    // Checks if duration (ms) has passed and modifies halt
-    // Runs infinitely if search_t is 0
-    bool isTimeOver(volatile bool& halt) const;
+    /** Sets and returns halt = true if search_t ms has passed. Will return false indefinetely if
+     * search_t = 0.
+     *
+     * \param halt bool reference which will turn false to indicate search should stop
+     * \returns the new value of halt
+     */
+    bool is_time_over(volatile bool& halt) const;
 
 
-    // The Negamax search algorithm to search for the best move
+    /** Recursively searches for the best move and eval of the current position assuming optimal
+     * play by both us and the opponent
+     *
+     * \param board current board
+     * \param depth depth to search for
+     * \param ply current ply (half-move) from the root
+     * \param alpha lower bound eval of current position
+     * \param beta upper bound eval of current position
+     * \param halt bool reference which will turn false to indicate search should stop
+     * \returns eval of current board
+     */
     int negamax(
         chess::Board& board,
         const int depth,
@@ -140,14 +190,32 @@ protected:
         volatile bool& halt
     );
 
-    // Quiescence search for all captures
-    int quiescence(chess::Board& board, int alpha, int beta, const int ply, volatile bool& halt);
+    /** Evaluates the board after all noisy moves are played out
+     *
+     * \param board current board
+     * \param ply current ply (half-moves) from the root
+     * \param alpha lower bound eval of current position
+     * \param beta upper bound eval of current position
+     * \param halt bool reference which will turn false to indicate search should stop
+     * \returns eval of current board
+     */
+    int quiescence(chess::Board& board, const int ply, int alpha, int beta, volatile bool& halt);
 
 
-    // Sorts movelist from best to worst using score_move as its heuristic
+    /** Sorts the movelist from best to worst
+     *
+     * \param movelist movelist to sort
+     * \param board current board
+     * \param ply current ply (half-moves) from the root
+     */
     void order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const;
 
-    // Assigns a score to the given move
+    /** Assigns a score to a move
+     *
+     * \param move move to score
+     * \param board current board
+     * \param ply current ply (half-moves) from the root
+     */
     void score_move(chess::Move& move, const chess::Board& board, const int ply) const;
 };
 };  // namespace Raphael

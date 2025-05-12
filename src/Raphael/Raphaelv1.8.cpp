@@ -215,7 +215,7 @@ chess::Move v1_8::get_move(
     }
 
     // stop search after an appropriate duration
-    startSearchTimer(board, t_remain, t_inc);
+    start_search_timer(board, t_remain, t_inc);
 
     // begin iterative deepening
     while (!halt && depth <= MAX_DEPTH) {
@@ -398,7 +398,7 @@ void v1_8::reset() {
 }
 
 
-void v1_8::startSearchTimer(const chess::Board& board, const int t_remain, const int t_inc) {
+void v1_8::start_search_timer(const chess::Board& board, const int t_remain, const int t_inc) {
     // if movetime is specified, use that instead
     if (searchopt.movetime != -1) {
         search_t = searchopt.movetime;
@@ -424,7 +424,7 @@ void v1_8::startSearchTimer(const chess::Board& board, const int t_remain, const
     start_t = ch::high_resolution_clock::now();
 }
 
-bool v1_8::isTimeOver(volatile bool& halt) const {
+bool v1_8::is_time_over(volatile bool& halt) const {
     // if max nodes is specified, check that instead
     if (searchopt.maxnodes != -1) {
         if (nodes >= searchopt.maxnodes) halt = true;
@@ -449,7 +449,7 @@ int v1_8::negamax(
     volatile bool& halt
 ) {
     // timeout
-    if (isTimeOver(halt)) return 0;
+    if (is_time_over(halt)) return 0;
     nodes++;
 
     if (ply) {
@@ -568,7 +568,7 @@ int v1_8::negamax(
 
 int v1_8::quiescence(chess::Board& board, int alpha, int beta, volatile bool& halt) {
     // timeout
-    if (isTimeOver(halt)) return 0;
+    if (is_time_over(halt)) return 0;
     nodes++;
 
     // prune with standing pat

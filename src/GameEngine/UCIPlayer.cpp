@@ -11,7 +11,11 @@ UCIPlayer::UCIPlayer(string name_in): GamePlayer(name_in) {
 
 
 chess::Move UCIPlayer::get_move(
-    chess::Board board, const int t_remain, const int t_inc, sf::Event& event, bool& halt
+    chess::Board board,
+    const int t_remain,
+    const int t_inc,
+    volatile sf::Event& event,
+    volatile bool& halt
 ) {
     return chess::Move::NO_MOVE;
 }

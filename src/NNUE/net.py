@@ -107,8 +107,8 @@ class NNUE(nn.Module):
         # NOTE: after quantization
         # q0 = crelu[(127W0)*x + (127b0)] ≡ 127o0
         # q1 = crelu[[(qscale1*W1)*q0 + (qscale1*127b1)] / qscale1] ≡ 127o1
-        # q2 = crelu[[(qscale2*W2)*q1 + (qscale2*127b1)] / qscale2] ≡ 127o2
-        # q3 = [(oscale*qscale3*W3/127)*q2 + (oscale*qscale3*b1)] / qscale3 ≡ oscale*o3
+        # q2 = crelu[[(qscale2*W2)*q1 + (qscale2*127b2)] / qscale2] ≡ 127o2
+        # q3 = [(oscale*qscale3*W3/127)*q2 + (oscale*qscale3*b3)] / qscale3 ≡ oscale*o3
 
         self.export_options: list[ExportOption] = [
             {
@@ -211,7 +211,7 @@ class NNUE(nn.Module):
         o1 = torch.clamp(self.l1(o0), 0.0, 1.0)
         o2 = torch.clamp(self.l2(o1), 0.0, 1.0)
         o3 = self.l3(o2) * self.params.OUTPUT_SCALE
-        return torch.sigmoid((o3 / self.params.WDL_SCALE).double())
+        return o3 / self.params.WDL_SCALE
 
     def parameters(self):
         """Returns overwritten parameters with min and max clamp range to account for

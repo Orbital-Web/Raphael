@@ -174,7 +174,7 @@ class NNUEDataSet(Dataset):
             plt.ylabel("WDL")
             plt.legend()
             plt.title("Eval vs WDL")
-            plt.savefig("wdl_fit.png")
+            plt.savefig("dataset/wdl_fit.png")
             plt.close()
 
         return wdl_scale

@@ -1,3 +1,4 @@
+# summarizes the logged games in compare.pgn
 import chess.pgn
 
 # [p2, p1]

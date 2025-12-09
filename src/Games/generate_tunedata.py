@@ -1,3 +1,4 @@
+# extracts the positions and outcomes from a pgn file for tuning the eval weights
 import random
 import time
 

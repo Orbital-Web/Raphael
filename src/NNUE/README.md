@@ -1,6 +1,6 @@
 # Raphael NNUE
 
-This document contains the documentation for the varios NNUE-related scripts, as well as the specific architecture and traindata info of the different Raphael NNUE versions.
+This document contains the documentation for the various NNUE-related scripts, as well as the specific architecture and traindata info of the different Raphael NNUE versions.
 
 ## TrainGen
 
@@ -9,10 +9,10 @@ TrainGen is a program written in C++ for generating the training data for Raphae
 ```text
 Usage: traingen [OPTIONS] INPUT_FILE DEPTH
 
-  Takes in a INPUT_FILE with rows "fen [wdl]" and generates the NNUE traindata of the using the evals at the specified DEPTH
+  Takes in a INPUT_FILE with rows "fen [wdl]" and generates the NNUE traindata using the evals at the specified DEPTH
 
 Options:
-  -o PATH  Output file. Defaults to traindata.csv
+  -o PATH  Output file. Defaults to dataset/traindata.csv
   -s LINE  Line of INPUT_FILE to read from. Defaults to 1
   -n N     Max number of nodes to search before moving on. Defaults to -1 (infinite)
   -e TE    Will drop data if abs(eval - static_eval) > TE. Defaults to 300
@@ -36,7 +36,7 @@ Note that for both the input and output file, `wdl` is absolute, with 1.0 being 
 
 The starting line (`-s`) argument should be used to resume the traindata generation. For example, if the traingen was stopped at line 2000, you would want to pass in `-s 2001` to resume from after line 2000. Before doing that though, you should make sure the last line of the output file isn't incomplete, which might happen if you use CTRL + C to force-quit the program.
 
-Before training, you will want to set `-n` to the number of nodes Raphael searches in a second (can be estimated by running the uci script) so that at most, each position takes a second to evaluate. However, you may want to adjust this depending on your desired `depth`.
+You should also set `-n` to a reasonable upper-bound so that the generator doesn't stall on complex positions trying to reach the specified `depth`. You can also set `depth` to an upper-bound, such as 128, and set `-n` to generate a dataset based on the number of nodes instead of the depth.
 
 The actual traindata generation is done in the following way:
 
@@ -51,10 +51,7 @@ for (fen, wdl) in input_dataset:
     output_dataset.append((fen, wdl, score))
 ```
 
-<!-- TODO: -->
-In the future, the traindata generation code may get updated to use the quiescene board before evaluating it to ensure the data is not noisy and reflects what will actually be passed into the NNUE model.
-
-In general, you would want `-e` to be a fairly small value and `-c` to not be set (don't include check) to ensure the dataset is not noisy. However, `-e` should not be set too small or else the NNUE may get worse at estimating the long-term evaluation of the board.
+In general, you would want `-e` to be a fairly small value and `-c` to not be set (don't include check) to ensure the dataset is not noisy. However, `-e` should not be set too small either or else the NNUE may get worse at estimating the long-term evaluation of the board.
 
 ## Trainer
 
@@ -87,7 +84,7 @@ The optimizer is used to ensure the weights are clamped during training so that 
 ### dataloader.py: NNUEDataSet
 
 This class is used to load the dataset for training. The expected input and output files will be described later below.
-The main portion you would want to change in this file is the `get_cost` function inside `optimize()`, which dictates how the dataset will be sampled to make it more suitable for training. The current implementation is roughly based on [this paper](https://arxiv.org/abs/2412.17948v1) which states the ideal characteristics of a NNUE dataset. For instance, it emphasizes the proportions of evaluation scores between and outside the range of -100 to 100.
+The main portion you would want to change in this file is the `get_cost` function inside `optimize()`, which dictates how the dataset will be sampled to make it more suitable for training. The current implementation is roughly based on [this paper](https://arxiv.org/abs/2412.17948v1) which states the ideal characteristics of an NNUE dataset. For instance, it emphasizes the proportions of evaluation scores between and outside the range of -100 to 100.
 
 This class is also used to calculate the optimum WDL_SCALE as well as the scaled evaluation scores using the provided data file.
 
@@ -125,9 +122,8 @@ If the `-d` flag is provided, the input dataset will be optimizied by removing o
 
 If an output path is provided, it will save this dataset with columns `fen`, `wdl`, `eval`, `side`, `widx`, and `bidx` to the path.
 
-The other command line arguments are pretty self explanatory if you know how training a neural network goes. The `-f` flag is used to enable feature factorization, which is explained in a lot more detail in [this document](https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#feature-factorization) by the Official Stockfish.
+The other command line arguments are pretty self explanatory if you know how training a neural network goes. Lastly, the `-f` flag is used to enable feature factorization, which is explained in a lot more detail in [this document](https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#feature-factorization) by the Official Stockfish.
 
-<!-- FIXME: -->
 ## NNUETest
 
 There are two versions of NNUETest, written in Python and C++. The following are the usage guide for the C++ and Python NNUETest, respectively:
@@ -179,11 +175,12 @@ Architecture:
 4. 32-neuron layer with int8 weights and quantization level of 6, followed by a CReLU activation
 5. output layer with int8 weights, quantization level of 5, and an output scale of 300
 
-Traindata:
+Training Procedure:
 
-- EPD file from [Blunder 8.1's Texel Tuning Dataset](https://talkchess.com/viewtopic.php?t=78536&start=20) with roughly a million positions
-- `traingen` with arguments `quiet-extended.epd 8 -n 16777216` (quiet-extended is the name of the EPD file above)
-- `trainer.py` with arguments `-i traindata.csv -o traindata_processed.csv -d`
+1. Gathered EPD files from [Blunder 8.1's Texel Tuning Dataset](https://talkchess.com/viewtopic.php?t=78536&start=20) and [Zurichess](https://www.reddit.com/r/chessprogramming/comments/1if8yx6/chess_dataset_for_tuning_evaluation/) with roughly two million unique positions in total
+2. Gathered evaluations using `traingen` with arguments `combined-positions.epd 128 -n 1048576`
+3. Used `clean_nnue_traindata.py` (inside /dataset) to remove positions with forced-mate sequences and downsample positions with large evaluations. At this point, the dataset size is roughly 1.3 million positions
+4. Trained the NNUE using `trainer.py` with arguments `-i traindata_combined.csv -o traindata_combined_ff.csv -f`
 
 <!--
 TODO:

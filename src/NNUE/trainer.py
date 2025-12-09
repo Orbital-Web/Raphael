@@ -9,6 +9,7 @@ import torch.nn as nn
 from dataloader import NNUEDataSet
 from net import NNUE, NNUEOptimizer, NNUEParams
 from torch.utils.data import DataLoader, random_split
+from tqdm import tqdm
 
 
 def train(
@@ -69,10 +70,11 @@ def train(
     ax.set_ylabel("Accuracy")
 
     for epoch in range(start_epoch, epochs):
+        print(f"\n==== Epoch {epoch + 1}/{epochs} ====")
         model.train()
         total_loss = 0.0
 
-        for i, ((wdata, bdata, side), labels) in enumerate(train_loader):
+        for (wdata, bdata, side), labels in tqdm(train_loader, desc="Training"):
             # move device
             wdata = wdata.to(device)
             bdata = bdata.to(device)
@@ -86,14 +88,12 @@ def train(
             total_loss += loss.item()
             loss.backward()
             optimizer.step()
-
         train_loss = total_loss / len(train_loader)
         train_losses.append(train_loss)
-        print(f"Epoch: {epoch + 1}. Train: {train_loss:.6f}", end="")
 
         test_loss = test(model, criterion, test_loader, device)
         test_losses.append(test_loss)
-        print(f", Test: {test_loss:.6f}")
+        print(f"Train: {train_loss:.6f} | Test: {test_loss:.6f}")
 
         # save model
         checkpoint = {
@@ -152,7 +152,7 @@ def test(model: NNUE, criterion, test_loader, device) -> float:
     total_loss = 0.0
 
     with torch.no_grad():
-        for (wdata, bdata, side), labels in test_loader:
+        for (wdata, bdata, side), labels in tqdm(test_loader, desc="Testing"):
             # move device
             wdata = wdata.to(device)
             bdata = bdata.to(device)
@@ -228,14 +228,14 @@ if __name__ == "__main__":
     model = NNUE(params)
     model.to(device)
     optimizer = NNUEOptimizer(params, model.parameters(), lr=0.001)
-    criterion = nn.MSELoss()
+    criterion = nn.BCEWithLogitsLoss()
 
     # set up data loader
     dataset = NNUEDataSet(
         params, args.in_filename, args.out_filename, args.data_optimize
     )
     train_dataset, test_dataset = random_split(
-        dataset, [0.8, 0.2], generator=torch.Generator().manual_seed(42)
+        dataset, [0.9, 0.1], generator=torch.Generator().manual_seed(42)
     )
 
     train(

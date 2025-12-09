@@ -87,7 +87,7 @@ public:
 struct GenArgs {
     // files
     string input_file;
-    string output_file = "traindata.csv";
+    string output_file = "dataset/traindata.csv";
     int start_line = 1;
 
     // eval
@@ -114,10 +114,10 @@ ostream& operator<<(ostream& os, const GenArgs& ga) {
 /** Prints help message. */
 void print_help() {
     cout << "Usage: traingen [OPTIONS] INPUT_FILE DEPTH\n\n"
-         << "  Takes in a INPUT_FILE with rows \"fen [wdl]\" and generates the NNUE traindata of "
-            "the using the evals at the specified DEPTH\n\n"
+         << "  Takes in a INPUT_FILE with rows \"fen [wdl]\" and generates the NNUE traindata "
+            "using the evals at the specified DEPTH\n\n"
          << "Options:\n"
-         << "  -o PATH  Output file. Defaults to traindata.csv\n"
+         << "  -o PATH  Output file. Defaults to dataset/traindata.csv\n"
          << "  -s LINE  Line of INPUT_FILE to read from. Defaults to 1\n"
          << "  -n N     Max number of nodes to search before moving on. Defaults to -1 (infinite)\n"
          << "  -e TE    Will drop data if abs(eval - static_eval) > TE. Defaults to 300\n"
@@ -139,7 +139,7 @@ GenArgs parse_args(int argc, char* argv[]) {
     while (++i < argc) {
         string s(argv[i]);
         if (s == "-o")
-            args.output_file = string(argv[++i]);
+            args.output_file = "dataset/" + string(argv[++i]);
         else if (s == "-s")
             args.start_line = stoi(argv[++i]);
         else if (s == "-d")
@@ -204,9 +204,6 @@ bool generate_one(
     size_t split = line.find("[");
     string fen = line.substr(0, split - 1);
     string wdl = line.substr(split + 1, line.find("]") - split - 1);
-
-    // TODO: use the quiescene position instead as that is what will actually get used in the engine
-    // make sure to add a -q flag and add documentation to nnue.md
 
     // exclude checks if requested and get eval
     chess::Board board(fen);

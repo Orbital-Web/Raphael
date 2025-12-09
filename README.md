@@ -465,3 +465,7 @@ And below are the more detailed comparisons.
 </table>
 
 *Note: a timeout usually means that the game was relatively equal*
+
+## Special Thanks to
+
+Those on the Stockfish Discord for helping me out with various aspects of the NNUE dataset collection and training. Without their help, my NNUE would have been very very crappy.

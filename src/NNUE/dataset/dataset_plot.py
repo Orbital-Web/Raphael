@@ -1,3 +1,4 @@
+# FIXME: to be changed
 import chess
 import matplotlib.pyplot as plt
 import numpy as np

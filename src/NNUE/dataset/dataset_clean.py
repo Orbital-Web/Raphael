@@ -1,4 +1,4 @@
-# evaluates the position using stockfish and cleans noisy and forced-mate positions
+# FIXME: to be changed: evaluates the position using stockfish and cleans noisy and forced-mate positions
 import multiprocessing
 from pathlib import Path
 from random import random

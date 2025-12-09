@@ -19,6 +19,7 @@ public:
 
     struct SearchOptions {
         int64_t maxnodes = -1;
+        int64_t maxnodes_soft = -1;
         int maxdepth = -1;
         int movetime = -1;
         int movestogo = 0;

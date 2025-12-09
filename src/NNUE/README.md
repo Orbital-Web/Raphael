@@ -7,20 +7,24 @@ This document contains the documentation for the various NNUE-related scripts, a
 TrainGen is a program written in C++ for generating the training data for Raphael NNUE. The following is the usage guide for `traingen`:
 
 ```text
-Usage: traingen [OPTIONS] INPUT_FILE DEPTH
+Usage: traingen [OPTIONS] INPUT_DIR OUTPUT_DIR MAX_NODES
 
-  Takes in a INPUT_FILE with rows "fen [wdl]" and generates the NNUE traindata using the evals at the specified DEPTH
+  Takes in an INPUT_DIR containing files 1.epd, 2.epd, ... with contents of the form
+  "fen [wdl]" in each row to generate the NNUE training data in OUTPUT_DIR, using
+  the evals at the specified MAX_NODES
 
 Options:
-  -o PATH  Output file. Defaults to dataset/traindata.csv
-  -s LINE  Line of INPUT_FILE to read from. Defaults to 1
-  -n N     Max number of nodes to search before moving on. Defaults to -1 (infinite)
+  -d DEPTH Max depths to search. Defaults to 128
+  -n N     Max number of soft nodes (depth at N nodes) to search. Defaults to -1 (infinite)
+  -b BS BE Start and end (inclusive) epd index to generate for. Defaults to 1, -1
+           I.e., go through the entire INPUT_DIR
   -e TE    Will drop data if abs(eval - static_eval) > TE. Defaults to 300
-  -c       Include checks in data
+  -c       Include checks in data. Defaults to false
   -h       Show this message and exit
 ```
 
-Each row of the input file needs to be in the format `"fen [wdl]"` (no header). For example,
+Each file in `INPUT_DIR` must be named `*.epd`, where `*` is an integer starting from 1 and ascending.
+Each row of the epd file needs to be in the format `"fen [wdl]"` (no header). For example,
 
 ```text
 R7/p3k1p1/1p4b1/8/4n3/q7/5PPP/6K1 w - - 0 1 [0.0]
@@ -30,20 +34,22 @@ R7/p3k1p1/1p4b1/8/4n3/q7/5PPP/6K1 w - - 0 1 [0.0]
 8/8/5B2/n6p/4K1k1/8/8/8 w - - 0 1 [0.5]
 ```
 
-The output will be a csv file with rows `fen`, `wdl`, and `eval` in relative centipawns from the side to move.
-These headers will be added the first time the output file is created, and will not be added when appending to an existing output file.
+The output will be a list of csv files, one for each epd file, with columns `fen`, `wdl`, and `eval` in relative centipawns from the side to move. These headers will be added the first time the output file is created, and will not be added when appending to an existing output file.
 Note that for both the input and output file, `wdl` is absolute, with 1.0 being a win for white and `0.0` being a win for black.
 
-The starting line (`-s`) argument should be used to resume the traindata generation. For example, if the traingen was stopped at line 2000, you would want to pass in `-s 2001` to resume from after line 2000. Before doing that though, you should make sure the last line of the output file isn't incomplete, which might happen if you use CTRL + C to force-quit the program.
+The `-b` argument is used to generate for a subset of epd files inside the `INPUT_DIR`, which can be useful for resuming generation or when generating across multiple devices.
 
-You should also set `-n` to a reasonable upper-bound so that the generator doesn't stall on complex positions trying to reach the specified `depth`. You can also set `depth` to an upper-bound, such as 128, and set `-n` to generate a dataset based on the number of nodes instead of the depth.
+Here is how the search depth is determined:
 
-The actual traindata generation is done in the following way:
+- the engine will attempt to search up to `MAX_NODES`
+- if at the end of a depth, the current depth exceeds `DEPTH` or the number of nodes explored exceeds `N`, the search will stop there
+
+There are additional logics in place to skip certain positions or data points from being added:
 
 ```python
-for (fen, wdl) in input_dataset:
+for (fen, wdl) in epd_file:
     board = Board(fen)
-    if options.include_check and board.inCheck():
+    if not options.include_check and board.inCheck():
         return
     score = engine.eval(board)
     if abs(score - engine.static_eval(board)) > options.TE:
@@ -51,7 +57,7 @@ for (fen, wdl) in input_dataset:
     output_dataset.append((fen, wdl, score))
 ```
 
-In general, you would want `-e` to be a fairly small value and `-c` to not be set (don't include check) to ensure the dataset is not noisy. However, `-e` should not be set too small either or else the NNUE may get worse at estimating the long-term evaluation of the board.
+In general, you would want `-e` to be a fairly small value and `-c` to not be set (don't include check) to ensure the dataset is not noisy.
 
 ## Trainer
 
@@ -167,7 +173,7 @@ This section documents the specific options and dataset used to train the differ
 
 This is the first version of the Raphael NNUE. Here is the breakdown of the NNUE architecture, dataset, and training results:
 
-Architecture:
+<!-- TODO: Architecture:
 
 1. 16 king-bucketed half-ka input features (12,288 features)
 2. 256-wide accumulator with int16 weights and weight scale factor of 127, followed by a CReLU activation
@@ -180,7 +186,7 @@ Training Procedure:
 1. Gathered EPD files from [Blunder 8.1's Texel Tuning Dataset](https://talkchess.com/viewtopic.php?t=78536&start=20) and [Zurichess](https://www.reddit.com/r/chessprogramming/comments/1if8yx6/chess_dataset_for_tuning_evaluation/) with roughly two million unique positions in total
 2. Gathered evaluations using `traingen` with arguments `combined-positions.epd 128 -n 1048576`
 3. Used `clean_nnue_traindata.py` (inside /dataset) to remove positions with forced-mate sequences and downsample positions with large evaluations. At this point, the dataset size is roughly 1.3 million positions
-4. Trained the NNUE using `trainer.py` with arguments `-i traindata_combined.csv -o traindata_combined_ff.csv -f`
+4. Trained the NNUE using `trainer.py` with arguments `-i traindata_combined.csv -o traindata_combined_ff.csv -f` -->
 
 <!--
 TODO:

@@ -228,7 +228,7 @@ if __name__ == "__main__":
     model = NNUE(params)
     model.to(device)
     optimizer = NNUEOptimizer(params, model.parameters(), lr=0.001)
-    criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.MSELoss()
 
     # set up data loader
     dataset = NNUEDataSet(

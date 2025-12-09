@@ -15,6 +15,7 @@ using std::fixed, std::setprecision;
 using std::numeric_limits;
 using std::ostream, std::ifstream, std::ofstream, std::ios, std::streamsize, std::getline;
 using std::string, std::stoi, std::stoll, std::to_string;
+using std::filesystem::exists, std::filesystem::is_directory, std::filesystem::create_directories;
 
 extern const bool UCI = false;
 
@@ -40,7 +41,9 @@ public:
         // begin iterative deepening
         while (!halt && depth <= MAX_DEPTH) {
             // max depth override
-            if (searchopt.maxdepth != -1 && depth > searchopt.maxdepth) break;
+            if ((searchopt.maxdepth != -1 && depth > searchopt.maxdepth)
+                || (searchopt.maxnodes_soft != -1 && nodes >= searchopt.maxnodes_soft))
+                break;
 
             int itereval = negamax(board, depth, 0, params.MAX_EXTENSIONS, alpha, beta, halt);
 
@@ -69,16 +72,6 @@ public:
 
     // Returns the relative static eval of the board
     int static_eval(const chess::Board& board) { return evaluate(board); }
-
-    // Returns the relative eval of the board after quiescence
-    int quiescence_eval(chess::Board board) {
-        bool halt = false;
-        history.clear();
-        nodes = 0;
-        start_search_timer(board, 0, 0);
-
-        return quiescence(board, -INT_MAX, INT_MAX, halt);
-    }
 };  // Raphael
 }  // namespace Raphael
 
@@ -86,42 +79,50 @@ public:
 
 struct GenArgs {
     // files
-    string input_file;
-    string output_file = "dataset/traindata.csv";
-    int start_line = 1;
+    string input_dir;
+    string output_dir = "dataset/eval/train";
+    int b_start = 1;
+    int b_end = -1;
 
     // eval
-    int depth;
-    int64_t maxnodes = -1;
+    int depth = Raphael::MAX_DEPTH;
+    int64_t maxnodes;
+    int64_t maxnodes_soft = -1;
 
     // data options
     int threshold_eval = 300;  // threshold of abs(eval - static_eval) to skip data
     bool include_checks = false;
 };
 ostream& operator<<(ostream& os, const GenArgs& ga) {
-    string maxnodes = (ga.maxnodes == -1) ? "infinite" : to_string(ga.maxnodes);
+    string maxnodes_soft = (ga.maxnodes_soft == -1) ? "infinite" : to_string(ga.maxnodes_soft);
+    string b_end = (ga.b_end == -1) ? "" : " to " + to_string(ga.b_end) + ".epd";
     os << "GenArgs:\n"
-       << "  input:  " << ga.input_file << " (from line " << ga.start_line << ")\n"
-       << "  output: " << ga.output_file << "\n"
+       << "  input_dir:  " << ga.input_dir << " (from " << ga.b_start << ".epd" << b_end << ")\n"
+       << "  output_dir: " << ga.output_dir << "\n"
+       << "  max nodes:  " << ga.maxnodes << "\n"
        << "  options:\n"
-       << "    depth:       " << ga.depth << "\n"
-       << "    max nodes:   " << maxnodes << "\n"
-       << "    teval:       " << ga.threshold_eval << "\n"
-       << "    checks:      " << ((ga.include_checks) ? "true" : "false") << endl;
+       << "    max depth:      " << ga.depth << "\n"
+       << "    max soft nodes: " << maxnodes_soft << "\n"
+       << "    teval:          " << ga.threshold_eval << "\n"
+       << "    checks:         " << ((ga.include_checks) ? "true" : "false") << "\n"
+       << endl;
     return os;
 }
 
 /** Prints help message. */
 void print_help() {
-    cout << "Usage: traingen [OPTIONS] INPUT_FILE DEPTH\n\n"
-         << "  Takes in a INPUT_FILE with rows \"fen [wdl]\" and generates the NNUE traindata "
-            "using the evals at the specified DEPTH\n\n"
+    cout << "Usage: traingen [OPTIONS] INPUT_DIR OUTPUT_DIR MAX_NODES\n\n"
+         << "  Takes in an INPUT_DIR containing files 1.epd, 2.epd, ... with contents of the form\n"
+            "  \"fen [wdl]\" in each row to generate the NNUE training data in OUTPUT_DIR, using\n"
+            "  the evals at the specified MAX_NODES\n\n"
          << "Options:\n"
-         << "  -o PATH  Output file. Defaults to dataset/traindata.csv\n"
-         << "  -s LINE  Line of INPUT_FILE to read from. Defaults to 1\n"
-         << "  -n N     Max number of nodes to search before moving on. Defaults to -1 (infinite)\n"
+         << "  -d DEPTH Max depths to search. Defaults to " << Raphael::MAX_DEPTH << "\n"
+         << "  -n N     Max number of soft nodes (depth at N nodes) to search. Defaults to -1 "
+         << "(infinite)\n"
+         << "  -b BS BE Start and end (inclusive) epd index to generate for. Defaults to 1, -1\n"
+         << "           I.e., go through the entire INPUT_DIR\n"
          << "  -e TE    Will drop data if abs(eval - static_eval) > TE. Defaults to 300\n"
-         << "  -c       Include checks in data\n"
+         << "  -c       Include checks in data. Defaults to false\n"
          << "  -h       Show this message and exit" << endl;
 }
 
@@ -138,15 +139,14 @@ GenArgs parse_args(int argc, char* argv[]) {
     int p = 0;
     while (++i < argc) {
         string s(argv[i]);
-        if (s == "-o")
-            args.output_file = "dataset/" + string(argv[++i]);
-        else if (s == "-s")
-            args.start_line = stoi(argv[++i]);
-        else if (s == "-d")
+        if (s == "-d")
             args.depth = stoi(argv[++i]);
         else if (s == "-n")
-            args.maxnodes = stoll(argv[++i]);
-        else if (s == "-e")
+            args.maxnodes_soft = stoll(argv[++i]);
+        else if (s == "-b") {
+            args.b_start = stoi(argv[++i]);
+            args.b_end = stoi(argv[++i]);
+        } else if (s == "-e")
             args.threshold_eval = stoi(argv[++i]);
         else if (s == "-c")
             args.include_checks = true;
@@ -155,9 +155,11 @@ GenArgs parse_args(int argc, char* argv[]) {
             exit(0);
         } else {  // positional arguments
             if (p == 0)
-                args.input_file = string(argv[i]);
+                args.input_dir = string(argv[i]);
             else if (p == 1)
-                args.depth = stoi(argv[i]);
+                args.output_dir = string(argv[i]);
+            else if (p == 2)
+                args.maxnodes = stoll(argv[i]);
             else {
                 print_help();
                 exit(1);
@@ -167,16 +169,24 @@ GenArgs parse_args(int argc, char* argv[]) {
     }
 
     // check input (no. positional args, value is positive, etc.)
-    if (p < 2) {
+    if (p < 3) {
         print_help();
         exit(1);
     }
-    if (args.depth <= 0 || (args.maxnodes != -1 && args.maxnodes <= 0)) {
-        cout << "error: depth and maxnodes must be positive (unless it is -1)" << endl;
+    if (args.maxnodes <= 0) {
+        cout << "error: maxnodes must be positive" << endl;
         exit(1);
     }
-    if (args.start_line < 1) {
-        cout << "error: starting line number must be positive" << endl;
+    if (args.maxnodes_soft != -1 and args.maxnodes_soft <= 0) {
+        cout << "error: maxnodes_soft must be positive (unless it is -1)" << endl;
+        exit(1);
+    }
+    if (args.depth <= 0 || args.depth > Raphael::MAX_DEPTH) {
+        cout << "error: depth must be positive and under " << Raphael::MAX_DEPTH << endl;
+        exit(1);
+    }
+    if (args.b_start <= 0 || (args.b_end != -1 && args.b_end <= 0)) {
+        cout << "error: BS and BE must be positive (unless BE is -1)" << endl;
         exit(1);
     }
     if (args.threshold_eval < 0) {
@@ -224,53 +234,64 @@ int main(int argc, char* argv[]) {
     GenArgs args = parse_args(argc, argv);
     cout << "Generating traindata with " << args;
 
-    // open input file and skip to args.start_line
-    ifstream infile(args.input_file);
-    if (!infile.is_open()) {
-        cout << "error: failed to open " << args.input_file << endl;
+    // check input directory
+    if (!is_directory(args.input_dir)) {
+        cout << "error: " << args.input_dir << " is not a directory or does not exist" << endl;
         exit(1);
     }
-    for (int i = 0; i < args.start_line - 1; i++) {
-        if (!infile.ignore(numeric_limits<streamsize>::max(), '\n')) {
-            cout << "error: cannot skip line " << i + 1 << ". End of file" << endl;
-            exit(1);
-        }
+
+    // check and create output directory
+    if (is_directory(args.output_dir))
+        cout << "warning: " << args.output_dir << " already exists" << endl;
+    else {
+        cout << "Creating output directory " << args.output_dir << endl;
+        create_directories(args.output_dir);
     }
 
-    // open output file in append mode and write header if the file is new
-    bool write_header = !std::filesystem::exists(args.output_file);
-    ofstream outfile(args.output_file, ios::app);
-    if (write_header)
-        outfile << "fen,wdl,eval\n";
-    else
-        cout << "info: " << args.output_file << " already exists. Appending to it" << endl;
-
     // load engine
-    cout << "info: loading engine" << endl;
+    cout << "Loading engine" << endl;
     Raphael::v1_8_traingen engine("Raphael");
     Raphael::v1_8::SearchOptions searchopt;
     searchopt.maxdepth = args.depth;
     searchopt.maxnodes = args.maxnodes;
+    searchopt.maxnodes_soft = args.maxnodes_soft;
     engine.set_searchoptions(searchopt);
 
-    // read input file line by line, get traindata, and add to the output file
-    cout << "info: beginning training data generation" << endl;
-    int n_added = 0;
-    int n_total = 0;
-    int iline = args.start_line;
-    string line;
-    while (getline(infile, line)) {
-        n_added += (int)generate_one(outfile, line, engine, args);
-        n_total++;
-        float percent = n_added * 100 / n_total;
+    // traverse input dir
+    int i = args.b_start;
+    while (args.b_end == -1 || i <= args.b_end) {
+        // read input file
+        string in_path = args.input_dir + "/" + to_string(i) + ".epd";
+        ifstream infile(in_path);
+        if (!infile.is_open()) break;
+        cout << "Processing " << in_path << endl;
 
-        // print progress bar
-        cout << "\rline " << iline << "    added: " << n_added << "/" << n_total << " (" << fixed
-             << setprecision(2) << percent << "%)" << flush;
-        iline++;
+        // create output file
+        string out_path = args.output_dir + "/" + to_string(i) + ".csv";
+        bool write_header = !exists(out_path);
+        ofstream outfile(out_path, ios::app);
+        if (write_header) outfile << "fen,wdl,eval\n";
 
-        // flush the output buffer ocassionally so progress isn't lost on program interrupt
-        if (iline % 64 == 0) outfile.flush();
+        // generate
+        int n_added = 0;
+        int n_total = 0;
+        int iline = args.b_start;
+        string line;
+        while (getline(infile, line)) {
+            n_added += (int)generate_one(outfile, line, engine, args);
+            n_total++;
+            float percent = n_added * 100 / n_total;
+
+            // print progress bar
+            cout << "\rline " << iline << "    added: " << n_added << "/" << n_total << " ("
+                 << fixed << setprecision(2) << percent << "%)" << flush;
+            iline++;
+
+            // flush the output buffer ocassionally so progress isn't lost on program interrupt
+            if (iline % 64 == 0) outfile.flush();
+        }
+        cout << endl;
+        i += 1;
     }
-    cout << endl;
+    cout << "All done" << endl;
 }

@@ -211,7 +211,7 @@ class NNUE(nn.Module):
         o1 = torch.clamp(self.l1(o0), 0.0, 1.0)
         o2 = torch.clamp(self.l2(o1), 0.0, 1.0)
         o3 = self.l3(o2) * self.params.OUTPUT_SCALE
-        return o3 / self.params.WDL_SCALE
+        return torch.sigmoid((o3 / self.params.WDL_SCALE).double())
 
     def parameters(self):
         """Returns overwritten parameters with min and max clamp range to account for

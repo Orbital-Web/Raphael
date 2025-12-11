@@ -61,74 +61,53 @@ In general, you would want `-e` to be a fairly small value and `-c` to not be se
 
 ## Trainer
 
-The trainer is written in Python and it, as you can probably guess, trains the NNUE model.
-Before using the trainer, you should check that the NNUE model and parameters defined in `net.py` is correct and aligns with what's in `Raphael/nnue.h`.
-
-### net.py: NNUEParams
-
-This defines the parameters for the NNUE model, and most of it should be the same as what's defined in `Raphael/nnue.h`.
-
-`N_INPUTS`, `N_INPUTS_FACTORIZED`, and `get_features()` must be implemented correctly for the trainer to function.
-`WDL_SCALE` and `FEATURE_FACTORIZE` should be left intact. The WDL scale is not so important as this will be recalculated anyways to fit the dataset.
-
-The remaining parameters can be freely modified/added/removed to fit the network architecture, though it should be inline with the C++ implementation. Some parameters may have certain constraints, such as being a multiple of 32, depending on the SIMD implementation of the model.
-
-### net.py: NNUE
-
-This defines the NNUE model. `forward()`, `parameters()`, `get_quantized_parameters()`, and `export()` must properly be implemented for the trainer to function. Again, these functions should be inline with the C++ implementation.
-
-Things such as the `export_options`, parameter values (some values may have implicit constraints), and weight initialization can be modified relatively safely to adjust the model while keeping its overall architecture. Note that these changes will have to be reflected in the C++ NNUE too.
-
-Parameters such as the qlevel denote the log2 quantization levels at the respective layers. A larger qlevel will allow the model to represent weights with higher precision but will decrease the range of values the weights can take.
-
-The output scale, defined in the parameters, also affect quantization. A larger output scale will increase precision but decrease the range of values for the final layer's weights. This output scale is only used during training and it is implicitly added to the model when exported. It enables the model to output larger values (evals in centipawns can get quite big) without requiring larger weights.
-
-### net.py: NNUEOptimizer
-
-The optimizer is used to ensure the weights are clamped during training so that they do not exceed the allowed range for quantization.
-
-### dataloader.py: NNUEDataSet
-
-This class is used to load the dataset for training. The expected input and output files will be described later below.
-The main portion you would want to change in this file is the `get_cost` function inside `optimize()`, which dictates how the dataset will be sampled to make it more suitable for training. The current implementation is roughly based on [this paper](https://arxiv.org/abs/2412.17948v1) which states the ideal characteristics of an NNUE dataset. For instance, it emphasizes the proportions of evaluation scores between and outside the range of -100 to 100.
-
-This class is also used to calculate the optimum WDL_SCALE as well as the scaled evaluation scores using the provided data file.
-
-### trainer.py
-
-This is the main script that is used to train the NNUE model. The following is the usage guide:
+The trainer is written in Python and it is used to train the NNUE model.
+The following is the usage guide:
 
 ```text
-usage: trainer.py [-h] [-o OUT_FILENAME] [-d | --data_optimize | --no-data_optimize] [-e EPOCH] [-p PATIENCE] [-f | --feature_factorize | --no-feature_factorize]
-                  [-c CHECKPOINT]
-                  in_filename
+usage: trainer.py [-h] config
 
 positional arguments:
-  in_filename           Path to input dataset csv with columns fen, wdl (absolute), and eval (relative), optionally with the feature columns (leads to faster loading)
+  config      Path to config file or checkpoint directory
 
 options:
-  -h, --help            show this help message and exit
-  -o OUT_FILENAME, --out_filename OUT_FILENAME
-                        Path to save processed dataset with the feature columns (default: None)
-  -d, --data_optimize, --no-data_optimize
-                        Whether to optimize the dataset for potentially faster and better training (default: False)
-  -e EPOCH, --epoch EPOCH
-                        Epoch number to stop training on. May stop training earlier if patience > 0 (default: 50)
-  -p PATIENCE, --patience PATIENCE
-                        Number of consecutive epochs without improvement to stop training. Will be ignored if 0 (default: 5)
-  -f, --feature_factorize, --no-feature_factorize
-                        Whether to enable feature factorization. May lead to faster training (default: False)
-  -c CHECKPOINT, --checkpoint CHECKPOINT
-                        Checkpoint (path to a .pth file) to resume from (default: )
+  -h, --help  show this help message and exit
 ```
 
-The input file should be a `csv` file with the rows `fen`, `wdl` (absolute, with 1.0 as white win), and `eval` (relative centipawns from the side to move). The data loader will call `NNUEParams.get_features()` to populate the `side`, `widx`, and `bidx` columns. If the input file already contains these columns, this step will be skipped.
+The input to the trainer is a path to either a config YAML file, or a path to a directory containing the config YAML file alongside the checkpoint files.
+If you provide a path to a config file, it will start a new training session using that config.
+Otherwise, it will load the checkpoint and resume training from there.
 
-If the `-d` flag is provided, the input dataset will be optimizied by removing outliers and ensuring a balanced dataset.
+The following are the contents of the config file.
 
-If an output path is provided, it will save this dataset with columns `fen`, `wdl`, `eval`, `side`, `widx`, and `bidx` to the path.
+```yaml
+config_version: 1.0
 
-The other command line arguments are pretty self explanatory if you know how training a neural network goes. Lastly, the `-f` flag is used to enable feature factorization, which is explained in a lot more detail in [this document](https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#feature-factorization) by the Official Stockfish.
+model:
+  architecture: all-1-screlu
+  wdl_scale: 258.0
+  # architecture-specific parameters, such as hidden_size, qa, qb, etc...
+
+training_options:
+  train_path: dataset/eval/train_clean
+  test_path: dataset/eval/test
+
+  superbatches: 500
+  lr_init: 0.001
+  lr_final: 0.00000243
+  patience: 10
+  batch_size: 32
+```
+
+The `model` field contains the `architecture` of the model, and the `wdl_scale` used to convert between eval and WDL. Each architecture also has its own set of parameters which must be defined to initialize the model. Note that it is very important that the architecture and parameters match the model on the CPU side.
+
+The `training_options` field contains the various settings to control the model training. For instance, `training_path` and `test_path` both contain the path to the dataset directory, containing files of the form `1.csv`, `2.csv`, ... with the fen, wdl, and eval. Each superbatch will load one of these files and train the model on them. It is common for each superbatch to contain about a million different positions.
+
+The `superbatches` field specifies how many superbatches to train for in total. If the superbatch index exceeds the number of training files, it will loop around to the first superbatch, effectively completing an epoch. The scheduler will decay the learning rate from `lr_init` to `lr_final` throughout the course of this process.
+
+Finally, `patience` determines how many superbatches of consecutive non-improvement in the validation loss must occur before early stopping the training, and `batch_size` determines the batch size during training.
+
+Note that training can take quite a while for the first epoch, as the dataloader must compute the input features to the model for every data point. These results will be cached in the `/cache` directory within the dataset directory, greatly speeding up the training process for future iterations.
 
 ## NNUETest
 

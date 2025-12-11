@@ -1,95 +1,40 @@
-# FIXME: to be changed: evaluates the position using stockfish and cleans noisy and forced-mate positions
+# a script to downsample positions with extreme evaluations
 import multiprocessing
 from pathlib import Path
-from random import random
 
-import chess.engine
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
 
-engine = None
-
-SAMPLE_RATIO = {
-    0: 1.0,
-    100: 1.0,
-    200: 1.0,
-    300: 1.0,
-    400: 0.9,
-    500: 0.8,
-    600: 0.7,
-    700: 0.5,
-    800: 0.25,
-}
-DEFAULT_RATIO = 0.1
-ERROR_THRESHOLD = 1000
-
-INPUT_FILENAME = "traindata.csv"
-OUTPUT_FILENAME = "traindata_processed.csv"
+WDL_SCALE = 258.0
 
 
-def init_engine():
-    global engine
-    engine = chess.engine.SimpleEngine.popen_uci(
-        "../../Games/stockfish/stockfish-ubuntu-x86-64-avx2"
-    )
+def sample(eval_rel) -> bool:
+    wdl = 1 / (1 + np.exp(-eval_rel / WDL_SCALE))
+    weight = 16 * np.power(wdl - 0.5, 4)
+    return np.random.random() >= weight
 
 
-def evaluate(row: str) -> tuple[str | None, float]:
-    global engine
-    fen, wdl, rel_eval = row.strip().split(",")
-    rel_eval = int(rel_eval)
+def clean(args: tuple[Path, Path]) -> None:
+    filepath, outdir = args
 
-    # pick data point by chance based on bucket
-    bucket = int(abs(rel_eval)) // 100 * 100
-    if random() > SAMPLE_RATIO.get(bucket, DEFAULT_RATIO):
-        return None, 0.0
+    name = filepath.name
+    df = pd.read_csv(filepath)
 
-    # skip if stockfish can find mate quick enough
-    board = chess.Board(fen)
-    score = engine.analyse(board, chess.engine.Limit(time=0.05))["score"]
-    true_eval = score.pov(board.turn).score()
-    if true_eval is None:
-        return None, 0.0
+    mask = df["eval"].apply(sample)
+    df = df[mask]
 
-    error = abs(true_eval - rel_eval)
-    return f"{fen},{wdl},{rel_eval},{error}\n", error
+    outpath = outdir / name
+    df.to_csv(outpath, sep=",", index=False)
 
 
 if __name__ == "__main__":
-    with open(INPUT_FILENAME, "r") as in_f:
-        inputs = in_f.readlines()[1:]
+    indir = Path(input("Dataset directory: "))
+    outdir = Path(indir.as_posix() + "_clean")
+    outdir.mkdir(exist_ok=True, parents=True)
 
-    pool = multiprocessing.Pool(
-        multiprocessing.cpu_count() - 2, initializer=init_engine
-    )
-
-    # raise error if file exists to avoid overwriting it
-    outpath = Path(OUTPUT_FILENAME)
-    if outpath.exists():
-        raise FileExistsError("The specified output file already exists")
-    errorpath = Path("high_error.csv")
-
-    sum_err = 0.0
-    cnt_err = 0
-    with outpath.open("w") as out_f:
-        out_f.write("fen,wdl,eval,error\n")
-
-        # separate file to store high-error data points to see what the problem is
-        with errorpath.open("a") as err_f:
-
-            for result, error in pool.imap_unordered(evaluate, inputs, chunksize=128):
-                if result is None:
-                    continue
-
-                if error >= ERROR_THRESHOLD:
-                    err_f.write(result)
-                    continue
-
-                out_f.write(result)
-                sum_err += error
-                cnt_err += 1
-
-                if (cnt_err + 1) % 10000 == 0:
-                    avg_error = sum_err / cnt_err
-                    print(f"Average error: {avg_error:.2f}")
-
-    avg_error = sum_err / cnt_err
-    print(f"Average error: {avg_error:.2f}")
+    print("Cleaning...")
+    with multiprocessing.Pool(8) as pool:
+        paths = [(path, outdir) for path in indir.iterdir() if path.is_file()]
+        for res in tqdm(pool.imap_unordered(clean, paths), total=len(paths)):
+            pass

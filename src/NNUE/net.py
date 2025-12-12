@@ -166,7 +166,7 @@ class NNUE_All1SCReLU(NNUE):
                     np.iinfo(np.int16).min / (self.QA * self.QB),
                     np.iinfo(np.int16).max / (self.QA * self.QB),
                 ),
-                "transpose": False,
+                "transpose": True,
             },
         ]
 
@@ -211,8 +211,8 @@ class NNUE_All1SCReLU(NNUE):
             wp = 6 * (pc == chess.BLACK) + pt
             bp = 6 * (pc == chess.WHITE) + pt
 
-            widx.append(wp * 64 + sq)
-            bidx.append(bp * 64 + chess.square_mirror(sq))
+            widx.append(64 * wp + sq)
+            bidx.append(64 * bp + chess.square_mirror(sq))
         return board.turn == chess.WHITE, widx, bidx
 
     def forward(

@@ -5,7 +5,7 @@ LDFLAGS = -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
 
 # sources
 GEN_SOURCES = ../GameEngine/consts.cpp ../GameEngine/GamePlayer.cpp ${wildcard ../Raphael/*.cpp} traingen.cpp
-TEST_SOURCES = ../Raphael/consts.cpp ../Raphael/nnue.cpp ../Raphael/simd.cpp nnuetest.cpp
+TEST_SOURCES = ../Raphael/consts.cpp ../Raphael/nnue.cpp nnuetest.cpp
 
 
 

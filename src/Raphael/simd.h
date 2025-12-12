@@ -5,48 +5,111 @@
 #if defined(__AVX__) || defined(__AVX2__)
     #define USE_SIMD 256
     #define ALIGNMENT 32
-    // 256 common operations
-    #define simd256_t __m256i
-    #define LOAD256(src) _mm256_load_si256(reinterpret_cast<const simd256_t*>(src))
-    #define STORE256(dst, src) _mm256_store_si256(reinterpret_cast<simd256_t*>(dst), src)
-    #define ZERO256 _mm256_setzero_si256  // sets everything to 0
-    #define ADDS256_16 _mm256_adds_epi16  // adds 16x int16_t pairs with clamping
-    #define SUBS256_16 _mm256_subs_epi16  // subtracts 16x int16_t pairs with clamping
-    // 128 common operations
-    #define simd128_t __m128i
-    #define LOAD128(src) _mm_load_si128(reinterpret_cast<const simd128_t*>(src))
-    #define STORE128(dst, src) _mm_store_si128(reinterpret_cast<simd128_t*>(dst), src)
-    #define RSHFT128_32 _mm_srai_epi32  // right shifts 4x int32_t
+typedef __m256i VecI16;  // a list of 16x int16_t
+typedef __m256i VecI32;  // a list of 8x int32_t
 
 
-/** Computes partial dot product of uint8_t a[32] and int8_t b[32] and adds into int32_t c[8]
+/** Loads an int16_t[16] array into a VecI16 register
  *
- * E.g., if a = [0, 0, 1, 1, ...] b = [12, -3, 6, -2, ...]
- * Out = [0(12) + 0(-3) + 1(6) + 1(-2), ...]
- *
- * \param c int32_t[8] to add into
- * \param a uint8_t[32] to dot with b
- * \param b int8_t[32] to dot with a
+ * \param src an array of 16x int16_t elements
+ * \returns the loaded register
  */
-void DOT256_32(simd256_t& c, simd256_t a, simd256_t b);
+inline VecI16 load_i16(const int16_t* src) {
+    return _mm256_load_si256(reinterpret_cast<const VecI16*>(src));
+}
 
-/** Computes bias + [sum s0, sum s1, sum s2, sum s3]
+/** Stores a VecI16 register into an int16_t[16] array
  *
- * \param s0 int32_t[8] list of partial dot products 0
- * \param s1 int32_t[8] list of partial dot products 1
- * \param s2 int32_t[8] list of partial dot products 2
- * \param s3 int32_t[8] list of partial dot products 3
- * \param bias int32_t[4] bias for each dot products
- * \returns bias + the accumulated sums of s0, s1, s2, and s3
+ * \param dst the array of 16x int16_t elements to store into
+ * \param src the register to store
  */
-simd128_t SUM128_32(simd256_t s0, simd256_t s1, simd256_t s2, simd256_t s3, simd128_t bias);
+inline void store_i16(int16_t* dst, VecI16& src) {
+    _mm256_store_si256(reinterpret_cast<VecI16*>(dst), src);
+}
 
-/** Computes the horizontal sum of an 8x int32_t register
+
+/** Returns a VecI16 register with all zeros
  *
- * \param reg int32_t[8] list of values to add
- * \returns int32_t the sum of the 8 values
+ * \returns an all zero register
  */
-int32_t HADD256_32(simd256_t reg);
+inline VecI16 zero_i16() { return _mm256_setzero_si256(); }
+
+/** Returns a VecI16 register with all values set to val
+ *
+ * \param val the value to set to
+ * \returns an all val register
+ */
+inline VecI16 full_i16(int16_t val) { return _mm256_set1_epi16(val); }
+
+
+/** Does an element-wise saturated addition of two VecI16 registers
+ *
+ * \param a register 1
+ * \param b register 2
+ * \returns the result of the addition
+ */
+inline VecI16 adds_i16(VecI16 a, VecI16 b) { return _mm256_adds_epi16(a, b); }
+
+/** Does an element-wise saturated subtraction of two VecI16 registers
+ *
+ * \param a register 1
+ * \param b register 2
+ * \returns the result of the subtraction
+ */
+inline VecI16 subs_i16(VecI16 a, VecI16 b) { return _mm256_subs_epi16(a, b); }
+
+/** Does an element-wise clamping of a VecI16 register
+ *
+ * \param reg register to clamp
+ * \param mins register containing the min values
+ * \param maxs register containing the max values
+ * \returns the result of the clamp
+ */
+inline VecI16 clamp_i16(VecI16 reg, VecI16 mins, VecI16 maxs) {
+    return _mm256_min_epi16(_mm256_max_epi16(reg, mins), maxs);
+}
+
+/** Does an element-wise multiplication of two VecI16 registers.
+ * The bottom 16 bits are taken for each multiplication.
+ *
+ * \param a register 1
+ * \param b register 2
+ * \returns the result of the multiplication
+ */
+inline VecI16 mul_i16(VecI16 a, VecI16 b) { return _mm256_mullo_epi16(a, b); }
+
+/** Does an element-wise multiplication of two VecI16 registers and horizontally adds the results,
+ * creating a VecI32 result.
+ *
+ * \param a register 1
+ * \param b register 2
+ * \returns the result of the multiplication-addition
+ */
+inline VecI32 madd_i16(VecI16 a, VecI16 b) { return _mm256_madd_epi16(a, b); }
+
+/** Does an element-wise addition of two VecI32 registers
+ *
+ * \param a register 1
+ * \param b register 2
+ * \returns the result of the addition
+ */
+inline VecI32 add_i32(VecI32 a, VecI32 b) { return _mm256_add_epi32(a, b); }
+
+
+/** Computes the horizontal sum of a VecI32 register
+ *
+ * \param reg register to sum up
+ * \returns the sum of the 8 int32_t in the register
+ */
+inline int32_t hadd_i32(VecI32 reg) {
+    __m128i lo = _mm256_castsi256_si128(reg);       // get bottom 4x int32_t from reg
+    __m128i hi = _mm256_extracti128_si256(reg, 1);  // get top 4x int32_t from reg
+
+    __m128i sum = _mm_add_epi32(lo, hi);  // add pairs [s0, s1, s2, s3]
+    sum = _mm_hadd_epi32(sum, sum);       // add adjacent pairs [s0 + s1, s2 + s3, ...]
+    sum = _mm_hadd_epi32(sum, sum);       // add remaining pair [s0 + s1 + s2 + s3, ...]
+    return _mm_extract_epi32(sum, 0);     // extract first value with sum
+}
 #else
     #define ALIGNMENT 0
 #endif

@@ -105,6 +105,8 @@ void test_make_move(Raphael::Nnue& net, chess::Board& board) {
     };
     const vector<string> test_pos = {
         "2r1n3/1N1NpPk1/4p1P1/p1pP1p1P/1rQ3p1/1b6/2B5/R3K2R w KQ c6 0 1",
+        "1k1r4/pp1b1R2/3q2pp/4p3/2B5/4Q3/PPP2B2/2K5 b - - 0 1",
+        "8/8/p1p5/1p5p/1P5p/8/PPP2K1p/4R1rk w - - 0 1",
     };
 
     // test lines in test suite

@@ -85,6 +85,7 @@ def train(
             # training step
             optimizer.zero_grad()
             outputs = model(wdata, bdata, side)
+            outputs = torch.sigmoid((outputs / model.WDL_SCALE).double())
             loss = criterion(outputs, labels.unsqueeze(1))
             total_loss += loss.item()
             loss.backward()
@@ -107,6 +108,7 @@ def train(
             "loss": test_loss,
         }
         torch.save(checkpoint, f"{outfolder}/latest.pth")
+        model.export(f"{outfolder}/latest.nnue")
         if test_loss < best_loss:
             best_loss = test_loss
             torch.save(checkpoint, f"{outfolder}/best.pth")
@@ -175,6 +177,7 @@ def test(
 
                 # compute loss
                 outputs = model(wdata, bdata, side)
+                outputs = torch.sigmoid((outputs / model.WDL_SCALE).double())
                 loss = criterion(outputs, labels.unsqueeze(1))
                 total_loss += loss.item()
 

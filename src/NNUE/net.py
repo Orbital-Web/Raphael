@@ -166,7 +166,7 @@ class NNUE_All1SCReLU(NNUE):
                     np.iinfo(np.int16).min / (self.QA * self.QB),
                     np.iinfo(np.int16).max / (self.QA * self.QB),
                 ),
-                "transpose": True,
+                "transpose": False,
             },
         ]
 
@@ -226,7 +226,7 @@ class NNUE_All1SCReLU(NNUE):
         # linear + screlu
         o0 = torch.square(torch.clamp(accumulator, 0.0, 1.0))
         o1 = self.l1(o0) * self.OUTPUT_SCALE
-        return torch.sigmoid((o1 / self.WDL_SCALE).double())
+        return o1
 
     def parameters(self) -> list[dict[str, Any]]:
         params = []

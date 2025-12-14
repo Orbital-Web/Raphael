@@ -48,8 +48,8 @@ void Nnue::load(const char* nnue_path) {
     read_or_throw(params.W1, sizeof(params.W1));
     read_or_throw(&params.b1, sizeof(params.b1));
 
-    // if (!nnue_file.eof() && nnue_file.peek() != EOF)
-    //     throw runtime_error("file size does not match nnue size");
+    if (!nnue_file.eof() && nnue_file.peek() != EOF)
+        throw runtime_error("file size does not match nnue size");
     loaded = true;
 }
 
@@ -61,8 +61,8 @@ int32_t Nnue::evaluate(int ply, bool side) {
     // get address to accumulators and weights
     const auto us_base = accumulators[ply][side];
     const auto them_base = accumulators[ply][!side];
-    const auto us_w_base = &params.W1[!side * N_HIDDEN];  // weights are packed by white, black
-    const auto them_w_base = &params.W1[side * N_HIDDEN];
+    const auto us_w_base = params.W1;
+    const auto them_w_base = params.W1 + N_HIDDEN;
 
 #ifdef USE_SIMD
     constexpr int regw = ALIGNMENT / sizeof(int16_t);

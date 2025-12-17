@@ -18,7 +18,6 @@ Options:
   -n N     Max number of soft nodes (depth at N nodes) to search. Defaults to -1 (infinite)
   -b BS BE Start and end (inclusive) epd index to generate for. Defaults to 1, -1
            I.e., go through the entire INPUT_DIR
-  -e TE    Will drop data if abs(eval - static_eval) > TE. Defaults to 300
   -c       Include checks in data. Defaults to false
   -h       Show this message and exit
 ```
@@ -34,8 +33,16 @@ R7/p3k1p1/1p4b1/8/4n3/q7/5PPP/6K1 w - - 0 1 [0.0]
 8/8/5B2/n6p/4K1k1/8/8/8 w - - 0 1 [0.5]
 ```
 
-The output will be a list of csv files, one for each epd file, with columns `fen`, `wdl`, and `eval` in relative centipawns from the side to move. These headers will be added the first time the output file is created, and will not be added when appending to an existing output file.
-Note that for both the input and output file, `wdl` is absolute, with 1.0 being a win for white and `0.0` being a win for black.
+The output will be a list of csv files, one for each epd file, with columns `fen`, `wdl` (absolute, `1.0` is a win for white), `eval` (in relative centipawns), `flag`, and `bm` (bestmove). These headers will be added the first time the output file is created, and will not be added when appending to an existing output file.
+
+The current flags are:
+
+- 0: None
+- 1: Checks
+- 2: Captures
+- 4: Promotions
+
+Note that multiple flags can be enabled at the same time via binary OR. E.g., if the flag = 3, it is equivalent to a capture with a check.
 
 The `-b` argument is used to generate for a subset of epd files inside the `INPUT_DIR`, which can be useful for resuming generation or when generating across multiple devices.
 
@@ -52,12 +59,10 @@ for (fen, wdl) in epd_file:
     if not options.include_check and board.inCheck():
         return
     score = engine.eval(board)
-    if abs(score - engine.static_eval(board)) > options.TE:
+    if score == MATE_SCORE:
         return
     output_dataset.append((fen, wdl, score))
 ```
-
-In general, you would want `-e` to be a fairly small value and `-c` to not be set (don't include check) to ensure the dataset is not noisy.
 
 ## Trainer
 
@@ -124,18 +129,15 @@ Options:
 ```
 
 ```text
-usage: nnuetest.py [-h] [-f | --feature_factorize | --no-feature_factorize] [-s DATASIZE] [path]
+usage: nnuetest.py [-h] [-s DATASIZE] [path]
 
 positional arguments:
-  path                  Path to trained pth file. (default: best.pth from the lastest trainining session)
+  path                  Path to trained checkpoint folder (default: lastest trainining session)
 
 options:
   -h, --help            show this help message and exit
-  -f, --feature_factorize, --no-feature_factorize
-                        Whether to the trained model uses feature factorization (default: False)
   -s DATASIZE, --datasize DATASIZE
-                        Number of positions to use during testing. Greater values provide more coverage but is also slower
-                        (default: 1000)
+                        Number of positions to use during testing. Greater values provide more coverage but is also slower (default: 1000)
 ```
 
 Both programs are used as debugging tools to validate consistency between the C++ and Python NNUE, measure quantization, evaluate errors, and test other behaviors. The two scripts tests different things, some of which are only possible on one or the other.

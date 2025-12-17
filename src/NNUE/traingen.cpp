@@ -14,6 +14,7 @@ using std::cout, std::endl, std::flush;
 using std::fixed, std::setprecision;
 using std::numeric_limits;
 using std::ostream, std::ifstream, std::ofstream, std::ios, std::streamsize, std::getline;
+using std::pair;
 using std::string, std::stoi, std::stoll, std::to_string;
 using std::filesystem::exists, std::filesystem::is_directory, std::filesystem::create_directories;
 
@@ -26,8 +27,9 @@ class v1_8_traingen: public v1_8 {
 public:
     v1_8_traingen(string name_in): v1_8(name_in) {}
 
-    // Returns the relative eval of this position using the get_move logic of the engine
-    int get_eval(chess::Board board) {
+    // Returns the relative eval and bestmove of this position using the get_move logic of the
+    // engine
+    pair<int, chess::Move> get_eval(chess::Board board) {
         bool halt = false;
         int depth = 1;
         int eval = 0;
@@ -65,9 +67,9 @@ public:
             }
 
             // checkmate, no need to continue
-            if (tt.isMate(eval)) return MATE_EVAL;
+            if (tt.isMate(eval)) return {MATE_EVAL, itermove};
         }
-        return eval;
+        return {eval, itermove};
     }
 
     // Returns the relative static eval of the board
@@ -90,7 +92,6 @@ struct GenArgs {
     int64_t maxnodes_soft = -1;
 
     // data options
-    int threshold_eval = 300;  // threshold of abs(eval - static_eval) to skip data
     bool include_checks = false;
 };
 ostream& operator<<(ostream& os, const GenArgs& ga) {
@@ -103,7 +104,6 @@ ostream& operator<<(ostream& os, const GenArgs& ga) {
        << "  options:\n"
        << "    max depth:      " << ga.depth << "\n"
        << "    max soft nodes: " << maxnodes_soft << "\n"
-       << "    teval:          " << ga.threshold_eval << "\n"
        << "    checks:         " << ((ga.include_checks) ? "true" : "false") << "\n"
        << endl;
     return os;
@@ -121,7 +121,6 @@ void print_help() {
          << "(infinite)\n"
          << "  -b BS BE Start and end (inclusive) epd index to generate for. Defaults to 1, -1\n"
          << "           I.e., go through the entire INPUT_DIR\n"
-         << "  -e TE    Will drop data if abs(eval - static_eval) > TE. Defaults to 300\n"
          << "  -c       Include checks in data. Defaults to false\n"
          << "  -h       Show this message and exit" << endl;
 }
@@ -146,9 +145,7 @@ GenArgs parse_args(int argc, char* argv[]) {
         else if (s == "-b") {
             args.b_start = stoi(argv[++i]);
             args.b_end = stoi(argv[++i]);
-        } else if (s == "-e")
-            args.threshold_eval = stoi(argv[++i]);
-        else if (s == "-c")
+        } else if (s == "-c")
             args.include_checks = true;
         else if (s == "-h") {
             print_help();
@@ -189,15 +186,18 @@ GenArgs parse_args(int argc, char* argv[]) {
         cout << "error: BS and BE must be positive (unless BE is -1)" << endl;
         exit(1);
     }
-    if (args.threshold_eval < 0) {
-        cout << "error: threshold cannot be negative" << endl;
-        exit(1);
-    }
 
     return args;
 }
 
 
+
+enum Flags {
+    NONE = 0,
+    CHECK = 1,
+    CAPTURE = 2,
+    PROMOTION = 4,
+};
 
 /** Generate a single row of traindata and appends to outfile
  *
@@ -214,17 +214,26 @@ bool generate_one(
     size_t split = line.find("[");
     string fen = line.substr(0, split - 1);
     string wdl = line.substr(split + 1, line.find("]") - split - 1);
+    int flag = Flags::NONE;
 
-    // exclude checks if requested and get eval
+    // exclude checks if requested
     chess::Board board(fen);
-    if (!args.include_checks && board.inCheck()) return false;
-    int eval = engine.get_eval(board);
+    if (board.inCheck()) {
+        flag |= Flags::CHECK;
+        if (!args.include_checks) return false;
+    }
 
-    // exclude mate and those outside the threshold
-    if (eval == Raphael::MATE_EVAL || abs(eval - engine.static_eval(board)) > args.threshold_eval)
-        return false;
+    // eval and skip mate
+    auto [eval, bestmove] = engine.get_eval(board);
+    if (eval == Raphael::MATE_EVAL) return false;
 
-    outfile << fen << "," << wdl << "," << eval << "\n";
+    // record
+    assert(bestmove != chess::Move::NO_MOVE);
+    auto bestmv = chess::uci::moveToUci(bestmove);
+    if (board.isCapture(bestmove)) flag |= Flags::CAPTURE;
+    if (bestmove.typeOf() == chess::Move::PROMOTION) flag |= Flags::PROMOTION;
+
+    outfile << fen << "," << wdl << "," << eval << "," << flag << "," << bestmv << "\n";
     return true;
 }
 
@@ -270,7 +279,7 @@ int main(int argc, char* argv[]) {
         string out_path = args.output_dir + "/" + to_string(i) + ".csv";
         bool write_header = !exists(out_path);
         ofstream outfile(out_path, ios::app);
-        if (write_header) outfile << "fen,wdl,eval\n";
+        if (write_header) outfile << "fen,wdl,eval,flag,bm\n";
 
         // generate
         int n_added = 0;

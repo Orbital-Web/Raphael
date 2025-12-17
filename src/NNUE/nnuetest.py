@@ -2,43 +2,39 @@ import argparse
 import subprocess
 import time
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import torch
-from net import NNUE, NNUEParams
+import yaml
+from net import load_model
 
 
 class NNUETester:
-    def __init__(
-        self,
-        nnuepath: str,
-        datapath: str,
-        feature_factorize: bool,
-        datasize: int,
-    ):
+    def __init__(self, nnuepath: Path, datapath: Path, datasize: int):
+        # load checkpoint
+        print(f"Loading {nnuepath}")
+        config_path = nnuepath / "config.yaml"
+        checkpoint = torch.load(nnuepath / "latest.pth")
+        with config_path.open("r") as f:
+            config: dict[str, Any] = list(yaml.load_all(f, yaml.SafeLoader))[0]
+            assert config["config_version"] >= 1.0
+            model_config: dict[str, Any] = config["model"]
+
         # load model
-        print(
-            f"Loading {nnuepath} "
-            f"{'(feature factorization enabled)' if feature_factorize else ''}"
-        )
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.params = NNUEParams(FEATURE_FACTORIZE=feature_factorize)
-        self.model = NNUE(self.params)
-        self.model.load_state_dict(
-            torch.load(
-                nnuepath,
-                weights_only=False,
-                map_location=self.device,
-            )["model_state_dict"]
-        )
+        self.model = load_model(model_config)
+        self.model.to(self.device)
+        self.model.load_state_dict(checkpoint["model_state_dict"])
         self.model.eval()
         self.quantized_params = self.model.get_quantized_parameters()
+        self.nnuepath = "./" + (nnuepath / "latest.nnue").as_posix()
 
         # initialize input and output structures
         self.data = pd.read_csv(datapath).dropna().head(datasize).reset_index(drop=True)
         self.data[["side", "widx", "bidx"]] = (
-            self.data["fen"].apply(self.params.get_features).apply(pd.Series)
+            self.data["fen"].apply(self.model.get_features).apply(pd.Series)
         )
         self.fens = self.data["fen"].tolist()
         self.cpp_runtime: float = 0
@@ -55,7 +51,7 @@ class NNUETester:
 
         # start C++ nnue process
         proc = subprocess.Popen(
-            ["./nnuetest"],
+            ["./nnuetest", self.nnuepath],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -63,6 +59,9 @@ class NNUETester:
             bufsize=0,
         )
         while True:
+            if proc.poll() is not None:
+                stderr = proc.stderr.read()
+                raise RuntimeError(f"nnuetest exited with error:\n{stderr}")
             if "start typing commands:" in proc.stdout.readline().lower():
                 break
 
@@ -84,8 +83,8 @@ class NNUETester:
 
         # evaluate with python
         for _, row in self.data.iterrows():
-            wf = torch.zeros(self.params.N_INPUTS_FACTORIZED)
-            bf = torch.zeros(self.params.N_INPUTS_FACTORIZED)
+            wf = torch.zeros(self.model.N_INPUTS)
+            bf = torch.zeros(self.model.N_INPUTS)
             wf[row["widx"]] = 1
             bf[row["bidx"]] = 1
             side = row["side"]
@@ -107,24 +106,31 @@ class NNUETester:
         Returns:
             tuple[float, int]: the unquantized and quantized evaluations
         """
-        w0, b0, w1, b1, w2, b2, w3, b3 = self.quantized_params
-        q1, q2, q3 = self.params.QLEVEL1, self.params.QLEVEL2, self.params.QLEVEL3
+        w0, b0, w1, b1 = self.quantized_params
+        qa, qb = self.model.QA, self.model.QB
 
         # get unquantized output
-        out = self.model(wf.unsqueeze(0), bf.unsqueeze(0), torch.tensor([side]))
-        out = self.params.WDL_SCALE * torch.log(out / (1 - out))  # undo sigmoid
-        out = float(out[0, 0])
+        with torch.no_grad():
+            wfd = wf.to(self.device).unsqueeze(0)
+            bfd = bf.to(self.device).unsqueeze(0)
+            sided = torch.tensor([side]).to(self.device)
+            out = self.model(wfd, bfd, sided)
+            out = float(out[0, 0])
 
         # get quantized output
-        w = w0.T @ wf[: self.params.N_INPUTS].detach().numpy().astype(np.int16) + b0
-        b = w0.T @ bf[: self.params.N_INPUTS].detach().numpy().astype(np.int16) + b0
+        w = w0.T @ wf.detach().numpy().astype(np.int16) + b0
+        b = w0.T @ bf.detach().numpy().astype(np.int16) + b0
+
         accumulator = np.expand_dims(
             np.concatenate([w, b]) if side else np.concatenate([b, w]), 0
         )
-        out_q = np.clip(accumulator, 0, 127).astype(np.int32)
-        out_q = np.clip((out_q @ w1.T + b1) >> q1, 0, 127).astype(np.int32)
-        out_q = np.clip((out_q @ w2.T + b2) >> q2, 0, 127).astype(np.int32)
-        out_q = (out_q @ w3.T + b3) >> q3
+        accumulator = np.clip(accumulator, 0, qa)
+        out_q = np.multiply(w1.astype(np.int32), accumulator.astype(np.int32))
+        out_q = out_q.astype(np.int32) @ accumulator.T.astype(np.int32)
+        out_q = qa * b1.astype(np.int32) + out_q
+
+        # ensure c-like division for negative values
+        out_q = (out_q / qa).astype(np.int32) * self.model.OUTPUT_SCALE / (qa * qb)
         out_q = int(out_q[0, 0])
         return out, out_q
 
@@ -150,12 +156,12 @@ class NNUETester:
         evals = np.array(self.eval_pys)
         evalqs = np.array(self.evalq_pys)
         abs_errors = np.abs(evals - evalqs)
-        percent_errors = np.divide(abs_errors, np.abs(evals) + 1e-2) * 100
+        rpd_errors = abs_errors / (0.5 * (evals + evalqs)) * 100
         print(f"  Mean error: {abs_errors.mean():.4f}")
-        print(f"  Mean percent error: {percent_errors.mean():.4f}%")
-        assert percent_errors.mean() < 8, (
+        print(f"  Mean relative percentage difference: {rpd_errors.mean():.4f}%")
+        assert abs_errors.mean() < 5, (
             "Fail: quantization error too large, perhaps there's overflow, "
-            "incorrect scaling, or an incorrect factorization implementation"
+            "incorrect scaling, or an incorrect implementation"
         )
         print("  Passed\n")
 
@@ -167,9 +173,9 @@ class NNUETester:
         evals_true = self.data["eval"].to_numpy()
         evals_guess = np.array(self.evalq_pys)
         abs_errors = np.abs(evals_true - evals_guess)
-        percent_errors = np.divide(abs_errors, np.abs(evals_true) + 1e-2) * 100
+        rpd_errors = abs_errors / (0.5 * (evals_true + evals_guess)) * 100
         print(f"  Mean error: {abs_errors.mean():.4f}")
-        print(f"  Mean percent error: {percent_errors.mean():.4f}%\n")
+        print(f"  Mean relative percentage difference: {rpd_errors.mean():.4f}%")
 
 
 if __name__ == "__main__":
@@ -179,16 +185,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "path",
         nargs="?",
-        default="best.pth from the lastest trainining session",
+        default="lastest trainining session",
         type=str,
-        help="Path to trained pth file.",
-    )
-    parser.add_argument(
-        "-f",
-        "--feature_factorize",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Whether to the trained model uses feature factorization",
+        help="Path to trained checkpoint folder",
     )
     parser.add_argument(
         "-s",
@@ -199,18 +198,20 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # find last training file
-    if args.path == "best.pth from the lastest trainining session":
-        for entry in Path(".").iterdir():
-            if entry.is_dir():
-                file = entry / "best.pth"
-                if file.exists() and str(file) > args.path:
-                    args.path = file.as_posix()
+    # find last training checkpoint
+    if args.path == "lastest trainining session":
+        dirs = sorted(
+            [entry for entry in Path(".").iterdir() if entry.name.startswith("train-")],
+            reverse=True,
+        )
+        if not dirs:
+            raise ValueError(f"No training checkpoint found in {Path(".").as_posix()}")
+        args.path = dirs[0]
+    else:
+        args.path = Path(args.path)
 
     # start tester
-    tester = NNUETester(
-        args.path, "traindata.csv", args.feature_factorize, args.datasize
-    )
+    tester = NNUETester(args.path, Path("dataset/eval/test/1.csv"), args.datasize)
 
     print(
         "Commands:\n"
@@ -237,9 +238,9 @@ if __name__ == "__main__":
             tester.test_quantization()
             tester.test_evaluation()
         else:
-            side, widx, bidx = tester.params.get_features(command)
-            wf = torch.zeros(tester.params.N_INPUTS_FACTORIZED)
-            bf = torch.zeros(tester.params.N_INPUTS_FACTORIZED)
+            side, widx, bidx = tester.model.get_features(command)
+            wf = torch.zeros(tester.model.N_INPUTS)
+            bf = torch.zeros(tester.model.N_INPUTS)
             wf[widx] = 1
             bf[bidx] = 1
             out, out_q = tester.eval_with_py_one(wf, bf, side)

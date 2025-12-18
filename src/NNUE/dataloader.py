@@ -63,7 +63,12 @@ class NNUEDataSet(Dataset):
 
 
 def get_dataloader(
-    dataset_path: Path, model: NNUE, batch_size: int, shuffle: bool, repeat: bool
+    dataset_path: Path,
+    model: NNUE,
+    batch_size: int,
+    shuffle: bool,
+    repeat: bool,
+    start_superbatch: int = 0,
 ) -> Generator[DataLoader, None, None]:
     """Yields each dataloader in the dataset path.
     If repeat is True, it will restart from the first superbatch after iterating
@@ -75,6 +80,7 @@ def get_dataloader(
         batch_size (int): batch size for the dataloader
         shuffle (bool): whether to shuffle the data points in each dataloader
         repeat (bool): whether to loop through the superbatches endlessly
+        start_superbatch (int): superbatch number to start from
 
     Yields:
         DataLoader: the dataloader for that superbatch
@@ -86,19 +92,21 @@ def get_dataloader(
     count = len(list(dataset_path.glob("*.csv")))
 
     # iterate
+    b = start_superbatch
     while True:
-        for b in range(1, count + 1):
-            filename = f"{b}.csv"
-            # check for cache
-            if (cache_dir / filename).exists():
-                filepath = cache_dir / filename
-            else:
-                filepath = dataset_path / filename
-
-            # get dataloader
-            dataset = NNUEDataSet(model, filepath, cache_dir)
-            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
-            yield dataloader
-
-        if not repeat:
+        if b >= count and not repeat:
             break
+
+        filename = f"{(b % count)+1}.csv"
+        # check for cache
+        if (cache_dir / filename).exists():
+            filepath = cache_dir / filename
+        else:
+            filepath = dataset_path / filename
+
+        # get dataloader
+        dataset = NNUEDataSet(model, filepath, cache_dir)
+        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+        yield dataloader
+
+        b += 1

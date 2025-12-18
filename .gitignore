@@ -222,6 +222,10 @@ SFML-2.6.0/
 # VS Code
 .vscode/
 
+# Helper Repositories (not submodules)
+fastchess
+texel-tuner
+
 # Chess Games
 src/Games/stockfish/
 src/Games/*.pgn

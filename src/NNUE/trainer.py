@@ -64,10 +64,16 @@ def train(
 
     # training loop
     for epoch, train_loader in enumerate(
-        get_dataloader(train_path, model, batch_size, shuffle=True, repeat=True)
+        get_dataloader(
+            train_path,
+            model,
+            batch_size,
+            shuffle=True,
+            repeat=True,
+            start_superbatch=start_epoch,
+        ),
+        start_epoch,
     ):
-        if epoch < start_epoch:
-            continue
         if epoch >= epochs:
             break
 

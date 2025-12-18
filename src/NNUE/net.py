@@ -2,7 +2,6 @@ import warnings
 from abc import ABC, abstractmethod
 from typing import Any
 
-import chess
 import numpy as np
 import torch
 import torch.nn as nn
@@ -22,6 +21,22 @@ class ExportOption(TypedDict):
     wrange: tuple[float, float]
     brange: tuple[float, float]
     transpose: bool
+
+
+PIECE_MAP = {
+    "P": 0,
+    "N": 1,
+    "B": 2,
+    "R": 3,
+    "Q": 4,
+    "K": 5,
+    "p": 6,
+    "n": 7,
+    "b": 8,
+    "r": 9,
+    "q": 10,
+    "k": 11,
+}
 
 
 class NNUE(nn.Module, ABC):
@@ -200,20 +215,23 @@ class NNUE_All1SCReLU(NNUE):
 
     @staticmethod
     def get_features(fen: str) -> tuple[bool, list[int], list[int]]:
-        board = chess.Board(fen)
-
         widx, bidx = [], []
-        for sq, p in board.piece_map().items():
-            pc = p.color
-            pt = p.piece_type - 1  # 1 indexed
-
-            # our pnbrqk, their pnbrqk
-            wp = 6 * (pc == chess.BLACK) + pt
-            bp = 6 * (pc == chess.WHITE) + pt
-
+        pieces, side, _ = fen.split(" ", 2)
+        sq = 56
+        for p in pieces:
+            if p == "/":
+                sq -= 16
+                continue
+            if p.isnumeric():
+                sq += int(p)
+                continue
+            wp = PIECE_MAP[p]
+            bp = (wp + 6) % 12
             widx.append(64 * wp + sq)
-            bidx.append(64 * bp + chess.square_mirror(sq))
-        return board.turn == chess.WHITE, widx, bidx
+            bidx.append(64 * bp + (sq ^ 0x38))
+            sq += 1
+
+        return side == "w", widx, bidx
 
     def forward(
         self, white_features: torch.Tensor, black_features: torch.Tensor, side: bool

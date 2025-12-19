@@ -21,38 +21,19 @@ TOT_VAL = (
     + 4 * PIECES["b"]
     + 4 * PIECES["r"]
     + 2 * PIECES["q"]
-    + 1  # indexing
 )
 
 
 class PieceStats(BaseModel):
     # per-position count
-    total: list[int] = [0 for _ in range(30)]
-
-    # per-piece count
-    p: int = 0
-    n: int = 0
-    b: int = 0
-    r: int = 0
-    q: int = 0
-
-    def avg_count(self, n_positions) -> list[float]:
-        return [
-            self.p / n_positions,
-            self.n / n_positions,
-            self.b / n_positions,
-            self.r / n_positions,
-            self.q / n_positions,
-        ]
+    counts: list[int] = [0 for _ in range(30)]
+    materials: list[int] = [0 for _ in range(100)]
 
     def __iadd__(self, other: "PieceStats") -> "PieceStats":
         for i in range(30):
-            self.total[i] += other.total[i]
-        self.p += other.p
-        self.n += other.n
-        self.b += other.b
-        self.r += other.r
-        self.q += other.q
+            self.counts[i] += other.counts[i]
+        for i in range(100):
+            self.materials[i] += other.materials[i]
         return self
 
 
@@ -91,9 +72,9 @@ class Stats(BaseModel):
     scores_d_sum: list[int] = [0 for _ in range(N_BUCKETS)]
     scores_l_sum: list[int] = [0 for _ in range(N_BUCKETS)]
 
-    ms_sum: list[list[int]] = [[0 for _ in range(N_BUCKETS)] for _ in range(TOT_VAL)]
-    ms_w_sum: list[list[int]] = [[0 for _ in range(N_BUCKETS)] for _ in range(TOT_VAL)]
-    ms_d_sum: list[list[int]] = [[0 for _ in range(N_BUCKETS)] for _ in range(TOT_VAL)]
+    ms_sum: list[list[int]] = [[0 for _ in range(N_BUCKETS)] for _ in range(100)]
+    ms_w_sum: list[list[int]] = [[0 for _ in range(N_BUCKETS)] for _ in range(100)]
+    ms_d_sum: list[list[int]] = [[0 for _ in range(N_BUCKETS)] for _ in range(100)]
 
     @property
     def scores_wdl_avg(self) -> list[float]:
@@ -136,7 +117,7 @@ class Stats(BaseModel):
             self.scores_w_sum[i] += other.scores_w_sum[i]
             self.scores_d_sum[i] += other.scores_d_sum[i]
             self.scores_l_sum[i] += other.scores_l_sum[i]
-            for m in range(TOT_VAL):
+            for m in range(100):
                 self.ms_sum[m][i] += other.ms_sum[m][i]
                 self.ms_w_sum[m][i] += other.ms_w_sum[m][i]
                 self.ms_d_sum[m][i] += other.ms_d_sum[m][i]
@@ -152,7 +133,7 @@ def get_stats(filepath: Path) -> Stats:
 
         for row in f:
             stats.n_positions += 1
-            fen, wdl, eval_rel = row.strip().split(",")
+            fen, wdl, eval_rel, *_ = row.strip().split(",", 3)
             wdl = float(wdl)
             eval_rel = int(eval_rel)
 
@@ -164,15 +145,16 @@ def get_stats(filepath: Path) -> Stats:
                 stats.wdls.d += 1
 
             pieces, side, _ = fen.split(" ", 2)
+            stats.side.__dict__[side] += 1
+
             n_pieces = 0
             material = 0
             for p in pieces.lower():
                 if p in PIECES:
                     n_pieces += 1
                     material += PIECES[p]
-                    stats.pieces.__dict__[p] += 1
-            stats.pieces.total[n_pieces - 1] += 1
-            stats.side.__dict__[side] += 1
+            stats.pieces.counts[n_pieces - 1] += 1
+            stats.pieces.materials[material] += 1
 
             score_bucket = (eval_rel - MIN_SCORE) // BUCKET_SIZE
             score_bucket = np.clip(score_bucket, 0, N_BUCKETS - 1)
@@ -215,21 +197,16 @@ if __name__ == "__main__":
 
     # Piece counts
     ax = fig.add_subplot(gs[0, 0])
-    ax.bar(list(range(1, 31)), stats.pieces.total)
+    ax.bar(list(range(1, 31)), stats.pieces.counts)
     ax.set_ylabel("No. Positions")
     ax.set_title("Piece Counts")
 
-    # Average count per piece
+    # Material counts
     ax = fig.add_subplot(gs[0, 1])
-    ax.bar(
-        ["pawn", "knight", "bishop", "rook", "queen"],
-        stats.pieces.avg_count(stats.n_positions),
-        zorder=2,
-    )
-    ax.grid(axis="y", zorder=1)
-    ax.set_yticks([i for i in range(11)])
-    ax.set_ylabel("Count")
-    ax.set_title("Average Piece Count")
+    ax.bar(list(range(0, 100)), stats.pieces.materials, width=1)
+    ax.set_xlim(0, TOT_VAL + 1)
+    ax.set_ylabel("No. Positions")
+    ax.set_title("Material (1,3,3,5,9)")
 
     # Side-to-move
     ax = fig.add_subplot(gs[0, 2])
@@ -310,26 +287,28 @@ if __name__ == "__main__":
     ax = fig.add_subplot(gs[1, 2])
     ax.contourf(
         stats.buckets,
-        list(range(TOT_VAL)),
+        list(range(100)),
         stats.ms_w_avg,
         levels=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
     )
-    ax.set_xlim(MIN_SCORE // 5, MAX_SCORE)
+    ax.set_xlim(MIN_SCORE // 5, 4 * MAX_SCORE // 5)
+    ax.set_ylim(0, TOT_VAL + 1)
     ax.set_xlabel("Eval")
-    ax.set_ylabel("Material (1, 3, 3, 5, 9)")
+    ax.set_ylabel("Material (1,3,3,5,9)")
     ax.set_title("Winrate")
 
     # Score vs Material vs Drawrate
     ax = fig.add_subplot(gs[1, 3])
     ax.contourf(
         stats.buckets,
-        list(range(TOT_VAL)),
+        list(range(100)),
         stats.ms_d_avg,
         levels=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
     )
     ax.set_xlim(MIN_SCORE // 2, MAX_SCORE // 2)
+    ax.set_ylim(0, TOT_VAL + 1)
     ax.set_xlabel("Eval")
-    ax.set_ylabel("Material (1, 3, 3, 5, 9)")
+    ax.set_ylabel("Material (1,3,3,5,9)")
     ax.set_title("Drawrate")
 
     plt.tight_layout()

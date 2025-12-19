@@ -8,13 +8,21 @@ from pydantic import BaseModel
 from scipy.optimize import curve_fit
 from tqdm import tqdm
 
-MIN_SCORE = -1000
-MAX_SCORE = 1000
-N_BUCKETS = 50
+MIN_SCORE = -1500
+MAX_SCORE = 1500
+N_BUCKETS = 100
 LIMIT = 8
 
 BUCKET_SIZE = (MAX_SCORE - MIN_SCORE) // N_BUCKETS
-PIECES = set("pnbrq")
+PIECES = {"p": 1, "n": 3, "b": 3, "r": 5, "q": 9}
+TOT_VAL = (
+    16 * PIECES["p"]
+    + 4 * PIECES["n"]
+    + 4 * PIECES["b"]
+    + 4 * PIECES["r"]
+    + 2 * PIECES["q"]
+    + 1  # indexing
+)
 
 
 class PieceStats(BaseModel):
@@ -78,11 +86,44 @@ class Stats(BaseModel):
 
     buckets: list[int] = [b for b in range(MIN_SCORE, MAX_SCORE, BUCKET_SIZE)]
     scores: list[int] = [0 for _ in range(N_BUCKETS)]
-    scores_wdl_sum: list[float] = [0.0 for _ in range(N_BUCKETS)]
+    scores_wdl_sum: list[int] = [0 for _ in range(N_BUCKETS)]
+    scores_w_sum: list[int] = [0 for _ in range(N_BUCKETS)]
+    scores_d_sum: list[int] = [0 for _ in range(N_BUCKETS)]
+    scores_l_sum: list[int] = [0 for _ in range(N_BUCKETS)]
+
+    ms_sum: list[list[int]] = [[0 for _ in range(N_BUCKETS)] for _ in range(TOT_VAL)]
+    ms_w_sum: list[list[int]] = [[0 for _ in range(N_BUCKETS)] for _ in range(TOT_VAL)]
+    ms_d_sum: list[list[int]] = [[0 for _ in range(N_BUCKETS)] for _ in range(TOT_VAL)]
 
     @property
     def scores_wdl_avg(self) -> list[float]:
-        return [w / (s + 1e-6) for s, w in zip(self.scores, self.scores_wdl_sum)]
+        return [c / s if c else 0.0 for s, c in zip(self.scores, self.scores_wdl_sum)]
+
+    @property
+    def scores_w_avg(self) -> list[float]:
+        return [c / s if c else 0.0 for s, c in zip(self.scores, self.scores_w_sum)]
+
+    @property
+    def scores_d_avg(self) -> list[float]:
+        return [c / s if c else 0.0 for s, c in zip(self.scores, self.scores_d_sum)]
+
+    @property
+    def scores_l_avg(self) -> list[float]:
+        return [c / s if c else 0.0 for s, c in zip(self.scores, self.scores_l_sum)]
+
+    @property
+    def ms_w_avg(self) -> list[list[float]]:
+        return [
+            [c / s if c else 0.0 for s, c in zip(ms, ms_w)]
+            for ms, ms_w in zip(self.ms_sum, self.ms_w_sum)
+        ]
+
+    @property
+    def ms_d_avg(self) -> list[list[float]]:
+        return [
+            [c / (s + 1e-6) for s, c in zip(ms, ms_d)]
+            for ms, ms_d in zip(self.ms_sum, self.ms_d_sum)
+        ]
 
     def __iadd__(self, other: "Stats") -> "Stats":
         self.n_positions += other.n_positions
@@ -92,6 +133,13 @@ class Stats(BaseModel):
         for i in range(N_BUCKETS):
             self.scores[i] += other.scores[i]
             self.scores_wdl_sum[i] += other.scores_wdl_sum[i]
+            self.scores_w_sum[i] += other.scores_w_sum[i]
+            self.scores_d_sum[i] += other.scores_d_sum[i]
+            self.scores_l_sum[i] += other.scores_l_sum[i]
+            for m in range(TOT_VAL):
+                self.ms_sum[m][i] += other.ms_sum[m][i]
+                self.ms_w_sum[m][i] += other.ms_w_sum[m][i]
+                self.ms_d_sum[m][i] += other.ms_d_sum[m][i]
         return self
 
 
@@ -117,9 +165,11 @@ def get_stats(filepath: Path) -> Stats:
 
             pieces, side, _ = fen.split(" ", 2)
             n_pieces = 0
+            material = 0
             for p in pieces.lower():
                 if p in PIECES:
                     n_pieces += 1
+                    material += PIECES[p]
                     stats.pieces.__dict__[p] += 1
             stats.pieces.total[n_pieces - 1] += 1
             stats.side.__dict__[side] += 1
@@ -128,6 +178,13 @@ def get_stats(filepath: Path) -> Stats:
             score_bucket = np.clip(score_bucket, 0, N_BUCKETS - 1)
             stats.scores[score_bucket] += 1
             stats.scores_wdl_sum[score_bucket] += wdl if side == "w" else 1.0 - wdl
+            stats.scores_w_sum[score_bucket] += wdl == int(side == "w")
+            stats.scores_d_sum[score_bucket] += wdl == 0.5
+            stats.scores_l_sum[score_bucket] += wdl == int(side == "b")
+
+            stats.ms_sum[material][score_bucket] += 1
+            stats.ms_w_sum[material][score_bucket] += wdl == int(side == "w")
+            stats.ms_d_sum[material][score_bucket] += wdl == 0.5
 
     return stats
 
@@ -148,13 +205,13 @@ if __name__ == "__main__":
             stats += res
 
     # fit sigmoid to scores vs wdl
-    params, _ = curve_fit(sigmoid_k, stats.buckets, stats.scores_wdl_avg, p0=200.0)
+    params, _ = curve_fit(sigmoid_k, stats.buckets, stats.scores_wdl_avg, p0=1000.0)
     wdl_scale = params[0]
 
     # plot
     print("Plotting...")
-    fig = plt.figure(figsize=(9, 9))
-    gs = fig.add_gridspec(3, 2)
+    fig = plt.figure(figsize=(18, 8))
+    gs = fig.add_gridspec(2, 4)
 
     # Piece counts
     ax = fig.add_subplot(gs[0, 0])
@@ -175,7 +232,7 @@ if __name__ == "__main__":
     ax.set_title("Average Piece Count")
 
     # Side-to-move
-    ax = fig.add_subplot(gs[1, 0])
+    ax = fig.add_subplot(gs[0, 2])
     ax.bar(
         ["white", "black"],
         np.array([stats.side.w, stats.side.b]) * 100.0 / stats.n_positions,
@@ -184,7 +241,7 @@ if __name__ == "__main__":
     ax.set_title("Side")
 
     # WDL
-    ax = fig.add_subplot(gs[1, 1])
+    ax = fig.add_subplot(gs[0, 3])
     ax.bar(
         ["white", "draw", "black"],
         (
@@ -197,32 +254,83 @@ if __name__ == "__main__":
     ax.set_title("WDL")
 
     # Scores
-    ax = fig.add_subplot(gs[2, 0])
+    ax = fig.add_subplot(gs[1, 0])
     ax.bar(stats.buckets, stats.scores, width=BUCKET_SIZE)
     ax.set_xlabel("Eval")
     ax.set_ylabel("No. Positions")
     ax.set_title("Scores")
 
     # Score vs WDL
-    ax = fig.add_subplot(gs[2, 1])
+    ax = fig.add_subplot(gs[1, 1])
     ax.scatter(
         stats.buckets,
         stats.scores_wdl_avg,
         c="blue",
         marker="x",
         s=10,
-        label="Datapoints",
+        label="Measured WDL",
+    )
+    ax.scatter(
+        stats.buckets,
+        stats.scores_w_avg,
+        c="green",
+        marker="x",
+        s=10,
+        label="Measured Winrate",
+    )
+    ax.scatter(
+        stats.buckets,
+        stats.scores_d_avg,
+        c="orange",
+        marker="x",
+        s=10,
+        label="Measured drawrate",
+    )
+    ax.scatter(
+        stats.buckets,
+        stats.scores_l_avg,
+        c="red",
+        marker="x",
+        s=10,
+        label="Measured lossrate",
     )
     ax.plot(
         stats.buckets,
         sigmoid_k(np.array(stats.buckets), wdl_scale),
-        "r-",
-        label=f"Fitted with scale={wdl_scale:.2f}",
+        "b-",
+        linewidth=0.7,
+        label=f"WDL fit {wdl_scale:.2f}",
     )
-    ax.legend(loc="upper left")
+    ax.legend(loc="center left", prop={"size": 8})
     ax.set_xlabel("Eval")
     ax.set_ylabel("WDL")
     ax.set_title("Eval vs WDL")
+
+    # Score vs Material vs Winrate
+    ax = fig.add_subplot(gs[1, 2])
+    ax.contourf(
+        stats.buckets,
+        list(range(TOT_VAL)),
+        stats.ms_w_avg,
+        levels=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+    )
+    ax.set_xlim(MIN_SCORE // 5, MAX_SCORE)
+    ax.set_xlabel("Eval")
+    ax.set_ylabel("Material (1, 3, 3, 5, 9)")
+    ax.set_title("Winrate")
+
+    # Score vs Material vs Drawrate
+    ax = fig.add_subplot(gs[1, 3])
+    ax.contourf(
+        stats.buckets,
+        list(range(TOT_VAL)),
+        stats.ms_d_avg,
+        levels=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+    )
+    ax.set_xlim(MIN_SCORE // 2, MAX_SCORE // 2)
+    ax.set_xlabel("Eval")
+    ax.set_ylabel("Material (1, 3, 3, 5, 9)")
+    ax.set_title("Drawrate")
 
     plt.tight_layout()
     plt.show()

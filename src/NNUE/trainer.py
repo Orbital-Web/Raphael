@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -136,6 +137,12 @@ def train(
         ax.plot(
             range(1, epoch + 2, save_freq), test_losses[::save_freq], "g-", label="Test"
         )
+        ymin = 0.8 * min(*train_losses, *test_losses)
+        ymax = 1.2 * max(*train_losses, *test_losses)
+        ax.set_ylim(ymin, ymax)
+        ax.set_yscale("log")
+        ax.set_yticks(np.logspace(np.log10(ymin), np.log10(ymax), 5))
+        ax.yaxis.set_major_formatter("{x:.6f}")
         ax.legend()
         plt.draw()
         plt.pause(0.1)

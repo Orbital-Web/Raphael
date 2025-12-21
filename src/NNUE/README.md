@@ -90,18 +90,20 @@ config_version: 1.0
 
 model:
   architecture: all-1-screlu
-  wdl_scale: 258.0
+  wdl_scale: 306.64
   # architecture-specific parameters, such as hidden_size, qa, qb, etc...
 
 training_options:
   train_path: dataset/eval/train_clean
-  test_path: dataset/eval/test
+  test_path: dataset/eval/test_clean
 
-  superbatches: 500
+  superbatches: 2000
   lr_init: 0.001
   lr_final: 0.00000243
-  patience: 10
-  batch_size: 32
+  patience: 5
+  batch_size: 16384
+
+  save_freq: 50
 ```
 
 The `model` field contains the `architecture` of the model, and the `wdl_scale` used to convert between eval and WDL. Each architecture also has its own set of parameters which must be defined to initialize the model. Note that it is very important that the architecture and parameters match the model on the CPU side.
@@ -110,7 +112,7 @@ The `training_options` field contains the various settings to control the model 
 
 The `superbatches` field specifies how many superbatches to train for in total. If the superbatch index exceeds the number of training files, it will loop around to the first superbatch, effectively completing an epoch. The scheduler will decay the learning rate from `lr_init` to `lr_final` throughout the course of this process.
 
-Finally, `patience` determines how many superbatches of consecutive non-improvement in the validation loss must occur before early stopping the training, and `batch_size` determines the batch size during training.
+Finally, `patience` determines how many superbatches of consecutive non-improvement in the validation loss must occur before early stopping the training (with 0 meaning infinite), and `batch_size` determines the batch size during training. `save_freq` determines the number of superbatches before the validation loss is computed.
 
 Note that training can take quite a while for the first epoch, as the dataloader must compute the input features to the model for every data point. These results will be cached in the `/cache` directory within the dataset directory, greatly speeding up the training process for future iterations.
 

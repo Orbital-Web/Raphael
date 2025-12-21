@@ -11,7 +11,7 @@ from tqdm import tqdm
 MIN_SCORE = -1500
 MAX_SCORE = 1500
 N_BUCKETS = 100
-LIMIT = 8
+LIMIT = 1000
 
 BUCKET_SIZE = (MAX_SCORE - MIN_SCORE) // N_BUCKETS
 PIECES = {"p": 1, "n": 3, "b": 3, "r": 5, "q": 9}

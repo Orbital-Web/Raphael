@@ -6,16 +6,16 @@ model:
   qa: 255
   qb: 64
   output_scale: 400
-  wdl_scale: 258.0
+  wdl_scale: 306.64
 
 training_options:
   train_path: dataset/eval/train_clean
-  test_path: dataset/eval/test
+  test_path: dataset/eval/test_clean
 
-  superbatches: 500
+  superbatches: 2000
   lr_init: 0.001
   lr_final: 0.00000243
-  patience: 10
-  batch_size: 32
+  patience: 5
+  batch_size: 16384
 
-  save_freq: 4
+  save_freq: 50

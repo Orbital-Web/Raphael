@@ -25,7 +25,7 @@ def clean(args: tuple[Path, Path]) -> None:
     df = pd.read_csv(filepath)
 
     mask = (df["flag"] & EXCLUDE) == 0
-    df = df[mask][["fen", "wdl", "eval"]]  # FIXME: remove flag
+    df = df[mask][["fen", "wdl", "eval"]]
 
     outpath = outdir / name
     df.to_csv(outpath, sep=",", index=False)

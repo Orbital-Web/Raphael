@@ -25,6 +25,7 @@ def train(
     epochs: int,
     patience: int,
     batch_size: int,
+    save_freq: int,
     train_path: Path,
     test_path: Path,
     checkpoint: dict[str, Any] | None,
@@ -101,9 +102,14 @@ def train(
         train_loss = total_loss / len(train_loader)
         train_losses.append(train_loss)
 
-        test_loss = test(model, criterion, test_path, device)
-        test_losses.append(test_loss)
-        print(f"Train: {train_loss:.6f} | Test: {test_loss:.6f}")
+        if epoch % save_freq != 0:
+            test_loss = float("nan")
+            test_losses.append(test_loss)
+            print(f"Train: {train_loss:.6f}")
+        else:
+            test_loss = test(model, criterion, test_path, device)
+            test_losses.append(test_loss)
+            print(f"Train: {train_loss:.6f} | Test: {test_loss:.6f}")
 
         # save model
         checkpoint = {
@@ -115,18 +121,21 @@ def train(
         }
         torch.save(checkpoint, f"{outfolder}/latest.pth")
         model.export(f"{outfolder}/latest.nnue")
-        if test_loss < best_loss:
-            best_loss = test_loss
-            torch.save(checkpoint, f"{outfolder}/best.pth")
-            model.export(f"{outfolder}/best.nnue")
-            epochs_without_improvement = 0
-        else:
-            epochs_without_improvement += 1
+        if epoch % save_freq == 0:
+            if test_loss < best_loss:
+                best_loss = test_loss
+                torch.save(checkpoint, f"{outfolder}/best.pth")
+                model.export(f"{outfolder}/best.nnue")
+                epochs_without_improvement = 0
+            else:
+                epochs_without_improvement += 1
 
         # update the plot
         ax.clear()
         ax.plot(range(1, epoch + 2), train_losses, "b-", label="Train")
-        ax.plot(range(1, epoch + 2), test_losses, "g-", label="Test")
+        ax.plot(
+            range(1, epoch + 2, save_freq), test_losses[::save_freq], "g-", label="Test"
+        )
         ax.legend()
         plt.draw()
         plt.pause(0.1)
@@ -171,7 +180,7 @@ def test(
 
     with torch.no_grad():
         for test_loader in get_dataloader(
-            test_path, model, 256, shuffle=False, repeat=False
+            test_path, model, 16384, shuffle=False, repeat=False
         ):
             total_count += len(test_loader)
             for (wdata, bdata, side), labels in tqdm(test_loader, desc="Testing "):
@@ -243,6 +252,7 @@ if __name__ == "__main__":
         train_config["superbatches"],
         train_config["patience"],
         train_config["batch_size"],
+        train_config["save_freq"],
         Path(train_config["train_path"]),
         Path(train_config["test_path"]),
         checkpoint,

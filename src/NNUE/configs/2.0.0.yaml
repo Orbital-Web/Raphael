@@ -15,7 +15,7 @@ training_options:
   superbatches: 3000
   lr_init: 0.001
   lr_final: 0.00000243
-  patience: 10
   batch_size: 16384
-
+  lambda: 0.4
+  patience: 10
   save_freq: 50

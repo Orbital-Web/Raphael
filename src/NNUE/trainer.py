@@ -26,6 +26,7 @@ def train(
     epochs: int,
     patience: int,
     batch_size: int,
+    lmbda: float,
     save_freq: int,
     train_path: Path,
     test_path: Path,
@@ -70,6 +71,7 @@ def train(
             train_path,
             model,
             batch_size,
+            lmbda,
             shuffle=True,
             repeat=True,
             start_superbatch=start_epoch,
@@ -108,7 +110,7 @@ def train(
             test_losses.append(test_loss)
             print(f"Train: {train_loss:.6f}")
         else:
-            test_loss = test(model, criterion, test_path, device)
+            test_loss = test(model, criterion, test_path, lmbda, device)
             test_losses.append(test_loss)
             print(f"Train: {train_loss:.6f} | Test: {test_loss:.6f}")
 
@@ -179,6 +181,7 @@ def test(
     model: NNUE,
     criterion: nn.modules.loss._Loss,
     test_path: Path,
+    lmbda: float,
     device: str,
 ) -> float:
     model.eval()
@@ -187,7 +190,7 @@ def test(
 
     with torch.no_grad():
         for test_loader in get_dataloader(
-            test_path, model, 16384, shuffle=False, repeat=False
+            test_path, model, 16384, lmbda, shuffle=False, repeat=False
         ):
             total_count += len(test_loader)
             for (wdata, bdata, side), labels in tqdm(test_loader, desc="Testing "):
@@ -259,6 +262,7 @@ if __name__ == "__main__":
         train_config["superbatches"],
         train_config["patience"],
         train_config["batch_size"],
+        train_config["lambda"],
         train_config["save_freq"],
         Path(train_config["train_path"]),
         Path(train_config["test_path"]),

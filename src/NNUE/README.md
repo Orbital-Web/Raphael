@@ -100,9 +100,9 @@ training_options:
   superbatches: 3000
   lr_init: 0.001
   lr_final: 0.00000243
-  patience: 10
   batch_size: 16384
-
+  lambda: 0.4
+  patience: 10
   save_freq: 50
 ```
 
@@ -112,7 +112,9 @@ The `training_options` field contains the various settings to control the model 
 
 The `superbatches` field specifies how many superbatches to train for in total. If the superbatch index exceeds the number of training files, it will loop around to the first superbatch, effectively completing an epoch. The scheduler will decay the learning rate from `lr_init` to `lr_final` throughout the course of this process.
 
-Finally, `patience` determines how many superbatches of consecutive non-improvement in the validation loss must occur before early stopping the training (with 0 meaning infinite), and `batch_size` determines the batch size during training. `save_freq` determines the number of superbatches before the validation loss is computed.
+`batch_size` determines the number of gradient samples used for a single gradient update during training, and `lambda` determines the ratio between the relative WDL and relative WDL scale eval to use as the training label. With a `lambda` of 0, only the net's eval is used as the label, whereas with a `lambda` of 1, only the final relative outcome of the game is used as the label. In general, you would want to use a value in between, such as 0.4.
+
+Finally, `patience` determines how many superbatches of consecutive non-improvement in the validation loss must occur before early stopping the training (with 0 meaning infinite), and `save_freq` determines the number of superbatches before the validation loss is computed. Note that the number of superbatches before early stopping is effectively the product of `patience` and `save_freq`.
 
 ## NNUETest
 

@@ -6,8 +6,8 @@
 namespace Raphael {
 // should remain largely unchanged
 static constexpr int MAX_DEPTH = 128;
-static constexpr int MATE_EVAL = 2000000000;          // evaluation for immediate mate
-static constexpr uint32_t DEF_TABLE_SIZE = 12582912;  // default no. entries in tt (192mb)
+static constexpr int MATE_EVAL = 2000000000;         // evaluation for immediate mate
+static constexpr uint32_t DEF_TABLE_SIZE = 4194304;  // default no. entries in tt (64mb)
 
 
 

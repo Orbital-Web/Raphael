@@ -109,7 +109,7 @@ chess::Move v2_0::get_move(
                 auto now = ch::high_resolution_clock::now();
                 auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
                 auto nps = (dtime) ? nodes * 1000 / dtime : 0;
-                char sign = (eval >= 0) ? '\0' : '-';
+                const char* sign = (eval >= 0) ? "" : "-";
                 lock_guard<mutex> lock(cout_mutex);
                 cout << "info depth " << depth - 1 << " time " << dtime << " nodes " << nodes
                      << " score mate " << sign << MATE_EVAL - abs(eval) << " nps " << nps << " pv "
@@ -119,7 +119,7 @@ chess::Move v2_0::get_move(
 #ifndef MUTEEVAL
             else {
                 // get absolute evaluation (i.e, set to white's perspective)
-                char sign = (whiteturn == (eval > 0)) ? '\0' : '-';
+                const char* sign = (eval >= 0) ? "" : "-";
                 lock_guard<mutex> lock(cout_mutex);
                 cout << "Eval: " << sign << "#" << MATE_EVAL - abs(eval) << "\tNodes: " << nodes
                      << "\n"

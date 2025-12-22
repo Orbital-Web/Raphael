@@ -33,13 +33,13 @@ cge::GamePlayer* player_factory(char* playertype, char* name) {
     else if (!strcmp(playertype, "Raphaelv2.0"))
         return new Raphael::v2_0(name);
     else if (!strcmp(playertype, "Raphael"))
-        return new Raphael::v1_8(name);  // FIXME: use v1.8 for now until v2 is better than v1.8
+        return new Raphael::v2_0(name);
 
     // invalid
     printf("Invalid player type: %s\n", playertype);
     printf("Valid player types are:\n");
     printf("   human:\t cge::HumanPlayer\n");
-    printf("   Raphael:\t Raphael::v1_8\n");  // FIXME:
+    printf("   Raphael:\t Raphael::v2_0\n");
     printf("   Raphaelv1.0:\t Raphael::v1_0\n");
     printf("   Raphaelv1.8:\t Raphael::v1_8\n");
     printf("   Raphaelv2.0:\t Raphael::v2_0\n");

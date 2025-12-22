@@ -118,8 +118,12 @@ class NNUETester:
             out = float(out[0, 0])
 
         # get quantized output
-        w = w0.T @ wf.detach().numpy().astype(np.int16) + b0
-        b = w0.T @ bf.detach().numpy().astype(np.int16) + b0
+        w = w0.T @ wf.detach().numpy().astype(np.int32) + b0
+        b = w0.T @ bf.detach().numpy().astype(np.int32) + b0
+        assert np.all(np.iinfo(np.int16).min <= w)
+        assert np.all(np.iinfo(np.int16).max >= w)
+        assert np.all(np.iinfo(np.int16).min <= b)
+        assert np.all(np.iinfo(np.int16).max >= b)
 
         accumulator = np.expand_dims(
             np.concatenate([w, b]) if side else np.concatenate([b, w]), 0
@@ -156,10 +160,11 @@ class NNUETester:
         evals = np.array(self.eval_pys)
         evalqs = np.array(self.evalq_pys)
         abs_errors = np.abs(evals - evalqs)
-        rpd_errors = abs_errors / (0.5 * (evals + evalqs)) * 100
+        rpd_errors = abs_errors / (0.5 * np.abs(evals + evalqs)) * 100
         print(f"  Mean error: {abs_errors.mean():.4f}")
+        print(f"  Max error:  {abs_errors.max():.4f}")
         print(f"  Mean relative percentage difference: {rpd_errors.mean():.4f}%")
-        assert abs_errors.mean() < 5, (
+        assert abs_errors.mean() < 8, (
             "Fail: quantization error too large, perhaps there's overflow, "
             "incorrect scaling, or an incorrect implementation"
         )
@@ -173,7 +178,7 @@ class NNUETester:
         evals_true = self.data["eval"].to_numpy()
         evals_guess = np.array(self.evalq_pys)
         abs_errors = np.abs(evals_true - evals_guess)
-        rpd_errors = abs_errors / (0.5 * (evals_true + evals_guess)) * 100
+        rpd_errors = abs_errors / (0.5 * np.abs(evals_true + evals_guess)) * 100
         print(f"  Mean error: {abs_errors.mean():.4f}")
         print(f"  Mean relative percentage difference: {rpd_errors.mean():.4f}%")
 

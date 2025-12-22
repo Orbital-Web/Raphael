@@ -46,7 +46,6 @@ def train(
         optimizer.load_state_dict(checkpoint["optim_state_dict"])
         scheduler.load_state_dict(checkpoint["sched_state_dict"])
         start_epoch = checkpoint["epoch"]
-        best_loss = checkpoint["loss"]
 
         # load from loss.csv if available
         loss_path = outfolder / "loss.csv"
@@ -54,6 +53,7 @@ def train(
             df = pd.read_csv(loss_path)
             train_losses = df["Train Loss"].tolist()
             test_losses = df["Test Loss"].tolist()
+            best_loss = min(test_losses)
 
     print(f"Starting training on device {device}. Output in {outfolder}/")
 

@@ -29,13 +29,11 @@ The following are the historic **[CCRL 40/2 ELO](https://www.computerchess.org.u
 
 ## Getting Started
 
-Builds for Windows and Ubuntu/WSL are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page.
+Builds of the UCI engine for Windows and Ubuntu/WSL are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page.
 
-The UCI engine is a standalone executable. The GUI is in `main.zip` and should be extracted and kept in the `main` folder to ensure the executable can correctly find its dependencies (you may rename the folder). If you are on Ubuntu, please run `sudo apt-get install libsfml-dev` as the build is dynamically linked (the makefile will do this for you).
+Please refer to the [following section](#compiling-on-ubuntuwsl-recommended) to compile the GUI and/or the engine yourself on Windows or Linux.
 
-Please see the sections below on how to compile the code yourself if the executables do not work for you.
-
-You can start a quick GUI match against yourself and **Raphael** as follows:
+With the GUI compiled, you can start a quick GUI match against yourself and **Raphael** as follows:
 
 ```shell
 main.exe human "Human" Raphael "Raphael" -s "game.pgn"  # Windows
@@ -46,7 +44,7 @@ You can see other command-line arguments by running `main.exe -h`. The UCI engin
 
 ### Compiling on Ubuntu/WSL (Recommended)
 
-This is the recommended way of compiling **Raphael**. If you are on Windows, you can install [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) to follow these steps (it may be easier than the compilation steps described in the Windows portion).
+This is the recommended way of compiling **Raphael**. If you are on Windows, you can install [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) to follow these steps:
 
 1. Clone the repository with
 
@@ -69,7 +67,8 @@ This is the recommended way of compiling **Raphael**. If you are on Windows, you
     make uci       # build UCI engine
     ```
 
-### Compiling on Windows
+<!-- ### Compiling on Windows
+TODO: update SFML to 3.0 so we can use makefile and easily compile on Windows too
 
 If Ubuntu/WSL does not work for you, or you would like to compile the code statically, you can follow these steps:
 
@@ -103,7 +102,7 @@ If Ubuntu/WSL does not work for you, or you would like to compile the code stati
     ```shell
     g++ -c -O3 -march=native -DNDEBUG uci.cpp -Isrc -Ichess-library/src -I"SFML-2.6.0/include" -DSFML_STATIC
     g++ -o uci uci.o src/GameEngine/consts.o src/GameEngine/GamePlayer.o src/Raphael/consts.o src/Raphael/History.o src/Raphael/Killers.o src/Raphael/See.o src/Raphael/Transposition.o src/Raphael/nnue.o src/Raphael/simd.o -L"SFML-2.6.0/lib" -lsfml-graphics-s -static
-    ```
+    ``` -->
 
 ## Features
 

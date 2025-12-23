@@ -175,7 +175,7 @@ int main() {
             lock_guard<mutex> lock(cout_mutex);
             cout << "id name " << engine.name << "\n"
                  << "id author Rei Meguro\n"
-                 << "option name Hash type spin default 192 min 1 max 2560\n"
+                 << "option name Hash type spin default 64 min 1 max 2560\n"
                  << "uciok\n"
                  << flush;
 

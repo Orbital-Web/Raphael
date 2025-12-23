@@ -156,27 +156,19 @@ This section documents the specific options and dataset used to train the differ
 
 This is the first version of the Raphael NNUE. Here is the breakdown of the NNUE architecture, dataset, and training results:
 
-<!-- TODO: Architecture:
+#### Architecture
 
-1. 16 king-bucketed half-ka input features (12,288 features)
-2. 256-wide accumulator with int16 weights and weight scale factor of 127, followed by a CReLU activation
-3. 32-neuron layer with int8 weights and quantization level of 6, followed by a CReLU activation
-4. 32-neuron layer with int8 weights and quantization level of 6, followed by a CReLU activation
-5. output layer with int8 weights, quantization level of 5, and an output scale of 300
+`(768 -> 64) x2 -> 1` perspective-all model with SCReLU activations, `QA=255`, `QB=64`, and `output_scale=400`. Note the specific model parameters are in `configs/2.0.0.yaml`.
 
-Training Procedure:
+#### Training Procedure
 
-1. Gathered EPD files from [Blunder 8.1's Texel Tuning Dataset](https://talkchess.com/viewtopic.php?t=78536&start=20) and [Zurichess](https://www.reddit.com/r/chessprogramming/comments/1if8yx6/chess_dataset_for_tuning_evaluation/) with roughly two million unique positions in total
-2. Gathered evaluations using `traingen` with arguments `combined-positions.epd 128 -n 1048576`
-3. Used `clean_nnue_traindata.py` (inside /dataset) to remove positions with forced-mate sequences and downsample positions with large evaluations. At this point, the dataset size is roughly 1.3 million positions
-4. Trained the NNUE using `trainer.py` with arguments `-i traindata_combined.csv -o traindata_combined_ff.csv -f` -->
+1. Gathered a series of matches in pgn format from CCRL tournaments and lichess, then extracted roughly 250 million positions from those matches
+2. Deduplicated some positions and ran `traingen` with `131072` hard nodes and `5000` soft nodes, with checks excluded
+3. Further filtered dataset by removing positions where the best move is a capture or promotion, resulting in roughly 150 million positions
+4. Trained with `2.0.0.yaml` config for 1200 positions (8 epochs), achieving a validation loss of `0.020402`
 
-<!--
-TODO:
-Training Results:
+<!-- #### Results
 
-- Epochs:
-- Training Loss:
-- Test Loss:
-- ELO-gain:
-- -->
++XXX ELO stc
++XXX ELO ltc
+ -->

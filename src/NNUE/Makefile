@@ -1,7 +1,7 @@
 # Compiler & flags
 CC = g++
 CCFLAGS = -Wall -O3 -march=native -DNDEBUG -fno-builtin -std=c++20 -I../../src -I../../chess-library/src
-LDFLAGS = -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system -z noexecstack
+LDFLAGS = -z noexecstack
 
 # NNUE binary
 NNUE_FILE = ../../net.nnue
@@ -18,7 +18,7 @@ GEN_OBJS = $(GEN_SOURCES:.cpp=.o) $(NNUE_OBJ)
 TEST_OBJS = $(TEST_SOURCES:.cpp=.o) $(NNUE_OBJ)
 
 # Default rule
-all: packages traingen nnuetest
+all: traingen nnuetest
 
 # Building NNUE object
 $(NNUE_OBJ): $(NNUE_FILE)
@@ -38,15 +38,6 @@ nnuetest: $(TEST_OBJS)
 # Generic rules for compiling a source file to an object file
 %.o: %.cpp
 	$(CC) $(CCFLAGS) -c $< -o $@
-
-# Rule to install SFML if not present
-packages:
-	@if ! dpkg -l | grep libsfml-dev -c >>/dev/null; then \
-		echo "SFML not found. Downloading and installing..."; \
-		sudo apt-get install libsfml-dev; \
-	else \
-		echo "SFML-2.6.0 already installed."; \
-	fi
 
 # Clean rule
 clean:

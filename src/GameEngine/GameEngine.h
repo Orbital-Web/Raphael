@@ -23,6 +23,7 @@ private:
     PieceDrawer piecedrawer;
     std::vector<sf::SoundBuffer> soundbuffers;
     std::vector<sf::Sound> sounds;
+    MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
     bool interactive;  // play sound and keep window open after game end
 
     // for draw_select()

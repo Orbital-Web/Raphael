@@ -1,7 +1,10 @@
 #include <GameEngine/HumanPlayer.h>
+#include <GameEngine/utils.h>
 
 using namespace cge;
 using std::string;
+
+#define whiteturn (board.sideToMove() == chess::Color::WHITE)
 
 
 
@@ -12,7 +15,7 @@ chess::Move HumanPlayer::get_move(
     chess::Board board,
     const int t_remain,
     const int t_inc,
-    volatile sf::Event& event,
+    volatile MouseInfo& mouse,
     volatile bool& halt
 ) {
     auto sq_from = chess::NO_SQ;
@@ -25,9 +28,9 @@ chess::Move HumanPlayer::get_move(
     // ui controls for move selection
     while (!halt && (sq_to == chess::NO_SQ || sq_from == chess::NO_SQ)) {
         // onclick (or drag)
-        if (lmbdown || lmbup) {
-            int x = event.mouseButton.x;
-            int y = event.mouseButton.y;
+        if (mouse.event == MouseEvent::LMBDOWN || mouse.event == MouseEvent::LMBUP) {
+            int x = mouse.x;
+            int y = mouse.y;
 
             // board clicked
             if (x > 50 && x < 850 && y > 70 && y < 870) {
@@ -50,7 +53,7 @@ chess::Move HumanPlayer::get_move(
                 }
             }
         }
-        if (rmbdown) sq_from = chess::NO_SQ;
+        if (mouse.event == MouseEvent::RMBDOWN) sq_from = chess::NO_SQ;
     }
     return chess::Move::NO_MOVE;
 }

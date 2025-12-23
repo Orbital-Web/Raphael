@@ -14,7 +14,7 @@ chess::Move UCIPlayer::get_move(
     chess::Board board,
     const int t_remain,
     const int t_inc,
-    volatile sf::Event& event,
+    volatile MouseInfo& mouse,
     volatile bool& halt
 ) {
     return chess::Move::NO_MOVE;

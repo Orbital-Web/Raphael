@@ -18,6 +18,8 @@ using std::ref;
 using std::string;
 using std::vector;
 
+#define whiteturn (board.sideToMove() == chess::Color::WHITE)
+
 
 
 GameEngine::GameEngine(const vector<GamePlayer*>& players_in)
@@ -75,7 +77,7 @@ void GameEngine::run_match(const GameOptions& options) {
         // ask player for move in seperate thread so that we can keep rendering
         bool halt = false;
         auto movereceiver = async(
-            &GamePlayer::get_move, cur_player, board, cur_t_remain, t_inc, ref(event), ref(halt)
+            &GamePlayer::get_move, cur_player, board, cur_t_remain, t_inc, ref(mouse), ref(halt)
         );
         auto status = future_status::timeout;
 
@@ -211,10 +213,10 @@ void GameEngine::generate_assets() {
 
 void GameEngine::update_select() {
     // populate selected squares
-    if (lmbdown) {
+    if (mouse.event == MouseEvent::LMBDOWN) {
         arrows.clear();
-        int x = event.mouseButton.x;
-        int y = event.mouseButton.y;
+        int x = mouse.x;
+        int y = mouse.y;
 
         // board clicked
         if (x > 50 && x < 850 && y > 70 && y < 870) {
@@ -230,7 +232,7 @@ void GameEngine::update_select() {
                 selectedtiles.clear();
         }
     }
-    if (rmbdown) selectedtiles.clear();
+    if (mouse.event == MouseEvent::RMBDOWN) selectedtiles.clear();
 }
 
 
@@ -265,17 +267,17 @@ void GameEngine::add_selectedtiles() {
 
 void GameEngine::update_arrows() {
     // from arrow
-    if (rmbdown) {
-        int x = event.mouseButton.x;
-        int y = event.mouseButton.y;
+    if (mouse.event == MouseEvent::RMBDOWN) {
+        int x = mouse.x;
+        int y = mouse.y;
         // board clicked
         if (x > 50 && x < 850 && y > 70 && y < 870) arrow_from = get_square(x, y);
     }
 
     // to arrow
-    else if (rmbup) {
-        int x = event.mouseButton.x;
-        int y = event.mouseButton.y;
+    else if (mouse.event == MouseEvent::RMBUP) {
+        int x = mouse.x;
+        int y = mouse.y;
 
         // board clicked
         if (x > 50 && x < 850 && y > 70 && y < 870) {
@@ -308,12 +310,23 @@ void GameEngine::update_arrows() {
 void GameEngine::update_window() {
     // event handling
     while (window.pollEvent(event)) {
-        if (event.type == sf::Event::Closed) window.close();
-        if (event.type == sf::Event::MouseButtonPressed
-            || event.type == sf::Event::MouseButtonReleased) {
+        if (event.type == sf::Event::Closed)
+            window.close();
+        else if (event.type == sf::Event::MouseButtonPressed
+                 || event.type == sf::Event::MouseButtonReleased) {
+            if (event.type == sf::Event::MouseButtonPressed)
+                mouse.event = (event.mouseButton.button == sf::Mouse::Right) ? MouseEvent::RMBDOWN
+                                                                             : MouseEvent::LMBDOWN;
+            else
+                mouse.event = (event.mouseButton.button == sf::Mouse::Right) ? MouseEvent::RMBUP
+                                                                             : MouseEvent::LMBUP;
+
+            mouse.x = event.mouseButton.x;
+            mouse.y = event.mouseButton.y;
             update_arrows();  // handle arrow placing
             update_select();  // handle move selection
-        }
+        } else
+            mouse.event = MouseEvent::NONE;
     }
 
     // clear window render

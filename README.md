@@ -62,13 +62,12 @@ This is the recommended way of compiling **Raphael**. If you are on Windows, you
 3. Compile as follows:
 
     ```shell
-    make packages  # install dependencies (SFML)
-    make main      # build GUI
+    make main      # build GUI (note this will also install SFML)
     make uci       # build UCI engine
     ```
 
 <!-- ### Compiling on Windows
-TODO: update SFML to 3.0 so we can use makefile and easily compile on Windows too
+FIXME: update SFML to 3.0 so we can use makefile and easily compile on Windows too
 
 If Ubuntu/WSL does not work for you, or you would like to compile the code statically, you can follow these steps:
 

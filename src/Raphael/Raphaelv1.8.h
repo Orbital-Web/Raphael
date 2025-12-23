@@ -136,7 +136,7 @@ public:
      * \param board current board
      * \param t_remain time remaining in ms
      * \param t_inc increment after move in ms
-     * \param event there for the human player implementation, ignored
+     * \param mouse unused
      * \param halt bool reference which will turn false to indicate search should stop
      * \returns the best move it found
      */
@@ -144,7 +144,7 @@ public:
         chess::Board board,
         const int t_remain,
         const int t_inc,
-        volatile sf::Event& event,
+        volatile cge::MouseInfo& mouse,
         volatile bool& halt
     );
 

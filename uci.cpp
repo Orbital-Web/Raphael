@@ -57,10 +57,10 @@ void handle_search() {
         // do search (ignore return value)
         {
             lock_guard<mutex> engine_lock(engine_mutex);
-            sf::Event nullevent;
+            cge::MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
             halt = false;
             engine.set_searchoptions(request.options);
-            engine.get_move(request.board, request.t_remain, request.t_inc, nullevent, halt);
+            engine.get_move(request.board, request.t_remain, request.t_inc, mouse, halt);
         }
     }
 }

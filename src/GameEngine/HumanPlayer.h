@@ -1,6 +1,5 @@
 #pragma once
 #include <GameEngine/GamePlayer.h>
-#include <GameEngine/utils.h>
 
 
 
@@ -18,7 +17,7 @@ public:
      * \param board current board
      * \param t_remain time remaining in ms
      * \param t_inc increment after move in ms
-     * \param event used to access events, e.g., mouse moves and clicks
+     * \param mouse contains mouse movement info
      * \param halt bool reference which will turn false to indicate search should stop
      * \returns the move made by the human
      */
@@ -26,7 +25,7 @@ public:
         chess::Board board,
         const int t_remain,
         const int t_inc,
-        volatile sf::Event& event,
+        volatile MouseInfo& mouse,
         volatile bool& halt
     );
 

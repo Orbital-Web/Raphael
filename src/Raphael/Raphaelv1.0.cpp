@@ -1,5 +1,4 @@
 #include <GameEngine/consts.h>
-#include <GameEngine/utils.h>
 #include <Raphael/Raphaelv1.0.h>
 #include <Raphael/consts.h>
 #include <math.h>
@@ -16,6 +15,8 @@ using std::max, std::min;
 using std::mutex, std::lock_guard;
 using std::string;
 namespace ch = std::chrono;
+
+#define whiteturn (board.sideToMove() == chess::Color::WHITE)
 
 extern const bool UCI;
 
@@ -186,7 +187,7 @@ chess::Move v1_0::get_move(
     chess::Board board,
     const int t_remain,
     const int t_inc,
-    volatile sf::Event& event,
+    volatile cge::MouseInfo& mouse,
     volatile bool& halt
 ) {
     tt.clear();

@@ -19,14 +19,14 @@ MAIN_OBJS = $(MAIN_SOURCES:.cpp=.o) $(NNUE_OBJ)
 UCI_OBJS = $(UCI_SOURCES:.cpp=.o) $(NNUE_OBJ)
 
 # Default rule
-all: packages main uci
+all: main uci
 
 # Building NNUE object
 $(NNUE_OBJ): $(NNUE_FILE)
 	$(LD) -r -b binary $< -o $@
 
 # Linking the main executable
-main: $(MAIN_OBJS)
+main: packages $(MAIN_OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 # Linking the UCI executable

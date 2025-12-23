@@ -1,4 +1,5 @@
 #define _USE_MATH_DEFINES
+#include <GameEngine/consts.h>
 #include <GameEngine/utils.h>
 #include <math.h>
 
@@ -7,7 +8,8 @@
 #include <iomanip>
 
 using namespace cge;
-using std::fixed, std::setprecision, std::setfill, std::setw;
+using std::cout, std::fixed, std::setprecision, std::setfill, std::setw;
+using std::mutex, std::lock_guard;
 using std::string, std::to_string;
 using std::stringstream;
 
@@ -25,19 +27,19 @@ Arrow::Arrow(const chess::Square from_in, const chess::Square to_in): from(from_
     float dy = from_coord.y - to_coord.y;
     float headlen = ARROWSIZE * 1.5f;
     float arrowlen = sqrt(dx * dx + dy * dy);
-    float arrowang = 180 * atan2(dx, dy) / M_PI;
+    auto arrowang = sf::radians(atan2(dx, dy));
 
     arrowbody.setSize({THICKNESS, arrowlen - headlen});
-    arrowbody.setOrigin(0.5f * THICKNESS, arrowlen - headlen);
+    arrowbody.setOrigin({0.5f * THICKNESS, arrowlen - headlen});
     arrowbody.setPosition(from_coord);
     arrowbody.setRotation(arrowang);
     arrowbody.setFillColor(PALETTE::TILE_SEL);
 
     arrowhead.setPointCount(3);
-    arrowhead.setPoint(0, sf::Vector2f(0, 0));
-    arrowhead.setPoint(1, sf::Vector2f(-0.9f * ARROWSIZE, headlen));
-    arrowhead.setPoint(2, sf::Vector2f(0.9f * ARROWSIZE, headlen));
-    arrowhead.setOrigin(0, arrowlen);
+    arrowhead.setPoint(0, {0.0f, 0.0f});
+    arrowhead.setPoint(1, {-0.9f * ARROWSIZE, headlen});
+    arrowhead.setPoint(2, {0.9f * ARROWSIZE, headlen});
+    arrowhead.setOrigin({0, arrowlen});
     arrowhead.setPosition(from_coord);
     arrowhead.setRotation(arrowang);
     arrowhead.setFillColor(PALETTE::TILE_SEL);
@@ -52,7 +54,7 @@ bool Arrow::operator==(const Arrow& rhs) const { return ((to == rhs.to) && (from
 
 
 
-PieceDrawer::PieceDrawer(): textures(13), sprites(13) {
+PieceDrawer::PieceDrawer(): textures(13) {
     const string TEXTURE[12] = {
         "wP",
         "wN",
@@ -67,15 +69,21 @@ PieceDrawer::PieceDrawer(): textures(13), sprites(13) {
         "bQ",
         "bK",
     };
+    bool loaded = true;
     for (int i = 0; i < 12; i++) {
-        textures[i].loadFromFile("src/assets/themes/tartiana/" + TEXTURE[i] + ".png");
+        loaded &= textures[i].loadFromFile("src/assets/themes/tartiana/" + TEXTURE[i] + ".png");
         textures[i].setSmooth(true);
-        sprites[i].setTexture(textures[i]);
     }
     // check texture
-    textures[12].loadFromFile("src/assets/themes/check.png");
+    loaded &= textures[12].loadFromFile("src/assets/themes/check.png");
     textures[12].setSmooth(true);
-    sprites[12].setTexture(textures[12]);
+
+    if (!loaded) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "Warning, could not load 1 or more texture files\n";
+    }
+    sprites.reserve(13);
+    for (int i = 0; i < 13; i++) sprites.emplace_back(textures[i]);
 }
 
 void PieceDrawer::draw(
@@ -90,19 +98,19 @@ void PieceDrawer::draw(
     // draw check overlay
     if ((piece == chess::Piece::WHITEKING && check == 1)
         || (piece == chess::Piece::BLACKKING && check == -1)) {
-        sprites[12].setPosition(x, y);
+        sprites[12].setPosition({x, y});
         window.draw(sprites[12]);
     }
     // draw piece
-    sprites[i].setPosition(x, y);
+    sprites[i].setPosition({x, y});
     window.draw(sprites[i]);
 }
 
 
 
 Timer::Timer(const bool at_top, const sf::Font& font)
-    : top(at_top), timertext("", font, 40), timerbox({180, 50}) {
-    timerbox.setPosition(660, (top) ? 10 : 880);
+    : top(at_top), timertext(font, "", 40), timerbox({180.0f, 50.0f}) {
+    timerbox.setPosition({660.0f, (top) ? 10.0f : 880.0f});
     timertext.setFillColor(PALETTE::TEXT);
 }
 
@@ -125,7 +133,7 @@ void Timer::update(const float time, const bool active) {
     // manage positioning of string
     timertext.setString(t_disp);
     auto textbounds = timertext.getLocalBounds();
-    timertext.setPosition(820 - textbounds.width, (top) ? 10 : 880);
+    timertext.setPosition({820.0f - textbounds.size.x, (top) ? 10.0f : 880.0f});
 }
 
 void Timer::draw(sf::RenderTarget& target, sf::RenderStates states) const {

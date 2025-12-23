@@ -1,8 +1,9 @@
 # Compiler & flags
 CC = g++
 LD = ld
-CCFLAGS = -Wall -O3 -march=native -DNDEBUG -fno-builtin -std=c++20 -Isrc -Ichess-library/src
-LDFLAGS = -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system -z noexecstack
+CCFLAGS = -Wall -O3 -march=native -DNDEBUG -fno-builtin -std=c++20 -Isrc -Ichess-library/src -ISFML-3.0.2/include
+LDFLAGS = -LSFML-3.0.2/lib -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system \
+		  -Wl,-rpath,'$$ORIGIN/SFML-3.0.2/lib',-z,noexecstack
 
 # NNUE binary
 NNUE_FILE = net.nnue
@@ -26,7 +27,7 @@ $(NNUE_OBJ): $(NNUE_FILE)
 	$(LD) -r -b binary $< -o $@
 
 # Linking the main executable
-main: packages $(MAIN_OBJS)
+main: $(MAIN_OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 # Linking the UCI executable
@@ -37,13 +38,15 @@ uci: $(UCI_OBJS)
 %.o: %.cpp
 	$(CC) $(CCFLAGS) -c $< -o $@
 
-# Rule to install SFML if not present
+# Rule to download SFML if not present
 packages:
-	@if ! dpkg -l | grep libsfml-dev -c >>/dev/null; then \
-		echo "SFML not found. Downloading and installing..."; \
-		sudo apt-get install libsfml-dev; \
+	@if [ ! -d "SFML-3.0.2" ]; then \
+		echo "SFML-3.0.2 not found. Downloading..."; \
+		wget https://www.sfml-dev.org/files/SFML-3.0.2-linux-gcc-64-bit.tar.gz; \
+		tar -xzf SFML-3.0.2-linux-gcc-64-bit.tar.gz; \
+		rm SFML-3.0.2-linux-gcc-64-bit.tar.gz; \
 	else \
-		echo "SFML-2.6.0 already installed."; \
+		echo "SFML-3.0.2 already installed."; \
 	fi
 
 # Clean rule

@@ -1,7 +1,7 @@
 # Compiler & flags
 CC = g++
 CCFLAGS = -Wall -O3 -march=native -DNDEBUG -fno-builtin -std=c++20 -I../../src -I../../chess-library/src
-LDFLAGS = -z noexecstack
+LDFLAGS = -Wl,-z,noexecstack
 
 # NNUE binary
 NNUE_FILE = ../../net.nnue

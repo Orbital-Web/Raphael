@@ -14,6 +14,7 @@ using std::cout, std::fixed, std::setprecision;
 using std::min;
 using std::mutex, std::lock_guard;
 using std::ofstream, std::stringstream, std::ios_base;
+using std::optional;
 using std::ref;
 using std::string;
 using std::vector;
@@ -23,14 +24,14 @@ using std::vector;
 
 
 GameEngine::GameEngine(const vector<GamePlayer*>& players_in)
-    : tiles(66, sf::RectangleShape({100, 100})), soundbuffers(3), sounds(3), players(players_in) {
+    : tiles(66, sf::RectangleShape({100, 100})), soundbuffers(3), players(players_in) {
     generate_assets();
 }
 
 
 void GameEngine::run_match(const GameOptions& options) {
     // open window
-    window.create(sf::VideoMode(880, 940), "Chess");
+    window.create(sf::VideoMode({880, 940}), "Chess");
     window.setFramerateLimit(FRAMERATE);
 
     // initialize board
@@ -103,7 +104,7 @@ void GameEngine::run_match(const GameOptions& options) {
             }
 
             // timeout
-            if (cur_t_remain <= 0 || event.type == sf::Event::Closed) {
+            if (cur_t_remain <= 0 || !window.isOpen()) {
                 halt = true;
                 timeout = true;
                 timeoutwins[(p1_is_white != turn)]++;
@@ -149,15 +150,14 @@ game_end:
     if (interactive) {
         sounds[2].play();
         while (window.isOpen()) {
-            while (window.pollEvent(event))
-                if (event.type == sf::Event::Closed) window.close();
+            while (const optional<sf::Event> event = window.pollEvent())
+                if (event->is<sf::Event::Closed>()) window.close();
             update_window();
         }
     }
     sq_from = chess::NO_SQ;
     sq_to = chess::NO_SQ;
     movelist.clear();
-    event.type = sf::Event::MouseMoved;
     if (savepgn) {
         string pgn_result = "1/2-1/2";
         if (game_result != chess::GameResult::DRAW) pgn_result = (!whiteturn) ? "1-0" : "0-1";
@@ -186,7 +186,7 @@ void GameEngine::generate_assets() {
     for (int i = 0; i < 64; i++) {
         int y = i / 8;
         int x = i % 8;
-        tiles[i].setPosition(50 + 100 * x, 70 + 100 * y);
+        tiles[i].setPosition({50.0f + 100 * x, 70.0f + 100 * y});
         tiles[i].setFillColor(((x + y) % 2) ? PALETTE::TILE_B : PALETTE::TILE_W);
     }
 
@@ -195,19 +195,32 @@ void GameEngine::generate_assets() {
     tiles[65].setFillColor(PALETTE::TILE_SEL);  // selection squares
 
     // timer and player names
-    font.loadFromFile("src/assets/fonts/Roboto-Regular.ttf");
+    bool font_loaded = true;
+    font_loaded &= font.openFromFile("src/assets/fonts/Roboto-Regular.ttf");
+    if (!font_loaded) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "Warning, could not load font\n";
+    }
+    timers.reserve(2);
+    names.reserve(2);
     for (int i = 0; i < 2; i++) {
         timers.emplace_back(i, font);
-        names.emplace_back("", font, 40);
+        names.emplace_back(font, "", 40);
         names[i].setFillColor(PALETTE::TEXT);
-        names[i].setPosition(50, (i) ? 10 : 880);
+        names[i].setPosition({50.0f, (i) ? 10.0f : 880.0f});
     }
 
     // sounds
-    soundbuffers[0].loadFromFile("src/assets/sounds/Move.ogg");
-    soundbuffers[1].loadFromFile("src/assets/sounds/Capture.ogg");
-    soundbuffers[2].loadFromFile("src/assets/sounds/GenericNotify.ogg");
-    for (int i = 0; i < 3; i++) sounds[i].setBuffer(soundbuffers[i]);
+    bool sound_loaded = true;
+    sound_loaded &= soundbuffers[0].loadFromFile("src/assets/sounds/Move.ogg");
+    sound_loaded &= soundbuffers[1].loadFromFile("src/assets/sounds/Capture.ogg");
+    sound_loaded &= soundbuffers[2].loadFromFile("src/assets/sounds/GenericNotify.ogg");
+    if (!sound_loaded) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "Warning, could not load 1 or more sound files\n";
+    }
+    sounds.reserve(3);
+    for (int i = 0; i < 3; i++) sounds.emplace_back(soundbuffers[i]);
 }
 
 
@@ -309,22 +322,23 @@ void GameEngine::update_arrows() {
 
 void GameEngine::update_window() {
     // event handling
-    while (window.pollEvent(event)) {
-        if (event.type == sf::Event::Closed)
+    while (const optional<sf::Event> event = window.pollEvent()) {
+        if (event->is<sf::Event::Closed>())
             window.close();
-        else if (event.type == sf::Event::MouseButtonPressed
-                 || event.type == sf::Event::MouseButtonReleased) {
-            if (event.type == sf::Event::MouseButtonPressed)
-                mouse.event = (event.mouseButton.button == sf::Mouse::Right) ? MouseEvent::RMBDOWN
-                                                                             : MouseEvent::LMBDOWN;
-            else
-                mouse.event = (event.mouseButton.button == sf::Mouse::Right) ? MouseEvent::RMBUP
-                                                                             : MouseEvent::LMBUP;
-
-            mouse.x = event.mouseButton.x;
-            mouse.y = event.mouseButton.y;
-            update_arrows();  // handle arrow placing
-            update_select();  // handle move selection
+        else if (const auto* mouseevent = event->getIf<sf::Event::MouseButtonPressed>()) {
+            mouse.event = (mouseevent->button == sf::Mouse::Button::Right) ? MouseEvent::RMBDOWN
+                                                                           : MouseEvent::LMBDOWN;
+            mouse.x = mouseevent->position.x;
+            mouse.y = mouseevent->position.y;
+            update_arrows();
+            update_select();
+        } else if (const auto* mouseevent = event->getIf<sf::Event::MouseButtonReleased>()) {
+            mouse.event = (mouseevent->button == sf::Mouse::Button::Right) ? MouseEvent::RMBUP
+                                                                           : MouseEvent::LMBUP;
+            mouse.x = mouseevent->position.x;
+            mouse.y = mouseevent->position.y;
+            update_arrows();
+            update_select();
         } else
             mouse.event = MouseEvent::NONE;
     }
@@ -339,12 +353,12 @@ void GameEngine::update_window() {
     if (sq_from != chess::NO_SQ) {
         int file = (int)chess::utils::squareFile(sq_from);
         int rank = (int)chess::utils::squareRank(sq_from);
-        tiles[64].setPosition(50 + 100 * file, 770 - 100 * rank);
+        tiles[64].setPosition({50.0f + 100 * file, 770.0f - 100 * rank});
         window.draw(tiles[64]);
 
         file = (int)chess::utils::squareFile(sq_to);
         rank = (int)chess::utils::squareRank(sq_to);
-        tiles[64].setPosition(50 + 100 * file, 770 - 100 * rank);
+        tiles[64].setPosition({50.0f + 100 * file, 770.0f - 100 * rank});
         window.draw(tiles[64]);
     }
 
@@ -352,7 +366,7 @@ void GameEngine::update_window() {
     for (auto& sq : selectedtiles) {
         int file = (int)chess::utils::squareFile(sq);
         int rank = (int)chess::utils::squareRank(sq);
-        tiles[65].setPosition(50 + 100 * file, 770 - 100 * rank);
+        tiles[65].setPosition({50.0f + 100 * file, 770.0f - 100 * rank});
         window.draw(tiles[65]);
     }
 

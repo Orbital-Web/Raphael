@@ -15,7 +15,6 @@ class GameEngine {  // Class for managing games
 private:
     // visual & sound
     sf::RenderWindow window;
-    sf::Event event;
     sf::Font font;
     std::vector<sf::RectangleShape> tiles;
     std::vector<Timer> timers;

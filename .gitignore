@@ -217,7 +217,7 @@ Raphael1.*
 Raphael2.*
 
 # SFML
-SFML-2.6.0/
+SFML-*/
 
 # VS Code
 .vscode/

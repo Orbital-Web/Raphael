@@ -2,7 +2,7 @@
 
 **Raphael** is a UCI Chess Engine built using C++ and [Disservin's Chess Library](https://github.com/Disservin/chess-library). It also comes with a GUI built using [SFML](https://www.sfml-dev.org/).
 
-**Raphael** is a hobby project that is still a work in progress, but it will be updated as time goes by. It has comparable strengths to a human candidate, FIDE, or international master, and performs decently against other [CCRL-ranked](https://www.computerchess.org.uk/ccrl/404/) chess engines. You can [scroll to the bottom](https://github.com/Orbital-Web/Raphael#raphael-engine) to see a list of features currently implemented.
+**Raphael** is a hobby project that is still a work in progress, but it will be updated as time goes by. It has comparable strengths to a human candidate, FIDE, or international master, and performs decently against other [CCRL-ranked](https://www.computerchess.org.uk/ccrl/404/) chess engines. You can [scroll to the bottom](#raphael-engine) to see a list of features currently implemented.
 
 **Raphael** is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python.
 
@@ -12,12 +12,14 @@
 
 ## ELO
 
-The following are the historic **[CCRL 40/2 ELO](https://www.computerchess.org.uk/ccrl/404/)** for Raphael. Note that italicized ELOs are estimates and not official. These ELOs were estimated using [fastchess](https://github.com/Disservin/fastchess).
+The following are the historic **[CCRL Blitz ELO](https://www.computerchess.org.uk/ccrl/404/)** for Raphael.
+
+Note that italicized ELOs are estimates and not official, and were estimated using [fastchess](https://github.com/Disservin/fastchess).
 
 <table>
     <tr align="center">
         <th>Version</th>
-        <th>CCRL 40/2</th>
+        <th>CCRL Blitz</th>
     </tr>
     <tr align="center"><td>2.0.0</td><td><i>2273</i></td></tr>
     <tr align="center"><td>1.8.0</td><td><i>2084</i></td></tr>
@@ -111,11 +113,11 @@ The GUI is a quick and easy way to start engine battles or play against Raphael 
 
 The human player can move a piece by either dragging and dropping a piece to the destination square, or by clicking a piece and clicking the destination square. Castling can be done by clicking the destination square of the king after castling. Only promotion by queening is currently supported. You can also annotate the board with arrows by holding and dragging the right mouse button.
 
-You can also play with different time controls, increments, and player combinations. Again, please refer to `main.exe -h` and the [setup instructions above](https://github.com/Orbital-Web/Raphael#getting-started) for a more in-depth guide.
+You can also play with different time controls, increments, and player combinations. Again, please refer to `main.exe -h` and the [setup instructions above](#getting-started) for a more in-depth guide.
 
 ### Raphael (Engine)
 
-**Raphael** is a UCI-compliant chess engine. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](https://github.com/Orbital-Web/Raphael#getting-started). The UCI engine currently supports the following commands: `uci`, `isready`, `ucinewgame`, `stop`, `quit`, `position`, and `go [wtime|btime|winc|binc|depth|nodes|movestogo|movetime|infinite]`. Pondering is not implemented yet in the UCI engine, though it does come in the GUI version. The engine contains the following features:
+**Raphael** is a UCI-compliant chess engine. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](#getting-started). The UCI engine currently supports the following commands: `uci`, `isready`, `ucinewgame`, `stop`, `quit`, `position`, and `go [wtime|btime|winc|binc|depth|nodes|movestogo|movetime|infinite]`. Pondering is not implemented yet in the UCI engine, though it does come in the GUI version. The engine contains the following features:
 
 #### General
 
@@ -168,6 +170,8 @@ You can also play with different time controls, increments, and player combinati
 - [x] History heuristics        (`v1.5+`)
 - [x] SEE                       (`v1.7+`)
 
+For a more in-depth documentation on the NNUE and how it was trained, refer to the [NNUE README](https://github.com/Orbital-Web/Raphael/tree/main/src/NNUE)
+
 ## Special Thanks to
 
-Those on the Stockfish Discord for helping me out with various aspects of the NNUE dataset collection and training. Without their help, my NNUE would have been very very crappy.
+Those on the Stockfish Discord for teaching me and helping me out with the NNUE dataset collection, training, and evaluation. Without their help, I would have been stuck for a very very long time without a positive-ELO NNUE.

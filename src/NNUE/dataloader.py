@@ -47,12 +47,12 @@ class NNUEDataSet(Dataset):
         Returns:
             tuple: ((white_features, black_features, side), label)
         """
-        widx, bidx, side, eval_wdl = self.data[index]
+        widx, bidx, side, eval_combined = self.data[index]
         wf = torch.zeros(self.model.N_INPUTS)
         bf = torch.zeros(self.model.N_INPUTS)
         wf[widx] = 1
         bf[bidx] = 1
-        return (wf, bf, side), eval_wdl
+        return (wf, bf, side), torch.tensor(eval_combined, dtype=torch.float32)
 
     def __len__(self):
         return len(self.data)

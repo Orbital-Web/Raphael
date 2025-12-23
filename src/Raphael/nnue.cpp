@@ -1,5 +1,6 @@
 #include <Raphael/nnue.h>
 
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -10,19 +11,53 @@ using std::cout, std::endl;
 using std::ifstream, std::ios;
 using std::invalid_argument, std::runtime_error;
 using std::max, std::min;
+using std::memcpy;
 using std::string;
 using std::vector;
 
 extern const bool UCI;
+extern const unsigned char _binary_net_nnue_start[];
+extern const unsigned char _binary_net_nnue_end[];
 
 
 
 Nnue::NnueWeights Nnue::params;
 bool Nnue::loaded = false;
 
-Nnue::Nnue() { load(default_nnue_path); }
+Nnue::Nnue() { load(); }
 Nnue::Nnue(const std::string& nnue_path) { load(nnue_path.c_str()); }
 
+void Nnue::load() {
+    if (loaded) return;
+
+    if (!UCI) {
+#ifdef USE_SIMD
+        cout << "Raphael: SIMD AVX-" << USE_SIMD << " available for NNUE" << endl;
+#else
+        cout << "Raphael: SIMD unavailable for NNUE" << endl;
+#endif
+        cout << "Raphael: Loading NNUE" << endl;
+    }
+
+    const unsigned char* nnue_data = _binary_net_nnue_start;
+
+    auto read_or_throw = [&](void* dest, std::size_t bytes) {
+        if (nnue_data + bytes > _binary_net_nnue_end)
+            throw std::runtime_error("failed to read weights");
+
+        memcpy(dest, nnue_data, bytes);
+        nnue_data += bytes;
+    };
+
+    read_or_throw(params.W0, sizeof(params.W0));
+    read_or_throw(params.b0, sizeof(params.b0));
+    read_or_throw(params.W1, sizeof(params.W1));
+    read_or_throw(&params.b1, sizeof(params.b1));
+
+    if (nnue_data != _binary_net_nnue_end)
+        throw runtime_error("nnue binary size does not match nnue size");
+    loaded = true;
+}
 void Nnue::load(const char* nnue_path) {
     if (loaded) return;
 

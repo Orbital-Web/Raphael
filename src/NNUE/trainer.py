@@ -55,7 +55,6 @@ def train(
             train_losses = df["Train Loss"].tolist()
             test_losses = df["Test Loss"].tolist()
             best_loss = min(test_losses)
-
     print(f"Starting training on device {device}. Output in {outfolder}/")
 
     # set up real-time plot
@@ -95,7 +94,7 @@ def train(
             # training step
             optimizer.zero_grad()
             outputs = model(wdata, bdata, side)
-            outputs = torch.sigmoid((outputs / model.WDL_SCALE).double())
+            outputs = torch.sigmoid((outputs / model.WDL_SCALE))
             loss = criterion(outputs, labels.unsqueeze(1))
             total_loss += loss.item()
             loss.backward()
@@ -145,6 +144,7 @@ def train(
         ax.set_yscale("log")
         ax.set_yticks(np.logspace(np.log10(ymin), np.log10(ymax), 5))
         ax.yaxis.set_major_formatter("{x:.6f}")
+        ax.minorticks_off()
         ax.legend()
         plt.draw()
         plt.pause(0.1)

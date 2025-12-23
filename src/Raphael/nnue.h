@@ -31,7 +31,9 @@ private:
     };
     static NnueWeights params;  // network weights and biases
     static bool loaded;
-    static constexpr char default_nnue_path[15] = "net-2.0.0.nnue";
+
+    /** Loads the network from the linked binary */
+    static void load();
 
     /** Loads the network from nnue_path
      *

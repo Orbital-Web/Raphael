@@ -64,14 +64,12 @@ This is the recommended way of compiling **Raphael**. If you are on Windows, you
 3. Compile as follows:
 
     ```shell
-    make main      # build GUI (note this will also install SFML)
     make uci       # build UCI engine
+    make packages  # download SFML required for the GUI
+    make main      # build GUI
     ```
 
-<!-- ### Compiling on Windows
-FIXME: update SFML to 3.0 so we can use makefile and easily compile on Windows too
-
-If Ubuntu/WSL does not work for you, or you would like to compile the code statically, you can follow these steps:
+### Compiling on Windows
 
 1. Clone the repository with
 
@@ -79,31 +77,21 @@ If Ubuntu/WSL does not work for you, or you would like to compile the code stati
     git clone https://github.com/Orbital-Web/Raphael.git --recurse-submodules
     ```
 
-2. Download [SFML-2.6.0 GCC 13.1.0 MinGW 64-bit](https://www.sfml-dev.org/download/sfml/2.6.0/) and add it to the root directory
-3. Copy `openal32.dll` from `SFML-2.6.0/bin/` and add it to the root directory
-4. Compile dependencies with the following commands (in the root directory)
+2. Follow [this guide](https://code.visualstudio.com/docs/cpp/config-mingw) to install MSYS2
+3. Open the MSYS2 UCRT64 terminal and run the following command to install `g++`, `SFML`, and `make`
 
     ```shell
-    cd src/GameEngine
-    g++ -c -O3 -march=native -DNDEBUG consts.cpp GameEngine.cpp GamePlayer.cpp HumanPlayer.cpp utils.cpp -I"../../src" -I"../../chess-library/src" -I"../../SFML-2.6.0/include" -DSFML_STATIC
-    cd ../../src/Raphael
-    g++ -c -O3 -march=native -DNDEBUG consts.cpp History.cpp Killers.cpp SEE.cpp Transposition.cpp nnue.cpp simd.cpp Raphaelv1.0.cpp Raphaelv1.8.cpp Raphaelv2.0.cpp -Isrc -Ichess-library/src -I"../../src" -I"../../chess-library/src" -I"../../SFML-2.6.0/include" -DSFML_STATIC
-    cd ../../
+    pacman -S --needed mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-sfml make
     ```
 
-5. Compile `main.exe` with the following commands (optionally, compile with the `-DMUTEEVAL` flag to mute evaluations)
+4. Update the `Makefile` by removing `-ISFML-3.0.2/include`, `-LSFML-3.0.2/lib`, and `-Wl,-rpath,'$$ORIGIN/SFML-3.0.2/lib',-z,noexecstack`
+
+5. Compile as follows
 
     ```shell
-    g++ -c -O3 -march=native -DNDEBUG main.cpp -Isrc -Ichess-library/src -I"SFML-2.6.0/include" -DSFML_STATIC
-    g++ -o main main.o src/GameEngine/consts.o src/GameEngine/GameEngine.o src/GameEngine/GamePlayer.o src/GameEngine/HumanPlayer.o src/GameEngine/utils.o src/Raphael/consts.o src/Raphael/History.o src/Raphael/Killers.o src/Raphael/See.o src/Raphael/Transposition.o src/Raphael/nnue.o src/Raphael/simd.o -L"SFML-2.6.0/lib" -lsfml-graphics-s -lsfml-window-s -lsfml-audio-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -lopenal32 -lflac -lvorbisenc -lvorbisfile -lvorbis -logg -static
+    make uci       # build UCI engine
+    make main      # build GUI
     ```
-
-6. Compile the UCI engine with the following commands
-
-    ```shell
-    g++ -c -O3 -march=native -DNDEBUG uci.cpp -Isrc -Ichess-library/src -I"SFML-2.6.0/include" -DSFML_STATIC
-    g++ -o uci uci.o src/GameEngine/consts.o src/GameEngine/GamePlayer.o src/Raphael/consts.o src/Raphael/History.o src/Raphael/Killers.o src/Raphael/See.o src/Raphael/Transposition.o src/Raphael/nnue.o src/Raphael/simd.o -L"SFML-2.6.0/lib" -lsfml-graphics-s -static
-    ``` -->
 
 ## Features
 

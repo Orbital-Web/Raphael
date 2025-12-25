@@ -24,6 +24,8 @@ extern const bool UCI;
 
 
 
+string RaphaelHCE::version = "1.8.1.0";
+
 RaphaelHCE::RaphaelParams::RaphaelParams() {
     init_pst();
     PMASK::init_pawnmask();
@@ -182,7 +184,8 @@ void RaphaelHCE::RaphaelParams::init_pst() {
 
 
 RaphaelHCE::RaphaelHCE(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {}
-RaphaelHCE::RaphaelHCE(string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {}
+RaphaelHCE::RaphaelHCE(string name_in, EngineOptions options)
+    : GamePlayer(name_in), tt(options.tablesize) {}
 
 
 void RaphaelHCE::set_options(EngineOptions options) { tt = TranspositionTable(options.tablesize); }
@@ -400,7 +403,9 @@ void RaphaelHCE::reset() {
 }
 
 
-void RaphaelHCE::start_search_timer(const chess::Board& board, const int t_remain, const int t_inc) {
+void RaphaelHCE::start_search_timer(
+    const chess::Board& board, const int t_remain, const int t_inc
+) {
     // if movetime is specified, use that instead
     if (searchopt.movetime != -1) {
         search_t = searchopt.movetime;
@@ -602,7 +607,9 @@ int RaphaelHCE::quiescence(chess::Board& board, int alpha, int beta, volatile bo
 }
 
 
-void RaphaelHCE::order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const {
+void RaphaelHCE::order_moves(
+    chess::Movelist& movelist, const chess::Board& board, const int ply
+) const {
     for (auto& move : movelist) score_move(move, board, ply);
     movelist.sort();
 }

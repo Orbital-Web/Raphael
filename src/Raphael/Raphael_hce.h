@@ -13,7 +13,7 @@
 namespace Raphael {
 class RaphaelHCE: public cge::GamePlayer {
 public:
-    inline static std::string version = "1.8.1.0";
+    static std::string version;
 
     struct EngineOptions {
         uint32_t tablesize = DEF_TABLE_SIZE;  // number of entries in tt

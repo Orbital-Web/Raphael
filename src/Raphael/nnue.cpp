@@ -171,8 +171,10 @@ void Nnue::refresh_accumulator(NnueAccumulator& new_acc, const vector<int>& feat
 void Nnue::update_accumulator(
     NnueAccumulator& new_acc,
     const NnueAccumulator& old_acc,
-    const vector<int>& add_features,
-    const vector<int>& rem_features,
+    int add1,
+    int add2,
+    int rem1,
+    int rem2,
     bool side
 ) {
 #ifdef USE_SIMD
@@ -185,14 +187,18 @@ void Nnue::update_accumulator(
     for (int i = 0; i < n_chunks; i++) regs[i] = load_i16(&old_acc[side][i * regw]);
 
     // subtract rem_features
-    for (int f : rem_features)
+    for (int i = 0; i < n_chunks; i++)
+        regs[i] = subs_i16(regs[i], load_i16(&params.W0[rem1 * N_HIDDEN + i * regw]));
+    if (rem2 >= 0)
         for (int i = 0; i < n_chunks; i++)
-            regs[i] = subs_i16(regs[i], load_i16(&params.W0[f * N_HIDDEN + i * regw]));
+            regs[i] = subs_i16(regs[i], load_i16(&params.W0[rem2 * N_HIDDEN + i * regw]));
 
     // add add_features
-    for (int f : add_features)
+    for (int i = 0; i < n_chunks; i++)
+        regs[i] = adds_i16(regs[i], load_i16(&params.W0[add1 * N_HIDDEN + i * regw]));
+    if (add2 >= 0)
         for (int i = 0; i < n_chunks; i++)
-            regs[i] = adds_i16(regs[i], load_i16(&params.W0[f * N_HIDDEN + i * regw]));
+            regs[i] = adds_i16(regs[i], load_i16(&params.W0[add2 * N_HIDDEN + i * regw]));
 
     // store results in new accumulator
     for (int i = 0; i < n_chunks; i++) store_i16(&new_acc[side][i * regw], regs[i]);
@@ -245,8 +251,6 @@ void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board
     for (bool side : {false, true}) {
         // do incremental update
         vector<int> add_features, rem_features;
-        add_features.reserve(2);  // 2 if castling
-        rem_features.reserve(2);  // 2 if castling/capturing/enpassant
 
         bool moving = (board.sideToMove() == chess::Color::WHITE) == side;
         int from_sqi = (side) ? (int)from_sq : (int)from_sq ^ 56;
@@ -256,29 +260,28 @@ void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board
         int from_piecei = (side) ? (int)from_piece : ((int)from_piece + 6) % 12;
         int to_piecei = (side) ? (int)to_piece : ((int)to_piece + 6) % 12;
 
-        // add moving piece to rem_features
-        rem_features.push_back(64 * from_piecei + from_sqi);
+        // remove moving piece
+        int add1, add2 = -1, rem2 = -1;
+        int rem1 = 64 * from_piecei + from_sqi;
 
         // add moved piece to add_features (handle promotion and enemy castling)
         if (move_type == move.PROMOTION) {
             int promote_piecei = !moving * 6 + (int)move.promotionType();
-            add_features.push_back(64 * promote_piecei + to_sqi);
+            add1 = 64 * promote_piecei + to_sqi;
         } else if (move_type == move.CASTLING) {
             int new_ksqi = (to_sqi % 8 == 7) ? to_sqi - 1 : to_sqi + 2;
             int new_rsqi = (to_sqi % 8 == 7) ? to_sqi - 2 : to_sqi + 3;
-            add_features.push_back(64 * from_piecei + new_ksqi);
-            add_features.push_back(64 * to_piecei + new_rsqi);
+            add1 = 64 * from_piecei + new_ksqi;
+            add2 = 64 * to_piecei + new_rsqi;
         } else
-            add_features.push_back(64 * from_piecei + to_sqi);
+            add1 = 64 * from_piecei + to_sqi;
 
         // add captured piece (castling is treated as rook capture) to rem_features
         if (to_piece != chess::Piece::NONE)
-            rem_features.push_back(64 * to_piecei + to_sqi);
+            rem2 = 64 * to_piecei + to_sqi;
         else if (move_type == move.ENPASSANT)
-            rem_features.push_back(64 * 6 * moving + (to_sqi + 8 - moving * 16));
+            rem2 = 64 * 6 * moving + (to_sqi + 8 - moving * 16);
 
-        update_accumulator(
-            accumulators[ply], accumulators[ply - 1], add_features, rem_features, side
-        );
+        update_accumulator(accumulators[ply], accumulators[ply - 1], add1, add2, rem1, rem2, side);
     }
 }

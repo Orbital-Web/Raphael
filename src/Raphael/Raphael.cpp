@@ -23,6 +23,8 @@ extern const bool UCI;
 
 
 
+string RaphaelNNUE::version = "2.1.0.0";
+
 RaphaelNNUE::RaphaelParams::RaphaelParams() {}
 
 

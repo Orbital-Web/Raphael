@@ -63,15 +63,19 @@ private:
      *
      * \param new_acc accumulator to write updated values to
      * \param old_acc accumulator to use as base
-     * \param add_features indicies of features to activate
-     * \param rem_features indicies of features to deactivate
+     * \param add1 index of first feature to activate
+     * \param add2 index of second feature to activate (-1 for none)
+     * \param rem1 index of first feature to deactivate
+     * \param rem2 index of second feature to deactivate (-1 for none)
      * \param side which side accumulator to update (true for white)
      */
     void update_accumulator(
         NnueAccumulator& new_acc,
         const NnueAccumulator& old_acc,
-        const std::vector<int>& add_features,
-        const std::vector<int>& rem_features,
+        int add1,
+        int add2,
+        int rem1,
+        int rem2,
         bool side
     );
 

@@ -1,8 +1,7 @@
 #include <GameEngine/GameEngine.h>
 #include <GameEngine/HumanPlayer.h>
-#include <Raphael/Raphaelv1.0.h>
-#include <Raphael/Raphaelv1.8.h>
-#include <Raphael/Raphaelv2.0.h>
+#include <Raphael/Raphael.h>
+#include <Raphael/Raphael_hce.h>
 #include <string.h>
 
 #include <climits>
@@ -26,23 +25,17 @@ extern const bool UCI = false;
 cge::GamePlayer* player_factory(char* playertype, char* name) {
     if (!strcmp(playertype, "human") || !strcmp(playertype, "Human"))
         return new cge::HumanPlayer(name);
-    else if (!strcmp(playertype, "Raphaelv1.0"))
-        return new Raphael::v1_0(name);
-    else if (!strcmp(playertype, "Raphaelv1.8"))
-        return new Raphael::v1_8(name);
-    else if (!strcmp(playertype, "Raphaelv2.0"))
-        return new Raphael::v2_0(name);
     else if (!strcmp(playertype, "Raphael"))
-        return new Raphael::v2_0(name);
+        return new Raphael::RaphaelNNUE(name);
+    else if (!strcmp(playertype, "RaphaelHCE"))
+        return new Raphael::RaphaelHCE(name);
 
     // invalid
     printf("Invalid player type: %s\n", playertype);
     printf("Valid player types are:\n");
-    printf("   human:\t cge::HumanPlayer\n");
-    printf("   Raphael:\t Raphael::v2_0\n");
-    printf("   Raphaelv1.0:\t Raphael::v1_0\n");
-    printf("   Raphaelv1.8:\t Raphael::v1_8\n");
-    printf("   Raphaelv2.0:\t Raphael::v2_0\n");
+    printf("   human:         Human-controlled player\n");
+    printf("   Raphael:       Raphael %s\n", Raphael::RaphaelNNUE::version.c_str());
+    printf("   RaphaelHCE:    Raphael %s\n", Raphael::RaphaelHCE::version.c_str());
     return nullptr;
 }
 

@@ -1,5 +1,5 @@
 #include <GameEngine/consts.h>
-#include <Raphael/Raphaelv1.8.h>
+#include <Raphael/Raphael_hce.h>
 #include <Raphael/SEE.h>
 #include <Raphael/consts.h>
 #include <math.h>
@@ -24,12 +24,12 @@ extern const bool UCI;
 
 
 
-v1_8::RaphaelParams::RaphaelParams() {
+RaphaelHCE::RaphaelParams::RaphaelParams() {
     init_pst();
     PMASK::init_pawnmask();
 }
 
-void v1_8::RaphaelParams::init_pst() {
+void RaphaelHCE::RaphaelParams::init_pst() {
     constexpr int PAWN_MID[64] = {
         0,  0,   0,   0,   0,   0,   0,   0,     //
         43, 144, 79,  113, 29,  152, -31, -198,  //
@@ -181,16 +181,16 @@ void v1_8::RaphaelParams::init_pst() {
 }
 
 
-v1_8::v1_8(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {}
-v1_8::v1_8(string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {}
+RaphaelHCE::RaphaelHCE(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {}
+RaphaelHCE::RaphaelHCE(string name_in, EngineOptions options): GamePlayer(name_in), tt(options.tablesize) {}
 
 
-void v1_8::set_options(EngineOptions options) { tt = TranspositionTable(options.tablesize); }
+void RaphaelHCE::set_options(EngineOptions options) { tt = TranspositionTable(options.tablesize); }
 
-void v1_8::set_searchoptions(SearchOptions options) { searchopt = options; }
+void RaphaelHCE::set_searchoptions(SearchOptions options) { searchopt = options; }
 
 
-chess::Move v1_8::get_move(
+chess::Move RaphaelHCE::get_move(
     chess::Board board,
     const int t_remain,
     const int t_inc,
@@ -309,7 +309,7 @@ chess::Move v1_8::get_move(
     return itermove;
 }
 
-void v1_8::ponder(chess::Board board, volatile bool& halt) {
+void RaphaelHCE::ponder(chess::Board board, volatile bool& halt) {
     ponderdepth = 1;
     pondereval = 0;
     itermove = chess::Move::NO_MOVE;
@@ -369,7 +369,7 @@ void v1_8::ponder(chess::Board board, volatile bool& halt) {
 }
 
 
-string v1_8::get_pv_line(chess::Board board, int depth) const {
+string RaphaelHCE::get_pv_line(chess::Board board, int depth) const {
     // get first move
     auto ttkey = board.hash();
     auto ttentry = tt.get(ttkey, 0);
@@ -389,7 +389,7 @@ string v1_8::get_pv_line(chess::Board board, int depth) const {
 }
 
 
-void v1_8::reset() {
+void RaphaelHCE::reset() {
     tt.clear();
     killers.clear();
     history.clear();
@@ -400,7 +400,7 @@ void v1_8::reset() {
 }
 
 
-void v1_8::start_search_timer(const chess::Board& board, const int t_remain, const int t_inc) {
+void RaphaelHCE::start_search_timer(const chess::Board& board, const int t_remain, const int t_inc) {
     // if movetime is specified, use that instead
     if (searchopt.movetime != -1) {
         search_t = searchopt.movetime;
@@ -426,7 +426,7 @@ void v1_8::start_search_timer(const chess::Board& board, const int t_remain, con
     start_t = ch::high_resolution_clock::now();
 }
 
-bool v1_8::is_time_over(volatile bool& halt) const {
+bool RaphaelHCE::is_time_over(volatile bool& halt) const {
     // if max nodes is specified, check that instead
     if (searchopt.maxnodes != -1) {
         if (nodes >= searchopt.maxnodes) halt = true;
@@ -441,7 +441,7 @@ bool v1_8::is_time_over(volatile bool& halt) const {
 }
 
 
-int v1_8::negamax(
+int RaphaelHCE::negamax(
     chess::Board& board,
     const int depth,
     const int ply,
@@ -568,7 +568,7 @@ int v1_8::negamax(
     return alpha;
 }
 
-int v1_8::quiescence(chess::Board& board, int alpha, int beta, volatile bool& halt) {
+int RaphaelHCE::quiescence(chess::Board& board, int alpha, int beta, volatile bool& halt) {
     // timeout
     if (is_time_over(halt)) return 0;
     nodes++;
@@ -602,12 +602,12 @@ int v1_8::quiescence(chess::Board& board, int alpha, int beta, volatile bool& ha
 }
 
 
-void v1_8::order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const {
+void RaphaelHCE::order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const {
     for (auto& move : movelist) score_move(move, board, ply);
     movelist.sort();
 }
 
-void v1_8::score_move(chess::Move& move, const chess::Board& board, const int ply) const {
+void RaphaelHCE::score_move(chess::Move& move, const chess::Board& board, const int ply) const {
     // prioritize best move from previous iteraton
     if (move == tt.get(board.hash(), 0).move) {
         move.setScore(INT16_MAX);
@@ -638,7 +638,7 @@ void v1_8::score_move(chess::Move& move, const chess::Board& board, const int pl
     move.setScore(score);
 }
 
-int v1_8::evaluate(const chess::Board& board) const {
+int RaphaelHCE::evaluate(const chess::Board& board) const {
     int eval_mid = 0, eval_end = 0;
     int phase = 0;
     auto pieces = board.occ();

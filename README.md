@@ -24,7 +24,7 @@ Note that italicized ELOs are estimates and not official, and were estimated usi
     <tr align="center"><td>2.0.0</td><td><i>2273</i></td></tr>
     <tr align="center"><td>1.8.0</td><td><i>2084</i></td></tr>
     <tr align="center"><td>1.7.6</td><td>1967</td></tr>
-    <tr align="center"><td>1.7.0</td><td><i>1865</i></td></tr>
+    <tr align="center"><td>1.7.0</td><td>1851</td></tr>
     <tr align="center"><td>1.6.0</td><td><i>1797</i></td></tr>
     <tr align="center"><td>1.5.0</td><td><i>1764</i></td></tr>
 </table>

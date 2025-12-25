@@ -12,8 +12,10 @@
 
 
 namespace Raphael {
-class v2_0: public cge::GamePlayer {
+class RaphaelNNUE: public cge::GamePlayer {
 public:
+    inline static std::string version = "2.0.0.0";
+
     struct EngineOptions {
         uint32_t tablesize = DEF_TABLE_SIZE;  // number of entries in tt
     };
@@ -89,14 +91,14 @@ public:
      *
      * \param name_in player name
      */
-    v2_0(std::string name_in);
+    RaphaelNNUE(std::string name_in);
 
     /** Initializes Raphael
      *
      * \param name_in player name
      * \param options engine options, such as transposition table size
      */
-    v2_0(std::string name_in, EngineOptions options);
+    RaphaelNNUE(std::string name_in, EngineOptions options);
 
 
     /** Sets Raphael's engine options

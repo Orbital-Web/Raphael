@@ -1,5 +1,5 @@
 #include <GameEngine/consts.h>
-#include <Raphael/Raphaelv2.0.h>
+#include <Raphael/Raphael.h>
 #include <Raphael/SEE.h>
 #include <Raphael/consts.h>
 #include <math.h>
@@ -23,20 +23,20 @@ extern const bool UCI;
 
 
 
-v2_0::RaphaelParams::RaphaelParams() {}
+RaphaelNNUE::RaphaelParams::RaphaelParams() {}
 
 
-v2_0::v2_0(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {}
-v2_0::v2_0(string name_in, EngineOptions options)
+RaphaelNNUE::RaphaelNNUE(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {}
+RaphaelNNUE::RaphaelNNUE(string name_in, EngineOptions options)
     : GamePlayer(name_in), tt(options.tablesize), net() {}
 
 
-void v2_0::set_options(EngineOptions options) { tt = TranspositionTable(options.tablesize); }
+void RaphaelNNUE::set_options(EngineOptions options) { tt = TranspositionTable(options.tablesize); }
 
-void v2_0::set_searchoptions(SearchOptions options) { searchopt = options; }
+void RaphaelNNUE::set_searchoptions(SearchOptions options) { searchopt = options; }
 
 
-chess::Move v2_0::get_move(
+chess::Move RaphaelNNUE::get_move(
     chess::Board board,
     const int t_remain,
     const int t_inc,
@@ -158,7 +158,7 @@ chess::Move v2_0::get_move(
     return itermove;
 }
 
-void v2_0::ponder(chess::Board board, volatile bool& halt) {
+void RaphaelNNUE::ponder(chess::Board board, volatile bool& halt) {
     ponderdepth = 1;
     pondereval = 0;
     itermove = chess::Move::NO_MOVE;
@@ -221,7 +221,7 @@ void v2_0::ponder(chess::Board board, volatile bool& halt) {
 }
 
 
-string v2_0::get_pv_line(chess::Board board, int depth) const {
+string RaphaelNNUE::get_pv_line(chess::Board board, int depth) const {
     // get first move
     auto ttkey = board.hash();
     auto ttentry = tt.get(ttkey, 0);
@@ -241,7 +241,7 @@ string v2_0::get_pv_line(chess::Board board, int depth) const {
 }
 
 
-void v2_0::reset() {
+void RaphaelNNUE::reset() {
     tt.clear();
     killers.clear();
     history.clear();
@@ -252,7 +252,9 @@ void v2_0::reset() {
 }
 
 
-void v2_0::start_search_timer(const chess::Board& board, const int t_remain, const int t_inc) {
+void RaphaelNNUE::start_search_timer(
+    const chess::Board& board, const int t_remain, const int t_inc
+) {
     // if movetime is specified, use that instead
     if (searchopt.movetime != -1) {
         search_t = searchopt.movetime;
@@ -278,7 +280,7 @@ void v2_0::start_search_timer(const chess::Board& board, const int t_remain, con
     start_t = ch::high_resolution_clock::now();
 }
 
-bool v2_0::is_time_over(volatile bool& halt) const {
+bool RaphaelNNUE::is_time_over(volatile bool& halt) const {
     // if max nodes is specified, check that instead
     if (searchopt.maxnodes != -1 && nodes >= searchopt.maxnodes) {
         halt = true;
@@ -294,7 +296,7 @@ bool v2_0::is_time_over(volatile bool& halt) const {
 }
 
 
-int v2_0::negamax(
+int RaphaelNNUE::negamax(
     chess::Board& board,
     const int depth,
     const int ply,
@@ -422,7 +424,9 @@ int v2_0::negamax(
     return alpha;
 }
 
-int v2_0::quiescence(chess::Board& board, const int ply, int alpha, int beta, volatile bool& halt) {
+int RaphaelNNUE::quiescence(
+    chess::Board& board, const int ply, int alpha, int beta, volatile bool& halt
+) {
     // timeout
     if (is_time_over(halt)) return 0;
     nodes++;
@@ -460,12 +464,14 @@ int v2_0::quiescence(chess::Board& board, const int ply, int alpha, int beta, vo
 }
 
 
-void v2_0::order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const {
+void RaphaelNNUE::order_moves(
+    chess::Movelist& movelist, const chess::Board& board, const int ply
+) const {
     for (auto& move : movelist) score_move(move, board, ply);
     movelist.sort();
 }
 
-void v2_0::score_move(chess::Move& move, const chess::Board& board, const int ply) const {
+void RaphaelNNUE::score_move(chess::Move& move, const chess::Board& board, const int ply) const {
     // prioritize best move from previous iteraton
     if (move == tt.get(board.hash(), 0).move) {
         move.setScore(INT16_MAX);

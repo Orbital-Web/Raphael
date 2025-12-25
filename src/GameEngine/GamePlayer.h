@@ -14,6 +14,7 @@ struct MouseInfo {
 
 class GamePlayer {
 public:
+    inline static std::string version = "0.0.0.0";
     std::string name;
 
 

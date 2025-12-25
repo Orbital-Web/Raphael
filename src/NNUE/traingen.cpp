@@ -1,4 +1,4 @@
-#include <Raphael/Raphaelv1.8.h>
+#include <Raphael/Raphael_hce.h>
 #include <Raphael/consts.h>
 
 #include <chess.hpp>
@@ -23,9 +23,9 @@ extern const bool UCI = false;
 
 
 namespace Raphael {
-class v1_8_traingen: public v1_8 {
+class v1_8_traingen: public RaphaelHCE {
 public:
-    v1_8_traingen(string name_in): v1_8(name_in) {}
+    v1_8_traingen(string name_in): RaphaelHCE(name_in) {}
 
     // Returns the relative eval and bestmove of this position using the get_move logic of the
     // engine
@@ -260,7 +260,7 @@ int main(int argc, char* argv[]) {
     // load engine
     cout << "Loading engine" << endl;
     Raphael::v1_8_traingen engine("Raphael");
-    Raphael::v1_8::SearchOptions searchopt;
+    Raphael::RaphaelHCE::SearchOptions searchopt;
     searchopt.maxdepth = args.depth;
     searchopt.maxnodes = args.maxnodes;
     searchopt.maxnodes_soft = args.maxnodes_soft;

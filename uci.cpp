@@ -1,5 +1,5 @@
 #include <GameEngine/consts.h>
-#include <Raphael/Raphaelv2.0.h>
+#include <Raphael/Raphael.h>
 
 #include <condition_variable>
 #include <iostream>
@@ -21,14 +21,14 @@ extern const bool UCI = true;
 
 // engine
 mutex engine_mutex;
-Raphael::v2_0 engine("Raphael 2.0.0.0");  // TODO: make sure version is correct
+Raphael::RaphaelNNUE engine("Raphael");  // TODO: make sure version is correct
 
 // search globals
 mutex search_mutex;
 condition_variable search_cv;
 struct SearchRequest {
     chess::Board board;
-    Raphael::v2_0::SearchOptions options;
+    Raphael::RaphaelNNUE::SearchOptions options;
     int t_remain;
     int t_inc;
     bool go = false;
@@ -173,7 +173,7 @@ int main() {
 
         if (uci_command == "uci") {
             lock_guard<mutex> lock(cout_mutex);
-            cout << "id name " << engine.name << "\n"
+            cout << "id name " << engine.name << " " << engine.version << "\n"
                  << "id author Rei Meguro\n"
                  << "option name Hash type spin default 64 min 1 max 2560\n"
                  << "uciok\n"

@@ -50,6 +50,14 @@ private:
         const int16_t* operator[](bool side) const;
     };
     NnueAccumulator accumulators[MAX_DEPTH];  // accumulators[ply][black/white][index]
+    struct AccumulatorState {
+        bool dirty = false;
+        int add1[2];
+        int add2[2];
+        int rem1[2];
+        int rem2[2];
+    };
+    AccumulatorState accumulator_states[MAX_DEPTH];
 
     /** Refreshes the accumulator as new_acc = b1 + W1[features]
      *

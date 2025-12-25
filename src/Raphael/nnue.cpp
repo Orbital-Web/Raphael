@@ -93,6 +93,32 @@ void Nnue::load(const char* nnue_path) {
 /* ------------------------------- Evaluate ------------------------------- */
 
 int32_t Nnue::evaluate(int ply, bool side) {
+    // lazy update accumulators
+    int p = ply;
+    while (accumulator_states[p].dirty) p--;
+    while (p++ < ply) {
+        auto& state = accumulator_states[p];
+        update_accumulator(
+            accumulators[p],
+            accumulators[p - 1],
+            state.add1[0],
+            state.add2[0],
+            state.rem1[0],
+            state.rem2[0],
+            false
+        );
+        update_accumulator(
+            accumulators[p],
+            accumulators[p - 1],
+            state.add1[1],
+            state.add2[1],
+            state.rem1[1],
+            state.rem2[1],
+            true
+        );
+        state.dirty = false;
+    }
+
     // get address to accumulators and weights
     const auto us_base = accumulators[ply][side];
     const auto them_base = accumulators[ply][!side];
@@ -247,11 +273,12 @@ void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board
     auto to_sq = move.to();
     auto move_type = move.typeOf();
 
+    auto& state = accumulator_states[ply];
+    state.dirty = true;
+
     // update black and white states incrementally
     for (bool side : {false, true}) {
         // do incremental update
-        vector<int> add_features, rem_features;
-
         bool moving = (board.sideToMove() == chess::Color::WHITE) == side;
         int from_sqi = (side) ? (int)from_sq : (int)from_sq ^ 56;
         int to_sqi = (side) ? (int)to_sq : (int)to_sq ^ 56;
@@ -261,27 +288,27 @@ void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board
         int to_piecei = (side) ? (int)to_piece : ((int)to_piece + 6) % 12;
 
         // remove moving piece
-        int add1, add2 = -1, rem2 = -1;
-        int rem1 = 64 * from_piecei + from_sqi;
+        state.add1[side] = -1;
+        state.add2[side] = -1;
+        state.rem1[side] = 64 * from_piecei + from_sqi;
+        state.rem2[side] = -1;
 
         // add moved piece to add_features (handle promotion and enemy castling)
         if (move_type == move.PROMOTION) {
             int promote_piecei = !moving * 6 + (int)move.promotionType();
-            add1 = 64 * promote_piecei + to_sqi;
+            state.add1[side] = 64 * promote_piecei + to_sqi;
         } else if (move_type == move.CASTLING) {
             int new_ksqi = (to_sqi % 8 == 7) ? to_sqi - 1 : to_sqi + 2;
             int new_rsqi = (to_sqi % 8 == 7) ? to_sqi - 2 : to_sqi + 3;
-            add1 = 64 * from_piecei + new_ksqi;
-            add2 = 64 * to_piecei + new_rsqi;
+            state.add1[side] = 64 * from_piecei + new_ksqi;
+            state.add2[side] = 64 * to_piecei + new_rsqi;
         } else
-            add1 = 64 * from_piecei + to_sqi;
+            state.add1[side] = 64 * from_piecei + to_sqi;
 
         // add captured piece (castling is treated as rook capture) to rem_features
         if (to_piece != chess::Piece::NONE)
-            rem2 = 64 * to_piecei + to_sqi;
+            state.rem2[side] = 64 * to_piecei + to_sqi;
         else if (move_type == move.ENPASSANT)
-            rem2 = 64 * 6 * moving + (to_sqi + 8 - moving * 16);
-
-        update_accumulator(accumulators[ply], accumulators[ply - 1], add1, add2, rem1, rem2, side);
+            state.rem2[side] = 64 * 6 * moving + (to_sqi + 8 - moving * 16);
     }
 }

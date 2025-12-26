@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include <chess.hpp>
+#include <climits>
 #include <future>
 #include <iomanip>
 

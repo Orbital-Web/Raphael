@@ -115,11 +115,16 @@ void GameEngine::run_match(const GameOptions& options) {
 
         // play move
         auto toPlay = movereceiver.get();
-        if (toPlay == chess::Move::NO_MOVE) {
-            {
+        if (toPlay == chess::Move::NO_MOVE || movelist.find(toPlay) == -1) {
+            if (toPlay == chess::Move::NO_MOVE) {
                 lock_guard<mutex> lock(cout_mutex);
                 cout << "Warning, no move returned. Remaining time of player: " << fixed
                      << setprecision(2) << cur_t_remain / 1000.0f << "\n";
+            } else {
+                lock_guard<mutex> lock(cout_mutex);
+                cout << "Warning, illegal move " << chess::uci::moveToUci(toPlay)
+                     << " played. Remaining time of player: " << fixed << setprecision(2)
+                     << cur_t_remain / 1000.0f << "\n";
             }
             timeout = true;
             timeoutwins[(p1_is_white != turn)]++;

@@ -6,13 +6,18 @@
 namespace Raphael {
 class History {  // based on https://www.chessprogramming.org/History_Heuristic
 private:
+    static constexpr int HISTORY_BONUS_SCALE = 100;
+    static constexpr int HISTORY_BONUS_OFFSET = 100;
+    static constexpr int HISTORY_BONUS_MAX = 2000;
+    static constexpr int HISTORY_MAX = 16384;
+
     int _history[2][64][64];
 
 public:
     /** Initializes the storage with zeros */
     History();
 
-    /** Updates the history (assumes move is quiet)
+    /** Updates the history with gravity
      *
      * \param move a quiet move
      * \param depth depth of that move

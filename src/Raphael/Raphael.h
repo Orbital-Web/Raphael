@@ -40,26 +40,8 @@ protected:
         static constexpr int MIN_SKIP_EVAL = 200;  // minimum eval to halt early if pv is stable
 
         // move ordering
-        static constexpr int KILLER_WEIGHT = 50;          // move priority for killer moves
-        static constexpr int GOOD_CAPTURE_WEIGHT = 5000;  // move priority for good captures
-
-        // evaluation[midgame, endgame]
-        static constexpr int PVAL[12][2] = {
-            // WHITE
-            {100,   100 }, // PAWN
-            {418,   246 }, // KNIGHT
-            {449,   274 }, // BISHOP
-            {554,   437 }, // ROOK
-            {1191,  727 }, // QUEEN
-            {0,     0   }, // KING
-            // BLACK
-            {-100,  -100}, // PAWN
-            {-418,  -246}, // KNIGHT
-            {-449,  -274}, // BISHOP
-            {-554,  -437}, // ROOK
-            {-1191, -727}, // QUEEN
-            {0,     0   }, // KING
-        };  // value of each piece
+        static constexpr int KILLER_MOVE_FLOOR = 20000;    // min score for killer moves
+        static constexpr int GOOD_TACTICAL_FLOOR = 30000;  // min score for good captures/promotions
     };
 
     // search
@@ -204,17 +186,26 @@ protected:
     /** Sorts the movelist from best to worst
      *
      * \param movelist movelist to sort
+     * \param ttmove transposition table move
      * \param board current board
      * \param ply current ply (half-moves) from the root
      */
-    void order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const;
+    void order_moves(
+        chess::Movelist& movelist,
+        const chess::Move& ttmove,
+        const chess::Board& board,
+        const int ply
+    ) const;
 
     /** Assigns a score to a move
      *
      * \param move move to score
+     * \param ttmove transposition table move
      * \param board current board
      * \param ply current ply (half-moves) from the root
      */
-    void score_move(chess::Move& move, const chess::Board& board, const int ply) const;
+    void score_move(
+        chess::Move& move, const chess::Move& ttmove, const chess::Board& board, const int ply
+    ) const;
 };
 };  // namespace Raphael

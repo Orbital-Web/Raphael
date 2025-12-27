@@ -48,7 +48,7 @@ chess::Move RaphaelNNUE::get_move(
 ) {
     nodes = 0;
     pvlens[0] = 0;
-    history.clear();
+    // history.clear();
     net.set_board(board);
 
     int depth = 1;
@@ -310,6 +310,7 @@ int RaphaelNNUE::negamax(
     // probe transposition table
     auto ttkey = board.hash();
     auto entry = tt.get(ttkey, ply);
+    auto ttmove = (entry.key == ttkey) ? entry.move : chess::Move::NO_MOVE;
     if (ply && tt.valid(entry, ttkey, depth)) {
         if (entry.flag == tt.LOWER)
             alpha = max(alpha, entry.eval);
@@ -331,7 +332,7 @@ int RaphaelNNUE::negamax(
     // one reply extension
     int extension = 0;
     if (movelist.size() > 1)
-        order_moves(movelist, board, ply);
+        order_moves(movelist, ttmove, board, ply);
     else if (ext > 0)
         extension++;
 
@@ -419,7 +420,7 @@ int RaphaelNNUE::quiescence(
     // search
     chess::Movelist movelist;
     chess::movegen::legalmoves<chess::MoveGenType::CAPTURE>(movelist, board);
-    order_moves(movelist, board, 0);
+    order_moves(movelist, chess::Move::NO_MOVE, board, 0);
 
     for (const auto& move : movelist) {
         net.make_move(ply + 1, move, board);
@@ -443,39 +444,51 @@ int RaphaelNNUE::quiescence(
 
 
 void RaphaelNNUE::order_moves(
-    chess::Movelist& movelist, const chess::Board& board, const int ply
+    chess::Movelist& movelist, const chess::Move& ttmove, const chess::Board& board, const int ply
 ) const {
-    for (auto& move : movelist) score_move(move, board, ply);
+    for (auto& move : movelist) score_move(move, ttmove, board, ply);
     movelist.sort();
 }
 
-void RaphaelNNUE::score_move(chess::Move& move, const chess::Board& board, const int ply) const {
-    // prioritize best move from previous iteraton
-    if (move == tt.get(board.hash(), 0).move) {
+void RaphaelNNUE::score_move(
+    chess::Move& move, const chess::Move& ttmove, const chess::Board& board, const int ply
+) const {
+    // prioritize transposition table move
+    if (move == ttmove) {
         move.setScore(INT16_MAX);
         return;
     }
 
     int16_t score = 0;
 
-    // calculate other scores
-    int from = (int)board.at(move.from());
-    int to = (int)board.at(move.to());
+    if (board.isCapture(move) || move.typeOf() == chess::Move::PROMOTION) {
+        bool is_good = false;
 
-    // enemy piece captured
-    if (board.isCapture(move)) {
-        score += abs(params.PVAL[to][1]) - (from % 6);  // MVV/LVA
-        score += SEE::goodCapture(move, board, -12) * params.GOOD_CAPTURE_WEIGHT;
+        // promotion
+        if (move.typeOf() == chess::Move::PROMOTION) {
+            auto promo = move.promotionType();
+
+            if (promo == chess::PieceType::QUEEN) is_good = true;
+            score += 100 * (int)promo;
+        }
+
+        // capture
+        if (board.isCapture(move)) {
+            auto attacker = board.at<chess::PieceType>(move.from());
+            auto victim = board.at<chess::PieceType>(move.to());
+
+            if (!is_good && SEE::goodCapture(move, board, -12)) is_good = true;
+            score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
+        }
+
+        score += is_good ? params.GOOD_TACTICAL_FLOOR : 0;
+
     } else {
-        // killer move
-        if (ply > 0 && killers.isKiller(move, ply)) score += params.KILLER_WEIGHT;
-        // history
-        score += history.get(move, whiteturn);
+        if (ply > 0 && killers.isKiller(move, ply))
+            score += params.KILLER_MOVE_FLOOR;  // killer move
+        else
+            score += history.get(move, whiteturn);  // history
     }
-
-    // promotion
-    if (move.typeOf() == chess::Move::PROMOTION)
-        score += abs(params.PVAL[(int)move.promotionType()][1]);
 
     move.setScore(score);
 }

@@ -63,15 +63,14 @@ protected:
     };
 
     // search
-    chess::Move itermove;     // current iteration's bestmove
-    chess::Move prevPlay;     // previous iteration's bestmove
-    int consecutives;         // number of consecutive bestmoves
+    chess::Move pvtable[MAX_DEPTH][MAX_DEPTH] = {{chess::Move::NO_MOVE}};
+    int pvlens[MAX_DEPTH] = {0};
     SearchOptions searchopt;  // limit depth, nodes, or movetime
     RaphaelParams params;     // search parameters
-    // ponder
-    uint64_t ponderkey = 0;  // hash after opponent's best response
-    int pondereval = 0;      // eval we got during ponder
-    int ponderdepth = 1;     // depth we searched to during ponder
+    // ponder FIXME:
+    // uint64_t ponderkey = 0;  // hash after opponent's best response
+    // int pondereval = 0;      // eval we got during ponder
+    // int ponderdepth = 1;     // depth we searched to during ponder
     // storage
     TranspositionTable tt;  // table with position, eval, and bestmove
     Killers killers;        // 2 killer moves at each ply
@@ -142,11 +141,9 @@ public:
 
     /** Returns the PV line stored in the transposition table
      *
-     * \param board board to get PV from
-     * \param depth depth of PV
      * \returns the PV line of the board of length <= depth
      */
-    std::string get_pv_line(chess::Board board, int depth) const;
+    std::string get_pv_line() const;
 
 
     /** Resets Raphael */

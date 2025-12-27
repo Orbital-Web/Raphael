@@ -21,7 +21,7 @@ extern const bool UCI = true;
 
 // engine
 mutex engine_mutex;
-Raphael::RaphaelNNUE engine("Raphael");  // TODO: make sure version is correct
+Raphael::RaphaelNNUE engine("Raphael");
 
 // search globals
 mutex search_mutex;

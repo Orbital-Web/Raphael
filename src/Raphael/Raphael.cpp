@@ -322,6 +322,7 @@ int RaphaelNNUE::negamax(
     // terminal analysis
     if (board.isInsufficientMaterial()) return 0;
     chess::Movelist movelist;
+    chess::Movelist quietlist;
     chess::movegen::legalmoves<chess::MoveGenType::ALL>(movelist, board);
     if (movelist.empty()) {
         if (board.inCheck()) return -MATE_EVAL + ply;  // reward faster checkmate
@@ -342,7 +343,9 @@ int RaphaelNNUE::negamax(
     chess::Move bestmove = chess::Move::NO_MOVE;
 
     for (const auto& move : movelist) {
-        bool istactical = board.isCapture(move) || move.typeOf() == chess::Move::PROMOTION;
+        bool is_quiet = !board.isCapture(move) && move.typeOf() != chess::Move::PROMOTION;
+        if (is_quiet) quietlist.add(move);
+
         net.make_move(ply + 1, move, board);
         board.makeMove(move);
 
@@ -352,7 +355,7 @@ int RaphaelNNUE::negamax(
         bool fullwindow = true;
         int eval;
         // late move reduction with zero window for quiet moves
-        if (extension == 0 && depth >= 3 && movei >= params.REDUCTION_FROM && !istactical) {
+        if (extension == 0 && depth >= 3 && movei >= params.REDUCTION_FROM && is_quiet) {
             eval = -negamax(board, depth - 2, ply + 1, ext, -alpha - 1, -alpha, halt);
             fullwindow = eval > alpha;
         }
@@ -378,10 +381,10 @@ int RaphaelNNUE::negamax(
                 alpha = eval;
 
                 if (eval >= beta) {
-                    // store killer move (ignore captures)
-                    if (!board.isCapture(move)) {
+                    // store killer moves and update history
+                    if (is_quiet) {
                         killers.put(move, ply);
-                        history.update(move, depth, whiteturn);
+                        history.update(move, quietlist, depth, whiteturn);
                     }
                     break;  // prune
                 }
@@ -461,6 +464,7 @@ void RaphaelNNUE::score_move(
     int16_t score = 0;
 
     if (board.isCapture(move) || move.typeOf() == chess::Move::PROMOTION) {
+        // tactical moves
         bool is_good = false;
 
         // promotion
@@ -480,14 +484,14 @@ void RaphaelNNUE::score_move(
             score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
         }
 
-        score += is_good ? params.GOOD_TACTICAL_FLOOR : 0;
+        score += is_good ? params.GOOD_TACTICAL_FLOOR : params.BAD_TACTICAL_FLOOR;
 
-    } else {
-        if (ply > 0 && killers.isKiller(move, ply))
-            score += params.KILLER_MOVE_FLOOR;  // killer move
-        else
-            score += history.get(move, whiteturn);  // history
-    }
+    } else if (ply > 0 && killers.isKiller(move, ply))
+        // killer moves
+        score = params.KILLER_FLOOR;
+    else
+        // quiet moves
+        score = history.get(move, whiteturn);
 
     move.setScore(score);
 }

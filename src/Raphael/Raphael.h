@@ -40,8 +40,9 @@ protected:
         static constexpr int MIN_SKIP_EVAL = 200;  // minimum eval to halt early if pv is stable
 
         // move ordering
-        static constexpr int KILLER_MOVE_FLOOR = 20000;    // min score for killer moves
-        static constexpr int GOOD_TACTICAL_FLOOR = 30000;  // min score for good captures/promotions
+        static constexpr int GOOD_TACTICAL_FLOOR = 30000;  // good captures/promotions <=30805
+        static constexpr int KILLER_FLOOR = 20000;         // killer moves
+        static constexpr int BAD_TACTICAL_FLOOR = -20000;  // bad captures/promotions <=-19195
     };
 
     // search

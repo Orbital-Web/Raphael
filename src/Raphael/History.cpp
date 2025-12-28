@@ -11,11 +11,18 @@ using std::min;
 History::History(): _history{0} {}
 
 
-void History::update(const chess::Move move, const int depth, const int side) {
-    int from = (int)move.from();
-    int to = (int)move.to();
+void History::update(
+    const chess::Move bestmove, const chess::Movelist& quietlist, const int depth, const int side
+) {
     int bonus = min(HISTORY_BONUS_SCALE * depth + HISTORY_BONUS_OFFSET, HISTORY_BONUS_MAX);
-    _history[side][from][to] += bonus - (_history[side][from][to] * bonus) / HISTORY_MAX;
+
+    for (const auto& move : quietlist) {
+        int from = (int)move.from();
+        int to = (int)move.to();
+
+        _history[side][from][to] -= _history[side][from][to] * bonus / HISTORY_MAX;
+        _history[side][from][to] += (move == bestmove) ? bonus : -bonus;
+    }
 }
 
 

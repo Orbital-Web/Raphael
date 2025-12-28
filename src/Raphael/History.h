@@ -19,11 +19,17 @@ public:
 
     /** Updates the history with gravity
      *
-     * \param move a quiet move
+     * \param bestmove a quiet move to boost
+     * \param quietlist quiet moves to penalize (should include `bestmove`, `bestmove` is boosted)
      * \param depth depth of that move
      * \param side side playing the move
      */
-    void update(const chess::Move move, const int depth, const int side);
+    void update(
+        const chess::Move bestmove,
+        const chess::Movelist& quietlist,
+        const int depth,
+        const int side
+    );
 
     /** Returns the history heuristic
      *

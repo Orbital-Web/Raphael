@@ -494,6 +494,7 @@ int RaphaelHCE::negamax(
     // terminal analysis
     if (board.isInsufficientMaterial()) return 0;
     chess::Movelist movelist;
+    chess::Movelist quietlist;
     chess::movegen::legalmoves<chess::MoveGenType::ALL>(movelist, board);
     if (movelist.empty()) {
         if (board.inCheck()) return -MATE_EVAL + ply;  // reward faster checkmate
@@ -516,7 +517,9 @@ int RaphaelHCE::negamax(
     int movei = 0;
 
     for (const auto& move : movelist) {
-        bool istactical = board.isCapture(move) || move.typeOf() == chess::Move::PROMOTION;
+        bool is_quiet = !board.isCapture(move) && move.typeOf() != chess::Move::PROMOTION;
+        if (is_quiet) quietlist.add(move);
+
         board.makeMove(move);
         // check and passed pawn extension
         if (ext > extension) {
@@ -533,7 +536,7 @@ int RaphaelHCE::negamax(
         // late move reduction with zero window for certain quiet moves
         bool fullwindow = true;
         int eval;
-        if (extension == 0 && depth >= 3 && movei >= params.REDUCTION_FROM && !istactical) {
+        if (extension == 0 && depth >= 3 && movei >= params.REDUCTION_FROM && is_quiet) {
             eval = -negamax(board, depth - 2, ply + 1, ext, -alpha - 1, -alpha, halt);
             fullwindow = eval > alpha;
         }
@@ -550,10 +553,10 @@ int RaphaelHCE::negamax(
 
         // prune
         if (eval >= beta) {
-            // store killer move (ignore captures)
-            if (!board.isCapture(move)) {
+            // store killer move and update history
+            if (is_quiet) {
                 killers.put(move, ply);
-                history.update(move, depth, whiteturn);
+                history.update(move, quietlist, depth, whiteturn);
             }
             // update transposition
             tt.set({ttkey, depth, tt.LOWER, move, alpha}, ply);

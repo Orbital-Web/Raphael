@@ -48,7 +48,6 @@ chess::Move RaphaelNNUE::get_move(
 ) {
     nodes = 0;
     pvlens[0] = 0;
-    // history.clear();
     net.set_board(board);
 
     int depth = 1;
@@ -477,7 +476,7 @@ void RaphaelNNUE::score_move(
             auto attacker = board.at<chess::PieceType>(move.from());
             auto victim = board.at<chess::PieceType>(move.to());
 
-            if (!is_good && SEE::goodCapture(move, board, -12)) is_good = true;
+            if (!is_good && SEE::goodCapture(move, board, -15)) is_good = true;
             score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
         }
 

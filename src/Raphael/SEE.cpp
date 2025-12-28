@@ -6,9 +6,7 @@ using std::max;
 
 namespace Raphael {
 namespace SEE {
-int pieceval(const chess::Square sq, const chess::Board& board) {
-    return VAL[(int)board.at<chess::PieceType>(sq)];
-}
+int pieceval(const chess::Square sq, const chess::Board& board) { return VAL[(int)board.at(sq)]; }
 
 
 chess::Square lva(chess::Bitboard attackers, const chess::Board& board) {
@@ -20,79 +18,34 @@ chess::Square lva(chess::Bitboard attackers, const chess::Board& board) {
 }
 
 
-int evaluate(const chess::Move& move, const chess::Board& board) {
-    auto to = move.to();                        // where the exchange happens
-    auto victim = move.from();                  // capturer becomes next victim
-    auto occ = board.occ() ^ (1ULL << victim);  // remove capturer from occ
-    auto color = ~board.sideToMove();
-    // https://puzzling.stackexchange.com/questions/106011/consecutive-captures-on-the-same-square
-    int gain[26] = {0};  // max 26 captures
-    int n_captures = 0;
-
-    // handle enpassant
-    if (move.typeOf() == chess::Move::ENPASSANT) {
-        gain[0] = VAL[0];  // pawn captured
-        auto enpsq = (board.sideToMove() == chess::Color::WHITE) ? to + chess::Direction::SOUTH
-                                                                 : to + chess::Direction::NORTH;
-        occ ^= (1ULL << enpsq);
-    } else
-        gain[0] = pieceval(to, board);
-
-    // generate list of all direct attackers
-    auto queens = board.pieces(chess::PieceType::QUEEN);
-    auto bqs = board.pieces(chess::PieceType::BISHOP) | queens;
-    auto rqs = board.pieces(chess::PieceType::ROOK) | queens;
-    auto all_attackers
-        = (chess::attacks::pawn(color, to) & board.pieces(chess::PieceType::PAWN, ~color));
-    all_attackers
-        |= (chess::attacks::pawn(~color, to) & board.pieces(chess::PieceType::PAWN, color));
-    all_attackers |= (chess::attacks::knight(to) & board.pieces(chess::PieceType::KNIGHT));
-    all_attackers |= (chess::attacks::bishop(to, occ) & bqs);
-    all_attackers |= (chess::attacks::rook(to, occ) & rqs);
-    all_attackers |= (chess::attacks::king(to) & board.pieces(chess::PieceType::KING));
-
-    // first simulate a series of captures on the same square
-    while (true) {
-        n_captures++;
-        gain[n_captures] = pieceval(victim, board) - gain[n_captures - 1];  // assume defended
-        // if (max(-gain[n_captures-1], gain[n_captures]) < 0) break;
-
-        all_attackers &= occ;
-        auto attackers = all_attackers & board.us(color);
-        if (!attackers) break;
-
-        // update virtual board
-        color = ~color;
-        victim = lva(attackers, board);  // capturer becomes next victim
-        occ ^= (1ULL << victim);         // remove capturer from occ
-        all_attackers |= chess::attacks::bishop(to, occ) & bqs;
-        all_attackers |= chess::attacks::rook(to, occ) & rqs;
-    }
-
-    // evaluate the final material (dis)advantage if we both trade smartly
-    while (--n_captures) gain[n_captures - 1] = -max(-gain[n_captures - 1], gain[n_captures]);
-    return gain[0];
-}
-
-
 bool goodCapture(const chess::Move& move, const chess::Board& board, const int threshold) {
-    auto to = move.to();                        // where the exchange happens
-    auto victim = move.from();                  // capturer becomes next victim
-    auto occ = board.occ() ^ (1ULL << victim);  // remove capturer from occ
+    auto to = move.to();                           // where the exchange happens
+    auto victim_sq = move.from();                  // capturer becomes next victim
+    auto occ = board.occ() ^ (1ULL << victim_sq);  // remove capturer from occ
     auto color = ~board.sideToMove();
-    int gain;
+    int gain = -threshold;
 
-    // handle enpassant
+    // add material gain
     if (move.typeOf() == chess::Move::ENPASSANT) {
-        gain = VAL[0] - threshold;  // pawn captured
+        gain += VAL[0];  // pawn captured
         auto enpsq = (board.sideToMove() == chess::Color::WHITE) ? to + chess::Direction::SOUTH
                                                                  : to + chess::Direction::NORTH;
         occ ^= (1ULL << enpsq);
-    } else
-        gain = pieceval(to, board) - threshold;
+    } else if (move.typeOf() == chess::Move::PROMOTION) {
+        auto promo = move.promotionType();
+        gain += VAL[(int)promo] + pieceval(to, board) - VAL[0];  // promotion + any capture - pawn
+    } else if (move.typeOf() != chess::Move::CASTLING)
+        gain += pieceval(to, board);
+
     if (gain < 0) return false;
 
-    gain -= pieceval(move.from(), board);
+    // initial capture
+    if (move.typeOf() == chess::Move::PROMOTION) {
+        auto promo = move.promotionType();
+        gain -= VAL[(int)promo];
+    } else
+        gain -= pieceval(victim_sq, board);
+
     if (gain >= 0) return true;
 
     // generate list of all direct attackers
@@ -115,17 +68,17 @@ bool goodCapture(const chess::Move& move, const chess::Board& board, const int t
         if (!attackers) break;
 
         color = ~color;
-        victim = lva(attackers, board);  // capturer becomes next victim
-        gain = -gain - 1 - pieceval(victim, board);
+        victim_sq = lva(attackers, board);  // capturer becomes next victim
+        gain = -gain - 1 - pieceval(victim_sq, board);
         if (gain >= 0) {
-            if (board.at<chess::PieceType>(victim) == chess::PieceType::KING
+            if (board.at<chess::PieceType>(victim_sq) == chess::PieceType::KING
                 && attackers & board.us(color))
                 color = ~color;
             break;
         }
 
         // update virtual board
-        occ ^= (1ULL << victim);  // remove capturer from occ
+        occ ^= (1ULL << victim_sq);  // remove capturer from occ
         all_attackers |= chess::attacks::bishop(to, occ) & bqs;
         all_attackers |= chess::attacks::rook(to, occ) & rqs;
     }

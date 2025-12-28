@@ -8,13 +8,20 @@
 namespace Raphael {
 // Static Exchange Evaluation
 namespace SEE {
-const int VAL[6] = {
+const int VAL[13] = {
     100,
-    316,
-    328,
-    493,
-    983,
+    422,
+    437,
+    694,
+    1313,
     10000,
+    100,
+    422,
+    437,
+    694,
+    1313,
+    10000,
+    0,
 };
 
 
@@ -33,16 +40,6 @@ int pieceval(const chess::Square sq, const chess::Board& board);
  * \returns the square of the lva
  */
 chess::Square lva(chess::Bitboard attackers, const chess::Board& board);
-
-/** Returns the static exchange evaluation for a capture move
- * https://www.chessprogramming.org/SEE_-_The_Swap_Algorithm
- * http://www.talkchess.com/forum3/viewtopic.php?t=40054
- *
- * \param move the capture move
- * \param board current board
- * \returns the SEE evaluation
- */
-int evaluate(const chess::Move& move, const chess::Board& board);
 
 /** A quicker version of SEE to just compute if a capture is good or bad
  * https://github.com/rafid-dev/rice/blob/main/src/see.cpp#L5

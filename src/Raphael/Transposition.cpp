@@ -6,10 +6,9 @@ using std::vector;
 
 
 
-TranspositionTable::TranspositionTable(const uint32_t size_in)
-    : size(size_in), _table(size, {.val = 0}) {
+TranspositionTable::TranspositionTable(const uint32_t size_mb)
+    : size(size_mb * 1024 * 1024 / ENTRY_SIZE), _table(size, {.val = 0}) {
     assert((size > 0 && size <= MAX_TABLE_SIZE));  // size is within (0, MAX_TABLE_SIZE]
-    // assert(((size & (size-1)) == 0));           // size is a power of 2
 }
 
 

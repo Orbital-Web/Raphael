@@ -26,15 +26,24 @@ extern const bool UCI;
 
 string RaphaelNNUE::version = "2.1.0.0";
 
+const RaphaelNNUE::EngineOptions RaphaelNNUE::default_options{
+    .hash = {
+             .name = "Hash",
+             .min = 1,
+             .max = TranspositionTable::MAX_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
+             .value = TranspositionTable::DEF_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
+             },
+};
+
 RaphaelNNUE::RaphaelParams::RaphaelParams() {}
 
 
-RaphaelNNUE::RaphaelNNUE(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {}
-RaphaelNNUE::RaphaelNNUE(string name_in, EngineOptions options)
-    : GamePlayer(name_in), tt(options.tablesize), net() {}
+RaphaelNNUE::RaphaelNNUE(string name_in): GamePlayer(name_in), tt(default_options.hash.value) {}
 
 
-void RaphaelNNUE::set_options(EngineOptions options) { tt = TranspositionTable(options.tablesize); }
+void RaphaelNNUE::set_option(SetSpinOption option) {
+    if (option.name == "Hash") tt = TranspositionTable(option.value);
+}
 
 void RaphaelNNUE::set_searchoptions(SearchOptions options) { searchopt = options; }
 
@@ -48,6 +57,7 @@ chess::Move RaphaelNNUE::get_move(
 ) {
     nodes = 0;
     pvlens[0] = 0;
+    seldepth = 0;
     net.set_board(board);
 
     int depth = 1;
@@ -105,9 +115,10 @@ chess::Move RaphaelNNUE::get_move(
                 auto nps = (dtime) ? nodes * 1000 / dtime : 0;
                 const char* sign = (eval >= 0) ? "" : "-";
                 lock_guard<mutex> lock(cout_mutex);
-                cout << "info depth " << depth - 1 << " time " << dtime << " nodes " << nodes
-                     << " score mate " << sign << (MATE_EVAL - abs(eval) + 1) / 2 << " nps " << nps
-                     << " pv " << get_pv_line() << "\n";
+                cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime
+                     << " nodes " << nodes << " score mate " << sign
+                     << (MATE_EVAL - abs(eval) + 1) / 2 << " nps " << nps << " pv " << get_pv_line()
+                     << "\n";
                 cout << "bestmove " << chess::uci::moveToUci(bestmove) << "\n" << flush;
             }
 #ifndef MUTEEVAL
@@ -127,8 +138,9 @@ chess::Move RaphaelNNUE::get_move(
             auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
             auto nps = (dtime) ? nodes * 1000 / dtime : 0;
             lock_guard<mutex> lock(cout_mutex);
-            cout << "info depth " << depth - 1 << " time " << dtime << " nodes " << nodes
-                 << " score cp " << eval << " nps " << nps << " pv " << get_pv_line() << "\n"
+            cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime
+                 << " nodes " << nodes << " score cp " << eval << " nps " << nps << " pv "
+                 << get_pv_line() << "\n"
                  << flush;
         }
     }
@@ -227,6 +239,7 @@ string RaphaelNNUE::get_pv_line() const {
 void RaphaelNNUE::reset() {
     nodes = 0;
     pvlens[0] = 0;
+    seldepth = 0;
     tt.clear();
     killers.clear();
     history.clear();
@@ -411,6 +424,7 @@ int RaphaelNNUE::quiescence(
     // timeout
     if (is_time_over(halt)) return 0;
     nodes++;
+    seldepth = max(seldepth, ply);
 
     // get standing pat and prune
     int besteval = net.evaluate(ply, whiteturn);

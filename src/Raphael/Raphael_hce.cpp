@@ -27,6 +27,15 @@ extern const bool UCI;
 
 string RaphaelHCE::version = "1.8.1.0";
 
+const RaphaelHCE::EngineOptions RaphaelHCE::default_options{
+    .hash = {
+             .name = "Hash",
+             .min = 1,
+             .max = TranspositionTable::MAX_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
+             .value = TranspositionTable::DEF_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
+             },
+};
+
 RaphaelHCE::RaphaelParams::RaphaelParams() {
     init_pst();
     PMASK::init_pawnmask();
@@ -184,12 +193,12 @@ void RaphaelHCE::RaphaelParams::init_pst() {
 }
 
 
-RaphaelHCE::RaphaelHCE(string name_in): GamePlayer(name_in), tt(DEF_TABLE_SIZE) {}
-RaphaelHCE::RaphaelHCE(string name_in, EngineOptions options)
-    : GamePlayer(name_in), tt(options.tablesize) {}
+RaphaelHCE::RaphaelHCE(string name_in): GamePlayer(name_in), tt(default_options.hash.value) {}
 
 
-void RaphaelHCE::set_options(EngineOptions options) { tt = TranspositionTable(options.tablesize); }
+void RaphaelHCE::set_option(SetSpinOption option) {
+    if (option.name == "Hash") tt = TranspositionTable(option.value);
+}
 
 void RaphaelHCE::set_searchoptions(SearchOptions options) { searchopt = options; }
 

@@ -4,6 +4,7 @@
 #include <Raphael/Killers.h>
 #include <Raphael/Transposition.h>
 #include <Raphael/nnue.h>
+#include <Raphael/options.h>
 
 #include <chess.hpp>
 #include <chrono>
@@ -17,8 +18,9 @@ public:
     static std::string version;
 
     struct EngineOptions {
-        uint32_t tablesize = DEF_TABLE_SIZE;  // number of entries in tt
+        SpinOption hash;
     };
+    static const EngineOptions default_options;
 
     struct SearchOptions {
         int64_t maxnodes = -1;
@@ -62,6 +64,7 @@ protected:
     Nnue net;
     // info
     int64_t nodes;  // number of nodes visited
+    int seldepth;   // maximum search depth reached
     // timing
     std::chrono::time_point<std::chrono::high_resolution_clock> start_t;  // search start time
     int64_t search_t;                                                     // search duration (ms)
@@ -75,19 +78,12 @@ public:
      */
     RaphaelNNUE(std::string name_in);
 
-    /** Initializes Raphael
-     *
-     * \param name_in player name
-     * \param options engine options, such as transposition table size
-     */
-    RaphaelNNUE(std::string name_in, EngineOptions options);
-
 
     /** Sets Raphael's engine options
      *
-     * \param options options to set to
+     * \param option option to set
      */
-    void set_options(EngineOptions options);
+    void set_option(SetSpinOption option);
 
     /** Sets Raphael's search options
      *

@@ -1,5 +1,6 @@
 #include <GameEngine/consts.h>
 #include <Raphael/Raphael.h>
+#include <Raphael/options.h>
 
 #include <condition_variable>
 #include <iostream>
@@ -68,7 +69,7 @@ void handle_search() {
 
 
 /** Sets options such as tt size
- * E.g., setoption name Hash value [size(mb)]
+ * E.g., setoption name Hash value [size(MB)]
  *
  * \param tokens list of tokens for the command
  */
@@ -76,18 +77,14 @@ void setoption(const vector<string>& tokens) {
     if (tokens.size() != 5) return;
 
     if (tokens[2] == "Hash") {
-        int tablesize_mb = stoi(tokens[4]);
-        if (tablesize_mb < 1 || tablesize_mb > 2560) return;
-
-        uint32_t tablesize = (tablesize_mb * 1024U * 1024) / Raphael::TranspositionTable::entrysize;
+        uint32_t tablesize_mb = stoi(tokens[4]);
         {
             lock_guard<mutex> engine_lock(engine_mutex);
-            engine.set_options({.tablesize = tablesize});
+            engine.set_option(SetSpinOption{.name = "Hash", .value = tablesize_mb});
         }
 
         lock_guard<mutex> lock(cout_mutex);
-        cout << "Set table size to " << tablesize_mb << "mb (" << tablesize << " entries)\n"
-             << flush;
+        cout << "Set table size to " << tablesize_mb << "MB\n" << flush;
     }
 }
 
@@ -175,8 +172,7 @@ int main() {
             lock_guard<mutex> lock(cout_mutex);
             cout << "id name " << engine.name << " " << engine.version << "\n"
                  << "id author Rei Meguro\n"
-                 << "option name Hash type spin default 64 min 1 max 2560\n"
-                 << "uciok\n"
+                 << engine.default_options.hash.to_string() << "uciok\n"
                  << flush;
 
         } else if (uci_command == "isready") {

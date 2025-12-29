@@ -21,4 +21,10 @@ bool Killers::is_killer(const chess::Move move, const int ply) const {
 }
 
 
+void Killers::clear_ply(const int ply) {
+    _killers[2 * ply] = chess::Move::NO_MOVE;
+    _killers[2 * ply + 1] = chess::Move::NO_MOVE;
+}
+
+
 void Killers::clear() { fill(_killers, _killers + 2 * MAX_DEPTH, chess::Move::NO_MOVE); }

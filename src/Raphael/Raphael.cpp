@@ -304,7 +304,7 @@ int RaphaelNNUE::negamax(
     }
 
     // terminal depth
-    if (depth <= 0 || ply == MAX_DEPTH - 1) return quiescence(board, ply, alpha, beta, halt);
+    if (depth <= 0 || ply >= MAX_DEPTH - 1) return quiescence(board, ply, alpha, beta, halt);
 
     // probe transposition table
     auto ttkey = board.hash();
@@ -341,6 +341,7 @@ int RaphaelNNUE::negamax(
     int alphaorig = alpha;
     int besteval = -INT_MAX;
     chess::Move bestmove = chess::Move::NO_MOVE;
+    killers.clear_ply(ply + 1);
 
     for (const auto& move : movelist) {
         bool is_quiet = !board.isCapture(move) && move.typeOf() != chess::Move::PROMOTION;
@@ -417,7 +418,7 @@ int RaphaelNNUE::quiescence(
     alpha = max(alpha, besteval);
 
     // terminal depth
-    if (ply == MAX_DEPTH - 1) return besteval;
+    if (ply >= MAX_DEPTH - 1) return besteval;
 
     // search
     chess::Movelist movelist;
@@ -462,29 +463,20 @@ void RaphaelNNUE::score_move(
     }
 
     int16_t score = 0;
+    bool is_capture = board.isCapture(move);
+    bool is_quiet = !is_capture && move.typeOf() != chess::Move::PROMOTION;
 
-    if (board.isCapture(move) || move.typeOf() == chess::Move::PROMOTION) {
-        // tactical moves
-        bool is_good = false;
-
-        // promotion
-        if (move.typeOf() == chess::Move::PROMOTION) {
-            auto promo = move.promotionType();
-
-            if (promo == chess::PieceType::QUEEN) is_good = true;
-            score += 100 * (int)promo;
-        }
-
-        // capture
-        if (board.isCapture(move)) {
+    if (!is_quiet) {
+        // noisy moves
+        if (is_capture) {
+            // captures
             auto attacker = board.at<chess::PieceType>(move.from());
             auto victim = board.at<chess::PieceType>(move.to());
-
-            if (!is_good && SEE::goodCapture(move, board, -15)) is_good = true;
             score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
         }
 
-        score += is_good ? params.GOOD_TACTICAL_FLOOR : params.BAD_TACTICAL_FLOOR;
+        score += SEE::goodCapture(move, board, -15) ? params.GOOD_NOISY_FLOOR
+                                                    : params.BAD_NOISY_FLOOR;
 
     } else if (ply > 0 && killers.is_killer(move, ply))
         // killer moves

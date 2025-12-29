@@ -32,6 +32,12 @@ public:
      */
     bool is_killer(const chess::Move move, const int ply) const;
 
+    /** Clears the killer move for a given ply
+     *
+     * \param ply current distance from root
+     */
+    void clear_ply(const int ply);
+
     /** Clears the killer storage */
     void clear();
 };

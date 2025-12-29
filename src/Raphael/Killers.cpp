@@ -16,7 +16,7 @@ void Killers::put(const chess::Move move, const int ply) {
 }
 
 
-bool Killers::isKiller(const chess::Move move, const int ply) const {
+bool Killers::is_killer(const chess::Move move, const int ply) const {
     return (move == _killers[2 * ply] || move == _killers[2 * ply + 1]);
 }
 

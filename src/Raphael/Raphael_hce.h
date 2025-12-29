@@ -194,7 +194,7 @@ protected:
      *
      * \param board current board
      * \param depth depth to search for
-     * \param ply current ply (half-moves) from the root
+     * \param ply current distance from root
      * \param alpha lower bound eval of current position
      * \param beta upper bound eval of current position
      * \param halt bool reference which will turn false to indicate search should stop
@@ -225,7 +225,7 @@ protected:
      *
      * \param movelist movelist to sort
      * \param board current board
-     * \param ply current ply (half-moves) from the root
+     * \param ply current distance from root
      */
     void order_moves(chess::Movelist& movelist, const chess::Board& board, const int ply) const;
 
@@ -233,7 +233,7 @@ protected:
      *
      * \param move move to score
      * \param board current board
-     * \param ply current ply (half-moves) from the root
+     * \param ply current distance from root
      */
     void score_move(chess::Move& move, const chess::Board& board, const int ply) const;
 

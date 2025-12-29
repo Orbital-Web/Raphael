@@ -19,7 +19,7 @@ public:
     /** Adds a killer move (assumes move is quiet)
      *
      * \param move a quiet move
-     * \param ply number of half moves made before this one
+     * \param ply current distance from root
      */
     void put(const chess::Move move, const int ply);
 
@@ -27,10 +27,10 @@ public:
     /** Returns whether the move is a killer move
      *
      * \param move the move to check
-     * \param ply number of half moves made before this one
+     * \param ply current distance from root
      * \returns whether move is a killer move
      */
-    bool isKiller(const chess::Move move, const int ply) const;
+    bool is_killer(const chess::Move move, const int ply) const;
 
     /** Clears the killer storage */
     void clear();

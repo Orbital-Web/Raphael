@@ -44,7 +44,7 @@ public:
     /** Retrieves the table value for a given key (assumes valid is true)
      *
      * \param key key to look up
-     * \param ply number of half moves made
+     * \param ply current distance from root
      * \returns the Entry in the table
      */
     Entry get(const uint64_t key, const int ply) const;
@@ -52,7 +52,7 @@ public:
     /** Sets an entry for a given key
      *
      * \param entry the entry to store
-     * \param ply number of half moves made
+     * \param ply current distance from root
      */
     void set(const Entry& entry, const int ply);
 

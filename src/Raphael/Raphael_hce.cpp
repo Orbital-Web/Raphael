@@ -637,7 +637,7 @@ void RaphaelHCE::score_move(chess::Move& move, const chess::Board& board, const 
         score += SEE::goodCapture(move, board, -12) * params.GOOD_CAPTURE_WEIGHT;
     } else {
         // killer move
-        if (ply > 0 && killers.isKiller(move, ply)) score += params.KILLER_WEIGHT;
+        if (ply > 0 && killers.is_killer(move, ply)) score += params.KILLER_WEIGHT;
         // history
         score += history.get(move, whiteturn);
     }

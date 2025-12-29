@@ -486,7 +486,7 @@ void RaphaelNNUE::score_move(
 
         score += is_good ? params.GOOD_TACTICAL_FLOOR : params.BAD_TACTICAL_FLOOR;
 
-    } else if (ply > 0 && killers.isKiller(move, ply))
+    } else if (ply > 0 && killers.is_killer(move, ply))
         // killer moves
         score = params.KILLER_FLOOR;
     else

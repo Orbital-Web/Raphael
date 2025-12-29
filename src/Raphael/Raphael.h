@@ -156,7 +156,7 @@ protected:
      *
      * \param board current board
      * \param depth depth to search for
-     * \param ply current ply (half-move) from the root
+     * \param ply current distance from root
      * \param alpha lower bound eval of current position
      * \param beta upper bound eval of current position
      * \param halt bool reference which will turn false to indicate search should stop
@@ -175,7 +175,7 @@ protected:
     /** Evaluates the board after all noisy moves are played out
      *
      * \param board current board
-     * \param ply current ply (half-moves) from the root
+     * \param ply current distance from root
      * \param alpha lower bound eval of current position
      * \param beta upper bound eval of current position
      * \param halt bool reference which will turn false to indicate search should stop
@@ -189,7 +189,7 @@ protected:
      * \param movelist movelist to sort
      * \param ttmove transposition table move
      * \param board current board
-     * \param ply current ply (half-moves) from the root
+     * \param ply current distance from root
      */
     void order_moves(
         chess::Movelist& movelist,
@@ -203,7 +203,7 @@ protected:
      * \param move move to score
      * \param ttmove transposition table move
      * \param board current board
-     * \param ply current ply (half-moves) from the root
+     * \param ply current distance from root
      */
     void score_move(
         chess::Move& move, const chess::Move& ttmove, const chess::Board& board, const int ply

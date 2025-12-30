@@ -18,8 +18,10 @@ private:
     static constexpr int QB = 64;
     static constexpr int OUTPUT_SCALE = 400;
 
+#ifdef USE_SIMD
     const VecI16 zeros = zero_i16();
     const VecI16 qas = full_i16(QA);
+#endif
 
     struct NnueWeights {
         // accumulator: N_INPUTS -> N_HIDDEN

@@ -233,12 +233,14 @@ void Nnue::update_accumulator(
     if (&new_acc != &old_acc) copy(old_acc[side], old_acc[side] + N_HIDDEN, new_acc[side]);
 
     // subtract rem_features
-    for (int f : rem_features)
-        for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] -= params.W0[f * N_HIDDEN + i];
+    for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] -= params.W0[rem1 * N_HIDDEN + i];
+    if (rem2 >= 0)
+        for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] -= params.W0[rem2 * N_HIDDEN + i];
 
     // add add_features
-    for (int f : add_features)
-        for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[f * N_HIDDEN + i];
+    for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[add1 * N_HIDDEN + i];
+    if (add2 >= 0)
+        for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[add2 * N_HIDDEN + i];
 #endif
 }
 

@@ -1,9 +1,37 @@
 # Compiler & flags
 CC = g++
 LD = ld
-CCFLAGS = -Wall -O3 -march=native -DNDEBUG -fno-builtin -std=c++20 -Isrc -Ichess-library/src -ISFML-3.0.2/include
+CCFLAGS = -Wall -O3 -DNDEBUG -fno-builtin -std=c++20 -Isrc -Ichess-library/src -ISFML-3.0.2/include
 LDFLAGS = -LSFML-3.0.2/lib -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system \
 		  -Wl,-rpath,'$$ORIGIN/SFML-3.0.2/lib',-z,noexecstack
+
+# Architecture
+ARCH ?=
+CCFLAGS_NATIVE = -march=native
+CCFLAGS_AVX2_BMI2 = -march=haswell
+CCFLAGS_AVX2 = -march=haswell -mno-bmi2
+CCFLAGS_GENERIC = -march=x86-64
+
+ifeq ($(ARCH),)
+    $(warning ARCH not set, building for native)
+    EXTRA_CCFLAGS = $(CCFLAGS_NATIVE)
+else ifeq ($(ARCH),native)
+    $(info Building for ARCH=native)
+    EXTRA_CCFLAGS = $(CCFLAGS_NATIVE)
+else ifeq ($(ARCH),avx2_bmi2)
+    $(info Building for ARCH=avx2_bmi2)
+    EXTRA_CCFLAGS = $(CCFLAGS_AVX2_BMI2)
+else ifeq ($(ARCH),avx2)
+    $(info Building for ARCH=avx2)
+    EXTRA_CCFLAGS = $(CCFLAGS_AVX2)
+else ifeq ($(ARCH),generic)
+    $(info Building for ARCH=generic)
+    EXTRA_CCFLAGS = $(CCFLAGS_GENERIC)
+else
+    $(error Unknown architecture '$(ARCH)')
+endif
+
+override CCFLAGS += $(EXTRA_CCFLAGS)
 
 # NNUE binary
 NNUE_FILE = net.nnue

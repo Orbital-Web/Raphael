@@ -2,8 +2,11 @@
 CC = g++
 LD = ld
 CCFLAGS = -Wall -O3 -DNDEBUG -fno-builtin -std=c++20 -Isrc -Ichess-library/src -ISFML-3.0.2/include
-LDFLAGS = -LSFML-3.0.2/lib -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system \
-		  -Wl,-rpath,'$$ORIGIN/SFML-3.0.2/lib',-z,noexecstack
+LDFLAGS = -LSFML-3.0.2/lib -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
+
+ifneq ($(OS),Windows_NT)
+    LDFLAGS += -Wl,-rpath,'$$ORIGIN/SFML-3.0.2/lib',-z,noexecstack
+endif
 
 # Architecture
 ARCH ?=
@@ -68,6 +71,18 @@ uci: $(UCI_OBJS)
 
 # Rule to download SFML if not present
 packages:
+ifeq ($(OS),Windows_NT)
+	@if not exist SFML-3.0.2 ( \
+		echo SFML-3.0.2 not found. Downloading... && \
+		powershell -Command "Invoke-WebRequest https://www.sfml-dev.org/files/SFML-3.0.2-windows-gcc-14.2.0-mingw-64-bit.zip -OutFile sfml.zip" && \
+		tar -xf sfml.zip && \
+		del sfml.zip && \
+		echo Copying SFML DLLs next to executables... && \
+		copy SFML-3.0.2\bin\*.dll . >nul 2>&1 || true \
+	) else ( \
+		echo SFML-3.0.2 already installed. \
+	)
+else
 	@if [ ! -d "SFML-3.0.2" ]; then \
 		echo "SFML-3.0.2 not found. Downloading..."; \
 		wget https://www.sfml-dev.org/files/SFML-3.0.2-linux-gcc-64-bit.tar.gz; \
@@ -76,10 +91,19 @@ packages:
 	else \
 		echo "SFML-3.0.2 already installed."; \
 	fi
+endif
 
 # Clean rule
 clean:
+ifeq ($(OS),Windows_NT)
+	del /Q $(subst /,\,$(MAIN_OBJS) $(UCI_OBJS)) 2>nul
+else
 	rm -f $(MAIN_OBJS) $(UCI_OBJS)
+endif
 
-clean_all:
-	rm -f $(MAIN_OBJS) $(UCI_OBJS) main uci
+clean_all: clean
+ifeq ($(OS),Windows_NT)
+	del /Q main.exe uci.exe 2>nul
+else
+	rm -f main uci
+endif

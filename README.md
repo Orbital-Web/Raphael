@@ -31,22 +31,22 @@ Note that ELOs with an asterics next to them are estimates and not official, and
 
 ## Getting Started
 
-Builds of the UCI engine for Windows and Linux/WSL are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page.
+Builds of the UCI engine for Windows and Linux/WSL are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page. In general, you should use the `avx2-bmi2` build.
 
-Please refer to the [following section](#compiling-on-ubuntuwsl-recommended) to compile the GUI and/or the engine yourself on Windows or Linux.
+Please refer to the [following section](#compiling-from-source) to compile the GUI and/or the engine yourself on Windows and Linux.
 
 With the GUI compiled, you can start a quick GUI match against yourself and **Raphael** as follows:
 
 ```shell
 main.exe human "Human" Raphael "Raphael" -s "game.pgn"  # Windows
-./main human "Human" Raphael "Raphael" -s "game.pgn"    # Ubuntu/WSL
+./main human "Human" Raphael "Raphael" -s "game.pgn"    # Linux/WSL
 ```
 
 You can see other command-line arguments by running `main.exe -h`. The UCI engine has no command-line arguments.
 
-### Compiling on Ubuntu/WSL (Recommended)
+### Compiling From Source
 
-This is the recommended way of compiling **Raphael**. If you are on Windows, you can install [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) and follow these steps:
+Follow these steps to build Raphael yourself. Note that it is **highly recommended** you build on [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) if you are on Windows.
 
 1. Clone the repository with
 
@@ -54,42 +54,23 @@ This is the recommended way of compiling **Raphael**. If you are on Windows, you
     git clone https://github.com/Orbital-Web/Raphael.git --recurse-submodules
     ```
 
-2. Ensure you have Make and g++ installed. You can do so by running
+2. Ensure you have Make and g++ installed. If you are on Linux/WSL, you can do so by running:
 
    ```shell
-   sudo apt-get install build-essential
-   sudo apt-get install g++
+   sudo apt-get install build-essential g++  # Linux/WSL
+   ```
+
+   Otherwise,  if you are on Windows, follow [this guide](https://code.visualstudio.com/docs/cpp/config-mingw) to install MSYS2 and run the following command inside the MSYS2 UCRT64 terminal:
+
+   ```shell
+   pacman -S --needed mingw-w64-ucrt-x86_64-toolchain make  # Windows
    ```
 
 3. Compile as follows:
 
     ```shell
     make uci       # build UCI engine
-    make packages  # download SFML required for the GUI
-    make main      # build GUI
-    ```
-
-### Compiling on Windows
-
-1. Clone the repository with
-
-    ```shell
-    git clone https://github.com/Orbital-Web/Raphael.git --recurse-submodules
-    ```
-
-2. Follow [this guide](https://code.visualstudio.com/docs/cpp/config-mingw) to install MSYS2
-3. Open the MSYS2 UCRT64 terminal and run the following command to install `g++`, `SFML`, and `make`
-
-    ```shell
-    pacman -S --needed mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-sfml make
-    ```
-
-4. Update the `Makefile` by removing `-ISFML-3.0.2/include`, `-LSFML-3.0.2/lib`, and `-Wl,-rpath,'$$ORIGIN/SFML-3.0.2/lib',-z,noexecstack`
-
-5. Compile as follows
-
-    ```shell
-    make uci       # build UCI engine
+    make packages  # download SFML, required to build main
     make main      # build GUI
     ```
 

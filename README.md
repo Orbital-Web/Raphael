@@ -2,7 +2,7 @@
 
 **Raphael** is a UCI Chess Engine built using C++ and [Disservin's Chess Library](https://github.com/Disservin/chess-library). It also comes with a GUI built using [SFML](https://www.sfml-dev.org/).
 
-**Raphael** is a hobby project that is still a work in progress, but it will be updated as time goes by. It has comparable strengths to a human candidate, FIDE, or international master, and performs decently against other [CCRL-ranked](https://www.computerchess.org.uk/ccrl/404/) chess engines. You can [scroll to the bottom](#raphael-engine) to see a list of features currently implemented.
+**Raphael** is a hobby project that is still a work in progress, but it plays decent chess. You can [scroll to the bottom](#raphael-engine) to see a list of features currently implemented, and also download the prebuilt binaries to try Raphael out for yourself.
 
 **Raphael** is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python.
 
@@ -14,24 +14,24 @@
 
 The following are the historic **[CCRL Blitz ELO](https://www.computerchess.org.uk/ccrl/404/)** for Raphael.
 
-Note that italicized ELOs are estimates and not official, and were estimated using [fastchess](https://github.com/Disservin/fastchess).
+Note that ELOs with an asterics next to them are estimates and not official, and were estimated by running tournaments against [Stash](https://gitlab.com/mhouppin/stash-bot/-/releases) (and sometimes a few other engines) using [fastchess](https://github.com/Disservin/fastchess).
 
 <table>
     <tr align="center">
         <th>Version</th>
         <th>CCRL Blitz</th>
     </tr>
-    <tr align="center"><td>2.0.0</td><td><i>2273</i></td></tr>
-    <tr align="center"><td>1.8.0</td><td><i>2084</i></td></tr>
+    <tr align="center"><td>2.0.0</td><td>2734*</td></tr>
+    <tr align="center"><td>1.8.0</td><td>2223*</td></tr>
     <tr align="center"><td>1.7.6</td><td>1967</td></tr>
     <tr align="center"><td>1.7.0</td><td>1851</td></tr>
-    <tr align="center"><td>1.6.0</td><td><i>1797</i></td></tr>
-    <tr align="center"><td>1.5.0</td><td><i>1764</i></td></tr>
+    <tr align="center"><td>1.6.0</td><td>1797*</td></tr>
+    <tr align="center"><td>1.5.0</td><td>1764*</td></tr>
 </table>
 
 ## Getting Started
 
-Builds of the UCI engine for Windows and Ubuntu/WSL are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page.
+Builds of the UCI engine for Windows and Linux/WSL are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page.
 
 Please refer to the [following section](#compiling-on-ubuntuwsl-recommended) to compile the GUI and/or the engine yourself on Windows or Linux.
 
@@ -46,7 +46,7 @@ You can see other command-line arguments by running `main.exe -h`. The UCI engin
 
 ### Compiling on Ubuntu/WSL (Recommended)
 
-This is the recommended way of compiling **Raphael**. If you are on Windows, you can install [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) to follow these steps:
+This is the recommended way of compiling **Raphael**. If you are on Windows, you can install [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) and follow these steps:
 
 1. Clone the repository with
 
@@ -155,11 +155,13 @@ You can also play with different time controls, increments, and player combinati
 - [x] Promotions                (`v1.0+`)
 - [x] Hash move                 (`v1.6+`)
 - [x] Killer heuristics         (`v1.3+`)
-- [x] History heuristics        (`v1.5+`)
+- [x] Quiet History heuristics  (`v1.5+`)
 - [x] SEE                       (`v1.7+`)
 
-For a more in-depth documentation on the NNUE and how it was trained, refer to the [NNUE README](https://github.com/Orbital-Web/Raphael/tree/main/src/NNUE)
+For a more in-depth documentation on the NNUE and how it was trained, refer to the [NNUE README](https://github.com/Orbital-Web/Raphael/tree/main/src/NNUE). No external engines were used to generate Raphael NNUE's training data.
 
 ## Special Thanks to
 
-Those on the Stockfish Discord for teaching me and helping me out with the NNUE dataset collection, training, and evaluation. Without their help, I would have been stuck for a very very long time without a positive-ELO NNUE.
+- [Sebastian Lague](https://www.youtube.com/c/SebastianLague) for inspiring me to start the development of Raphael through the Coding Adventures series
+- [Disservin](https://github.com/Disservin) for creating the [C++ chess library](https://github.com/Disservin/chess-library), [fastchess](https://github.com/Disservin/fastchess), and [Python Chess Engine](https://github.com/Disservin/python-chess-engine), all of which I've used extensively while developing my engine
+- Those on the Stockfish Discord for teaching me and helping me out with the NNUE dataset collection, training, and evaluation, as well as engine development in general. Without their help, I would have been stuck for a very very long time without a positive-ELO NNUE.

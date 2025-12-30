@@ -391,6 +391,7 @@ string RaphaelHCE::get_pv_line(chess::Board board, int depth) const {
     string pvline = "";
 
     while (depth && tt.valid(ttentry, ttkey, 0)) {
+        if (board.isHalfMoveDraw() || board.isRepetition() || board.isInsufficientMaterial()) break;
         pvmove = ttentry.move;
         pvline += chess::uci::moveToUci(pvmove) + " ";
         board.makeMove(pvmove);

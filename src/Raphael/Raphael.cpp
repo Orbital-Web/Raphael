@@ -98,6 +98,7 @@ chess::Move RaphaelNNUE::get_move(
         if ((itereval <= alpha) || (itereval >= beta)) {
             alpha = -INT_MAX;
             beta = INT_MAX;
+            consecutives = 1;
             continue;
         }
 

@@ -24,7 +24,7 @@ public:
         // search
         static constexpr int ASPIRATION_WINDOW = 50;  // size of aspiration window
         static constexpr int PV_STABLE_COUNT = 6;  // consecutive bestmoves to consider pv as stable
-        static constexpr int MIN_SKIP_EVAL = 200;  // minimum eval to halt early if pv is stable
+        static constexpr int MIN_SKIP_EVAL = 400;  // minimum eval to halt early if pv is stable
 
         // negamax
         static constexpr int MAX_EXTENSIONS = 16;  // max number of times we can extend the search

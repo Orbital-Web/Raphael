@@ -26,23 +26,25 @@ extern const bool UCI;
 
 string RaphaelNNUE::version = "2.1.0.0";
 
-const RaphaelNNUE::EngineOptions RaphaelNNUE::default_options{
+RaphaelNNUE::EngineOptions RaphaelNNUE::params{
     .hash = {
              .name = "Hash",
              .min = 1,
              .max = TranspositionTable::MAX_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
+             .def = TranspositionTable::DEF_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
              .value = TranspositionTable::DEF_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
              },
 };
 
-RaphaelNNUE::RaphaelParams::RaphaelParams() {}
 
-
-RaphaelNNUE::RaphaelNNUE(string name_in): GamePlayer(name_in), tt(default_options.hash.value) {}
+RaphaelNNUE::RaphaelNNUE(string name_in): GamePlayer(name_in), tt(params.hash) {}
 
 
 void RaphaelNNUE::set_option(SetSpinOption option) {
-    if (option.name == "Hash") tt = TranspositionTable(option.value);
+    if (option.name == "Hash") {
+        params.hash.set(option.value);
+        tt = TranspositionTable(option.value);
+    }
 }
 
 void RaphaelNNUE::set_searchoptions(SearchOptions options) { searchopt = options; }
@@ -440,6 +442,9 @@ int RaphaelNNUE::quiescence(
     order_moves(movelist, chess::Move::NO_MOVE, board, 0);
 
     for (const auto& move : movelist) {
+        // delta pruning
+        if (SEE::estimate(move, board) + besteval + params.DELTA_THRESHOLD < alpha) continue;
+
         net.make_move(ply + 1, move, board);
         board.makeMove(move);
 

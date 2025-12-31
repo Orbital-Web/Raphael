@@ -19,8 +19,25 @@ public:
 
     struct EngineOptions {
         SpinOption hash;
+
+        // search
+        static constexpr int ASPIRATION_WINDOW = 50;  // size of aspiration window
+        static constexpr int PV_STABLE_COUNT = 6;  // consecutive bestmoves to consider pv as stable
+        static constexpr int MIN_SKIP_EVAL = 200;  // minimum eval to halt early if pv is stable
+
+        // negamax
+        static constexpr int MAX_EXTENSIONS = 16;  // max number of times we can extend the search
+        static constexpr int REDUCTION_FROM = 5;   // from which move to apply late move reduction
+
+        // quiescence
+        static constexpr int DELTA_THRESHOLD = 400;  // safety margin for delta pruning
+
+        // move ordering
+        static constexpr int GOOD_NOISY_FLOOR = 30000;  // good captures/promotions <=30805
+        static constexpr int KILLER_FLOOR = 21000;      // killer moves
+        static constexpr int BAD_NOISY_FLOOR = -20000;  // bad captures/promotions <=-19195
     };
-    static const EngineOptions default_options;
+    static EngineOptions params;
 
     struct SearchOptions {
         int64_t maxnodes = -1;
@@ -31,27 +48,10 @@ public:
     };
 
 protected:
-    struct RaphaelParams {
-        RaphaelParams();
-
-        // logic
-        static constexpr int ASPIRATION_WINDOW = 50;  // size of aspiration window
-        static constexpr int MAX_EXTENSIONS = 16;  // max number of times we can extend the search
-        static constexpr int REDUCTION_FROM = 5;   // from which move to apply late move reduction
-        static constexpr int PV_STABLE_COUNT = 6;  // consecutive bestmoves to consider pv as stable
-        static constexpr int MIN_SKIP_EVAL = 200;  // minimum eval to halt early if pv is stable
-
-        // move ordering
-        static constexpr int GOOD_NOISY_FLOOR = 30000;  // good captures/promotions <=30805
-        static constexpr int KILLER_FLOOR = 21000;      // killer moves
-        static constexpr int BAD_NOISY_FLOOR = -20000;  // bad captures/promotions <=-19195
-    };
-
     // search
     chess::Move pvtable[MAX_DEPTH][MAX_DEPTH] = {{chess::Move::NO_MOVE}};
     int pvlens[MAX_DEPTH] = {0};
     SearchOptions searchopt;  // limit depth, nodes, or movetime
-    RaphaelParams params;     // search parameters
     // ponder FIXME:
     // uint64_t ponderkey = 0;  // hash after opponent's best response
     // int pondereval = 0;      // eval we got during ponder

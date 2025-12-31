@@ -172,7 +172,7 @@ int main() {
             lock_guard<mutex> lock(cout_mutex);
             cout << "id name " << engine.name << " " << engine.version << "\n"
                  << "id author Rei Meguro\n"
-                 << engine.default_options.hash.to_string() << "uciok\n"
+                 << engine.params.hash.to_string() << "uciok\n"
                  << flush;
 
         } else if (uci_command == "isready") {

@@ -33,6 +33,13 @@ const int VAL[13] = {
  */
 int pieceval(const chess::Square sq, const chess::Board& board);
 
+/** Returns the estimated SEE score (material gain)
+ *
+ * \param move the capture move
+ * \param board current board
+ */
+int estimate(const chess::Move& move, const chess::Board& board);
+
 /** Returns the square of the least valuable attacker
  *
  * \param attackers attacker bitboard

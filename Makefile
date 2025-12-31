@@ -14,6 +14,7 @@ CCFLAGS_NATIVE = -march=native
 CCFLAGS_AVX2_BMI2 = -march=haswell
 CCFLAGS_AVX2 = -march=haswell -mno-bmi2
 CCFLAGS_GENERIC = -march=x86-64
+CCFLAGS_TUNABLE = -march=native -DTUNE
 
 ifeq ($(ARCH),)
     $(warning ARCH not set, building for native)
@@ -30,6 +31,9 @@ else ifeq ($(ARCH),avx2)
 else ifeq ($(ARCH),generic)
     $(info Building for ARCH=generic)
     EXTRA_CCFLAGS = $(CCFLAGS_GENERIC)
+else ifeq ($(ARCH),tunable)
+    $(info Building for ARCH=tunable)
+    EXTRA_CCFLAGS = $(CCFLAGS_TUNABLE)
 else
     $(error Unknown architecture '$(ARCH)')
 endif

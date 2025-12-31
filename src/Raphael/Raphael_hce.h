@@ -14,7 +14,7 @@
 namespace Raphael {
 class RaphaelHCE: public cge::GamePlayer {
 public:
-    static std::string version;
+    static const std::string version;
 
     struct EngineOptions {
         SpinOption hash;
@@ -44,6 +44,11 @@ protected:
         // move ordering
         static constexpr int KILLER_WEIGHT = 50;          // move priority for killer moves
         static constexpr int GOOD_CAPTURE_WEIGHT = 5000;  // move priority for good captures
+
+        static constexpr int HISTORY_BONUS_SCALE = 100;
+        static constexpr int HISTORY_BONUS_OFFSET = 100;
+        static constexpr int HISTORY_BONUS_MAX = 2000;
+        static constexpr int HISTORY_MAX = 16384;
 
         // evaluation[midgame, endgame]
         static constexpr int KING_DIST_WEIGHT[2] = {0, 20};  // closer king bonus

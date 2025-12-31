@@ -25,7 +25,7 @@ extern const bool UCI;
 
 
 
-string RaphaelHCE::version = "1.8.1.0";
+const string RaphaelHCE::version = "1.8.1.0";
 
 const RaphaelHCE::EngineOptions RaphaelHCE::default_options{
     .hash = {
@@ -193,7 +193,15 @@ void RaphaelHCE::RaphaelParams::init_pst() {
 }
 
 
-RaphaelHCE::RaphaelHCE(string name_in): GamePlayer(name_in), tt(default_options.hash.value) {}
+RaphaelHCE::RaphaelHCE(string name_in)
+    : GamePlayer(name_in),
+      tt(default_options.hash),
+      history(
+          params.HISTORY_BONUS_MAX,
+          params.HISTORY_BONUS_OFFSET,
+          params.HISTORY_BONUS_SCALE,
+          params.HISTORY_MAX
+      ) {}
 
 
 void RaphaelHCE::set_option(SetSpinOption option) {

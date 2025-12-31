@@ -15,9 +15,10 @@
 namespace Raphael {
 class RaphaelNNUE: public cge::GamePlayer {
 public:
-    static std::string version;
+    static const std::string version;
 
     struct EngineOptions {
+        // uci options
         SpinOption hash;
 
         // search
@@ -33,9 +34,14 @@ public:
         static constexpr int DELTA_THRESHOLD = 400;  // safety margin for delta pruning
 
         // move ordering
-        static constexpr int GOOD_NOISY_FLOOR = 30000;  // good captures/promotions <=30805
+        static constexpr int GOOD_NOISY_FLOOR = 30000;  // good captures/promotions <=30500
         static constexpr int KILLER_FLOOR = 21000;      // killer moves
-        static constexpr int BAD_NOISY_FLOOR = -20000;  // bad captures/promotions <=-19195
+        static constexpr int BAD_NOISY_FLOOR = -20000;  // bad captures/promotions <=-19500
+
+        static constexpr int HISTORY_BONUS_SCALE = 100;
+        static constexpr int HISTORY_BONUS_OFFSET = 100;
+        static constexpr int HISTORY_BONUS_MAX = 2000;
+        static constexpr int HISTORY_MAX = 16384;
     };
     static EngineOptions params;
 

@@ -8,19 +8,26 @@ using std::min;
 
 
 
-History::History(): _history{0} {}
+History::History(
+    const int bonus_scale, const int bonus_offset, const int bonus_max, const int history_max
+)
+    : bonus_scale(bonus_scale),
+      bonus_offset(bonus_offset),
+      bonus_max(bonus_max),
+      history_max(history_max),
+      _history{0} {}
 
 
 void History::update(
     const chess::Move bestmove, const chess::Movelist& quietlist, const int depth, const int side
 ) {
-    int bonus = min(HISTORY_BONUS_SCALE * depth + HISTORY_BONUS_OFFSET, HISTORY_BONUS_MAX);
+    int bonus = min(bonus_scale * depth + bonus_offset, bonus_max);
 
     for (const auto& move : quietlist) {
         int from = (int)move.from();
         int to = (int)move.to();
 
-        _history[side][from][to] -= _history[side][from][to] * bonus / HISTORY_MAX;
+        _history[side][from][to] -= _history[side][from][to] * bonus / history_max;
         _history[side][from][to] += (move == bestmove) ? bonus : -bonus;
     }
 }

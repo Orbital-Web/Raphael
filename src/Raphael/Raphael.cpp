@@ -24,7 +24,7 @@ extern const bool UCI;
 
 
 
-string RaphaelNNUE::version = "2.1.0.0";
+const string RaphaelNNUE::version = "2.1.0.0";
 
 RaphaelNNUE::EngineOptions RaphaelNNUE::params{
     .hash = {
@@ -37,7 +37,15 @@ RaphaelNNUE::EngineOptions RaphaelNNUE::params{
 };
 
 
-RaphaelNNUE::RaphaelNNUE(string name_in): GamePlayer(name_in), tt(params.hash) {}
+RaphaelNNUE::RaphaelNNUE(string name_in)
+    : GamePlayer(name_in),
+      tt(params.hash),
+      history(
+          params.HISTORY_BONUS_MAX,
+          params.HISTORY_BONUS_OFFSET,
+          params.HISTORY_BONUS_SCALE,
+          params.HISTORY_MAX
+      ) {}
 
 
 void RaphaelNNUE::set_option(SetSpinOption option) {

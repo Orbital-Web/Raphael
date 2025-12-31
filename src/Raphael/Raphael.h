@@ -164,6 +164,7 @@ protected:
      * \param halt bool reference which will turn false to indicate search should stop
      * \returns eval of current board
      */
+    template <bool is_PV>
     int negamax(
         chess::Board& board,
         const int depth,

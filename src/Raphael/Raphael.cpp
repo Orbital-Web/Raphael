@@ -91,7 +91,7 @@ chess::Move RaphaelNNUE::get_move(
             && !searchopt.infinite)
             halt = true;
 
-        int itereval = negamax(board, depth, 0, params.MAX_EXTENSIONS, alpha, beta, halt);
+        int itereval = negamax<true>(board, depth, 0, params.MAX_EXTENSIONS, alpha, beta, halt);
         if (halt) break;  // don't use results if timeout
 
         // re-search required
@@ -129,21 +129,20 @@ chess::Move RaphaelNNUE::get_move(
                 cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime
                      << " nodes " << nodes << " score mate " << sign
                      << (MATE_EVAL - abs(eval) + 1) / 2 << " nps " << nps << " pv " << get_pv_line()
-                     << "\n";
-                cout << "bestmove " << chess::uci::moveToUci(bestmove) << "\n" << flush;
+                     << "\n"
+                     << flush;
             }
 #ifndef MUTEEVAL
             else {
                 // get absolute evaluation (i.e, set to white's perspective)
-                const char* sign = (eval >= 0) ? "" : "-";
+                const char* sign = ((eval >= 0) == whiteturn) ? "" : "-";
                 lock_guard<mutex> lock(cout_mutex);
                 cout << "Eval: " << sign << "#" << (MATE_EVAL - abs(eval) + 1) / 2
                      << "\tNodes: " << nodes << "\n"
                      << flush;
             }
 #endif
-            halt = true;
-            return bestmove;
+            if (!searchopt.infinite) halt = true;
         } else if (UCI) {
             auto now = ch::high_resolution_clock::now();
             auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
@@ -165,7 +164,7 @@ chess::Move RaphaelNNUE::get_move(
         cout << "bestmove " << chess::uci::moveToUci(bestmove) << "\n" << flush;
     }
 #ifndef MUTEEVAL
-    else {
+    else if (!tt.isMate(eval)) {
         // get absolute evaluation (i.e, set to white's perspective)
         if (!whiteturn) eval *= -1;
         lock_guard<mutex> lock(cout_mutex);
@@ -302,6 +301,7 @@ bool RaphaelNNUE::is_time_over(volatile bool& halt) const {
 }
 
 
+template <bool is_PV>
 int RaphaelNNUE::negamax(
     chess::Board& board,
     const int depth,
@@ -377,17 +377,22 @@ int RaphaelNNUE::negamax(
         // check extension
         if (ext > extension && board.inCheck()) extension++;
 
-        bool fullwindow = true;
+        // principle variation search
         int eval;
-        // late move reduction with zero window for quiet moves
-        if (extension == 0 && depth >= 3 && movei >= params.REDUCTION_FROM && is_quiet) {
-            eval = -negamax(board, depth - 2, ply + 1, ext, -alpha - 1, -alpha, halt);
-            fullwindow = eval > alpha;
-        }
-        if (fullwindow)
-            eval = -negamax(
-                board, depth - 1 + extension, ply + 1, ext - extension, -beta, -alpha, halt
-            );
+        int new_depth = depth - 1 + extension;
+        int new_ext = ext - extension;
+        if (depth >= 3 && movei >= params.REDUCTION_FROM && is_quiet) {
+            // late move reduction
+            int red_depth = new_depth - 1;
+            eval = -negamax<false>(board, red_depth, ply + 1, new_ext, -alpha - 1, -alpha, halt);
+            if (eval > alpha && red_depth < new_depth)
+                eval
+                    = -negamax<false>(board, new_depth, ply + 1, new_ext, -alpha - 1, -alpha, halt);
+        } else if (!is_PV || movei >= 1)
+            eval = -negamax<false>(board, new_depth, ply + 1, new_ext, -alpha - 1, -alpha, halt);
+
+        if (is_PV && (movei == 0 || eval > alpha))
+            eval = -negamax<true>(board, new_depth, ply + 1, new_ext, -beta, -alpha, halt);
 
         board.unmakeMove(move);
         extension = 0;

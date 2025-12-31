@@ -205,7 +205,7 @@ RaphaelHCE::RaphaelHCE(string name_in)
 
 
 void RaphaelHCE::set_option(SetSpinOption option) {
-    if (option.name == "Hash") tt = TranspositionTable(option.value);
+    if (option.name == "Hash") tt.resize(option.value);
 }
 
 void RaphaelHCE::set_searchoptions(SearchOptions options) { searchopt = options; }

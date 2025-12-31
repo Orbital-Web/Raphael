@@ -51,7 +51,7 @@ RaphaelNNUE::RaphaelNNUE(string name_in)
 void RaphaelNNUE::set_option(SetSpinOption option) {
     if (option.name == "Hash") {
         params.hash.set(option.value);
-        tt = TranspositionTable(option.value);
+        tt.resize(option.value);
     }
 }
 

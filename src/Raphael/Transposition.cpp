@@ -1,14 +1,20 @@
 #include <Raphael/Transposition.h>
 
+#include <cstring>
+
 using namespace Raphael;
-using std::fill;
-using std::vector;
 
 
 
-TranspositionTable::TranspositionTable(const uint32_t size_mb)
-    : size(size_mb * 1024 * 1024 / ENTRY_SIZE), _table(size, {.val = 0}) {
+TranspositionTable::TranspositionTable(const uint32_t size_mb) { resize(size_mb); }
+
+
+void TranspositionTable::resize(const uint32_t size_mb) {
+    size = (uint64_t)size_mb * 1024 * 1024 / ENTRY_SIZE;
     assert((size > 0 && size <= MAX_TABLE_SIZE));  // size is within (0, MAX_TABLE_SIZE]
+
+    _table.clear();
+    _table.resize(size);
 }
 
 
@@ -54,7 +60,7 @@ void TranspositionTable::set(const Entry& entry, const int ply) {
 }
 
 
-void TranspositionTable::clear() { fill(_table.begin(), _table.end(), (EntryStorage){.val = 0}); }
+void TranspositionTable::clear() { memset(_table.data(), 0, size * ENTRY_SIZE); }
 
 
 bool TranspositionTable::valid(const Entry entry, const uint64_t key, const int depth) {

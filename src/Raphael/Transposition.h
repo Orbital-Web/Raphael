@@ -2,6 +2,7 @@
 #include <Raphael/consts.h>
 
 #include <chess.hpp>
+#include <vector>
 
 
 
@@ -14,12 +15,12 @@ private:
         uint64_t val;  // 63-32: eval, 31-16: move, 15-14: flag, 13-0: depth
     };
 
-    uint32_t size;
+    uint64_t size;
     std::vector<EntryStorage> _table;
 
 public:
-    static constexpr uint32_t MAX_TABLE_SIZE = 201326592;       // 3GB
-    static constexpr uint32_t DEF_TABLE_SIZE = 4194304;         // 64MB
+    static constexpr uint64_t MAX_TABLE_SIZE = 201326592;       // 3GB
+    static constexpr uint64_t DEF_TABLE_SIZE = 4194304;         // 64MB
     static constexpr size_t ENTRY_SIZE = sizeof(EntryStorage);  // 16 bytes
 
     enum Flag { INVALID = 0, LOWER, EXACT, UPPER };
@@ -39,7 +40,13 @@ public:
      *
      * \param size_mb the size of the table (in MB)
      */
-    TranspositionTable(const uint32_t size_mb);
+    explicit TranspositionTable(const uint32_t size_mb);
+
+    /** Resizes the Transposition Table
+     *
+     * \param size_mb the size of the table (in MB)
+     */
+    void resize(const uint32_t size_mb);
 
     /** Retrieves the table value for a given key (assumes valid is true)
      *

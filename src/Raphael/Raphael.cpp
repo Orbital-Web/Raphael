@@ -11,6 +11,7 @@
 
 using namespace Raphael;
 using std::async, std::ref;
+using std::copy;
 using std::cout, std::flush;
 using std::fixed, std::setprecision;
 using std::max, std::min;
@@ -40,7 +41,7 @@ RaphaelNNUE::EngineOptions RaphaelNNUE::params{
 
 void RaphaelNNUE::PVList::update(const chess::Move move, const PVList& child) {
     moves[0] = move;
-    std::copy(child.moves, child.moves + child.length, moves + 1);
+    copy(child.moves, child.moves + child.length, moves + 1);
     length = child.length + 1;
     assert(length == 1 || moves[0] != moves[1]);
 }
@@ -102,7 +103,7 @@ chess::Move RaphaelNNUE::get_move(
             && !searchopt.infinite)
             halt = true;
 
-        int itereval = negamax<true>(board, depth, 0, alpha, beta, ss, halt);
+        const int itereval = negamax<true>(board, depth, 0, alpha, beta, ss, halt);
         if (halt) break;  // don't use results if timeout
 
         // re-search required
@@ -132,9 +133,9 @@ chess::Move RaphaelNNUE::get_move(
         // checkmate, no need to continue
         if (tt.isMate(eval)) {
             if (UCI) {
-                auto now = ch::high_resolution_clock::now();
-                auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
-                auto nps = (dtime) ? nodes * 1000 / dtime : 0;
+                const auto now = ch::high_resolution_clock::now();
+                const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
+                const auto nps = (dtime) ? nodes * 1000 / dtime : 0;
                 const char* sign = (eval >= 0) ? "" : "-";
                 lock_guard<mutex> lock(cout_mutex);
                 cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime
@@ -155,9 +156,9 @@ chess::Move RaphaelNNUE::get_move(
 #endif
             if (!searchopt.infinite) halt = true;
         } else if (UCI) {
-            auto now = ch::high_resolution_clock::now();
-            auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
-            auto nps = (dtime) ? nodes * 1000 / dtime : 0;
+            const auto now = ch::high_resolution_clock::now();
+            const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
+            const auto nps = (dtime) ? nodes * 1000 / dtime : 0;
             lock_guard<mutex> lock(cout_mutex);
             cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime
                  << " nodes " << nodes << " score cp " << eval << " nps " << nps << " pv "
@@ -218,9 +219,9 @@ void RaphaelNNUE::start_search_timer(
         return;
     }
 
-    float n = board.occ().count();
+    const float n = board.occ().count();
     // 0~1, higher the more time it uses (max at 20 pieces left)
-    float ratio = 0.0044f * (n - 32) * (-n / 32) * pow(2.5f + n / 32, 3);
+    const float ratio = 0.0044f * (n - 32) * (-n / 32) * pow(2.5f + n / 32, 3);
     // use 1~5% of the remaining time based on the ratio + buffered increment
     int duration = t_remain * (0.01f + 0.04f * ratio) + max(t_inc - 30, 1);
     // try to use all of our time if timer resets after movestogo (unless it's 1, then be fast)
@@ -237,8 +238,8 @@ bool RaphaelNNUE::is_time_over(volatile bool& halt) const {
     }
     // otherwise, check timeover every 2048 nodes
     if (search_t && !(nodes & 2047)) {
-        auto now = ch::high_resolution_clock::now();
-        auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
+        const auto now = ch::high_resolution_clock::now();
+        const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
         if (dtime >= search_t) halt = true;
     }
     return halt;
@@ -282,9 +283,9 @@ int RaphaelNNUE::negamax(
     if (depth <= 0 || ply >= MAX_DEPTH - 1) return quiescence(board, ply, alpha, beta, halt);
 
     // probe transposition table
-    auto ttkey = board.hash();
-    auto entry = tt.get(ttkey, ply);
-    auto ttmove = (entry.key == ttkey) ? entry.move : chess::Move::NO_MOVE;
+    const auto ttkey = board.hash();
+    const auto entry = tt.get(ttkey, ply);
+    const auto ttmove = (entry.key == ttkey) ? entry.move : chess::Move::NO_MOVE;
     if (ply && tt.valid(entry, ttkey, depth)) {
         if (entry.flag == tt.LOWER)
             alpha = max(alpha, entry.eval);
@@ -294,7 +295,7 @@ int RaphaelNNUE::negamax(
         if (alpha >= beta) return entry.eval;  // prune
     }
 
-    bool in_check = board.inCheck();
+    const bool in_check = board.inCheck();
     ss->static_eval = (entry.key == ttkey) ? entry.eval : net.evaluate(ply, whiteturn);
 
     // pre-moveloop pruning
@@ -322,13 +323,13 @@ int RaphaelNNUE::negamax(
 
     // search
     int movei = 0;
-    int alphaorig = alpha;
+    const int alphaorig = alpha;
     int besteval = -INT_MAX;
     chess::Move bestmove = chess::Move::NO_MOVE;
     killers.clear_ply(ply + 1);
 
     for (const auto& move : movelist) {
-        bool is_quiet = !board.isCapture(move) && move.typeOf() != chess::Move::PROMOTION;
+        const bool is_quiet = !board.isCapture(move) && move.typeOf() != chess::Move::PROMOTION;
         if (is_quiet) quietlist.add(move);
 
         net.make_move(ply + 1, move, board);
@@ -339,10 +340,10 @@ int RaphaelNNUE::negamax(
 
         // principle variation search
         int eval;
-        int new_depth = depth - 1 + extension;
+        const int new_depth = depth - 1 + extension;
         if (depth >= 3 && movei >= params.REDUCTION_FROM && is_quiet) {
             // late move reduction
-            int red_depth = max(new_depth - 1, 0);
+            const int red_depth = max(new_depth - 1, 0);
             eval = -negamax<false>(board, red_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
             if (eval > alpha && red_depth < new_depth)
                 eval = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
@@ -418,7 +419,7 @@ int RaphaelNNUE::quiescence(
         net.make_move(ply + 1, move, board);
         board.makeMove(move);
 
-        int eval = -quiescence(board, ply + 1, -beta, -alpha, halt);
+        const int eval = -quiescence(board, ply + 1, -beta, -alpha, halt);
         board.unmakeMove(move);
 
         if (eval > besteval) {
@@ -454,8 +455,8 @@ void RaphaelNNUE::score_move(
     }
 
     int16_t score = 0;
-    bool is_capture = board.isCapture(move);
-    bool is_quiet = !is_capture && move.typeOf() != chess::Move::PROMOTION;
+    const bool is_capture = board.isCapture(move);
+    const bool is_quiet = !is_capture && move.typeOf() != chess::Move::PROMOTION;
 
     if (!is_quiet) {
         // noisy moves

@@ -25,7 +25,7 @@ Nnue::NnueWeights Nnue::params;
 bool Nnue::loaded = false;
 
 Nnue::Nnue() { load(); }
-Nnue::Nnue(const std::string& nnue_path) { load(nnue_path.c_str()); }
+Nnue::Nnue(const string& nnue_path) { load(nnue_path.c_str()); }
 
 void Nnue::load() {
     if (loaded) return;
@@ -41,9 +41,8 @@ void Nnue::load() {
 
     const unsigned char* nnue_data = _binary_net_nnue_start;
 
-    auto read_or_throw = [&](void* dest, std::size_t bytes) {
-        if (nnue_data + bytes > _binary_net_nnue_end)
-            throw std::runtime_error("failed to read weights");
+    auto read_or_throw = [&](void* dest, size_t bytes) {
+        if (nnue_data + bytes > _binary_net_nnue_end) throw runtime_error("failed to read weights");
 
         memcpy(dest, nnue_data, bytes);
         nnue_data += bytes;
@@ -73,9 +72,9 @@ void Nnue::load(const char* nnue_path) {
     ifstream nnue_file(nnue_path, ios::binary);
     if (!nnue_file) throw runtime_error("could not open file");
 
-    auto read_or_throw = [&](void* dest, std::size_t bytes) {
+    auto read_or_throw = [&](void* dest, size_t bytes) {
         if (!nnue_file.read(reinterpret_cast<char*>(dest), bytes))
-            throw std::runtime_error("failed to read weights");
+            throw runtime_error("failed to read weights");
     };
 
     read_or_throw(params.W0, sizeof(params.W0));
@@ -146,7 +145,7 @@ int32_t Nnue::evaluate(int ply, bool side) {
         sum = add_i32(sum, add_i32(us_screlu, them_screlu));
     }
 
-    int32_t eval = (int32_t)QA * params.b1 + hadd_i32(sum);
+    const int32_t eval = (int32_t)QA * params.b1 + hadd_i32(sum);
     return (eval / QA) * OUTPUT_SCALE / (QA * QB);
 #else
     int32_t eval = (int32_t)QA * params.b1;
@@ -255,10 +254,10 @@ void Nnue::set_board(const chess::Board& board) {
 
     auto pieces = board.occ();
     while (!pieces.empty()) {
-        auto sqi = pieces.pop();
+        const auto sqi = pieces.pop();
 
-        int wpiece = (int)board.at(sqi);  // 0...5, 6...11
-        int bpiece = (wpiece + 6) % 12;   // 6...11, 0...5
+        const int wpiece = (int)board.at(sqi);  // 0...5, 6...11
+        const int bpiece = (wpiece + 6) % 12;   // 6...11, 0...5
 
         w_features.push_back(64 * wpiece + sqi);
         b_features.push_back(64 * bpiece + (sqi ^ 56));
@@ -270,23 +269,23 @@ void Nnue::set_board(const chess::Board& board) {
 void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board) {
     assert((ply != 0));
 
-    auto from_sq = move.from();
-    auto to_sq = move.to();
-    auto move_type = move.typeOf();
+    const auto from_sq = move.from();
+    const auto to_sq = move.to();
+    const auto move_type = move.typeOf();
 
     auto& state = accumulator_states[ply];
     state.dirty = true;
 
     // update black and white states incrementally
-    for (bool side : {false, true}) {
+    for (const bool side : {false, true}) {
         // do incremental update
-        bool moving = (board.sideToMove() == chess::Color::WHITE) == side;
-        int from_sqi = (side) ? from_sq.index() : (from_sq.index() ^ 56);
-        int to_sqi = (side) ? to_sq.index() : (to_sq.index() ^ 56);
-        auto from_piece = board.at(from_sq);
-        auto to_piece = board.at(to_sq);
-        int from_piecei = (side) ? (int)from_piece : ((int)from_piece + 6) % 12;
-        int to_piecei = (side) ? (int)to_piece : ((int)to_piece + 6) % 12;
+        const bool moving = (board.sideToMove() == chess::Color::WHITE) == side;
+        const int from_sqi = (side) ? from_sq.index() : (from_sq.index() ^ 56);
+        const int to_sqi = (side) ? to_sq.index() : (to_sq.index() ^ 56);
+        const auto from_piece = board.at(from_sq);
+        const auto to_piece = board.at(to_sq);
+        const int from_piecei = (side) ? (int)from_piece : ((int)from_piece + 6) % 12;
+        const int to_piecei = (side) ? (int)to_piece : ((int)to_piece + 6) % 12;
         assert(from_piece != chess::Piece::NONE);
 
         // remove moving piece
@@ -297,11 +296,11 @@ void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board
 
         // add moved piece to add_features (handle promotion and enemy castling)
         if (move_type == move.PROMOTION) {
-            int promote_piecei = !moving * 6 + (int)move.promotionType();
+            const int promote_piecei = !moving * 6 + (int)move.promotionType();
             state.add1[side] = 64 * promote_piecei + to_sqi;
         } else if (move_type == move.CASTLING) {
-            int new_ksqi = (to_sqi % 8 == 7) ? to_sqi - 1 : to_sqi + 2;
-            int new_rsqi = (to_sqi % 8 == 7) ? to_sqi - 2 : to_sqi + 3;
+            const int new_ksqi = (to_sqi % 8 == 7) ? to_sqi - 1 : to_sqi + 2;
+            const int new_rsqi = (to_sqi % 8 == 7) ? to_sqi - 2 : to_sqi + 3;
             state.add1[side] = 64 * from_piecei + new_ksqi;
             state.add2[side] = 64 * to_piecei + new_rsqi;
         } else

@@ -10,12 +10,12 @@ int pieceval(const chess::Square sq, const chess::Board& board) { return VAL[(in
 
 
 int estimate(const chess::Move& move, const chess::Board& board) {
-    auto to = move.to();
+    const auto to = move.to();
 
     if (move.typeOf() == chess::Move::ENPASSANT)
         return VAL[0];  // pawn captured
     else if (move.typeOf() == chess::Move::PROMOTION) {
-        auto promo = move.promotionType();
+        const auto promo = move.promotionType();
         return VAL[(int)promo] + pieceval(to, board) - VAL[0];  // promotion + any capture - pawn
     } else
         return pieceval(to, board);
@@ -33,7 +33,7 @@ chess::Square lva(chess::Bitboard attackers, const chess::Board& board) {
 
 
 bool goodCapture(const chess::Move& move, const chess::Board& board, const int threshold) {
-    auto to = move.to();                              // where the exchange happens
+    const auto to = move.to();                        // where the exchange happens
     auto victim_sq = move.from();                     // capturer becomes next victim
     auto occ = board.occ().clear(victim_sq.index());  // remove capturer from occ
     auto color = ~board.sideToMove();
@@ -42,11 +42,12 @@ bool goodCapture(const chess::Move& move, const chess::Board& board, const int t
     // add material gain
     if (move.typeOf() == chess::Move::ENPASSANT) {
         gain += VAL[0];  // pawn captured
-        auto enpsq = (board.sideToMove() == chess::Color::WHITE) ? to + chess::Direction::SOUTH
-                                                                 : to + chess::Direction::NORTH;
+        const auto enpsq = (board.sideToMove() == chess::Color::WHITE)
+                               ? to + chess::Direction::SOUTH
+                               : to + chess::Direction::NORTH;
         occ.clear(enpsq.index());
     } else if (move.typeOf() == chess::Move::PROMOTION) {
-        auto promo = move.promotionType();
+        const auto promo = move.promotionType();
         gain += VAL[(int)promo] + pieceval(to, board) - VAL[0];  // promotion + any capture - pawn
     } else if (move.typeOf() != chess::Move::CASTLING)
         gain += pieceval(to, board);
@@ -55,7 +56,7 @@ bool goodCapture(const chess::Move& move, const chess::Board& board, const int t
 
     // initial capture
     if (move.typeOf() == chess::Move::PROMOTION) {
-        auto promo = move.promotionType();
+        const auto promo = move.promotionType();
         gain -= VAL[(int)promo];
     } else
         gain -= pieceval(victim_sq, board);
@@ -63,9 +64,9 @@ bool goodCapture(const chess::Move& move, const chess::Board& board, const int t
     if (gain >= 0) return true;
 
     // generate list of all direct attackers
-    auto queens = board.pieces(chess::PieceType::QUEEN);
-    auto bqs = board.pieces(chess::PieceType::BISHOP) | queens;
-    auto rqs = board.pieces(chess::PieceType::ROOK) | queens;
+    const auto queens = board.pieces(chess::PieceType::QUEEN);
+    const auto bqs = board.pieces(chess::PieceType::BISHOP) | queens;
+    const auto rqs = board.pieces(chess::PieceType::ROOK) | queens;
     auto all_attackers
         = (chess::attacks::pawn(color, to) & board.pieces(chess::PieceType::PAWN, ~color));
     all_attackers
@@ -78,7 +79,7 @@ bool goodCapture(const chess::Move& move, const chess::Board& board, const int t
     // simulate a series of captures on the same square
     while (true) {
         all_attackers &= occ;
-        auto attackers = all_attackers & board.us(color);
+        const auto attackers = all_attackers & board.us(color);
         if (!attackers) break;
 
         color = ~color;

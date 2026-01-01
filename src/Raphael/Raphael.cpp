@@ -294,15 +294,24 @@ int RaphaelNNUE::negamax(
         if (alpha >= beta) return entry.eval;  // prune
     }
 
+    bool in_check = board.inCheck();
+    ss->static_eval = (entry.key == ttkey) ? entry.eval : net.evaluate(ply, whiteturn);
+
+    // pre-moveloop pruning
+    if (!is_PV && ply && !in_check) {
+        // reverse futility pruning
+        const int rfp_margin = params.RFP_MARGIN * depth;
+        if (depth < params.RFP_DEPTH && ss->static_eval - rfp_margin >= beta)
+            return ss->static_eval;
+    }
+
     // terminal analysis
     if (board.isInsufficientMaterial()) return 0;
     chess::Movelist movelist;
     chess::Movelist quietlist;
     chess::movegen::legalmoves<chess::movegen::MoveGenType::ALL>(movelist, board);
-    if (movelist.empty()) {
-        if (board.inCheck()) return -MATE_EVAL + ply;  // reward faster checkmate
-        return 0;
-    }
+    if (movelist.empty()) return (in_check) ? -MATE_EVAL + ply : 0;  // reward faster mate
+
 
     // one reply extension
     int extension = 0;

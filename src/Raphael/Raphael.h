@@ -27,6 +27,8 @@ public:
         static constexpr int MIN_SKIP_EVAL = 400;  // minimum eval to halt early if pv is stable
 
         // negamax
+        static constexpr int RFP_DEPTH = 7;       // from which depth to apply rfp
+        static constexpr int RFP_MARGIN = 77;     // depth margin scalar for rfp
         static constexpr int REDUCTION_FROM = 5;  // from which move to apply late move reduction
 
         // quiescence
@@ -86,8 +88,8 @@ protected:
 
     struct SearchStack {
         PVList pv;
+        int static_eval;
         // TODO: move killers here
-        // int static_eval; TODO: rfp
     };
 
 

@@ -21,7 +21,8 @@ Note that ELOs with an asterics next to them are estimates and not official, and
         <th>Version</th>
         <th>CCRL Blitz</th>
     </tr>
-    <tr align="center"><td>2.0.0</td><td>2734*</td></tr>
+    <tr align="center"><td>2.1.0</td><td>2739*</td></tr>
+    <tr align="center"><td>2.0.0</td><td>2646*</td></tr>
     <tr align="center"><td>1.8.0</td><td>2223*</td></tr>
     <tr align="center"><td>1.7.6</td><td>1967</td></tr>
     <tr align="center"><td>1.7.0</td><td>1851</td></tr>
@@ -90,25 +91,30 @@ You can also play with different time controls, increments, and player combinati
 
 #### General
 
-- [x] Alpha-beta pruning        (`v1.0+`)
-- [x] Move ordering             (`v1.0+`)
-- [x] Transposition table (fix) (`v1.1+`)
-- [x] Iterative deepening (fix) (`v1.1+`)
-- [x] Aspiration window         (`v1.3+`)
-- [ ] Opening book
 - [ ] Endgame table
-- [x] Quiescence with captures  (`v1.0+`)
-- [ ] Quiescence with queening
-- [x] Time management           (`v1.0+`)
-- [x] Skip search on stable pv  (`v1.6+`)
-- [x] Pondering                 (`v1.2+`)
-- [x] Pondering with pv         (`v1.6+`)
-- [x] Check extensions          (`v1.4+`)
-- [x] Passed pawn extensions    (`v1.4+`)
-- [x] One reply extensions      (`v1.7+`)
-- [x] Late move reductions      (`v1.5+`)
-- [x] Mate distance pruning     (`v1.6+`)
-- [x] SEE pruning               (`v1.7+`)
+- [x] Time management               (`v1.0+`)
+- [x] Skip search on stable pv      (`v1.6+`)
+- [x] Pondering                     (`v1.2+`)
+- [x] Pondering with pv             (`v1.6+`)
+
+#### Search
+
+- [x] Alpha-beta pruning            (`v1.0+`)
+- [x] Move ordering                 (`v1.0+`)
+- [x] Transposition table           (`v1.1+`)
+- [x] Quiescence with captures      (`v1.0+`)
+- [x] Iterative deepening           (`v1.1+`)
+- [x] Aspiration window             (`v1.3+`)
+- [x] Check extensions              (`v1.4+`) <!-- - [x] Passed pawn extensions        (`v1.4`) -->
+- [x] One reply extensions          (`v1.7+`)
+- [x] Mate distance pruning         (`v1.6+`)
+- [x] Principle variation search    (`v2.1+`)
+- [x] Late move reductions          (`v1.5+`)
+- [ ] Reverse futility pruning
+- [ ] Null move pruning
+- [ ] Late move pruning
+- [ ] Futility pruning
+- [ ] Internal iterative deepening <!-- - [x] SEE pruning                   (`v1.7`) -->
 - [ ] Lazy SMP
 
 #### Evaluation
@@ -127,7 +133,7 @@ You can also play with different time controls, increments, and player combinati
 - [x] Draw evaluation           (`v1.8+`)
 - [x] Evaluation tuning         (`v1.8+`)
 - [x] NNUE                      (`v2.0+`)
-- [ ] NNUE lazy updates
+- [x] NNUE lazy updates         (`v2.1+`)
 - [ ] NNUE output bucket
 
 #### Move Ordering
@@ -136,7 +142,10 @@ You can also play with different time controls, increments, and player combinati
 - [x] Promotions                (`v1.0+`)
 - [x] Hash move                 (`v1.6+`)
 - [x] Killer heuristics         (`v1.3+`)
-- [x] Quiet History heuristics  (`v1.5+`)
+- [x] Quiet history             (`v1.5+`)
+- [ ] Continuation history
+- [ ] Capture history
+- [ ] Correction history
 - [x] SEE                       (`v1.7+`)
 
 For a more in-depth documentation on the NNUE and how it was trained, refer to the [NNUE README](https://github.com/Orbital-Web/Raphael/tree/main/src/NNUE). No external engines were used to generate Raphael NNUE's training data.

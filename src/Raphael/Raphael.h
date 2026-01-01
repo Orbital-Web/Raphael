@@ -27,8 +27,7 @@ public:
         static constexpr int MIN_SKIP_EVAL = 400;  // minimum eval to halt early if pv is stable
 
         // negamax
-        static constexpr int MAX_EXTENSIONS = 16;  // max number of times we can extend the search
-        static constexpr int REDUCTION_FROM = 5;   // from which move to apply late move reduction
+        static constexpr int REDUCTION_FROM = 5;  // from which move to apply late move reduction
 
         // quiescence
         static constexpr int DELTA_THRESHOLD = 400;  // safety margin for delta pruning
@@ -169,7 +168,6 @@ protected:
         chess::Board& board,
         const int depth,
         const int ply,
-        const int ext,
         int alpha,
         int beta,
         volatile bool& halt

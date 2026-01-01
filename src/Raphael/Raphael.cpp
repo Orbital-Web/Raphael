@@ -92,7 +92,7 @@ chess::Move RaphaelNNUE::get_move(
             && !searchopt.infinite)
             halt = true;
 
-        int itereval = negamax<true>(board, depth, 0, params.MAX_EXTENSIONS, alpha, beta, halt);
+        int itereval = negamax<true>(board, depth, 0, alpha, beta, halt);
         if (halt) break;  // don't use results if timeout
 
         // re-search required
@@ -304,13 +304,7 @@ bool RaphaelNNUE::is_time_over(volatile bool& halt) const {
 
 template <bool is_PV>
 int RaphaelNNUE::negamax(
-    chess::Board& board,
-    const int depth,
-    const int ply,
-    const int ext,
-    int alpha,
-    int beta,
-    volatile bool& halt
+    chess::Board& board, const int depth, const int ply, int alpha, int beta, volatile bool& halt
 ) {
     // timeout
     if (is_time_over(halt)) return 0;
@@ -358,7 +352,7 @@ int RaphaelNNUE::negamax(
     int extension = 0;
     if (movelist.size() > 1)
         order_moves(movelist, ttmove, board, ply);
-    else if (ext > 0)
+    else
         extension++;
 
     // search
@@ -376,24 +370,22 @@ int RaphaelNNUE::negamax(
         board.makeMove(move);
 
         // check extension
-        if (ext > extension && board.inCheck()) extension++;
+        if (board.inCheck()) extension++;
 
         // principle variation search
         int eval;
         int new_depth = depth - 1 + extension;
-        int new_ext = ext - extension;
         if (depth >= 3 && movei >= params.REDUCTION_FROM && is_quiet) {
             // late move reduction
-            int red_depth = new_depth - 1;
-            eval = -negamax<false>(board, red_depth, ply + 1, new_ext, -alpha - 1, -alpha, halt);
+            int red_depth = max(new_depth - 1, 0);
+            eval = -negamax<false>(board, red_depth, ply + 1, -alpha - 1, -alpha, halt);
             if (eval > alpha && red_depth < new_depth)
-                eval
-                    = -negamax<false>(board, new_depth, ply + 1, new_ext, -alpha - 1, -alpha, halt);
+                eval = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, halt);
         } else if (!is_PV || movei >= 1)
-            eval = -negamax<false>(board, new_depth, ply + 1, new_ext, -alpha - 1, -alpha, halt);
+            eval = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, halt);
 
         if (is_PV && (movei == 0 || eval > alpha))
-            eval = -negamax<true>(board, new_depth, ply + 1, new_ext, -beta, -alpha, halt);
+            eval = -negamax<true>(board, new_depth, ply + 1, -beta, -alpha, halt);
 
         board.unmakeMove(move);
         extension = 0;

@@ -15,6 +15,7 @@ using std::cout, std::flush;
 using std::fixed, std::setprecision;
 using std::max, std::min;
 using std::mutex, std::lock_guard;
+using std::stable_sort;
 using std::string;
 namespace ch = std::chrono;
 
@@ -274,7 +275,7 @@ void RaphaelNNUE::start_search_timer(
         return;
     }
 
-    float n = chess::builtin::popcount(board.occ());
+    float n = board.occ().count();
     // 0~1, higher the more time it uses (max at 20 pieces left)
     float ratio = 0.0044f * (n - 32) * (-n / 32) * pow(2.5f + n / 32, 3);
     // use 1~5% of the remaining time based on the ratio + buffered increment
@@ -347,7 +348,7 @@ int RaphaelNNUE::negamax(
     if (board.isInsufficientMaterial()) return 0;
     chess::Movelist movelist;
     chess::Movelist quietlist;
-    chess::movegen::legalmoves<chess::MoveGenType::ALL>(movelist, board);
+    chess::movegen::legalmoves<chess::movegen::MoveGenType::ALL>(movelist, board);
     if (movelist.empty()) {
         if (board.inCheck()) return -MATE_EVAL + ply;  // reward faster checkmate
         return 0;
@@ -452,7 +453,7 @@ int RaphaelNNUE::quiescence(
 
     // search
     chess::Movelist movelist;
-    chess::movegen::legalmoves<chess::MoveGenType::CAPTURE>(movelist, board);
+    chess::movegen::legalmoves<chess::movegen::MoveGenType::CAPTURE>(movelist, board);
     order_moves(movelist, chess::Move::NO_MOVE, board, 0);
 
     for (const auto& move : movelist) {
@@ -483,7 +484,9 @@ void RaphaelNNUE::order_moves(
     chess::Movelist& movelist, const chess::Move& ttmove, const chess::Board& board, const int ply
 ) const {
     for (auto& move : movelist) score_move(move, ttmove, board, ply);
-    movelist.sort();
+    stable_sort(movelist.begin(), movelist.end(), [](const chess::Move& a, const chess::Move& b) {
+        return a.score() > b.score();
+    });
 }
 
 void RaphaelNNUE::score_move(

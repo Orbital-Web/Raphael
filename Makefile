@@ -1,7 +1,7 @@
 # Compiler & flags
 CC = g++
 LD = ld
-CCFLAGS = -Wall -O3 -DNDEBUG -fno-builtin -std=c++20 -Isrc -Ichess-library/src -ISFML-3.0.2/include
+CCFLAGS = -Wall -O3 -DNDEBUG -fno-builtin -std=c++20 -Isrc -Ichess-library/include -ISFML-3.0.2/include
 LDFLAGS = -LSFML-3.0.2/lib -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
 
 ifneq ($(OS),Windows_NT)

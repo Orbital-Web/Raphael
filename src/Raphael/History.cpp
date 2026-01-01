@@ -24,8 +24,8 @@ void History::update(
     int bonus = min(bonus_scale * depth + bonus_offset, bonus_max);
 
     for (const auto& move : quietlist) {
-        int from = (int)move.from();
-        int to = (int)move.to();
+        int from = move.from().index();
+        int to = move.to().index();
 
         _history[side][from][to] -= _history[side][from][to] * bonus / history_max;
         _history[side][from][to] += (move == bestmove) ? bonus : -bonus;
@@ -34,8 +34,8 @@ void History::update(
 
 
 int History::get(const chess::Move move, const int side) const {
-    int from = (int)move.from();
-    int to = (int)move.to();
+    int from = move.from().index();
+    int to = move.to().index();
     return _history[side][from][to];
 }
 

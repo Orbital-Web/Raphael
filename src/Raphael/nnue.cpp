@@ -254,12 +254,11 @@ void Nnue::set_board(const chess::Board& board) {
     b_features.reserve(32);
 
     auto pieces = board.occ();
-    while (pieces) {
-        auto sq = chess::builtin::poplsb(pieces);
-        int sqi = (int)sq;
+    while (!pieces.empty()) {
+        auto sqi = pieces.pop();
 
-        int wpiece = (int)board.at(sq);  // 0...5, 6...11
-        int bpiece = (wpiece + 6) % 12;  // 6...11, 0...5
+        int wpiece = (int)board.at(sqi);  // 0...5, 6...11
+        int bpiece = (wpiece + 6) % 12;   // 6...11, 0...5
 
         w_features.push_back(64 * wpiece + sqi);
         b_features.push_back(64 * bpiece + (sqi ^ 56));
@@ -282,12 +281,13 @@ void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board
     for (bool side : {false, true}) {
         // do incremental update
         bool moving = (board.sideToMove() == chess::Color::WHITE) == side;
-        int from_sqi = (side) ? (int)from_sq : (int)from_sq ^ 56;
-        int to_sqi = (side) ? (int)to_sq : (int)to_sq ^ 56;
+        int from_sqi = (side) ? from_sq.index() : (from_sq.index() ^ 56);
+        int to_sqi = (side) ? to_sq.index() : (to_sq.index() ^ 56);
         auto from_piece = board.at(from_sq);
         auto to_piece = board.at(to_sq);
         int from_piecei = (side) ? (int)from_piece : ((int)from_piece + 6) % 12;
         int to_piecei = (side) ? (int)to_piece : ((int)to_piece + 6) % 12;
+        assert(from_piece != chess::Piece::NONE);
 
         // remove moving piece
         state.add1[side] = -1;

@@ -115,7 +115,8 @@ void GameEngine::run_match(const GameOptions& options) {
 
         // play move
         auto toPlay = movereceiver.get();
-        if (toPlay == chess::Move::NO_MOVE || movelist.find(toPlay) == -1) {
+        if (toPlay == chess::Move::NO_MOVE
+            || std::find(movelist.begin(), movelist.end(), toPlay) == movelist.end()) {
             if (toPlay == chess::Move::NO_MOVE) {
                 lock_guard<mutex> lock(cout_mutex);
                 cout << "Warning, no move returned. Remaining time of player: " << fixed
@@ -160,8 +161,8 @@ game_end:
             update_window();
         }
     }
-    sq_from = chess::NO_SQ;
-    sq_to = chess::NO_SQ;
+    sq_from = chess::Square::NO_SQ;
+    sq_to = chess::Square::NO_SQ;
     movelist.clear();
     if (savepgn) {
         string pgn_result = "1/2-1/2";
@@ -261,21 +262,14 @@ void GameEngine::add_selectedtiles() {
         if (move.from() == sq_from) {
             // modify castling move to target empty tile
             if (move.typeOf() == chess::Move::CASTLING) {
-                switch (move.to()) {
-                    case chess::SQ_H1:  // white king-side
-                        selectedtiles.push_back(chess::SQ_G1);
-                        break;
-                    case chess::SQ_A1:  // white queen-side
-                        selectedtiles.push_back(chess::SQ_C1);
-                        break;
-                    case chess::SQ_H8:  // black king-side
-                        selectedtiles.push_back(chess::SQ_G8);
-                        break;
-                    case chess::SQ_A8:  // black queen-side
-                        selectedtiles.push_back(chess::SQ_C8);
-                        break;
-                    default: break;
-                }
+                if (move.to() == chess::Square::SQ_H1)  // white king-side
+                    selectedtiles.push_back(chess::Square::SQ_G1);
+                else if (move.to() == chess::Square::SQ_A1)  // white queen-side
+                    selectedtiles.push_back(chess::Square::SQ_C1);
+                else if (move.to() == chess::Square::SQ_H8)  // black king-side
+                    selectedtiles.push_back(chess::Square::SQ_G8);
+                else if (move.to() == chess::Square::SQ_A8)  // black queen-side
+                    selectedtiles.push_back(chess::Square::SQ_C8);
             } else
                 selectedtiles.push_back(move.to());
         }
@@ -300,7 +294,7 @@ void GameEngine::update_arrows() {
         // board clicked
         if (x > 50 && x < 850 && y > 70 && y < 870) {
             auto arrow_to = get_square(x, y);
-            if (arrow_to != arrow_from && arrow_from != chess::NO_SQ) {
+            if (arrow_to != arrow_from && arrow_from != chess::Square::NO_SQ) {
                 Arrow newarrow(arrow_from, arrow_to);
 
                 // check arrow does not exist
@@ -308,7 +302,7 @@ void GameEngine::update_arrows() {
                 for (size_t i = 0; i < arrows.size(); i++) {
                     if (newarrow == arrows[i]) {
                         arrows.erase(arrows.begin() + i);
-                        arrow_from = chess::NO_SQ;
+                        arrow_from = chess::Square::NO_SQ;
                         arrow_exists = true;
                         break;
                     }
@@ -317,7 +311,7 @@ void GameEngine::update_arrows() {
                 // add arrow
                 if (!arrow_exists) {
                     arrows.push_back(newarrow);
-                    arrow_from = chess::NO_SQ;
+                    arrow_from = chess::Square::NO_SQ;
                 }
             }
         }
@@ -355,22 +349,22 @@ void GameEngine::update_window() {
     for (int i = 0; i < 64; i++) window.draw(tiles[i]);
 
     // draw move to/from squares
-    if (sq_from != chess::NO_SQ) {
-        int file = (int)chess::utils::squareFile(sq_from);
-        int rank = (int)chess::utils::squareRank(sq_from);
+    if (sq_from != chess::Square::NO_SQ) {
+        int file = (int)sq_from.file();
+        int rank = (int)sq_from.rank();
         tiles[64].setPosition({50.0f + 100 * file, 770.0f - 100 * rank});
         window.draw(tiles[64]);
 
-        file = (int)chess::utils::squareFile(sq_to);
-        rank = (int)chess::utils::squareRank(sq_to);
+        file = (int)sq_to.file();
+        rank = (int)sq_to.rank();
         tiles[64].setPosition({50.0f + 100 * file, 770.0f - 100 * rank});
         window.draw(tiles[64]);
     }
 
     // draw selection squares
     for (auto& sq : selectedtiles) {
-        int file = (int)chess::utils::squareFile(sq);
-        int rank = (int)chess::utils::squareRank(sq);
+        int file = (int)sq.file();
+        int rank = (int)sq.rank();
         tiles[65].setPosition({50.0f + 100 * file, 770.0f - 100 * rank});
         window.draw(tiles[65]);
     }
@@ -380,9 +374,9 @@ void GameEngine::update_window() {
     int check = 0;
     if (board.inCheck()) check = (whiteturn) ? 1 : -1;
     while (pieces) {
-        auto sq = chess::builtin::poplsb(pieces);
-        int file = (int)chess::utils::squareFile(sq);
-        int rank = (int)chess::utils::squareRank(sq);
+        chess::Square sq = pieces.pop();
+        int file = (int)sq.file();
+        int rank = (int)sq.rank();
         auto piece = board.at(sq);
         piecedrawer.draw(window, piece, 50 + 100 * file, 770 - 100 * rank, check);
     }

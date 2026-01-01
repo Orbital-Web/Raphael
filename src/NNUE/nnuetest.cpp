@@ -80,7 +80,7 @@ void test_make_move(Raphael::Nnue& net, chess::Board& board) {
     // test suite
     const vector<vector<string>> test_suite = {
         // non-king moves
-        {chess::STARTPOS, "e2e4", "d7d5", "g1f3", "c8g4", "h1g1", "d8d6"},
+        {chess::constants::STARTPOS, "e2e4", "d7d5", "g1f3", "c8g4", "h1g1", "d8d6"},
         // non-king captures
         {"4kr2/8/8/6nq/4B3/5R2/4P3/Q3K3 b - - 0 1", "f8f3", "e4f3", "g5f3", "e2f3", "h5f3"},
         {"4k2q/3rp1n1/5b2/8/4N3/4P1R1/3Q4/4K3 w - - 0 1", "g3g7", "d7d2", "e4f6", "e7f6"},
@@ -148,7 +148,7 @@ void test_make_move(Raphael::Nnue& net, chess::Board& board) {
         board.setFen(pos);
         net.set_board(board);
         chess::Movelist movelist;
-        chess::movegen::legalmoves<chess::MoveGenType::ALL>(movelist, board);
+        chess::movegen::legalmoves<chess::movegen::MoveGenType::ALL>(movelist, board);
 
         for (auto& move : movelist) {
             net.make_move(1, move, board);

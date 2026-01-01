@@ -26,13 +26,13 @@ private:
     bool interactive;  // play sound and keep window open after game end
 
     // for draw_select()
-    chess::Square sq_from = chess::NO_SQ;
-    chess::Square sq_to = chess::NO_SQ;
+    chess::Square sq_from = chess::Square::NO_SQ;
+    chess::Square sq_to = chess::Square::NO_SQ;
     std::vector<chess::Square> selectedtiles;
     chess::Movelist movelist;
 
     // arrows
-    chess::Square arrow_from = chess::NO_SQ;
+    chess::Square arrow_from = chess::Square::NO_SQ;
     std::vector<Arrow> arrows;
 
     // chess game logic
@@ -51,9 +51,9 @@ public:
         bool p1_is_white = true;  // whether p1 or p2 is white
         bool interactive = true;  // whether we play sound and keep window open after game end
         int t_inc = 0;            // ms incremented per move
-        std::vector<int64_t> t_remain = {600000, 600000};  // ms remaining for p1 and p2
-        std::string start_fen = chess::STARTPOS;           // the starting chess position in FEN
-        std::string pgn_file = "";                         // the pgn file to save the game to
+        std::vector<int64_t> t_remain = {600000, 600000};    // ms remaining for p1 and p2
+        std::string start_fen = chess::constants::STARTPOS;  // the starting chess position in FEN
+        std::string pgn_file = "";                           // the pgn file to save the game to
     };
 
 

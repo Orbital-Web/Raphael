@@ -24,17 +24,18 @@ int estimate(const chess::Move& move, const chess::Board& board) {
 
 chess::Square lva(chess::Bitboard attackers, const chess::Board& board) {
     for (int p = 0; p < 6; p++) {
-        auto attacker_of_type = attackers & board.pieces((chess::PieceType)p);
-        if (attacker_of_type) return chess::builtin::poplsb(attacker_of_type);
+        auto attacker_of_type
+            = attackers & board.pieces(static_cast<chess::PieceType::underlying>(p));
+        if (attacker_of_type) return attacker_of_type.pop();
     }
-    return chess::NO_SQ;
+    return chess::Square::NO_SQ;
 }
 
 
 bool goodCapture(const chess::Move& move, const chess::Board& board, const int threshold) {
-    auto to = move.to();                           // where the exchange happens
-    auto victim_sq = move.from();                  // capturer becomes next victim
-    auto occ = board.occ() ^ (1ULL << victim_sq);  // remove capturer from occ
+    auto to = move.to();                              // where the exchange happens
+    auto victim_sq = move.from();                     // capturer becomes next victim
+    auto occ = board.occ().clear(victim_sq.index());  // remove capturer from occ
     auto color = ~board.sideToMove();
     int gain = -threshold;
 
@@ -43,7 +44,7 @@ bool goodCapture(const chess::Move& move, const chess::Board& board, const int t
         gain += VAL[0];  // pawn captured
         auto enpsq = (board.sideToMove() == chess::Color::WHITE) ? to + chess::Direction::SOUTH
                                                                  : to + chess::Direction::NORTH;
-        occ ^= (1ULL << enpsq);
+        occ.clear(enpsq.index());
     } else if (move.typeOf() == chess::Move::PROMOTION) {
         auto promo = move.promotionType();
         gain += VAL[(int)promo] + pieceval(to, board) - VAL[0];  // promotion + any capture - pawn
@@ -91,7 +92,7 @@ bool goodCapture(const chess::Move& move, const chess::Board& board, const int t
         }
 
         // update virtual board
-        occ ^= (1ULL << victim_sq);  // remove capturer from occ
+        occ.clear(victim_sq.index());  // remove capturer from occ
         all_attackers |= chess::attacks::bishop(to, occ) & bqs;
         all_attackers |= chess::attacks::rook(to, occ) & rqs;
     }

@@ -16,12 +16,8 @@ using std::stringstream;
 
 
 Arrow::Arrow(const chess::Square from_in, const chess::Square to_in): from(from_in), to(to_in) {
-    sf::Vector2f from_coord
-        = {100.0f + 100 * (int)chess::utils::squareFile(from),
-           820.0f - 100 * (int)chess::utils::squareRank(from)};
-    sf::Vector2f to_coord
-        = {100.0f + 100 * (int)chess::utils::squareFile(to),
-           820.0f - 100 * (int)chess::utils::squareRank(to)};
+    sf::Vector2f from_coord = {100.0f + 100 * (int)from.file(), 820.0f - 100 * (int)from.rank()};
+    sf::Vector2f to_coord = {100.0f + 100 * (int)to.file(), 820.0f - 100 * (int)to.rank()};
 
     float dx = to_coord.x - from_coord.x;
     float dy = from_coord.y - to_coord.y;
@@ -146,5 +142,5 @@ void Timer::draw(sf::RenderTarget& target, sf::RenderStates states) const {
 chess::Square cge::get_square(int x, int y) {
     int rank = (870 - y) / 100;
     int file = (x - 50) / 100;
-    return chess::utils::fileRankSquare(chess::File(file), chess::Rank(rank));
+    return chess::Square(chess::File(file), chess::Rank(rank));
 }

@@ -102,7 +102,7 @@ void setposition(const vector<string>& tokens) {
     lock_guard<mutex> search_lock(search_mutex);
     int i = 2;
     if (tokens[1] == "startpos")
-        pending_request.board.setFen(chess::STARTPOS);
+        pending_request.board.setFen(chess::constants::STARTPOS);
     else if (tokens[1] == "fen") {
         string fen = tokens[2];
         i = 3;

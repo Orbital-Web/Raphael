@@ -15,11 +15,11 @@ using std::cout, std::flush;
 using std::fixed, std::setprecision;
 using std::max, std::min;
 using std::mutex, std::lock_guard;
+using std::stable_sort;
 using std::string;
 namespace ch = std::chrono;
 
 #define whiteturn (board.sideToMove() == chess::Color::WHITE)
-#define lighttile(sqi) (((sq >> 3) ^ sq) & 1)
 
 extern const bool UCI;
 
@@ -439,7 +439,7 @@ void RaphaelHCE::start_search_timer(
         return;
     }
 
-    float n = chess::builtin::popcount(board.occ());
+    float n = board.occ().count();
     // 0~1, higher the more time it uses (max at 20 pieces left)
     float ratio = 0.0044f * (n - 32) * (-n / 32) * pow(2.5f + n / 32, 3);
     // use 1~5% of the remaining time based on the ratio + buffered increment
@@ -513,7 +513,7 @@ int RaphaelHCE::negamax(
     if (board.isInsufficientMaterial()) return 0;
     chess::Movelist movelist;
     chess::Movelist quietlist;
-    chess::movegen::legalmoves<chess::MoveGenType::ALL>(movelist, board);
+    chess::movegen::legalmoves<chess::movegen::MoveGenType::ALL>(movelist, board);
     if (movelist.empty()) {
         if (board.inCheck()) return -MATE_EVAL + ply;  // reward faster checkmate
         return 0;
@@ -544,7 +544,7 @@ int RaphaelHCE::negamax(
             if (board.inCheck())
                 extension++;
             else {
-                auto sqrank = chess::utils::squareRank(move.to());
+                auto sqrank = move.to().rank();
                 auto piece = board.at(move.to());
                 if ((sqrank == chess::Rank::RANK_2 && piece == chess::Piece::BLACKPAWN)
                     || (sqrank == chess::Rank::RANK_7 && piece == chess::Piece::WHITEPAWN))
@@ -607,7 +607,7 @@ int RaphaelHCE::quiescence(chess::Board& board, int alpha, int beta, volatile bo
 
     // search
     chess::Movelist movelist;
-    chess::movegen::legalmoves<chess::MoveGenType::CAPTURE>(movelist, board);
+    chess::movegen::legalmoves<chess::movegen::MoveGenType::CAPTURE>(movelist, board);
     order_moves(movelist, board, 0);
 
     for (const auto& move : movelist) {
@@ -633,7 +633,9 @@ void RaphaelHCE::order_moves(
     chess::Movelist& movelist, const chess::Board& board, const int ply
 ) const {
     for (auto& move : movelist) score_move(move, board, ply);
-    movelist.sort();
+    stable_sort(movelist.begin(), movelist.end(), [](const chess::Move& a, const chess::Move& b) {
+        return a.score() > b.score();
+    });
 }
 
 void RaphaelHCE::score_move(chess::Move& move, const chess::Board& board, const int ply) const {
@@ -693,8 +695,8 @@ int RaphaelHCE::evaluate(const chess::Board& board) const {
 
     // loop through all pieces
     while (pieces) {
-        auto sq = chess::builtin::poplsb(pieces);
-        int sqi = (int)sq;
+        auto sqi = pieces.pop();
+        chess::Square sq = sqi;
         int piece = (int)board.at(sq);
 
         // add material value
@@ -747,28 +749,28 @@ int RaphaelHCE::evaluate(const chess::Board& board) const {
             case 2:
                 phase++;
                 wbish++;
-                wbish_on_w += lighttile(sqi);
-                wbish_on_b += !lighttile(sqi);
-                bishmob += chess::builtin::popcount(chess::attacks::bishop(sq, wbishx));
+                wbish_on_w += sq.is_light();
+                wbish_on_b += sq.is_dark();
+                bishmob += chess::attacks::bishop(sq, wbishx).count();
                 break;
             case 8:
                 phase++;
                 bbish++;
-                bbish_on_w += lighttile(sqi);
-                bbish_on_b += !lighttile(sqi);
-                bishmob -= chess::builtin::popcount(chess::attacks::bishop(sq, bbishx));
+                bbish_on_w += sq.is_light();
+                bbish_on_b += sq.is_dark();
+                bishmob -= chess::attacks::bishop(sq, bbishx).count();
                 break;
 
             // rook mobility (xrays rooks and queens)
             case 3:
                 phase += 2;
                 minor_only = false;
-                rookmob += chess::builtin::popcount(chess::attacks::rook(sq, wrookx));
+                rookmob += chess::attacks::rook(sq, wrookx).count();
                 break;
             case 9:
                 phase += 2;
                 minor_only = false;
-                rookmob -= chess::builtin::popcount(chess::attacks::rook(sq, brookx));
+                rookmob -= chess::attacks::rook(sq, brookx).count();
                 break;
 
             // queen count
@@ -783,12 +785,12 @@ int RaphaelHCE::evaluate(const chess::Board& board) const {
 
             // king proximity
             case 5:
-                wkr = (int)chess::utils::squareRank(sq);
-                wkf = (int)chess::utils::squareFile(sq);
+                wkr = (int)sq.rank();
+                wkf = (int)sq.file();
                 break;
             case 11:
-                bkr = (int)chess::utils::squareRank(sq);
-                bkf = (int)chess::utils::squareFile(sq);
+                bkr = (int)sq.rank();
+                bkf = (int)sq.file();
                 break;
         }
     }

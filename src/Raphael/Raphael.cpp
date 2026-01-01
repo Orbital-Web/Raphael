@@ -38,6 +38,14 @@ RaphaelNNUE::EngineOptions RaphaelNNUE::params{
 };
 
 
+void RaphaelNNUE::PVList::update(const chess::Move move, const PVList& child) {
+    moves[0] = move;
+    std::copy(child.moves, child.moves + child.length, moves + 1);
+    length = child.length + 1;
+    assert(length == 1 || moves[0] != moves[1]);
+}
+
+
 RaphaelNNUE::RaphaelNNUE(string name_in)
     : GamePlayer(name_in),
       tt(params.hash),
@@ -67,7 +75,6 @@ chess::Move RaphaelNNUE::get_move(
     volatile bool& halt
 ) {
     nodes = 0;
-    pvlens[0] = 0;
     seldepth = 0;
     net.set_board(board);
 
@@ -78,6 +85,9 @@ chess::Move RaphaelNNUE::get_move(
     chess::Move bestmove = chess::Move::NO_MOVE;
     chess::Move prevbest = chess::Move::NO_MOVE;
     int consecutives = 0;
+
+    SearchStack stack[MAX_DEPTH + 3];
+    SearchStack* ss = &stack[2];
 
     // stop search after an appropriate duration
     start_search_timer(board, t_remain, t_inc);
@@ -92,7 +102,7 @@ chess::Move RaphaelNNUE::get_move(
             && !searchopt.infinite)
             halt = true;
 
-        int itereval = negamax<true>(board, depth, 0, alpha, beta, halt);
+        int itereval = negamax<true>(board, depth, 0, alpha, beta, ss, halt);
         if (halt) break;  // don't use results if timeout
 
         // re-search required
@@ -104,7 +114,7 @@ chess::Move RaphaelNNUE::get_move(
         }
 
         eval = itereval;
-        bestmove = pvtable[0][0];
+        bestmove = ss->pv.moves[0];
 
         // narrow window
         alpha = eval - params.ASPIRATION_WINDOW;
@@ -129,8 +139,8 @@ chess::Move RaphaelNNUE::get_move(
                 lock_guard<mutex> lock(cout_mutex);
                 cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime
                      << " nodes " << nodes << " score mate " << sign
-                     << (MATE_EVAL - abs(eval) + 1) / 2 << " nps " << nps << " pv " << get_pv_line()
-                     << "\n"
+                     << (MATE_EVAL - abs(eval) + 1) / 2 << " nps " << nps << " pv "
+                     << get_pv_line(ss->pv) << "\n"
                      << flush;
             }
 #ifndef MUTEEVAL
@@ -151,13 +161,13 @@ chess::Move RaphaelNNUE::get_move(
             lock_guard<mutex> lock(cout_mutex);
             cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime
                  << " nodes " << nodes << " score cp " << eval << " nps " << nps << " pv "
-                 << get_pv_line() << "\n"
+                 << get_pv_line(ss->pv) << "\n"
                  << flush;
         }
     }
 
     // last attempt to get bestmove
-    if (bestmove == chess::Move::NO_MOVE) bestmove = pvtable[0][0];
+    if (bestmove == chess::Move::NO_MOVE) bestmove = ss->pv.moves[0];
 
     // print bestmove
     if (UCI) {
@@ -178,78 +188,11 @@ chess::Move RaphaelNNUE::get_move(
 }
 
 void RaphaelNNUE::ponder(chess::Board board, volatile bool& halt) {  // FIXME:
-    // ponderdepth = 1;
-    // pondereval = 0;
-    // itermove = chess::Move::NO_MOVE;
-    // search_t = 0;  // infinite time
-
-    // // predict opponent's move from pv
-    // auto ttkey = board.hash();
-    // auto ttentry = tt.get(ttkey, 0);
-
-    // // no valid response in pv or timeout
-    // if (halt || !tt.valid(ttentry, ttkey, 0)) {
-    //     consecutives = 1;
-    //     return;
-    // }
-
-    // // play opponent's move and store key to check for ponderhit
-    // board.makeMove(ttentry.move);
-    // ponderkey = board.hash();
-    // history.clear();
-
-    // // set up nnue board
-    // net.set_board(board);
-
-    // int alpha = -INT_MAX;
-    // int beta = INT_MAX;
-    // nodes = 0;
-    // consecutives = 1;
-
-    // // begin iterative deepening for our best response
-    // while (!halt && ponderdepth <= MAX_DEPTH) {
-    //     int itereval = negamax(board, ponderdepth, 0, params.MAX_EXTENSIONS, alpha, beta, halt);
-
-    //     if (!halt) {
-    //         pondereval = itereval;
-
-    //         // re-search required
-    //         if ((pondereval <= alpha) || (pondereval >= beta)) {
-    //             alpha = -INT_MAX;
-    //             beta = INT_MAX;
-    //             continue;
-    //         }
-
-    //         // narrow window
-    //         alpha = pondereval - params.ASPIRATION_WINDOW;
-    //         beta = pondereval + params.ASPIRATION_WINDOW;
-    //         ponderdepth++;
-
-    //         // count consecutive bestmove
-    //         if (itermove == prevPlay)
-    //             consecutives++;
-    //         else {
-    //             prevPlay = itermove;
-    //             consecutives = 1;
-    //         }
-    //     }
-
-    //     // checkmate, no need to continue (but don't edit halt)
-    //     if (tt.isMate(pondereval)) break;
-    // }
-}
-
-
-string RaphaelNNUE::get_pv_line() const {
-    string pvline = "";
-    for (int i = 0; i < pvlens[0]; i++) pvline += chess::uci::moveToUci(pvtable[0][i]) + " ";
-    return pvline;
 }
 
 
 void RaphaelNNUE::reset() {
     nodes = 0;
-    pvlens[0] = 0;
     seldepth = 0;
     tt.clear();
     killers.clear();
@@ -302,14 +245,27 @@ bool RaphaelNNUE::is_time_over(volatile bool& halt) const {
 }
 
 
+string RaphaelNNUE::get_pv_line(const PVList& pv) const {
+    string pvline = "";
+    for (int i = 0; i < pv.length; i++) pvline += chess::uci::moveToUci(pv.moves[i]) + " ";
+    return pvline;
+}
+
+
 template <bool is_PV>
 int RaphaelNNUE::negamax(
-    chess::Board& board, const int depth, const int ply, int alpha, int beta, volatile bool& halt
+    chess::Board& board,
+    const int depth,
+    const int ply,
+    int alpha,
+    int beta,
+    SearchStack* ss,
+    volatile bool& halt
 ) {
     // timeout
     if (is_time_over(halt)) return 0;
     nodes++;
-    pvlens[ply] = ply;
+    if constexpr (is_PV) ss->pv.length = 0;
 
     if (ply) {
         // prevent draw in winning positions
@@ -378,14 +334,14 @@ int RaphaelNNUE::negamax(
         if (depth >= 3 && movei >= params.REDUCTION_FROM && is_quiet) {
             // late move reduction
             int red_depth = max(new_depth - 1, 0);
-            eval = -negamax<false>(board, red_depth, ply + 1, -alpha - 1, -alpha, halt);
+            eval = -negamax<false>(board, red_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
             if (eval > alpha && red_depth < new_depth)
-                eval = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, halt);
+                eval = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
         } else if (!is_PV || movei >= 1)
-            eval = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, halt);
+            eval = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
 
         if (is_PV && (movei == 0 || eval > alpha))
-            eval = -negamax<true>(board, new_depth, ply + 1, -beta, -alpha, halt);
+            eval = -negamax<true>(board, new_depth, ply + 1, -beta, -alpha, ss + 1, halt);
 
         board.unmakeMove(move);
         extension = 0;
@@ -395,13 +351,11 @@ int RaphaelNNUE::negamax(
             besteval = eval;
             bestmove = move;
 
-            // update pv
-            pvtable[ply][ply] = move;
-            for (int i = ply + 1; i < pvlens[ply + 1]; i++) pvtable[ply][i] = pvtable[ply + 1][i];
-            pvlens[ply] = pvlens[ply + 1];
-
             if (eval > alpha) {
                 alpha = eval;
+
+                // update pv
+                if constexpr (is_PV) ss->pv.update(move, (ss + 1)->pv);
 
                 if (eval >= beta) {
                     // store killer moves and update history

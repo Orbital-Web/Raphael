@@ -54,8 +54,6 @@ public:
 
 protected:
     // search
-    chess::Move pvtable[MAX_DEPTH][MAX_DEPTH] = {{chess::Move::NO_MOVE}};
-    int pvlens[MAX_DEPTH] = {0};
     SearchOptions searchopt;  // limit depth, nodes, or movetime
     // ponder FIXME:
     // uint64_t ponderkey = 0;  // hash after opponent's best response
@@ -73,6 +71,24 @@ protected:
     // timing
     std::chrono::time_point<std::chrono::high_resolution_clock> start_t;  // search start time
     int64_t search_t;                                                     // search duration (ms)
+
+    struct PVList {
+        chess::Move moves[MAX_DEPTH] = {chess::Move::NO_MOVE};
+        int length = 0;
+
+        /** Updates the PV
+         *
+         * \param move move to add
+         * \param child child PV to append
+         */
+        void update(const chess::Move move, const PVList& child);
+    };
+
+    struct SearchStack {
+        PVList pv;
+        // TODO: move killers here
+        // int static_eval; TODO: rfp
+    };
 
 
 
@@ -123,13 +139,6 @@ public:
     void ponder(chess::Board board, volatile bool& halt);
 
 
-    /** Returns the PV line stored in the transposition table
-     *
-     * \returns the PV line of the board of length <= depth
-     */
-    std::string get_pv_line() const;
-
-
     /** Resets Raphael */
     void reset();
 
@@ -152,6 +161,14 @@ protected:
     bool is_time_over(volatile bool& halt) const;
 
 
+    /** Returns the stringified PV line
+     *
+     * \param pv the PV to stringify
+     * \returns the stringified PV line of the board
+     */
+    std::string get_pv_line(const PVList& pv) const;
+
+
     /** Recursively searches for the best move and eval of the current position assuming optimal
      * play by both us and the opponent
      *
@@ -160,6 +177,7 @@ protected:
      * \param ply current distance from root
      * \param alpha lower bound eval of current position
      * \param beta upper bound eval of current position
+     * \param ss search stack at current ply
      * \param halt bool reference which will turn false to indicate search should stop
      * \returns eval of current board
      */
@@ -170,6 +188,7 @@ protected:
         const int ply,
         int alpha,
         int beta,
+        SearchStack* ss,
         volatile bool& halt
     );
 

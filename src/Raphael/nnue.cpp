@@ -212,15 +212,17 @@ void Nnue::update_accumulator(
     for (int i = 0; i < n_chunks; i++) regs[i] = load_i16(&old_acc[side][i * regw]);
 
     // subtract rem_features
-    for (int i = 0; i < n_chunks; i++)
-        regs[i] = subs_i16(regs[i], load_i16(&params.W0[rem1 * N_HIDDEN + i * regw]));
+    if (rem1 >= 0)
+        for (int i = 0; i < n_chunks; i++)
+            regs[i] = subs_i16(regs[i], load_i16(&params.W0[rem1 * N_HIDDEN + i * regw]));
     if (rem2 >= 0)
         for (int i = 0; i < n_chunks; i++)
             regs[i] = subs_i16(regs[i], load_i16(&params.W0[rem2 * N_HIDDEN + i * regw]));
 
     // add add_features
-    for (int i = 0; i < n_chunks; i++)
-        regs[i] = adds_i16(regs[i], load_i16(&params.W0[add1 * N_HIDDEN + i * regw]));
+    if (add1 >= 0)
+        for (int i = 0; i < n_chunks; i++)
+            regs[i] = adds_i16(regs[i], load_i16(&params.W0[add1 * N_HIDDEN + i * regw]));
     if (add2 >= 0)
         for (int i = 0; i < n_chunks; i++)
             regs[i] = adds_i16(regs[i], load_i16(&params.W0[add2 * N_HIDDEN + i * regw]));
@@ -228,16 +230,18 @@ void Nnue::update_accumulator(
     // store results in new accumulator
     for (int i = 0; i < n_chunks; i++) store_i16(&new_acc[side][i * regw], regs[i]);
 #else
-    // copy old_acc into new_acc if they aren't the same already
-    if (&new_acc != &old_acc) copy(old_acc[side], old_acc[side] + N_HIDDEN, new_acc[side]);
+    // copy old_acc into new_acc
+    copy(old_acc[side], old_acc[side] + N_HIDDEN, new_acc[side]);
 
     // subtract rem_features
-    for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] -= params.W0[rem1 * N_HIDDEN + i];
+    if (rem1 >= 0)
+        for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] -= params.W0[rem1 * N_HIDDEN + i];
     if (rem2 >= 0)
         for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] -= params.W0[rem2 * N_HIDDEN + i];
 
     // add add_features
-    for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[add1 * N_HIDDEN + i];
+    if (add1 >= 0)
+        for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[add1 * N_HIDDEN + i];
     if (add2 >= 0)
         for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[add2 * N_HIDDEN + i];
 #endif
@@ -275,6 +279,18 @@ void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board
 
     auto& state = accumulator_states[ply];
     state.dirty = true;
+
+    if (move == move.NULL_MOVE) {
+        state.add1[false] = -1;
+        state.add2[false] = -1;
+        state.rem1[false] = -1;
+        state.rem2[false] = -1;
+        state.add1[true] = -1;
+        state.add2[true] = -1;
+        state.rem1[true] = -1;
+        state.rem2[true] = -1;
+        return;
+    }
 
     // update black and white states incrementally
     for (const bool side : {false, true}) {

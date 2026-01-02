@@ -25,9 +25,11 @@ public:
         static constexpr int ASPIRATION_WINDOW = 50;  // size of aspiration window
 
         // negamax
-        static constexpr int RFP_DEPTH = 7;       // from which depth to apply rfp
-        static constexpr int RFP_MARGIN = 77;     // depth margin scalar for rfp
-        static constexpr int REDUCTION_FROM = 5;  // from which move to apply late move reduction
+        static constexpr int RFP_DEPTH = 6;       // max depth to apply rfp from
+        static constexpr int RFP_MARGIN = 77;     // depth margin scale for rfp
+        static constexpr int NMP_DEPTH = 3;       // depth to apply nmp from
+        static constexpr int NMP_REDUCTION = 4;   // depth reduction for nmp
+        static constexpr int REDUCTION_FROM = 5;  // movei to apply lmr from
 
         // quiescence
         static constexpr int DELTA_THRESHOLD = 400;  // safety margin for delta pruning
@@ -86,7 +88,8 @@ protected:
 
     struct SearchStack {
         PVList pv;
-        int static_eval;
+        chess::Move move = chess::Move::NO_MOVE;
+        int static_eval = 0;
         // TODO: move killers here
     };
 

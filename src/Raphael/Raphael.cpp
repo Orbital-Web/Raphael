@@ -288,8 +288,27 @@ int RaphaelNNUE::negamax(
     if (!is_PV && ply && !in_check) {
         // reverse futility pruning
         const int rfp_margin = params.RFP_MARGIN * depth;
-        if (depth < params.RFP_DEPTH && ss->static_eval - rfp_margin >= beta)
+        if (depth <= params.RFP_DEPTH && ss->static_eval - rfp_margin >= beta)
             return ss->static_eval;
+
+        // null move pruning
+        const auto side = board.sideToMove();
+        const bool non_pk
+            = ((board.us(side) ^ board.pieces(chess::PieceType::PAWN, side)).count() > 1);
+        if (depth >= params.NMP_DEPTH && non_pk && ss->static_eval >= beta
+            && (ss - 1)->move != chess::Move::NULL_MOVE && non_pk) {
+            board.makeNullMove();
+            net.make_move(ply + 1, chess::Move::NULL_MOVE, board);
+            ss->move = chess::Move::NULL_MOVE;
+
+            const int red_depth = depth - params.NMP_REDUCTION;
+            const int eval
+                = -negamax<false>(board, red_depth, ply + 1, -beta, -beta + 1, ss + 1, halt);
+
+            board.unmakeNullMove();
+
+            if (eval >= beta) return (beta > MATE_EVAL) ? beta : eval;
+        }
     }
 
     // terminal analysis
@@ -320,6 +339,7 @@ int RaphaelNNUE::negamax(
 
         net.make_move(ply + 1, move, board);
         board.makeMove(move);
+        ss->move = move;
 
         // check extension
         if (board.inCheck()) extension++;

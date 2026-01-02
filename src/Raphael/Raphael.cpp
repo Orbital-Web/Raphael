@@ -182,7 +182,6 @@ void RaphaelNNUE::reset() {
     nodes = 0;
     seldepth = 0;
     tt.clear();
-    killers.clear();
     history.clear();
     searchopt = SearchOptions();
 }
@@ -322,7 +321,7 @@ int RaphaelNNUE::negamax(
     // one reply extension
     int extension = 0;
     if (movelist.size() > 1)
-        score_moves(movelist, ttmove, board, ply);
+        score_moves(movelist, ttmove, board, ss);
     else
         extension++;
 
@@ -330,7 +329,7 @@ int RaphaelNNUE::negamax(
     const int alphaorig = alpha;
     int besteval = -INT_MAX;
     chess::Move bestmove = chess::Move::NO_MOVE;
-    killers.clear_ply(ply + 1);
+    (ss + 1)->killer = chess::Move::NO_MOVE;
 
     for (int movei = 0; movei < movelist.size(); movei++) {
         const auto move = pick_move(movei, movelist);
@@ -375,7 +374,7 @@ int RaphaelNNUE::negamax(
                 if (eval >= beta) {
                     // store killer moves and update history
                     if (is_quiet) {
-                        killers.put(move, ply);
+                        ss->killer = move;
                         history.update(move, quietlist, depth, whiteturn);
                     }
                     break;  // prune
@@ -415,7 +414,7 @@ int RaphaelNNUE::quiescence(
     // search
     chess::Movelist movelist;
     chess::movegen::legalmoves<chess::movegen::MoveGenType::CAPTURE>(movelist, board);
-    score_moves(movelist, chess::Move::NO_MOVE, board, ply);
+    score_moves(movelist, board);
 
     for (int movei = 0; movei < movelist.size(); movei++) {
         const auto move = pick_move(movei, movelist);
@@ -444,7 +443,10 @@ int RaphaelNNUE::quiescence(
 
 
 void RaphaelNNUE::score_moves(
-    chess::Movelist& movelist, const chess::Move& ttmove, const chess::Board& board, const int ply
+    chess::Movelist& movelist,
+    const chess::Move& ttmove,
+    const chess::Board& board,
+    const SearchStack* ss
 ) const {
     for (auto& move : movelist) {
         // prioritize transposition table move
@@ -469,12 +471,31 @@ void RaphaelNNUE::score_moves(
             score += SEE::goodCapture(move, board, -15) ? params.GOOD_NOISY_FLOOR
                                                         : params.BAD_NOISY_FLOOR;
 
-        } else if (ply > 0 && killers.is_killer(move, ply))
+        } else if (move == ss->killer)
             // killer moves
             score = params.KILLER_FLOOR;
         else
             // quiet moves
             score = history.get(move, whiteturn);
+
+        move.setScore(score);
+    }
+}
+
+void RaphaelNNUE::score_moves(chess::Movelist& movelist, const chess::Board& board) const {
+    for (auto& move : movelist) {
+        int16_t score = 0;
+
+        // assume noisy
+        if (board.isCapture(move)) {
+            // captures
+            auto attacker = board.at<chess::PieceType>(move.from());
+            auto victim = board.at<chess::PieceType>(move.to());
+            score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
+        }
+
+        score += SEE::goodCapture(move, board, -15) ? params.GOOD_NOISY_FLOOR
+                                                    : params.BAD_NOISY_FLOOR;
 
         move.setScore(score);
     }

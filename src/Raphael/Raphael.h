@@ -1,7 +1,6 @@
 #pragma once
 #include <GameEngine/GamePlayer.h>
 #include <Raphael/History.h>
-#include <Raphael/Killers.h>
 #include <Raphael/Transposition.h>
 #include <Raphael/nnue.h>
 #include <Raphael/options.h>
@@ -63,7 +62,6 @@ protected:
     // int ponderdepth = 1;     // depth we searched to during ponder
     // storage
     TranspositionTable tt;  // table with position, eval, and bestmove
-    Killers killers;        // 2 killer moves at each ply
     History history;        // history score for each move
     // nnue
     Nnue net;
@@ -89,8 +87,8 @@ protected:
     struct SearchStack {
         PVList pv;
         chess::Move move = chess::Move::NO_MOVE;
+        chess::Move killer = chess::Move::NO_MOVE;
         int static_eval = 0;
-        // TODO: move killers here
     };
 
 
@@ -207,19 +205,26 @@ protected:
     int quiescence(chess::Board& board, const int ply, int alpha, int beta, volatile bool& halt);
 
 
-    /** Assigns scores to a list of move
+    /** Assigns scores to a list of moves
      *
      * \param movelist movelist to score
      * \param ttmove transposition table move
      * \param board current board
-     * \param ply current distance from root
+     * \param ss search stack at current ply
      */
     void score_moves(
         chess::Movelist& movelist,
         const chess::Move& ttmove,
         const chess::Board& board,
-        const int ply
+        const SearchStack* ss
     ) const;
+
+    /** Assigns scores to a list of quiet moves
+     *
+     * \param movelist movelist to score
+     * \param board current board
+     */
+    void score_moves(chess::Movelist& movelist, const chess::Board& board) const;
 
     /** Picks the movei'th best move in the movelist
      *

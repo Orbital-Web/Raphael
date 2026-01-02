@@ -90,6 +90,8 @@ chess::Move RaphaelNNUE::get_move(
 
     // stop search after an appropriate duration
     start_search_timer(board, t_remain, t_inc);
+    const bool exit_on_mate = !searchopt.infinite && searchopt.maxdepth == -1
+                              && searchopt.movetime == -1 && searchopt.maxnodes == -1;
 
     // begin iterative deepening
     while (!halt && depth <= MAX_DEPTH) {
@@ -138,7 +140,7 @@ chess::Move RaphaelNNUE::get_move(
                      << flush;
             }
 #endif
-            if (!searchopt.infinite) halt = true;
+            if (exit_on_mate) halt = true;
         } else if (UCI) {
             const auto now = ch::high_resolution_clock::now();
             const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();

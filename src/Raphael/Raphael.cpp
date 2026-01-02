@@ -68,7 +68,7 @@ void RaphaelNNUE::set_option(SetSpinOption option) {
 void RaphaelNNUE::set_searchoptions(SearchOptions options) { searchopt = options; }
 
 
-chess::Move RaphaelNNUE::get_move(
+RaphaelNNUE::MoveEval RaphaelNNUE::get_move(
     chess::Board board,
     const int t_remain,
     const int t_inc,
@@ -171,7 +171,7 @@ chess::Move RaphaelNNUE::get_move(
              << flush;
     }
 #endif
-    return bestmove;
+    return {bestmove, eval};
 }
 
 void RaphaelNNUE::ponder(chess::Board board, volatile bool& halt) {  // FIXME:

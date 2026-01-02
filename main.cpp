@@ -1,7 +1,6 @@
 #include <GameEngine/GameEngine.h>
 #include <GameEngine/HumanPlayer.h>
 #include <Raphael/Raphael.h>
-#include <Raphael/Raphael_hce.h>
 #include <string.h>
 
 #include <climits>
@@ -27,15 +26,12 @@ cge::GamePlayer* player_factory(char* playertype, char* name) {
         return new cge::HumanPlayer(name);
     else if (!strcmp(playertype, "Raphael"))
         return new Raphael::RaphaelNNUE(name);
-    else if (!strcmp(playertype, "RaphaelHCE"))
-        return new Raphael::RaphaelHCE(name);
 
     // invalid
     printf("Invalid player type: %s\n", playertype);
     printf("Valid player types are:\n");
     printf("   human:         Human-controlled player\n");
     printf("   Raphael:       Raphael %s\n", Raphael::RaphaelNNUE::version.c_str());
-    printf("   RaphaelHCE:    Raphael %s\n", Raphael::RaphaelHCE::version.c_str());
     return nullptr;
 }
 

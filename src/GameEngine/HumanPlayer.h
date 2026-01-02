@@ -21,7 +21,7 @@ public:
      * \param halt bool reference which will turn false to indicate search should stop
      * \returns the move made by the human
      */
-    chess::Move get_move(
+    MoveEval get_move(
         chess::Board board,
         const int t_remain,
         const int t_inc,

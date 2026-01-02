@@ -10,14 +10,14 @@ UCIPlayer::UCIPlayer(string name_in): GamePlayer(name_in) {
 }
 
 
-chess::Move UCIPlayer::get_move(
+UCIPlayer::MoveEval UCIPlayer::get_move(
     chess::Board board,
     const int t_remain,
     const int t_inc,
     volatile MouseInfo& mouse,
     volatile bool& halt
 ) {
-    return chess::Move::NO_MOVE;
+    return {chess::Move::NO_MOVE, 0};
 }
 
 

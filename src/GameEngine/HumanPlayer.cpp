@@ -11,7 +11,7 @@ using std::string;
 HumanPlayer::HumanPlayer(string name_in): GamePlayer(name_in) {}
 
 
-chess::Move HumanPlayer::get_move(
+HumanPlayer::MoveEval HumanPlayer::get_move(
     chess::Board board,
     const int t_remain,
     const int t_inc,
@@ -47,7 +47,7 @@ chess::Move HumanPlayer::get_move(
                 if (sq_from != chess::Square::NO_SQ && sq_from != sq) {
                     chess::Move move = move_if_valid(sq_from, sq, movelist, board);
                     if (move != chess::Move::NO_MOVE)
-                        return move;
+                        return {move, 0};
                     else
                         sq_from = chess::Square::NO_SQ;
                 }
@@ -55,7 +55,7 @@ chess::Move HumanPlayer::get_move(
         }
         if (mouse.event == MouseEvent::RMBDOWN) sq_from = chess::Square::NO_SQ;
     }
-    return chess::Move::NO_MOVE;
+    return {chess::Move::NO_MOVE, 0};
 }
 
 

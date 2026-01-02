@@ -17,6 +17,11 @@ public:
     inline static const std::string version = "0.0.0.0";
     std::string name;
 
+    struct MoveEval {
+        chess::Move move;
+        int eval;
+    };
+
 
 public:
     /** Initializes a GamePlayer
@@ -28,16 +33,16 @@ public:
     /** Destructor of GamePlayer */
     virtual ~GamePlayer();
 
-    /** Returns a valid move string. Should return immediately if halt becomes true.
+    /** Returns a move and its evaluation. Should return immediately if halt becomes true.
      *
      * \param board current board
      * \param t_remain time remaining in ms
      * \param t_inc increment after move in ms
      * \param mouse contains mouse movement info for human players
      * \param halt bool reference which will turn false to indicate search should stop
-     * \returns the best move it found
+     * \returns the found MoveEval
      */
-    virtual chess::Move get_move(
+    virtual MoveEval get_move(
         chess::Board board,
         const int t_remain,
         const int t_inc,

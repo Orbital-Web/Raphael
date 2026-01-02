@@ -114,7 +114,7 @@ void GameEngine::run_match(const GameOptions& options) {
         }
 
         // play move
-        auto toPlay = movereceiver.get();
+        auto toPlay = movereceiver.get().move;
         if (toPlay == chess::Move::NO_MOVE
             || std::find(movelist.begin(), movelist.end(), toPlay) == movelist.end()) {
             if (toPlay == chess::Move::NO_MOVE) {

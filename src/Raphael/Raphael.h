@@ -122,9 +122,9 @@ public:
      * \param t_inc increment after move in ms
      * \param mouse unused
      * \param halt bool reference which will turn false to indicate search should stop
-     * \returns the best move it found
+     * \returns the best move and its evaluation
      */
-    chess::Move get_move(
+    MoveEval get_move(
         chess::Board board,
         const int t_remain,
         const int t_inc,

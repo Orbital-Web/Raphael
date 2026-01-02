@@ -207,29 +207,26 @@ protected:
     int quiescence(chess::Board& board, const int ply, int alpha, int beta, volatile bool& halt);
 
 
-    /** Sorts the movelist from best to worst
+    /** Assigns scores to a list of move
      *
-     * \param movelist movelist to sort
+     * \param movelist movelist to score
      * \param ttmove transposition table move
      * \param board current board
      * \param ply current distance from root
      */
-    void order_moves(
+    void score_moves(
         chess::Movelist& movelist,
         const chess::Move& ttmove,
         const chess::Board& board,
         const int ply
     ) const;
 
-    /** Assigns a score to a move
+    /** Picks the movei'th best move in the movelist
      *
-     * \param move move to score
-     * \param ttmove transposition table move
-     * \param board current board
-     * \param ply current distance from root
+     * \param movei index to pick
+     * \param movelist movelist to pick from
+     * \returns the chosen move in the movelist
      */
-    void score_move(
-        chess::Move& move, const chess::Move& ttmove, const chess::Board& board, const int ply
-    ) const;
+    chess::Move pick_move(const int movei, chess::Movelist& movelist);
 };
 };  // namespace Raphael

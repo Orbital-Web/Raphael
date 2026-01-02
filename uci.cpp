@@ -84,7 +84,7 @@ void setoption(const vector<string>& tokens) {
         }
 
         lock_guard<mutex> lock(cout_mutex);
-        cout << "Set table size to " << tablesize_mb << "MB\n" << flush;
+        cout << "info string set hash size to " << tablesize_mb << "MB\n" << flush;
     }
 }
 

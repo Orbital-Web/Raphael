@@ -16,8 +16,8 @@ using std::cout, std::flush;
 using std::fixed, std::setprecision;
 using std::max, std::min;
 using std::mutex, std::lock_guard;
-using std::stable_sort;
 using std::string;
+using std::swap;
 namespace ch = std::chrono;
 
 #define whiteturn (board.sideToMove() == chess::Color::WHITE)
@@ -322,18 +322,18 @@ int RaphaelNNUE::negamax(
     // one reply extension
     int extension = 0;
     if (movelist.size() > 1)
-        order_moves(movelist, ttmove, board, ply);
+        score_moves(movelist, ttmove, board, ply);
     else
         extension++;
 
     // search
-    int movei = 0;
     const int alphaorig = alpha;
     int besteval = -INT_MAX;
     chess::Move bestmove = chess::Move::NO_MOVE;
     killers.clear_ply(ply + 1);
 
-    for (const auto& move : movelist) {
+    for (int movei = 0; movei < movelist.size(); movei++) {
+        const auto move = pick_move(movei, movelist);
         const bool is_quiet = !board.isCapture(move) && move.typeOf() != chess::Move::PROMOTION;
         if (is_quiet) quietlist.add(move);
 
@@ -361,7 +361,6 @@ int RaphaelNNUE::negamax(
 
         board.unmakeMove(move);
         extension = 0;
-        movei++;
 
         if (eval > besteval) {
             besteval = eval;
@@ -416,9 +415,11 @@ int RaphaelNNUE::quiescence(
     // search
     chess::Movelist movelist;
     chess::movegen::legalmoves<chess::movegen::MoveGenType::CAPTURE>(movelist, board);
-    order_moves(movelist, chess::Move::NO_MOVE, board, 0);
+    score_moves(movelist, chess::Move::NO_MOVE, board, ply);
 
-    for (const auto& move : movelist) {
+    for (int movei = 0; movei < movelist.size(); movei++) {
+        const auto move = pick_move(movei, movelist);
+
         // delta pruning
         if (SEE::estimate(move, board) + besteval + params.DELTA_THRESHOLD < alpha) continue;
 
@@ -442,46 +443,55 @@ int RaphaelNNUE::quiescence(
 }
 
 
-void RaphaelNNUE::order_moves(
+void RaphaelNNUE::score_moves(
     chess::Movelist& movelist, const chess::Move& ttmove, const chess::Board& board, const int ply
 ) const {
-    for (auto& move : movelist) score_move(move, ttmove, board, ply);
-    stable_sort(movelist.begin(), movelist.end(), [](const chess::Move& a, const chess::Move& b) {
-        return a.score() > b.score();
-    });
-}
-
-void RaphaelNNUE::score_move(
-    chess::Move& move, const chess::Move& ttmove, const chess::Board& board, const int ply
-) const {
-    // prioritize transposition table move
-    if (move == ttmove) {
-        move.setScore(INT16_MAX);
-        return;
-    }
-
-    int16_t score = 0;
-    const bool is_capture = board.isCapture(move);
-    const bool is_quiet = !is_capture && move.typeOf() != chess::Move::PROMOTION;
-
-    if (!is_quiet) {
-        // noisy moves
-        if (is_capture) {
-            // captures
-            auto attacker = board.at<chess::PieceType>(move.from());
-            auto victim = board.at<chess::PieceType>(move.to());
-            score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
+    for (auto& move : movelist) {
+        // prioritize transposition table move
+        if (move == ttmove) {
+            move.setScore(INT16_MAX);
+            continue;
         }
 
-        score += SEE::goodCapture(move, board, -15) ? params.GOOD_NOISY_FLOOR
-                                                    : params.BAD_NOISY_FLOOR;
+        int16_t score = 0;
+        const bool is_capture = board.isCapture(move);
+        const bool is_quiet = !is_capture && move.typeOf() != chess::Move::PROMOTION;
 
-    } else if (ply > 0 && killers.is_killer(move, ply))
-        // killer moves
-        score = params.KILLER_FLOOR;
-    else
-        // quiet moves
-        score = history.get(move, whiteturn);
+        if (!is_quiet) {
+            // noisy moves
+            if (is_capture) {
+                // captures
+                auto attacker = board.at<chess::PieceType>(move.from());
+                auto victim = board.at<chess::PieceType>(move.to());
+                score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
+            }
 
-    move.setScore(score);
+            score += SEE::goodCapture(move, board, -15) ? params.GOOD_NOISY_FLOOR
+                                                        : params.BAD_NOISY_FLOOR;
+
+        } else if (ply > 0 && killers.is_killer(move, ply))
+            // killer moves
+            score = params.KILLER_FLOOR;
+        else
+            // quiet moves
+            score = history.get(move, whiteturn);
+
+        move.setScore(score);
+    }
+}
+
+chess::Move RaphaelNNUE::pick_move(const int movei, chess::Movelist& movelist) {
+    int besti = movei;
+    auto bestscore = movelist[movei].score();
+
+    for (int i = movei + 1; i < movelist.size(); i++) {
+        if (movelist[i].score() > bestscore) {
+            bestscore = movelist[i].score();
+            besti = i;
+        }
+    }
+
+    if (besti != movei) swap(movelist[movei], movelist[besti]);
+
+    return movelist[movei];
 }

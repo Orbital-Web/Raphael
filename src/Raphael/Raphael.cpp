@@ -84,8 +84,6 @@ chess::Move RaphaelNNUE::get_move(
     int alpha = -INT_MAX;
     int beta = INT_MAX;
     chess::Move bestmove = chess::Move::NO_MOVE;
-    chess::Move prevbest = chess::Move::NO_MOVE;
-    int consecutives = 0;
 
     SearchStack stack[MAX_DEPTH + 3];
     SearchStack* ss = &stack[2];
@@ -98,11 +96,6 @@ chess::Move RaphaelNNUE::get_move(
         // max depth override
         if (searchopt.maxdepth != -1 && depth > searchopt.maxdepth) break;
 
-        // stable pv, skip
-        if (eval >= params.MIN_SKIP_EVAL && consecutives >= params.PV_STABLE_COUNT
-            && !searchopt.infinite)
-            halt = true;
-
         const int itereval = negamax<true>(board, depth, 0, alpha, beta, ss, halt);
         if (halt) break;  // don't use results if timeout
 
@@ -110,7 +103,6 @@ chess::Move RaphaelNNUE::get_move(
         if ((itereval <= alpha) || (itereval >= beta)) {
             alpha = -INT_MAX;
             beta = INT_MAX;
-            consecutives = 1;
             continue;
         }
 
@@ -121,14 +113,6 @@ chess::Move RaphaelNNUE::get_move(
         alpha = eval - params.ASPIRATION_WINDOW;
         beta = eval + params.ASPIRATION_WINDOW;
         depth++;
-
-        // count consecutive bestmove
-        if (bestmove == prevbest)
-            consecutives++;
-        else {
-            prevbest = bestmove;
-            consecutives = 1;
-        }
 
         // checkmate, no need to continue
         if (tt.isMate(eval)) {

@@ -23,8 +23,6 @@ public:
 
         // search
         static constexpr int ASPIRATION_WINDOW = 50;  // size of aspiration window
-        static constexpr int PV_STABLE_COUNT = 6;  // consecutive bestmoves to consider pv as stable
-        static constexpr int MIN_SKIP_EVAL = 400;  // minimum eval to halt early if pv is stable
 
         // negamax
         static constexpr int RFP_DEPTH = 7;       // from which depth to apply rfp

@@ -82,7 +82,7 @@ void setoption(const vector<string>& tokens) {
     if (tokens[4] == "true" || tokens[4] == "false") {
         const bool value = (tokens[4][0] == 't');
         lock_guard<mutex> engine_lock(engine_mutex);
-        engine.set_option(SetCheckOption{.name = tokens[2], .value = value});
+        engine.set_option(tokens[2], value);
         return;
     }
 
@@ -95,7 +95,14 @@ void setoption(const vector<string>& tokens) {
     }
 
     lock_guard<mutex> engine_lock(engine_mutex);
-    engine.set_option(SetSpinOption{.name = tokens[2], .value = value});
+#ifdef TUNE
+    if (Raphael::set_tunable(tokens[2], value)) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string set " << tokens[2] << " to " << value << "\n" << flush;
+        return;
+    }
+#endif
+    engine.set_option(tokens[2], value);
 }
 
 
@@ -184,9 +191,12 @@ int main() {
             lock_guard<mutex> lock(cout_mutex);
             cout << "id name " << engine.name << " " << engine.version << "\n"
                  << "id author Rei Meguro\n"
-                 << engine.params.hash.to_string() << engine.params.softnodes.to_string()
-                 << engine.params.softhardmult.to_string() << "uciok\n"
-                 << flush;
+                 << engine.params.hash.uci() << engine.params.softnodes.uci()
+                 << engine.params.softhardmult.uci();
+#ifdef TUNE
+            for (const auto tunable : Raphael::tunables) cout << tunable->uci();
+#endif
+            cout << "uciok\n" << flush;
 
         } else if (uci_command == "isready") {
             lock_guard<mutex> lock(cout_mutex);

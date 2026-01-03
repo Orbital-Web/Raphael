@@ -18,36 +18,14 @@ public:
 
     struct EngineOptions {
         // uci options
-        SpinOption hash;
+        SpinOption<false> hash;
 
         // other options
         CheckOption softnodes;
-        SpinOption softhardmult;
-
-        // search
-        static constexpr int ASPIRATION_WINDOW = 50;  // size of aspiration window
-
-        // negamax
-        static constexpr int RFP_DEPTH = 6;       // max depth to apply rfp from
-        static constexpr int RFP_MARGIN = 77;     // depth margin scale for rfp
-        static constexpr int NMP_DEPTH = 3;       // depth to apply nmp from
-        static constexpr int NMP_REDUCTION = 4;   // depth reduction for nmp
-        static constexpr int REDUCTION_FROM = 5;  // movei to apply lmr from
-
-        // quiescence
-        static constexpr int DELTA_THRESHOLD = 400;  // safety margin for delta pruning
-
-        // move ordering
-        static constexpr int GOOD_NOISY_FLOOR = 30000;  // good captures/promotions <=30500
-        static constexpr int KILLER_FLOOR = 21000;      // killer moves
-        static constexpr int BAD_NOISY_FLOOR = -20000;  // bad captures/promotions <=-19500
-
-        static constexpr int HISTORY_BONUS_SCALE = 100;
-        static constexpr int HISTORY_BONUS_OFFSET = 100;
-        static constexpr int HISTORY_BONUS_MAX = 2000;
-        static constexpr int HISTORY_MAX = 16384;
+        SpinOption<false> softhardmult;
     };
-    static EngineOptions params;  // TODO: rework once spsa, this shouldn't be static
+    static const EngineOptions default_params;
+    EngineOptions params;
 
     struct SearchOptions {
         int64_t maxnodes = -1;
@@ -107,10 +85,11 @@ public:
 
     /** Sets Raphael's engine options
      *
-     * \param option option to set
+     * \param name name of option to set
+     * \param value value to set to
      */
-    void set_option(const SetSpinOption& option);
-    void set_option(const SetCheckOption& option);
+    void set_option(const std::string& name, const int value);
+    void set_option(const std::string& name, const bool value);
 
     /** Sets Raphael's search options
      *

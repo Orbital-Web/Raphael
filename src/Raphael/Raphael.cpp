@@ -28,25 +28,22 @@ extern const bool UCI;
 
 const string RaphaelNNUE::version = "2.1.0.0";
 
-RaphaelNNUE::EngineOptions RaphaelNNUE::params{
+const RaphaelNNUE::EngineOptions RaphaelNNUE::default_params{
     .hash = {
-             .name = "Hash",
-             .min = 1,
-             .max = TranspositionTable::MAX_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
-             .def = TranspositionTable::DEF_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
-             .value = TranspositionTable::DEF_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
-             },
+        "Hash",
+        TranspositionTable::DEF_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
+        1,
+        TranspositionTable::MAX_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
+    },
     .softnodes = {
-        .name = "Softnodes",
-        .def = false,
-        .value = false,
+        "Softnodes",
+        false,
     },
     .softhardmult = {
-        .name = "SoftNodeHardLimitMultiplier",
-        .min = 1,
-        .max = 5000,
-        .def = 1678,
-        .value = 1678,
+        "SoftNodeHardLimitMultiplier",
+        1678,
+        1,
+        5000,
     }
 };
 
@@ -61,47 +58,45 @@ void RaphaelNNUE::PVList::update(const chess::Move move, const PVList& child) {
 
 RaphaelNNUE::RaphaelNNUE(string name_in)
     : GamePlayer(name_in),
-      tt(params.hash),
-      history(
-          params.HISTORY_BONUS_MAX,
-          params.HISTORY_BONUS_OFFSET,
-          params.HISTORY_BONUS_SCALE,
-          params.HISTORY_MAX
-      ) {}
+      params(default_params),
+      tt(default_params.hash),
+      history(HISTORY_BONUS_MAX, HISTORY_BONUS_OFFSET, HISTORY_BONUS_SCALE, HISTORY_MAX) {}
 
 
-void RaphaelNNUE::set_option(const SetSpinOption& option) {
-    for (SpinOption* p : {&params.hash, &params.softhardmult}) {
-        if (option.name != p->name) continue;
+void RaphaelNNUE::set_option(const std::string& name, const int value) {
+    for (const auto p : {&params.hash, &params.softhardmult}) {
+        if (p->name != name) continue;
 
         // error checking
-        if (option.value < p->min || option.value > p->max) {
+        if (value < p->min || value > p->max) {
             lock_guard<mutex> lock(cout_mutex);
-            cout << p->error_string() << flush;
+            cout << "info string error: option '" << p->name << "' value must be within min "
+                 << p->min << " max " << p->max << "\n"
+                 << flush;
             return;
         }
 
         // set value
-        p->set(option.value);
-        if (p->name == params.hash.name) tt.resize(option.value);
+        p->set(value);
+        if (p->name == params.hash.name) tt.resize(value);
 
         lock_guard<mutex> lock(cout_mutex);
-        cout << "info string set " << p->name << " to " << option.value << "\n" << flush;
+        cout << "info string set " << p->name << " to " << value << "\n" << flush;
         return;
     }
 
     lock_guard<mutex> lock(cout_mutex);
-    cout << "info string error: unknown spin option '" << option.name << "'\n" << flush;
+    cout << "info string error: unknown spin option '" << name << "'\n" << flush;
 }
-void RaphaelNNUE::set_option(const SetCheckOption& option) {
+void RaphaelNNUE::set_option(const std::string& name, const bool value) {
     for (CheckOption* p : {&params.softnodes}) {
-        if (option.name != p->name) continue;
+        if (p->name != name) continue;
 
         // set value
-        p->set(option.value);
+        p->set(value);
 
         lock_guard<mutex> lock(cout_mutex);
-        if (option.value)
+        if (value)
             cout << "info string enabled " << p->name << "\n" << flush;
         else
             cout << "info string disabled " << p->name << "\n" << flush;
@@ -109,7 +104,7 @@ void RaphaelNNUE::set_option(const SetCheckOption& option) {
     }
 
     lock_guard<mutex> lock(cout_mutex);
-    cout << "info string error: unknown check option '" << option.name << "'\n" << flush;
+    cout << "info string error: unknown check option '" << name << "'\n" << flush;
 }
 
 void RaphaelNNUE::set_searchoptions(SearchOptions options) { searchopt = options; }
@@ -159,8 +154,8 @@ RaphaelNNUE::MoveEval RaphaelNNUE::get_move(
         bestmove = ss->pv.moves[0];
 
         // narrow window
-        alpha = eval - params.ASPIRATION_WINDOW;
-        beta = eval + params.ASPIRATION_WINDOW;
+        alpha = eval - ASPIRATION_WINDOW;
+        beta = eval + ASPIRATION_WINDOW;
         depth++;
 
         // checkmate, no need to continue
@@ -333,21 +328,20 @@ int RaphaelNNUE::negamax(
     // pre-moveloop pruning
     if (!is_PV && ply && !in_check) {
         // reverse futility pruning
-        const int rfp_margin = params.RFP_MARGIN * depth;
-        if (depth <= params.RFP_DEPTH && ss->static_eval - rfp_margin >= beta)
-            return ss->static_eval;
+        const int rfp_margin = RFP_MARGIN * depth;
+        if (depth <= RFP_DEPTH && ss->static_eval - rfp_margin >= beta) return ss->static_eval;
 
         // null move pruning
         const auto side = board.sideToMove();
         const bool non_pk
             = ((board.us(side) ^ board.pieces(chess::PieceType::PAWN, side)).count() > 1);
-        if (depth >= params.NMP_DEPTH && non_pk && ss->static_eval >= beta
+        if (depth >= NMP_DEPTH && non_pk && ss->static_eval >= beta
             && (ss - 1)->move != chess::Move::NULL_MOVE && non_pk) {
             board.makeNullMove();
             net.make_move(ply + 1, chess::Move::NULL_MOVE, board);
             ss->move = chess::Move::NULL_MOVE;
 
-            const int red_depth = depth - params.NMP_REDUCTION;
+            const int red_depth = depth - NMP_REDUCTION;
             const int eval
                 = -negamax<false>(board, red_depth, ply + 1, -beta, -beta + 1, ss + 1, halt);
 
@@ -393,7 +387,7 @@ int RaphaelNNUE::negamax(
         // principle variation search
         int eval;
         const int new_depth = depth - 1 + extension;
-        if (depth >= 3 && movei >= params.REDUCTION_FROM && is_quiet) {
+        if (depth >= 3 && movei >= REDUCTION_FROM && is_quiet) {
             // late move reduction
             const int red_depth = max(new_depth - 1, 0);
             eval = -negamax<false>(board, red_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
@@ -467,7 +461,7 @@ int RaphaelNNUE::quiescence(
         const auto move = pick_move(movei, movelist);
 
         // delta pruning
-        if (SEE::estimate(move, board) + besteval + params.DELTA_THRESHOLD < alpha) continue;
+        if (SEE::estimate(move, board) + besteval + DELTA_THRESHOLD < alpha) continue;
 
         net.make_move(ply + 1, move, board);
         board.makeMove(move);
@@ -515,12 +509,11 @@ void RaphaelNNUE::score_moves(
                 score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
             }
 
-            score += SEE::goodCapture(move, board, -15) ? params.GOOD_NOISY_FLOOR
-                                                        : params.BAD_NOISY_FLOOR;
+            score += SEE::goodCapture(move, board, -15) ? GOOD_NOISY_FLOOR : BAD_NOISY_FLOOR;
 
         } else if (move == ss->killer)
             // killer moves
-            score = params.KILLER_FLOOR;
+            score = KILLER_FLOOR;
         else
             // quiet moves
             score = history.get(move, whiteturn);
@@ -541,8 +534,7 @@ void RaphaelNNUE::score_moves(chess::Movelist& movelist, const chess::Board& boa
             score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
         }
 
-        score += SEE::goodCapture(move, board, -15) ? params.GOOD_NOISY_FLOOR
-                                                    : params.BAD_NOISY_FLOOR;
+        score += SEE::goodCapture(move, board, -15) ? GOOD_NOISY_FLOOR : BAD_NOISY_FLOOR;
 
         move.setScore(score);
     }

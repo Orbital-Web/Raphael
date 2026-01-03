@@ -132,13 +132,19 @@ RaphaelNNUE::MoveEval RaphaelNNUE::get_move(
 
     // stop search after an appropriate duration
     start_search_timer(board, t_remain, t_inc);
+
+    // exit on mate if not infinite, maxdepth & movetime not set, maxnodes not set or is softnodes
     const bool exit_on_mate = !searchopt.infinite && searchopt.maxdepth == -1
-                              && searchopt.movetime == -1 && searchopt.maxnodes == -1;
+                              && searchopt.movetime == -1
+                              && (searchopt.maxnodes == -1 || params.softnodes);
 
     // begin iterative deepening
     while (!halt && depth <= MAX_DEPTH) {
         // max depth override
         if (searchopt.maxdepth != -1 && depth > searchopt.maxdepth) break;
+
+        // soft nodes override
+        if (params.softnodes && searchopt.maxnodes != -1 && nodes >= searchopt.maxnodes) break;
 
         const int itereval = negamax<true>(board, depth, 0, alpha, beta, ss, halt);
         if (halt) break;  // don't use results if timeout
@@ -259,7 +265,8 @@ void RaphaelNNUE::start_search_timer(
 
 bool RaphaelNNUE::is_time_over(volatile bool& halt) const {
     // if max nodes is specified, check that instead
-    if (searchopt.maxnodes != -1 && nodes >= searchopt.maxnodes) {
+    if (searchopt.maxnodes != -1
+        && nodes >= searchopt.maxnodes * ((params.softnodes) ? params.softhardmult : 1)) {
         halt = true;
         return true;
     }

@@ -191,8 +191,8 @@ int main() {
             lock_guard<mutex> lock(cout_mutex);
             cout << "id name " << engine.name << " " << engine.version << "\n"
                  << "id author Rei Meguro\n"
-                 << engine.params.hash.uci() << engine.params.softnodes.uci()
-                 << engine.params.softhardmult.uci();
+                 << engine.default_params.hash.uci() << engine.default_params.softnodes.uci()
+                 << engine.default_params.softhardmult.uci();
 #ifdef TUNE
             for (const auto tunable : Raphael::tunables) cout << tunable->uci();
 #endif

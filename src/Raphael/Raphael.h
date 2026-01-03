@@ -25,7 +25,6 @@ public:
         SpinOption<false> softhardmult;
     };
     static const EngineOptions default_params;
-    EngineOptions params;
 
     struct SearchOptions {
         int64_t maxnodes = -1;
@@ -35,8 +34,9 @@ public:
         bool infinite = false;
     };
 
-protected:
+private:
     // search
+    EngineOptions params;
     SearchOptions searchopt;  // limit depth, nodes, or movetime
     // ponder FIXME:
     // uint64_t ponderkey = 0;  // hash after opponent's best response
@@ -127,7 +127,7 @@ public:
     /** Resets Raphael */
     void reset();
 
-protected:
+private:
     /** Estimates the time in ms Raphael should spent on searching a move, and sets search_t. Should
      * be called at the start before using is_time_over.
      *

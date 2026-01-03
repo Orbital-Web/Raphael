@@ -36,6 +36,18 @@ RaphaelNNUE::EngineOptions RaphaelNNUE::params{
              .def = TranspositionTable::DEF_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
              .value = TranspositionTable::DEF_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
              },
+    .softnodes = {
+        .name = "Softnodes",
+        .def = false,
+        .value = false,
+    },
+    .softhardmult = {
+        .name = "SoftNodeHardLimitMultiplier",
+        .min = 1,
+        .max = 5000,
+        .def = 1678,
+        .value = 1678,
+    }
 };
 
 
@@ -58,11 +70,46 @@ RaphaelNNUE::RaphaelNNUE(string name_in)
       ) {}
 
 
-void RaphaelNNUE::set_option(SetSpinOption option) {
-    if (option.name == "Hash") {
-        params.hash.set(option.value);
-        tt.resize(option.value);
+void RaphaelNNUE::set_option(const SetSpinOption& option) {
+    for (SpinOption* p : {&params.hash, &params.softhardmult}) {
+        if (option.name != p->name) continue;
+
+        // error checking
+        if (option.value < p->min || option.value > p->max) {
+            lock_guard<mutex> lock(cout_mutex);
+            cout << p->error_string() << flush;
+            return;
+        }
+
+        // set value
+        p->set(option.value);
+        if (p->name == params.hash.name) tt.resize(option.value);
+
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string set " << p->name << " to " << option.value << "\n" << flush;
+        return;
     }
+
+    lock_guard<mutex> lock(cout_mutex);
+    cout << "info string error: unknown spin option '" << option.name << "'\n" << flush;
+}
+void RaphaelNNUE::set_option(const SetCheckOption& option) {
+    for (CheckOption* p : {&params.softnodes}) {
+        if (option.name != p->name) continue;
+
+        // set value
+        p->set(option.value);
+
+        lock_guard<mutex> lock(cout_mutex);
+        if (option.value)
+            cout << "info string enabled " << p->name << "\n" << flush;
+        else
+            cout << "info string disabled " << p->name << "\n" << flush;
+        return;
+    }
+
+    lock_guard<mutex> lock(cout_mutex);
+    cout << "info string error: unknown check option '" << option.name << "'\n" << flush;
 }
 
 void RaphaelNNUE::set_searchoptions(SearchOptions options) { searchopt = options; }

@@ -20,6 +20,10 @@ public:
         // uci options
         SpinOption hash;
 
+        // other options
+        CheckOption softnodes;
+        SpinOption softhardmult;
+
         // search
         static constexpr int ASPIRATION_WINDOW = 50;  // size of aspiration window
 
@@ -43,7 +47,7 @@ public:
         static constexpr int HISTORY_BONUS_MAX = 2000;
         static constexpr int HISTORY_MAX = 16384;
     };
-    static EngineOptions params;
+    static EngineOptions params;  // TODO: rework once spsa, this shouldn't be static
 
     struct SearchOptions {
         int64_t maxnodes = -1;
@@ -105,7 +109,8 @@ public:
      *
      * \param option option to set
      */
-    void set_option(SetSpinOption option);
+    void set_option(const SetSpinOption& option);
+    void set_option(const SetCheckOption& option);
 
     /** Sets Raphael's search options
      *

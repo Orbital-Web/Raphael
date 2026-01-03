@@ -11,6 +11,7 @@
 #include <vector>
 
 using std::cin, std::cout, std::flush;
+using std::exception;
 using std::string, std::stoi, std::stoll;
 using std::stringstream;
 using std::thread, std::mutex, std::unique_lock, std::lock_guard, std::condition_variable;
@@ -75,17 +76,26 @@ void handle_search() {
  */
 void setoption(const vector<string>& tokens) {
     if (tokens.size() != 5) return;
+    if (tokens[1] != "name" || tokens[3] != "value") return;
 
-    if (tokens[2] == "Hash") {
-        uint32_t tablesize_mb = stoi(tokens[4]);
-        {
-            lock_guard<mutex> engine_lock(engine_mutex);
-            engine.set_option(SetSpinOption{.name = "Hash", .value = tablesize_mb});
-        }
-
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "info string set hash size to " << tablesize_mb << "MB\n" << flush;
+    // check option
+    if (tokens[4] == "true" || tokens[4] == "false") {
+        const bool value = (tokens[4][0] == 't');
+        lock_guard<mutex> engine_lock(engine_mutex);
+        engine.set_option(SetCheckOption{.name = tokens[2], .value = value});
+        return;
     }
+
+    // spin option
+    int value;
+    try {
+        value = stoi(tokens[4]);
+    } catch (const exception& e) {
+        return;
+    }
+
+    lock_guard<mutex> engine_lock(engine_mutex);
+    engine.set_option(SetSpinOption{.name = tokens[2], .value = value});
 }
 
 
@@ -174,7 +184,8 @@ int main() {
             lock_guard<mutex> lock(cout_mutex);
             cout << "id name " << engine.name << " " << engine.version << "\n"
                  << "id author Rei Meguro\n"
-                 << engine.params.hash.to_string() << "uciok\n"
+                 << engine.params.hash.to_string() << engine.params.softnodes.to_string()
+                 << engine.params.softhardmult.to_string() << "uciok\n"
                  << flush;
 
         } else if (uci_command == "isready") {

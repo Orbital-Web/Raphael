@@ -135,6 +135,8 @@ static constexpr int GOOD_NOISY_FLOOR = 30000;  // good captures/promotions <=30
 static constexpr int KILLER_FLOOR = 21000;      // killer moves
 static constexpr int BAD_NOISY_FLOOR = -20000;  // bad captures/promotions <=-19500
 
+Tunable(GOOD_NOISY_THRESH, 15);  // negative SEE threshold for good capture/promotion
+
 Tunable(HISTORY_BONUS_SCALE, 100);
 Tunable(HISTORY_BONUS_OFFSET, 100);
 Tunable(HISTORY_BONUS_MAX, 2000);

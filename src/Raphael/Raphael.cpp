@@ -62,10 +62,7 @@ void RaphaelNNUE::PVList::update(const chess::Move move, const PVList& child) {
 
 
 RaphaelNNUE::RaphaelNNUE(string name_in)
-    : GamePlayer(name_in),
-      params(default_params),
-      tt(default_params.hash),
-      history(HISTORY_BONUS_MAX, HISTORY_BONUS_OFFSET, HISTORY_BONUS_SCALE, HISTORY_MAX) {}
+    : GamePlayer(name_in), params(default_params), tt(default_params.hash) {}
 
 
 void RaphaelNNUE::set_option(const std::string& name, const int value) {
@@ -138,11 +135,6 @@ RaphaelNNUE::MoveEval RaphaelNNUE::get_move(
     // stop search after an appropriate duration
     start_search_timer(board, t_remain, t_inc);
 
-    // exit on mate if not infinite, maxdepth & movetime not set, maxnodes not set or is softnodes
-    const bool exit_on_mate = !searchopt.infinite && searchopt.maxdepth == -1
-                              && searchopt.movetime == -1
-                              && (searchopt.maxnodes == -1 || params.softnodes);
-
     // begin iterative deepening
     while (!halt && depth <= MAX_DEPTH) {
         // max depth override
@@ -171,9 +163,6 @@ RaphaelNNUE::MoveEval RaphaelNNUE::get_move(
 
         // print info
         if (UCI) print_uci_info(depth, eval, ss);
-
-        // checkmate, no need to continue
-        if (exit_on_mate && TranspositionTable::isMate(eval)) halt = true;
     }
 
     // last attempt to get bestmove
@@ -187,7 +176,7 @@ RaphaelNNUE::MoveEval RaphaelNNUE::get_move(
 #ifndef MUTEEVAL
     else {
         lock_guard<mutex> lock(cout_mutex);
-        if (TranspositionTable::isMate(eval)) {
+        if (TranspositionTable::is_mate(eval)) {
             const int mate_dist
                 = (((eval >= 0) == whiteturn) ? 1 : -1) * (MATE_EVAL - abs(eval) + 1) / 2;
             cout << "Eval: #" << mate_dist;
@@ -269,7 +258,7 @@ void RaphaelNNUE::print_uci_info(const int depth, const int eval, const SearchSt
     cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime << " nodes "
          << nodes;
 
-    if (TranspositionTable::isMate(eval)) {
+    if (TranspositionTable::is_mate(eval)) {
         const int mate_dist = ((eval >= 0) ? 1 : -1) * (MATE_EVAL - abs(eval) + 1) / 2;
         cout << " score mate " << mate_dist;
     } else
@@ -514,7 +503,8 @@ void RaphaelNNUE::score_moves(
                 score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
             }
 
-            score += SEE::goodCapture(move, board, -15) ? GOOD_NOISY_FLOOR : BAD_NOISY_FLOOR;
+            score += SEE::good_capture(move, board, -GOOD_NOISY_THRESH) ? GOOD_NOISY_FLOOR
+                                                                        : BAD_NOISY_FLOOR;
 
         } else if (move == ss->killer)
             // killer moves
@@ -539,7 +529,8 @@ void RaphaelNNUE::score_moves(chess::Movelist& movelist, const chess::Board& boa
             score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
         }
 
-        score += SEE::goodCapture(move, board, -15) ? GOOD_NOISY_FLOOR : BAD_NOISY_FLOOR;
+        score += SEE::good_capture(move, board, -GOOD_NOISY_THRESH) ? GOOD_NOISY_FLOOR
+                                                                    : BAD_NOISY_FLOOR;
 
         move.setScore(score);
     }

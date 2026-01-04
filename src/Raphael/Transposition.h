@@ -80,7 +80,7 @@ public:
      * \param eval the eval score
      * \returns whether the eval implies a mate or not
      */
-    static bool isMate(const int eval);
+    static bool is_mate(const int eval);
 
 private:
     /** Computes the index on the table

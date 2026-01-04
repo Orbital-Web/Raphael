@@ -33,7 +33,7 @@ const int VAL[13] = {
  */
 int pieceval(const chess::Square sq, const chess::Board& board);
 
-/** Returns the estimated SEE score (material gain)
+/** Returns the estimated material gain
  *
  * \param move the capture move
  * \param board current board
@@ -48,7 +48,7 @@ int estimate(const chess::Move& move, const chess::Board& board);
  */
 chess::Square lva(chess::Bitboard attackers, const chess::Board& board);
 
-/** A quicker version of SEE to just compute if a capture is good or bad
+/** A quick version of SEE to just compute if a capture is good or bad
  * https://github.com/rafid-dev/rice/blob/main/src/see.cpp#L5
  *
  * \param move the capture move
@@ -56,6 +56,6 @@ chess::Square lva(chess::Bitboard attackers, const chess::Board& board);
  * \param threshold minimum evaluation to count as good
  * \returns whether the capture is "good" or not
  */
-bool goodCapture(const chess::Move& move, const chess::Board& board, const int threshold);
+bool good_capture(const chess::Move& move, const chess::Board& board, const int threshold);
 }  // namespace SEE
 }  // namespace Raphael

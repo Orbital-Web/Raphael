@@ -67,7 +67,7 @@ public:
             }
 
             // checkmate, no need to continue
-            if (tt.isMate(eval)) return {MATE_EVAL, itermove};
+            if (tt.is_mate(eval)) return {MATE_EVAL, itermove};
         }
         return {eval, itermove};
     }

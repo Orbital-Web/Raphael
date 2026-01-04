@@ -68,7 +68,7 @@ bool TranspositionTable::valid(const Entry entry, const uint64_t key, const int 
 }
 
 
-bool TranspositionTable::isMate(const int eval) {
+bool TranspositionTable::is_mate(const int eval) {
     int abseval = abs(eval);
     return ((abseval <= MATE_EVAL) && (abseval > MATE_EVAL - 1000));
 }

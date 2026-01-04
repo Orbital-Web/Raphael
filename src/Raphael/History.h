@@ -6,24 +6,11 @@
 namespace Raphael {
 class History {  // based on https://www.chessprogramming.org/History_Heuristic
 private:
-    const int bonus_scale;
-    const int bonus_offset;
-    const int bonus_max;
-    const int history_max;
-
     int _history[2][64][64];
 
 public:
-    /** Initializes the storage with zeros
-     *
-     * \param bonus_scale depth multiplier scale of bonus
-     * \param bonus_offset offset to bonus
-     * \param bonus_max maximum bonus
-     * \param history_max maximum value of history score
-     */
-    History(
-        const int bonus_scale, const int bonus_offset, const int bonus_max, const int history_max
-    );
+    /** Initializes the history with zeros */
+    History();
 
     /** Updates the history with gravity
      *

@@ -32,7 +32,7 @@ chess::Square lva(chess::Bitboard attackers, const chess::Board& board) {
 }
 
 
-bool goodCapture(const chess::Move& move, const chess::Board& board, const int threshold) {
+bool good_capture(const chess::Move& move, const chess::Board& board, const int threshold) {
     const auto to = move.to();                        // where the exchange happens
     auto victim_sq = move.from();                     // capturer becomes next victim
     auto occ = board.occ().clear(victim_sq.index());  // remove capturer from occ

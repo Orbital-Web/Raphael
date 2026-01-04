@@ -328,7 +328,7 @@ int RaphaelNNUE::negamax(
     }
 
     const bool in_check = board.inCheck();
-    ss->static_eval = (entry.key == ttkey) ? entry.eval : net.evaluate(ply, whiteturn);
+    ss->static_eval = net.evaluate(ply, whiteturn);
 
     // pre-moveloop pruning
     if (!is_PV && ply && !in_check) {
@@ -352,7 +352,7 @@ int RaphaelNNUE::negamax(
 
             board.unmakeNullMove();
 
-            if (eval >= beta) return (beta > MATE_EVAL) ? beta : eval;
+            if (eval >= beta) return (eval >= MATE_EVAL - 1000) ? beta : eval;
         }
     }
 

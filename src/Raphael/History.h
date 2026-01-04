@@ -19,12 +19,7 @@ public:
      * \param depth depth of that move
      * \param side side playing the move
      */
-    void update(
-        const chess::Move bestmove,
-        const chess::Movelist& quietlist,
-        const int depth,
-        const int side
-    );
+    void update(const chess::Move& bestmove, const chess::Movelist& quietlist, int depth, int side);
 
     /** Returns the history heuristic
      *
@@ -32,7 +27,7 @@ public:
      * \param side side playing the move
      * \returns the stored history of that move
      */
-    int get(const chess::Move move, const int side) const;
+    int get(const chess::Move& move, int side) const;
 
     /** Zeros out the history */
     void clear();

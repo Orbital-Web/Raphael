@@ -6,7 +6,7 @@ using std::max;
 
 namespace Raphael {
 namespace SEE {
-int pieceval(const chess::Square sq, const chess::Board& board) { return VAL[(int)board.at(sq)]; }
+int pieceval(chess::Square sq, const chess::Board& board) { return VAL[(int)board.at(sq)]; }
 
 
 int estimate(const chess::Move& move, const chess::Board& board) {
@@ -32,7 +32,7 @@ chess::Square lva(chess::Bitboard attackers, const chess::Board& board) {
 }
 
 
-bool good_capture(const chess::Move& move, const chess::Board& board, const int threshold) {
+bool good_capture(const chess::Move& move, const chess::Board& board, int threshold) {
     const auto to = move.to();                        // where the exchange happens
     auto victim_sq = move.from();                     // capturer becomes next victim
     auto occ = board.occ().clear(victim_sq.index());  // remove capturer from occ

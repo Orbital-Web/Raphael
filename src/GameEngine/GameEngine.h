@@ -94,6 +94,6 @@ private:
      *
      * \param move_in the move to make
      */
-    void move(chess::Move move_in);
+    void move(const chess::Move& move_in);
 };
 }  // namespace cge

@@ -36,7 +36,7 @@ struct SpinOption {
      *
      * \param val value to set to
      */
-    void set(const int val) { value = val; }
+    void set(int val) { value = val; }
     operator int() const { return value; }
 
     /** Returns the UCI option info string
@@ -65,7 +65,7 @@ struct CheckOption {
      *
      * \param val value to set to
      */
-    void set(const bool val) { value = val; }
+    void set(bool val) { value = val; }
     operator bool() const { return value; }
 
     /** Returns the UCI option info string
@@ -88,7 +88,7 @@ inline std::vector<SpinOption<true>*> tunables;
  * \param value value to set to
  * \returns whether a parameter value was set or not
  */
-inline bool set_tunable(const std::string& name, const int value) {
+inline bool set_tunable(const std::string& name, int value) {
     for (const auto& tunable : tunables) {
         if (tunable->name == name) {
             // assume value is valid

@@ -9,14 +9,20 @@
 #include <string>
 
 using namespace cge;
-using std::async, std::future_status;
-using std::cout, std::fixed, std::setprecision;
+using std::async;
+using std::cout;
+using std::fixed;
+using std::future_status;
+using std::ios_base;
+using std::lock_guard;
 using std::min;
-using std::mutex, std::lock_guard;
-using std::ofstream, std::stringstream, std::ios_base;
+using std::mutex;
+using std::ofstream;
 using std::optional;
 using std::ref;
+using std::setprecision;
 using std::string;
+using std::stringstream;
 using std::vector;
 
 #define whiteturn (board.sideToMove() == chess::Color::WHITE)
@@ -396,7 +402,7 @@ void GameEngine::update_window() {
 }
 
 
-void GameEngine::move(chess::Move move_in) {
+void GameEngine::move(const chess::Move& move_in) {
     sq_from = move_in.from();
     sq_to = move_in.to();
     selectedtiles.clear();

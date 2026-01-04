@@ -28,7 +28,7 @@ public:
      *
      * \param name_in name of player
      */
-    GamePlayer(std::string name_in);
+    GamePlayer(const std::string& name_in);
 
     /** Destructor of GamePlayer */
     virtual ~GamePlayer();

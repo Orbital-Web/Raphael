@@ -6,10 +6,10 @@ using namespace Raphael;
 
 
 
-TranspositionTable::TranspositionTable(const uint32_t size_mb) { resize(size_mb); }
+TranspositionTable::TranspositionTable(uint32_t size_mb) { resize(size_mb); }
 
 
-void TranspositionTable::resize(const uint32_t size_mb) {
+void TranspositionTable::resize(uint32_t size_mb) {
     size = (uint64_t)size_mb * 1024 * 1024 / ENTRY_SIZE;
     assert((size > 0 && size <= MAX_TABLE_SIZE));  // size is within (0, MAX_TABLE_SIZE]
 
@@ -18,7 +18,7 @@ void TranspositionTable::resize(const uint32_t size_mb) {
 }
 
 
-TranspositionTable::Entry TranspositionTable::get(const uint64_t key, const int ply) const {
+TranspositionTable::Entry TranspositionTable::get(uint64_t key, int ply) const {
     // get
     const EntryStorage& entryst = _table[index(key)];
 
@@ -40,7 +40,7 @@ TranspositionTable::Entry TranspositionTable::get(const uint64_t key, const int 
 }
 
 
-void TranspositionTable::set(const Entry& entry, const int ply) {
+void TranspositionTable::set(const Entry& entry, int ply) {
     // correct mate eval when storing (https://youtu.be/XfeuxubYlT0)
     int eval = entry.eval;
     if (eval < -MATE_EVAL + 1000)
@@ -63,15 +63,15 @@ void TranspositionTable::set(const Entry& entry, const int ply) {
 void TranspositionTable::clear() { memset(_table.data(), 0, size * ENTRY_SIZE); }
 
 
-bool TranspositionTable::valid(const Entry entry, const uint64_t key, const int depth) {
+bool TranspositionTable::valid(const Entry& entry, uint64_t key, int depth) {
     return ((entry.flag != INVALID) && (entry.depth >= depth) && (entry.key == key));
 }
 
 
-bool TranspositionTable::is_mate(const int eval) {
+bool TranspositionTable::is_mate(int eval) {
     int abseval = abs(eval);
     return ((abseval <= MATE_EVAL) && (abseval > MATE_EVAL - 1000));
 }
 
 
-uint64_t TranspositionTable::index(const uint64_t key) const { return key % size; }
+uint64_t TranspositionTable::index(uint64_t key) const { return key % size; }

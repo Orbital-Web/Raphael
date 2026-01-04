@@ -40,13 +40,13 @@ public:
      *
      * \param size_mb the size of the table (in MB)
      */
-    explicit TranspositionTable(const uint32_t size_mb);
+    explicit TranspositionTable(uint32_t size_mb);
 
     /** Resizes the Transposition Table
      *
      * \param size_mb the size of the table (in MB)
      */
-    void resize(const uint32_t size_mb);
+    void resize(uint32_t size_mb);
 
     /** Retrieves the table value for a given key (assumes valid is true)
      *
@@ -54,14 +54,14 @@ public:
      * \param ply current distance from root
      * \returns the Entry in the table
      */
-    Entry get(const uint64_t key, const int ply) const;
+    Entry get(uint64_t key, int ply) const;
 
     /** Sets an entry for a given key
      *
      * \param entry the entry to store
      * \param ply current distance from root
      */
-    void set(const Entry& entry, const int ply);
+    void set(const Entry& entry, int ply);
 
     /** Clears the table */
     void clear();
@@ -73,14 +73,14 @@ public:
      * \param depth the current depth
      * \returns whether entry is valid
      */
-    static bool valid(const Entry entry, const uint64_t key, const int depth);
+    static bool valid(const Entry& entry, uint64_t key, int depth);
 
     /** Whether the given eval implies a mate
      *
      * \param eval the eval score
      * \returns whether the eval implies a mate or not
      */
-    static bool is_mate(const int eval);
+    static bool is_mate(int eval);
 
 private:
     /** Computes the index on the table
@@ -88,6 +88,6 @@ private:
      * \param key the key to use
      * \returns the index of the key in the table
      */
-    uint64_t index(const uint64_t key) const;
+    uint64_t index(uint64_t key) const;
 };
 }  // namespace Raphael

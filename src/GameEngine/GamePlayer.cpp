@@ -5,7 +5,7 @@ using std::string;
 
 
 
-GamePlayer::GamePlayer(string name_in): name(name_in) {}
+GamePlayer::GamePlayer(const string& name_in): name(name_in) {}
 GamePlayer::~GamePlayer() {}
 
 // By default, does nothing

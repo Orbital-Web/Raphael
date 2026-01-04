@@ -31,7 +31,7 @@ private:
     sf::RectangleShape arrowbody;
 
 public:
-    Arrow(const chess::Square from_in, const chess::Square to_in);
+    Arrow(chess::Square from_in, chess::Square to_in);
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     bool operator==(const Arrow& rhs) const;
 };
@@ -45,13 +45,7 @@ private:
 
 public:
     PieceDrawer();
-    void draw(
-        sf::RenderWindow& window,
-        const chess::Piece piece,
-        const float x,
-        const float y,
-        const int check
-    );
+    void draw(sf::RenderWindow& window, chess::Piece piece, float x, float y, int check);
 };
 
 
@@ -64,8 +58,8 @@ private:
     sf::RectangleShape timerbox;
 
 public:
-    Timer(const bool at_top, const sf::Font& font);
-    void update(const float time, const bool active);
+    Timer(bool at_top, const sf::Font& font);
+    void update(float time, bool active);
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 };
 

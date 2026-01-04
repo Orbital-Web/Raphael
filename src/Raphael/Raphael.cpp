@@ -61,11 +61,11 @@ void RaphaelNNUE::PVList::update(const chess::Move move, const PVList& child) {
 }
 
 
-RaphaelNNUE::RaphaelNNUE(string name_in)
+RaphaelNNUE::RaphaelNNUE(const string& name_in)
     : GamePlayer(name_in), params(default_params), tt(default_params.hash) {}
 
 
-void RaphaelNNUE::set_option(const std::string& name, const int value) {
+void RaphaelNNUE::set_option(const std::string& name, int value) {
     for (const auto p : {&params.hash, &params.softhardmult}) {
         if (p->name != name) continue;
 
@@ -90,7 +90,7 @@ void RaphaelNNUE::set_option(const std::string& name, const int value) {
     lock_guard<mutex> lock(cout_mutex);
     cout << "info string error: unknown spin option '" << name << "'\n" << flush;
 }
-void RaphaelNNUE::set_option(const std::string& name, const bool value) {
+void RaphaelNNUE::set_option(const std::string& name, bool value) {
     for (CheckOption* p : {&params.softnodes}) {
         if (p->name != name) continue;
 
@@ -204,9 +204,7 @@ void RaphaelNNUE::reset() {
 }
 
 
-void RaphaelNNUE::start_search_timer(
-    const chess::Board& board, const int t_remain, const int t_inc
-) {
+void RaphaelNNUE::start_search_timer(const chess::Board& board, int t_remain, int t_inc) {
     // if movetime is specified, use that instead
     if (searchopt.movetime != -1) {
         search_t = searchopt.movetime;
@@ -249,7 +247,7 @@ bool RaphaelNNUE::is_time_over(volatile bool& halt) const {
 }
 
 
-void RaphaelNNUE::print_uci_info(const int depth, const int eval, const SearchStack* ss) const {
+void RaphaelNNUE::print_uci_info(int depth, int eval, const SearchStack* ss) const {
     const auto now = ch::high_resolution_clock::now();
     const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
     const auto nps = (dtime) ? nodes * 1000 / dtime : 0;
@@ -536,7 +534,7 @@ void RaphaelNNUE::score_moves(chess::Movelist& movelist, const chess::Board& boa
     }
 }
 
-chess::Move RaphaelNNUE::pick_move(const int movei, chess::Movelist& movelist) {
+chess::Move RaphaelNNUE::pick_move(int movei, chess::Movelist& movelist) const {
     int besti = movei;
     auto bestscore = movelist[movei].score();
 

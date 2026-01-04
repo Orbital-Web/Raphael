@@ -8,7 +8,7 @@ using std::string;
 
 
 
-HumanPlayer::HumanPlayer(string name_in): GamePlayer(name_in) {}
+HumanPlayer::HumanPlayer(const string& name_in): GamePlayer(name_in) {}
 
 
 HumanPlayer::MoveEval HumanPlayer::get_move(

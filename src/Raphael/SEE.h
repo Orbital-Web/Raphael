@@ -31,7 +31,7 @@ const int VAL[13] = {
  * \param board current board
  * \returns the value of the piece
  */
-int pieceval(const chess::Square sq, const chess::Board& board);
+int pieceval(chess::Square sq, const chess::Board& board);
 
 /** Returns the estimated material gain
  *
@@ -56,6 +56,6 @@ chess::Square lva(chess::Bitboard attackers, const chess::Board& board);
  * \param threshold minimum evaluation to count as good
  * \returns whether the capture is "good" or not
  */
-bool good_capture(const chess::Move& move, const chess::Board& board, const int threshold);
+bool good_capture(const chess::Move& move, const chess::Board& board, int threshold);
 }  // namespace SEE
 }  // namespace Raphael

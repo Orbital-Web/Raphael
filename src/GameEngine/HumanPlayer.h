@@ -10,7 +10,7 @@ public:
      *
      * \param name_in name of player
      */
-    HumanPlayer(std::string name_in);
+    HumanPlayer(const std::string& name_in);
 
     /** Asks the human to make a valid move. Should return immediately if halt becomes true.
      *

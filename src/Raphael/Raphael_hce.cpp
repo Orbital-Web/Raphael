@@ -2,7 +2,8 @@
 
 using namespace Raphael;
 using std::array;
-using std::max, std::min;
+using std::max;
+using std::min;
 
 #define whiteturn (board.sideToMove() == chess::Color::WHITE)
 

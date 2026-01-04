@@ -80,7 +80,7 @@ public:
      *
      * \param name_in player name
      */
-    RaphaelNNUE(std::string name_in);
+    RaphaelNNUE(const std::string& name_in);
 
 
     /** Sets Raphael's engine options
@@ -88,8 +88,8 @@ public:
      * \param name name of option to set
      * \param value value to set to
      */
-    void set_option(const std::string& name, const int value);
-    void set_option(const std::string& name, const bool value);
+    void set_option(const std::string& name, int value);
+    void set_option(const std::string& name, bool value);
 
     /** Sets Raphael's search options
      *
@@ -135,7 +135,7 @@ private:
      * \param t_remain remaining time in ms
      * \param t_inc increment after move in ms
      */
-    void start_search_timer(const chess::Board& board, const int t_remain, const int t_inc);
+    void start_search_timer(const chess::Board& board, int t_remain, int t_inc);
 
     /** Sets and returns halt = true if search_t ms has passed. Will return false indefinetely if
      * search_t = 0.
@@ -152,7 +152,7 @@ private:
      * \param eval evaluation to print
      * \param search stack at current ply
      */
-    void print_uci_info(const int depth, const int eval, const SearchStack* ss) const;
+    void print_uci_info(int depth, int eval, const SearchStack* ss) const;
 
     /** Returns the stringified PV line
      *
@@ -211,7 +211,7 @@ private:
         const SearchStack* ss
     ) const;
 
-    /** Assigns scores to a list of quiet moves
+    /** Assigns scores to a list of noisy moves
      *
      * \param movelist movelist to score
      * \param board current board
@@ -224,6 +224,6 @@ private:
      * \param movelist movelist to pick from
      * \returns the chosen move in the movelist
      */
-    chess::Move pick_move(const int movei, chess::Movelist& movelist);
+    chess::Move pick_move(int movei, chess::Movelist& movelist) const;
 };
 };  // namespace Raphael

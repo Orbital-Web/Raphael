@@ -8,14 +8,20 @@
 #include <iomanip>
 
 using namespace cge;
-using std::cout, std::fixed, std::setprecision, std::setfill, std::setw;
-using std::mutex, std::lock_guard;
-using std::string, std::to_string;
+using std::cout;
+using std::fixed;
+using std::lock_guard;
+using std::mutex;
+using std::setfill;
+using std::setprecision;
+using std::setw;
+using std::string;
 using std::stringstream;
+using std::to_string;
 
 
 
-Arrow::Arrow(const chess::Square from_in, const chess::Square to_in): from(from_in), to(to_in) {
+Arrow::Arrow(chess::Square from_in, chess::Square to_in): from(from_in), to(to_in) {
     sf::Vector2f from_coord = {100.0f + 100 * (int)from.file(), 820.0f - 100 * (int)from.rank()};
     sf::Vector2f to_coord = {100.0f + 100 * (int)to.file(), 820.0f - 100 * (int)to.rank()};
 
@@ -82,13 +88,7 @@ PieceDrawer::PieceDrawer(): textures(13) {
     for (int i = 0; i < 13; i++) sprites.emplace_back(textures[i]);
 }
 
-void PieceDrawer::draw(
-    sf::RenderWindow& window,
-    const chess::Piece piece,
-    const float x,
-    const float y,
-    const int check
-) {
+void PieceDrawer::draw(sf::RenderWindow& window, chess::Piece piece, float x, float y, int check) {
     int i = (int)piece;
     assert((i != 12));
     // draw check overlay
@@ -104,13 +104,13 @@ void PieceDrawer::draw(
 
 
 
-Timer::Timer(const bool at_top, const sf::Font& font)
+Timer::Timer(bool at_top, const sf::Font& font)
     : top(at_top), timertext(font, "", 40), timerbox({180.0f, 50.0f}) {
     timerbox.setPosition({660.0f, (top) ? 10.0f : 880.0f});
     timertext.setFillColor(PALETTE::TEXT);
 }
 
-void Timer::update(const float time, const bool active) {
+void Timer::update(float time, bool active) {
     // accomodate different format
     stringstream formatter;
 

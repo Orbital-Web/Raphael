@@ -7,11 +7,15 @@
 
 using namespace Raphael;
 using std::copy;
-using std::cout, std::endl;
-using std::ifstream, std::ios;
-using std::invalid_argument, std::runtime_error;
-using std::max, std::min;
+using std::cout;
+using std::endl;
+using std::ifstream;
+using std::invalid_argument;
+using std::ios;
+using std::max;
 using std::memcpy;
+using std::min;
+using std::runtime_error;
 using std::string;
 using std::vector;
 

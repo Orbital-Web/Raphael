@@ -10,12 +10,17 @@
 #include <iomanip>
 
 using namespace Raphael;
-using std::async, std::ref;
+using std::async;
 using std::copy;
-using std::cout, std::flush;
-using std::fixed, std::setprecision;
-using std::max, std::min;
-using std::mutex, std::lock_guard;
+using std::cout;
+using std::fixed;
+using std::flush;
+using std::lock_guard;
+using std::max;
+using std::min;
+using std::mutex;
+using std::ref;
+using std::setprecision;
 using std::string;
 using std::swap;
 namespace ch = std::chrono;
@@ -164,41 +169,11 @@ RaphaelNNUE::MoveEval RaphaelNNUE::get_move(
         beta = eval + ASPIRATION_WINDOW;
         depth++;
 
+        // print info
+        if (UCI) print_uci_info(depth, eval, ss);
+
         // checkmate, no need to continue
-        if (tt.isMate(eval)) {
-            if (UCI) {
-                const auto now = ch::high_resolution_clock::now();
-                const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
-                const auto nps = (dtime) ? nodes * 1000 / dtime : 0;
-                const char* sign = (eval >= 0) ? "" : "-";
-                lock_guard<mutex> lock(cout_mutex);
-                cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime
-                     << " nodes " << nodes << " score mate " << sign
-                     << (MATE_EVAL - abs(eval) + 1) / 2 << " nps " << nps << " pv "
-                     << get_pv_line(ss->pv) << "\n"
-                     << flush;
-            }
-#ifndef MUTEEVAL
-            else {
-                // get absolute evaluation (i.e, set to white's perspective)
-                const char* sign = ((eval >= 0) == whiteturn) ? "" : "-";
-                lock_guard<mutex> lock(cout_mutex);
-                cout << "Eval: " << sign << "#" << (MATE_EVAL - abs(eval) + 1) / 2
-                     << "\tNodes: " << nodes << "\n"
-                     << flush;
-            }
-#endif
-            if (exit_on_mate) halt = true;
-        } else if (UCI) {
-            const auto now = ch::high_resolution_clock::now();
-            const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
-            const auto nps = (dtime) ? nodes * 1000 / dtime : 0;
-            lock_guard<mutex> lock(cout_mutex);
-            cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime
-                 << " nodes " << nodes << " score cp " << eval << " nps " << nps << " pv "
-                 << get_pv_line(ss->pv) << "\n"
-                 << flush;
-        }
+        if (exit_on_mate && TranspositionTable::isMate(eval)) halt = true;
     }
 
     // last attempt to get bestmove
@@ -210,13 +185,18 @@ RaphaelNNUE::MoveEval RaphaelNNUE::get_move(
         cout << "bestmove " << chess::uci::moveToUci(bestmove) << "\n" << flush;
     }
 #ifndef MUTEEVAL
-    else if (!tt.isMate(eval)) {
-        // get absolute evaluation (i.e, set to white's perspective)
-        if (!whiteturn) eval *= -1;
+    else {
         lock_guard<mutex> lock(cout_mutex);
-        cout << "Eval: " << fixed << setprecision(2) << eval / 100.0f << "\tDepth: " << depth - 1
-             << "\tNodes: " << nodes << "\n"
-             << flush;
+        if (TranspositionTable::isMate(eval)) {
+            const int mate_dist
+                = (((eval >= 0) == whiteturn) ? 1 : -1) * (MATE_EVAL - abs(eval) + 1) / 2;
+            cout << "Eval: #" << mate_dist;
+        } else {
+            const auto eval_p = ((whiteturn) ? 1 : -1) * eval / 100.0f;
+            cout << "Eval: " << fixed << setprecision(2) << eval_p;
+        }
+
+        cout << "\tDepth: " << depth - 1 << "\tNodes: " << nodes << "\n" << flush;
     }
 #endif
     return {bestmove, eval};
@@ -279,6 +259,24 @@ bool RaphaelNNUE::is_time_over(volatile bool& halt) const {
     return halt;
 }
 
+
+void RaphaelNNUE::print_uci_info(const int depth, const int eval, const SearchStack* ss) const {
+    const auto now = ch::high_resolution_clock::now();
+    const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
+    const auto nps = (dtime) ? nodes * 1000 / dtime : 0;
+
+    lock_guard<mutex> lock(cout_mutex);
+    cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime << " nodes "
+         << nodes;
+
+    if (TranspositionTable::isMate(eval)) {
+        const int mate_dist = ((eval >= 0) ? 1 : -1) * (MATE_EVAL - abs(eval) + 1) / 2;
+        cout << " score mate " << mate_dist;
+    } else
+        cout << " score cp " << eval;
+
+    cout << " nps " << nps << " pv " << get_pv_line(ss->pv) << "\n" << flush;
+}
 
 string RaphaelNNUE::get_pv_line(const PVList& pv) const {
     string pvline = "";

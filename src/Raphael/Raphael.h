@@ -3,7 +3,7 @@
 #include <Raphael/History.h>
 #include <Raphael/Transposition.h>
 #include <Raphael/nnue.h>
-#include <Raphael/options.h>
+#include <Raphael/tunable.h>
 
 #include <chess.hpp>
 #include <chrono>
@@ -145,6 +145,14 @@ private:
      */
     bool is_time_over(volatile bool& halt) const;
 
+
+    /** Prints out the uci info
+     *
+     * \param depth current depth
+     * \param eval evaluation to print
+     * \param search stack at current ply
+     */
+    void print_uci_info(const int depth, const int eval, const SearchStack* ss) const;
 
     /** Returns the stringified PV line
      *

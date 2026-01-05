@@ -39,6 +39,7 @@ const RaphaelNNUE::EngineOptions RaphaelNNUE::default_params{
         TranspositionTable::DEF_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
         1,
         TranspositionTable::MAX_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
+        nullptr,
     },
     .softnodes = {
         "Softnodes",
@@ -49,6 +50,7 @@ const RaphaelNNUE::EngineOptions RaphaelNNUE::default_params{
         1678,
         1,
         5000,
+        nullptr,
     }
 };
 
@@ -62,7 +64,9 @@ void RaphaelNNUE::PVList::update(const chess::Move move, const PVList& child) {
 
 
 RaphaelNNUE::RaphaelNNUE(const string& name_in)
-    : GamePlayer(name_in), params(default_params), tt(default_params.hash) {}
+    : GamePlayer(name_in), params(default_params), tt(default_params.hash) {
+    params.hash.set_callback([this](int val) { tt.resize(val); });
+}
 
 
 void RaphaelNNUE::set_option(const std::string& name, int value) {
@@ -80,7 +84,6 @@ void RaphaelNNUE::set_option(const std::string& name, int value) {
 
         // set value
         p->set(value);
-        if (p->name == params.hash.name) tt.resize(value);
 
         lock_guard<mutex> lock(cout_mutex);
         cout << "info string set " << p->name << " to " << value << "\n" << flush;

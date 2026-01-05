@@ -371,6 +371,7 @@ int RaphaelNNUE::negamax(
 
         net.make_move(ply + 1, move, board);
         board.makeMove(move);
+        tt.prefetch(board.hash());
         ss->move = move;
 
         // check extension

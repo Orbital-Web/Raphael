@@ -56,6 +56,12 @@ public:
      */
     Entry get(uint64_t key, int ply) const;
 
+    /** Prefetches a table entry
+     *
+     * \param key key to prefetch
+     */
+    void prefetch(uint64_t key) const;
+
     /** Sets an entry for a given key
      *
      * \param entry the entry to store

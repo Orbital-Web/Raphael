@@ -40,6 +40,9 @@ TranspositionTable::Entry TranspositionTable::get(uint64_t key, int ply) const {
 }
 
 
+void TranspositionTable::prefetch(uint64_t key) const { __builtin_prefetch(&_table[index(key)]); }
+
+
 void TranspositionTable::set(const Entry& entry, int ply) {
     // correct mate eval when storing (https://youtu.be/XfeuxubYlT0)
     int eval = entry.eval;

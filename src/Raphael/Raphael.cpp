@@ -64,7 +64,8 @@ void RaphaelNNUE::PVList::update(const chess::Move move, const PVList& child) {
 
 RaphaelNNUE::RaphaelNNUE(const string& name_in)
     : GamePlayer(name_in), params(default_params), tt(default_params.hash) {
-    params.hash.set_callback([this](int val) { tt.resize(val); });
+    params.hash.set_callback([this]() { tt.resize(params.hash); });
+    init_tunables();
 }
 
 
@@ -382,9 +383,10 @@ int RaphaelNNUE::negamax(
         // principle variation search
         int eval;
         const int new_depth = depth - 1 + extension;
-        if (depth >= 3 && movei >= REDUCTION_FROM && is_quiet) {
+        if (depth >= LMR_DEPTH && movei >= LMR_FROMMOVE && is_quiet) {
             // late move reduction
-            const int red_depth = max(new_depth - 1, 0);
+            const int red_factor = LMR_TABLE[is_quiet][depth][movei] + !is_PV * LMR_NONPV;
+            const int red_depth = max(new_depth - red_factor / 1024, 0);
             eval = -negamax<false>(board, red_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
             if (eval > alpha && red_depth < new_depth)
                 eval = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);

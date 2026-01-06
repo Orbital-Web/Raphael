@@ -1,4 +1,7 @@
 #pragma once
+#include <Raphael/utils.h>
+
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -6,10 +9,11 @@
 
 namespace Raphael {
 
-// inspired by https://github.com/Quinniboi10/Lazarus/blob/main/src/tunable.h
+// inspired by https://github.com/Quinniboi10/Lazarus/blob/main/src/tunable.h and
+// https://github.com/Ciekce/Stormphrax/blob/main/src/tunable.h
 template <bool tunable>
 struct SpinOption {
-    using SpinOptionCB = std::function<void(int)>;
+    using SpinOptionCB = std::function<void()>;
 
     std::string name;
     int value;
@@ -34,7 +38,7 @@ struct SpinOption {
      */
     void set(int val) {
         value = val;
-        if (callback) callback(val);
+        if (callback) callback();
     }
     operator int() const { return value; }
 
@@ -84,6 +88,7 @@ struct CheckOption {
 
 
 
+// tunable helpers
 #ifdef TUNE
 inline std::vector<SpinOption<true>*> tunables;
 
@@ -115,8 +120,6 @@ inline bool set_tunable(const std::string& name, int value) {
     #define TunableCallback(name, value, min, max, callback) static constexpr int name = value
 #endif
 
-
-
 template <bool tunable>
 inline SpinOption<tunable>::SpinOption(
     const std::string& name, int value, int min, int max, SpinOptionCB callback
@@ -128,6 +131,13 @@ inline SpinOption<tunable>::SpinOption(
 }
 
 
+/** Updates the lmr table */
+void update_lmr_table();
+
+/** Initializes the tunable dependent parameters */
+void init_tunables();
+
+
 
 // search
 Tunable(ASPIRATION_WINDOW, 50, 5, 100);
@@ -137,7 +147,15 @@ Tunable(RFP_DEPTH, 6, 1, 10);      // max depth to apply rfp from
 Tunable(RFP_MARGIN, 77, 25, 150);  // depth margin scale for rfp
 Tunable(NMP_DEPTH, 3, 1, 8);       // depth to apply nmp from
 Tunable(NMP_REDUCTION, 4, 1, 8);   // depth reduction for nmp
-Tunable(REDUCTION_FROM, 5, 2, 8);  // movei to apply lmr from
+
+Tunable(LMR_DEPTH, 3, 1, 5);                    // depth to apply lmr from
+Tunable(LMR_FROMMOVE, 5, 2, 8);                 // movei to apply lmr from
+inline MultiArray<int, 2, 256, 256> LMR_TABLE;  // lmr reduction[quiet][ply][movei]
+TunableCallback(LMR_QUIET_BASE, 1456, 500, 2000, update_lmr_table);
+TunableCallback(LMR_NOISY_BASE, 202, -500, 750, update_lmr_table);
+TunableCallback(LMR_QUIET_DIVISOR, 2835, 1000, 4000, update_lmr_table);
+TunableCallback(LMR_NOISY_DIVISOR, 3319, 2500, 4500, update_lmr_table);
+TunableCallback(LMR_NONPV, 1046, 500, 2000, update_lmr_table);
 
 // quiescence
 Tunable(DELTA_THRESHOLD, 400, 50, 600);  // safety margin for delta pruning

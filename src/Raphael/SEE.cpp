@@ -1,7 +1,5 @@
 #include <Raphael/SEE.h>
 
-using std::max;
-
 
 
 namespace Raphael {

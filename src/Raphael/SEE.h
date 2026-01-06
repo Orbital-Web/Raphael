@@ -1,5 +1,4 @@
 #pragma once
-#include <Raphael/consts.h>
 
 #include <chess.hpp>
 

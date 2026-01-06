@@ -1,11 +1,7 @@
-#define _USE_MATH_DEFINES
 #include <GameEngine/consts.h>
 #include <GameEngine/utils.h>
-#include <math.h>
 
-#include <SFML/Graphics.hpp>
-#include <chess.hpp>
-#include <iomanip>
+#include <cmath>
 
 using namespace cge;
 using std::cout;

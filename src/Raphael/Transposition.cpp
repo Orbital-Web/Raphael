@@ -1,4 +1,5 @@
 #include <Raphael/Transposition.h>
+#include <Raphael/consts.h>
 
 #include <cstring>
 

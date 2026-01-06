@@ -1,12 +1,12 @@
 #pragma once
 #include <immintrin.h>
-#include <stdint.h>
 
 #if defined(__AVX__) || defined(__AVX2__)
     #define USE_SIMD 256
     #define ALIGNMENT 32
 typedef __m256i VecI16;  // a list of 16x int16_t
 typedef __m256i VecI32;  // a list of 8x int32_t
+
 
 
 /** Loads an int16_t[16] array into a VecI16 register

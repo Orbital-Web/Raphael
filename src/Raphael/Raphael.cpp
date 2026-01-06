@@ -2,10 +2,9 @@
 #include <Raphael/Raphael.h>
 #include <Raphael/SEE.h>
 #include <Raphael/consts.h>
-#include <math.h>
 
-#include <chess.hpp>
 #include <climits>
+#include <cmath>
 #include <future>
 #include <iomanip>
 

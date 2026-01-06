@@ -1,7 +1,6 @@
 #pragma once
 #include <Raphael/consts.h>
 #include <Raphael/simd.h>
-#include <stdint.h>
 
 #include <chess.hpp>
 #include <string>

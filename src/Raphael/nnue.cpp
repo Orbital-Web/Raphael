@@ -2,8 +2,6 @@
 
 #include <cstring>
 #include <fstream>
-#include <iostream>
-#include <stdexcept>
 
 using namespace Raphael;
 using std::copy;

@@ -1,9 +1,9 @@
 #include <GameEngine/GameEngine.h>
 #include <GameEngine/HumanPlayer.h>
 #include <Raphael/Raphael.h>
-#include <string.h>
 
 #include <climits>
+#include <cstring>
 #include <fstream>
 
 using std::cout;

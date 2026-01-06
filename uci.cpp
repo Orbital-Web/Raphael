@@ -4,17 +4,24 @@
 
 #include <condition_variable>
 #include <iostream>
-#include <mutex>
 #include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
 
-using std::cin, std::cout, std::flush;
+using std::cin;
+using std::condition_variable;
+using std::cout;
 using std::exception;
-using std::string, std::stoi, std::stoll;
+using std::flush;
+using std::lock_guard;
+using std::mutex;
+using std::stoi;
+using std::stoll;
+using std::string;
 using std::stringstream;
-using std::thread, std::mutex, std::unique_lock, std::lock_guard, std::condition_variable;
+using std::thread;
+using std::unique_lock;
 using std::vector;
 
 extern const bool UCI = true;

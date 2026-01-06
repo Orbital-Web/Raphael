@@ -1,7 +1,6 @@
 #include <Raphael/Raphael_hce.h>
 
 using namespace Raphael;
-using std::array;
 using std::max;
 using std::min;
 
@@ -9,8 +8,8 @@ using std::min;
 
 
 
-const array<array<array<int, 2>, 64>, 12> RaphaelHCE::PST = [] {
-    array<array<array<int, 2>, 64>, 12> pst{};
+const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
+    MultiArray<int, 12, 64, 2> pst{};
 
     static constexpr int PAWN_MID[64] = {
         0,  0,   0,   0,   0,   0,   0,   0,     //

@@ -1,5 +1,5 @@
 #pragma once
-#include <GameEngine/GamePlayer.h>
+#include <Raphael/utils.h>
 
 #include <array>
 #include <chess.hpp>
@@ -29,8 +29,7 @@ private:
         {-1191, -727}, // QUEEN
         {0,     0   }, // KING
     };  // value of each piece
-    static const std::array<std::array<std::array<int, 2>, 64>, 12>
-        PST;  // piece square table for piece, square, and phase
+    static const MultiArray<int, 12, 64, 2> PST;  // piece square table for piece, square, and phase
     static constexpr int PAWN_PASSED_WEIGHT[7][2] = {
         {0,   0  }, // promotion line
         {114, 215},

@@ -1,6 +1,8 @@
 #pragma once
 #include <immintrin.h>
 
+#include <cstdint>
+
 #if defined(__AVX__) || defined(__AVX2__)
     #define USE_SIMD 256
     #define ALIGNMENT 32

@@ -24,7 +24,7 @@ public:
         CheckOption softnodes;
         SpinOption<false> softhardmult;
     };
-    static const EngineOptions default_params;
+    static const EngineOptions& default_params();
 
     struct SearchOptions {
         int64_t maxnodes = -1;

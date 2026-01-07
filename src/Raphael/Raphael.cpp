@@ -32,25 +32,28 @@ extern const bool UCI;
 
 const string RaphaelNNUE::version = "2.1.0.0";
 
-const RaphaelNNUE::EngineOptions RaphaelNNUE::default_params{
-    .hash = {
-        "Hash",
-        TranspositionTable::DEF_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
-        1,
-        TranspositionTable::MAX_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
-        nullptr,
-    },
-    .softnodes = {
-        "Softnodes",
-        false,
-    },
-    .softhardmult = {
-        "SoftNodeHardLimitMultiplier",
-        1678,
-        1,
-        5000,
-        nullptr,
-    }
+const RaphaelNNUE::EngineOptions& RaphaelNNUE::default_params() {
+    static EngineOptions opts{
+        .hash = {
+            "Hash",
+            TranspositionTable::DEF_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
+            1,
+            TranspositionTable::MAX_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
+            nullptr,
+        },
+        .softnodes = {
+            "Softnodes",
+            false,
+        },
+        .softhardmult = {
+            "SoftNodeHardLimitMultiplier",
+            1678,
+            1,
+            5000,
+            nullptr,
+        }
+    };
+    return opts;
 };
 
 
@@ -63,7 +66,7 @@ void RaphaelNNUE::PVList::update(const chess::Move move, const PVList& child) {
 
 
 RaphaelNNUE::RaphaelNNUE(const string& name_in)
-    : GamePlayer(name_in), params(default_params), tt(default_params.hash) {
+    : GamePlayer(name_in), params(default_params()), tt(params.hash) {
     params.hash.set_callback([this]() { tt.resize(params.hash); });
     init_tunables();
 }

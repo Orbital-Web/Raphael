@@ -319,11 +319,12 @@ int RaphaelNNUE::negamax(
 
     const bool in_check = board.inCheck();
     ss->static_eval = net.evaluate(ply, whiteturn);
+    const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
 
     // pre-moveloop pruning
     if (!is_PV && ply && !in_check) {
         // reverse futility pruning
-        const int rfp_margin = RFP_MARGIN * depth;
+        const int rfp_margin = RFP_DEPTH_SCALE * depth - RFP_IMPROV_SCALE * improving;
         if (depth <= RFP_DEPTH && ss->static_eval - rfp_margin >= beta) return ss->static_eval;
 
         // null move pruning

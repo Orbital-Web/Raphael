@@ -143,10 +143,12 @@ void init_tunables();
 Tunable(ASPIRATION_WINDOW, 50, 5, 100);
 
 // negamax
-Tunable(RFP_DEPTH, 6, 1, 10);      // max depth to apply rfp from
-Tunable(RFP_MARGIN, 77, 25, 150);  // depth margin scale for rfp
-Tunable(NMP_DEPTH, 3, 1, 8);       // depth to apply nmp from
-Tunable(NMP_REDUCTION, 4, 1, 8);   // depth reduction for nmp
+Tunable(RFP_DEPTH, 6, 1, 10);           // max depth to apply rfp from
+Tunable(RFP_DEPTH_SCALE, 77, 25, 150);  // depth margin scale for rfp
+Tunable(RFP_IMPROV_SCALE, 0, 0, 100);   // improving margin scale for rfp
+
+Tunable(NMP_DEPTH, 3, 1, 8);      // depth to apply nmp from
+Tunable(NMP_REDUCTION, 4, 1, 8);  // depth reduction for nmp
 
 Tunable(LMR_DEPTH, 3, 1, 5);                    // depth to apply lmr from
 Tunable(LMR_FROMMOVE, 5, 2, 8);                 // movei to apply lmr from

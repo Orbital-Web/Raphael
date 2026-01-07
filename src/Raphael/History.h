@@ -27,7 +27,7 @@ public:
      * \param side side playing the move
      * \returns the stored history of that move
      */
-    int get(const chess::Move& move, int side) const;
+    int get(const chess::Move& move, bool side) const;
 
     /** Zeros out the history */
     void clear();

@@ -1,7 +1,7 @@
 # Compiler & flags
 CC = g++
 LD = ld
-CCFLAGS = -Wall -O3 -DNDEBUG -fno-builtin -std=c++20 -Isrc -Ichess-library/include -ISFML-3.0.2/include
+CCFLAGS = -std=c++20 -O3 -Wall -Isrc -Ichess-library/include -ISFML-3.0.2/include
 LDFLAGS = -LSFML-3.0.2/lib -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
 
 ifneq ($(OS),Windows_NT)
@@ -10,11 +10,12 @@ endif
 
 # Architecture
 ARCH ?=
-CCFLAGS_NATIVE = -march=native
-CCFLAGS_AVX2_BMI2 = -march=haswell
-CCFLAGS_AVX2 = -march=haswell -mno-bmi2
-CCFLAGS_GENERIC = -march=x86-64
-CCFLAGS_TUNABLE = -march=native -DTUNE
+CCFLAGS_NATIVE = -march=native -DNDEBUG
+CCFLAGS_AVX2_BMI2 = -march=haswell -DNDEBUG
+CCFLAGS_AVX2 = -march=haswell -mno-bmi2 -DNDEBUG
+CCFLAGS_GENERIC = -march=x86-64 -DNDEBUG
+CCFLAGS_TUNABLE = -march=native -DTUNE -DNDEBUG
+CCFLAGS_DEBUG = -march=native
 
 ifeq ($(ARCH),)
     $(warning ARCH not set, building for native)
@@ -34,6 +35,9 @@ else ifeq ($(ARCH),generic)
 else ifeq ($(ARCH),tunable)
     $(info Building for ARCH=tunable)
     EXTRA_CCFLAGS = $(CCFLAGS_TUNABLE)
+else ifeq ($(ARCH),debug)
+    $(info Building for ARCH=debug)
+    EXTRA_CCFLAGS = $(CCFLAGS_DEBUG)
 else
     $(error Unknown architecture '$(ARCH)')
 endif

@@ -15,7 +15,8 @@ private:
     };
 
     uint64_t size;
-    std::vector<EntryStorage> _table;
+    uint64_t capacity;
+    EntryStorage* _table;
 
 public:
     static constexpr uint64_t MAX_TABLE_SIZE = 201326592;       // 3GB
@@ -40,6 +41,12 @@ public:
      * \param size_mb the size of the table (in MB)
      */
     explicit TranspositionTable(uint32_t size_mb);
+
+    /** Destructs and deallocates the table */
+    ~TranspositionTable();
+
+    TranspositionTable(const TranspositionTable&) = delete;
+    TranspositionTable& operator=(const TranspositionTable&) = delete;
 
     /** Resizes the Transposition Table
      *
@@ -94,5 +101,14 @@ private:
      * \returns the index of the key in the table
      */
     uint64_t index(uint64_t key) const;
+
+    /** Allocates the table and sets capacity and _table (not size)
+     *
+     * \param newsize new size in number of entries
+     */
+    void allocate(uint64_t newsize);
+
+    /** Deallocates the table (if allocated) and sets capacity and _table (not size) */
+    void deallocate();
 };
 }  // namespace Raphael

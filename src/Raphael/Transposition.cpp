@@ -3,19 +3,36 @@
 
 #include <cstring>
 
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <sys/mman.h>
+#endif
+
 using namespace Raphael;
 
 
 
-TranspositionTable::TranspositionTable(uint32_t size_mb) { resize(size_mb); }
+TranspositionTable::TranspositionTable(uint32_t size_mb): capacity(0), _table(nullptr) {
+    resize(size_mb);
+}
+
+
+TranspositionTable::~TranspositionTable() { deallocate(); }
 
 
 void TranspositionTable::resize(uint32_t size_mb) {
-    size = (uint64_t)size_mb * 1024 * 1024 / ENTRY_SIZE;
-    assert((size > 0 && size <= MAX_TABLE_SIZE));  // size is within (0, MAX_TABLE_SIZE]
+    const uint64_t newsize = (uint64_t)size_mb * 1024 * 1024 / ENTRY_SIZE;
+    assert((newsize > 0 && newsize <= MAX_TABLE_SIZE));
 
-    _table.clear();
-    _table.resize(size);
+    // re-allocate if necessary
+    if (newsize > capacity || newsize <= capacity / 2) {
+        deallocate();
+        allocate(newsize);
+    }
+    size = newsize;
+
+    clear();
 }
 
 
@@ -64,7 +81,12 @@ void TranspositionTable::set(const Entry& entry, int ply) {
 }
 
 
-void TranspositionTable::clear() { memset(_table.data(), 0, size * ENTRY_SIZE); }
+void TranspositionTable::clear() {
+    assert(_table != nullptr);
+    assert(size > 0);
+
+    memset(_table, 0, size * ENTRY_SIZE);
+}
 
 
 bool TranspositionTable::valid(const Entry& entry, uint64_t key, int depth) {
@@ -79,3 +101,42 @@ bool TranspositionTable::is_mate(int eval) {
 
 
 uint64_t TranspositionTable::index(uint64_t key) const { return key % size; }
+
+
+void TranspositionTable::allocate(uint64_t newsize) {
+    assert(_table == nullptr);
+    assert(capacity == 0);
+
+#ifdef _WIN32
+    static constexpr size_t page_size = 4096;
+#else
+    static constexpr size_t page_size = 2 * 1024 * 1024;
+#endif
+
+    const size_t newsize_s = ((newsize * ENTRY_SIZE + page_size - 1) / page_size) * page_size;
+    capacity = newsize_s / ENTRY_SIZE;
+
+#ifdef _WIN32
+    // TODO: windows huge page support
+    _table = static_cast<EntryStorage*>(_aligned_malloc(newsize_s, page_size));
+#else
+    _table = static_cast<EntryStorage*>(aligned_alloc(page_size, newsize_s));
+    madvise(_table, newsize_s, MADV_HUGEPAGE);
+#endif
+}
+
+void TranspositionTable::deallocate() {
+    if (_table) {
+        assert(_table != nullptr);
+        assert(capacity > 0);
+
+#ifdef _WIN32
+        _aligned_free(_table);
+#else
+        free(_table);
+#endif
+
+        capacity = 0;
+        _table = nullptr;
+    }
+}

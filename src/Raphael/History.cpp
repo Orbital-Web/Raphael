@@ -28,7 +28,7 @@ void History::update(
 }
 
 
-int History::get(const chess::Move& move, int side) const {
+int History::get(const chess::Move& move, bool side) const {
     const int from = move.from().index();
     const int to = move.to().index();
     return _history[side][from][to];

@@ -89,64 +89,65 @@ You can also play with different time controls, increments, and player combinati
 
 **Raphael** is a UCI-compliant chess engine. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](#getting-started). The UCI engine currently supports the following commands: `uci`, `isready`, `ucinewgame`, `stop`, `quit`, `position`, and `go [wtime|btime|winc|binc|depth|nodes|movestogo|movetime|infinite]`. Pondering is not implemented yet in the UCI engine, though it does come in the GUI version. The engine contains the following features:
 
-#### General
-
-- [ ] Endgame table
-- [x] Time management               (`v1.0+`)
-- [x] Skip search on stable pv      (`v1.6+`)
-- [x] Pondering                     (`v1.2+`)
-- [x] Pondering with pv             (`v1.6+`)
-
-#### Search
-
-- [x] Alpha-beta pruning            (`v1.0+`)
-- [x] Move ordering                 (`v1.0+`)
-- [x] Transposition table           (`v1.1+`)
-- [x] Quiescence with captures      (`v1.0+`)
-- [x] Iterative deepening           (`v1.1+`)
-- [x] Aspiration window             (`v1.3+`)
-- [x] Check extensions              (`v1.4+`) <!-- - [x] Passed pawn extensions        (`v1.4`) -->
-- [x] One reply extensions          (`v1.7+`)
-- [x] Mate distance pruning         (`v1.6+`)
-- [x] Principle variation search    (`v2.1+`)
-- [x] Late move reductions          (`v1.5+`)
-- [ ] Reverse futility pruning
-- [ ] Null move pruning
-- [ ] Late move pruning
-- [ ] Futility pruning
-- [ ] Internal iterative deepening <!-- - [x] SEE pruning                   (`v1.7`) -->
+- [x] Search                                (`v1.0+`)
+  - [x] Iterative deepening                 (`v1.1+`)
+  - [x] Aspiration window                   (`v1.3+`)
+  - [ ] Endgame table base
+- [x] Alpha-beta search                     (`v1.0+`)
+  - [x] Pruning                             (`v1.0+`)
+    - [x] Alpha-beta pruning                (`v1.0+`)
+    - [x] Mate distance pruning             (`v1.6+`)
+    - [x] Reverse futility pruning          (`v2.2+`)
+    - [x] Null move pruning                 (`v2.2+`)
+    - [ ] Futility pruning
+    - [ ] Late move pruning
+  - [x] Transposition table                 (`v1.1+`)
+  - [x] Principle variation search          (`v2.1+`)
+  - [x] Extensions                          (`v1.4+`)
+    - [x] Check extensions                  (`v1.4+`)
+    - [x] One reply extensions              (`v1.7+`)
+    - [ ] Singular extensions
+  - [x] Reductions                          (`v1.5+`)
+    - [x] Late move reductions              (`v1.5+`)
+    - [ ] Internal iterative reduction
+  - [x] Move ordering                       (`v1.0+`)
+    - [x] MVV-LVA                           (`v1.0+`)
+    - [x] Promotions                        (`v1.0+`)
+    - [x] Hash move                         (`v1.6+`)
+    - [x] Killer heuristics                 (`v1.3+`)
+    - [x] Quiet history                     (`v1.5+`)
+    - [ ] Continuation history
+    - [ ] Capture history
+    - [ ] Correction history
+    - [x] SEE                               (`v1.7+`)
+- [x] Quiescence search                     (`v1.0+`)
+- [x] Evaluation                            (`v1.0+`)
+  - [x] Hand-crafted evaluation             (`v1.0+`)
+    - [x] Materials                         (`v1.0+`)
+    - [x] Piece-square tables               (`v1.0+`)
+    - [ ] Midgame King safety
+    - [ ] Endgame King opposition
+    - [x] Endgame King proximity            (`v1.0+`)
+    - [x] Evaluation tapering               (`v1.0+`)
+    - [x] Passed Pawn                       (`v1.3+`)
+    - [x] Isolated Pawn                     (`v1.3+`)
+    - [x] Mobility                          (`v1.5+`)
+    - [x] Bishop pair                       (`v1.8+`)
+    - [x] Bishop-colored corner             (`v1.8+`)
+    - [x] Draw evaluation                   (`v1.8+`)
+    - [x] Evaluation tuning                 (`v1.8+`)
+  - [x] NNUE                                (`v2.0+`)
+    - [x] NNUE lazy updates                 (`v2.1+`)
+    - [ ] NNUE output buckets
+- [x] Time management                       (`v1.0+`)
+- [x] Pondering                             (`v1.2+`)
+  - [x] Pondering with pv                   (`v1.6+`)
+- [x] Performance                           (`v1.8+`)
+  - [x] Compiler optimizations              (`v1.8+`)
+  - [x] Incremental selection sort          (`v2.2+`)
+  - [x] Linux huge pages                    (`v2.2+`)
 - [ ] Lazy SMP
-
-#### Evaluation
-
-- [x] Materials                 (`v1.0+`)
-- [x] Piece-square tables       (`v1.0+`)
-- [ ] Midgame King safety
-- [ ] Endgame King opposition
-- [x] Endgame King proximity    (`v1.0+`)
-- [x] Evaluation tapering       (`v1.0+`)
-- [x] Passed Pawn               (`v1.3+`)
-- [x] Isolated Pawn             (`v1.3+`)
-- [x] Mobility                  (`v1.5+`)
-- [x] Bishop pair               (`v1.8+`)
-- [x] Bishop-colored corner     (`v1.8+`)
-- [x] Draw evaluation           (`v1.8+`)
-- [x] Evaluation tuning         (`v1.8+`)
-- [x] NNUE                      (`v2.0+`)
-- [x] NNUE lazy updates         (`v2.1+`)
-- [ ] NNUE output bucket
-
-#### Move Ordering
-
-- [x] MVV-LVA                   (`v1.0+`)
-- [x] Promotions                (`v1.0+`)
-- [x] Hash move                 (`v1.6+`)
-- [x] Killer heuristics         (`v1.3+`)
-- [x] Quiet history             (`v1.5+`)
-- [ ] Continuation history
-- [ ] Capture history
-- [ ] Correction history
-- [x] SEE                       (`v1.7+`)
+- [ ] SPSA tuning
 
 For a more in-depth documentation on the NNUE and how it was trained, refer to the [NNUE README](https://github.com/Orbital-Web/Raphael/tree/main/src/NNUE). No external engines were used to generate Raphael NNUE's training data.
 

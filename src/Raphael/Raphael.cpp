@@ -30,7 +30,7 @@ extern const bool UCI;
 
 
 
-const string RaphaelNNUE::version = "2.1.0.0";
+const string RaphaelNNUE::version = "2.2.0.0";
 
 const RaphaelNNUE::EngineOptions& RaphaelNNUE::default_params() {
     static EngineOptions opts{

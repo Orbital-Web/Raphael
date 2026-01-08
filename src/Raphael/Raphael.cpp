@@ -178,9 +178,7 @@ RaphaelNNUE::MoveEval RaphaelNNUE::get_move(
     if (UCI) {
         lock_guard<mutex> lock(cout_mutex);
         cout << "bestmove " << chess::uci::moveToUci(bestmove) << "\n" << flush;
-    }
-#ifndef MUTEEVAL
-    else {
+    } else {
         lock_guard<mutex> lock(cout_mutex);
         if (TranspositionTable::is_mate(eval)) {
             const int mate_dist
@@ -193,7 +191,7 @@ RaphaelNNUE::MoveEval RaphaelNNUE::get_move(
 
         cout << "\tDepth: " << depth - 1 << "\tNodes: " << nodes << "\n" << flush;
     }
-#endif
+
     return {bestmove, eval};
 }
 

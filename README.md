@@ -10,24 +10,26 @@
     <img src="https://github.com/Orbital-Web/Raphael/blob/8667a6f6db60c5cacce297145246f89a22fa5333/Demo.png" alt="demo of Raphael" width=400/>
 </p>
 
-## ELO
+## Elo
 
-The following are the historic **[CCRL Blitz ELO](https://www.computerchess.org.uk/ccrl/404/)** for Raphael.
+The following are the historic Elo for Raphael.
 
-Note that ELOs with an asterics next to them are estimates and not official, and were estimated by running tournaments against [Stash](https://gitlab.com/mhouppin/stash-bot/-/releases) (and sometimes a few other engines) using [fastchess](https://github.com/Disservin/fastchess).
+Note that Elos with an asterics next to them are estimates and not official, and were estimated by running tournaments against [Stash](https://gitlab.com/mhouppin/stash-bot/-/releases) (and sometimes a few other engines) using [fastchess](https://github.com/Disservin/fastchess).
 
 <table>
     <tr align="center">
         <th>Version</th>
-        <th>CCRL Blitz</th>
+        <th><a href="https://www.computerchess.org.uk/ccrl/404/">CCRL Blitz</a></th>
+        <th><a href="https://www.computerchess.org.uk/ccrl/4040/">CCRL 40/15</a></th>
     </tr>
-    <tr align="center"><td>2.1.0</td><td>2739*</td></tr>
-    <tr align="center"><td>2.0.0</td><td>2646*</td></tr>
-    <tr align="center"><td>1.8.0</td><td>2223*</td></tr>
-    <tr align="center"><td>1.7.6</td><td>1967</td></tr>
-    <tr align="center"><td>1.7.0</td><td>1851</td></tr>
-    <tr align="center"><td>1.6.0</td><td>1797*</td></tr>
-    <tr align="center"><td>1.5.0</td><td>1764*</td></tr>
+    <tr align="center"><td>2.2.0</td> <td>3035*</td> <td>3005*</td></tr>
+    <tr align="center"><td>2.1.0</td> <td>2739*</td> <td>2691</td></tr>
+    <tr align="center"><td>2.0.0</td> <td>2646*</td> <td></td></tr>
+    <tr align="center"><td>1.8.0</td> <td>2223*</td> <td></td></tr>
+    <tr align="center"><td>1.7.6</td> <td>1967</td>  <td></td></tr>
+    <tr align="center"><td>1.7.0</td> <td>1851</td>  <td></td></tr>
+    <tr align="center"><td>1.6.0</td> <td>1797*</td> <td></td></tr>
+    <tr align="center"><td>1.5.0</td> <td>1764*</td> <td></td></tr>
 </table>
 
 ## Getting Started
@@ -155,4 +157,4 @@ For a more in-depth documentation on the NNUE and how it was trained, refer to t
 
 - [Sebastian Lague](https://www.youtube.com/c/SebastianLague) for inspiring me to start the development of Raphael through the Coding Adventures series
 - [Disservin](https://github.com/Disservin) for creating the [C++ chess library](https://github.com/Disservin/chess-library), [fastchess](https://github.com/Disservin/fastchess), and [Python Chess Engine](https://github.com/Disservin/python-chess-engine), all of which I've used extensively while developing my engine
-- Those on the Stockfish Discord for teaching me and helping me out with the NNUE dataset collection, training, and evaluation, as well as engine development in general. Without their help, I would have been stuck for a very very long time without a positive-ELO NNUE.
+- Those on the Stockfish Discord for teaching me and helping me out with the NNUE dataset collection, training, and evaluation, as well as engine development in general. Without their help, I would have been stuck for a very very long time without a positive-elo NNUE.

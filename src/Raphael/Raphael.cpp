@@ -452,11 +452,17 @@ int RaphaelNNUE::quiescence(
     chess::movegen::legalmoves<chess::movegen::MoveGenType::CAPTURE>(movelist, board);
     score_moves(movelist, board);
 
+    const int futility = besteval + QS_FUTILITY_MARGIN;
+    const bool in_check = board.inCheck();
+
     for (int movei = 0; movei < movelist.size(); movei++) {
         const auto move = pick_move(movei, movelist);
 
-        // delta pruning
-        if (SEE::estimate(move, board) + besteval + DELTA_THRESHOLD < alpha) continue;
+        // qs futility pruning
+        if (!in_check && futility <= alpha && !SEE::good_capture(move, board, 1)) {
+            besteval = max(besteval, futility);
+            continue;
+        }
 
         net.make_move(ply + 1, move, board);
         board.makeMove(move);
@@ -504,8 +510,8 @@ void RaphaelNNUE::score_moves(
                 score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
             }
 
-            score += SEE::good_capture(move, board, -GOOD_NOISY_THRESH) ? GOOD_NOISY_FLOOR
-                                                                        : BAD_NOISY_FLOOR;
+            score += SEE::good_capture(move, board, GOOD_NOISY_SEE_THRESH) ? GOOD_NOISY_FLOOR
+                                                                           : BAD_NOISY_FLOOR;
 
         } else if (move == ss->killer)
             // killer moves
@@ -530,8 +536,8 @@ void RaphaelNNUE::score_moves(chess::Movelist& movelist, const chess::Board& boa
             score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
         }
 
-        score += SEE::good_capture(move, board, -GOOD_NOISY_THRESH) ? GOOD_NOISY_FLOOR
-                                                                    : BAD_NOISY_FLOOR;
+        score += SEE::good_capture(move, board, GOOD_NOISY_SEE_THRESH) ? GOOD_NOISY_FLOOR
+                                                                       : BAD_NOISY_FLOOR;
 
         move.setScore(score);
     }

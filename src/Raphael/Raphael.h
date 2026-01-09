@@ -38,10 +38,6 @@ private:
     // search
     EngineOptions params;
     SearchOptions searchopt;  // limit depth, nodes, or movetime
-    // ponder FIXME:
-    // uint64_t ponderkey = 0;  // hash after opponent's best response
-    // int pondereval = 0;      // eval we got during ponder
-    // int ponderdepth = 1;     // depth we searched to during ponder
     // storage
     TranspositionTable tt;  // table with position, eval, and bestmove
     History history;        // history score for each move

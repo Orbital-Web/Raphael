@@ -125,7 +125,8 @@ You can also play with different time controls, increments, and player combinati
     - [ ] Correction history
     - [x] SEE                               (`v1.7+`)
 - [x] Quiescence search                     (`v1.0+`)
-  - [x] Delta pruning                       (`v2.1+`)
+  - ~~[x] Delta pruning~~                   (`v2.1+`)
+  - [x] Futility pruning                    (`v2.3+`)
   - [ ] SEE pruning
   - [ ] Transposition table probing
 - [x] Evaluation                            (`v1.0+`)

@@ -160,14 +160,14 @@ TunableCallback(LMR_NOISY_DIVISOR, 3319, 2500, 4500, update_lmr_table);
 TunableCallback(LMR_NONPV, 1046, 500, 2000, update_lmr_table);
 
 // quiescence
-Tunable(DELTA_THRESHOLD, 400, 50, 600);  // safety margin for delta pruning
+Tunable(QS_FUTILITY_MARGIN, 150, 50, 400);  // margin for qs futility pruning
 
 // move ordering
 static constexpr int GOOD_NOISY_FLOOR = 30000;  // good captures/promotions <=30500
 static constexpr int KILLER_FLOOR = 21000;      // killer moves
 static constexpr int BAD_NOISY_FLOOR = -20000;  // bad captures/promotions <=-19500
 
-Tunable(GOOD_NOISY_THRESH, 15, -200, 200);  // negative SEE threshold for good capture/promotion
+Tunable(GOOD_NOISY_SEE_THRESH, -15, -200, 200);  // SEE threshold for good capture/promotion
 
 Tunable(HISTORY_BONUS_SCALE, 100, 5, 500);
 Tunable(HISTORY_BONUS_OFFSET, 100, 0, 200);

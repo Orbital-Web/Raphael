@@ -7,19 +7,6 @@ namespace SEE {
 int pieceval(chess::Square sq, const chess::Board& board) { return VAL[(int)board.at(sq)]; }
 
 
-int estimate(const chess::Move& move, const chess::Board& board) {
-    const auto to = move.to();
-
-    if (move.typeOf() == chess::Move::ENPASSANT)
-        return VAL[0];  // pawn captured
-    else if (move.typeOf() == chess::Move::PROMOTION) {
-        const auto promo = move.promotionType();
-        return VAL[(int)promo] + pieceval(to, board) - VAL[0];  // promotion + any capture - pawn
-    } else
-        return pieceval(to, board);
-}
-
-
 chess::Square lva(chess::Bitboard attackers, const chess::Board& board) {
     for (int p = 0; p < 6; p++) {
         auto attacker_of_type

@@ -161,6 +161,7 @@ TunableCallback(LMR_NONPV, 1046, 500, 2000, update_lmr_table);
 
 // quiescence
 Tunable(QS_FUTILITY_MARGIN, 150, 50, 400);  // margin for qs futility pruning
+Tunable(QS_SEE_THRESH, -100, -500, 200);    // SEE threshold for qs SEE pruning
 
 // move ordering
 static constexpr int GOOD_NOISY_FLOOR = 30000;  // good captures/promotions <=30500

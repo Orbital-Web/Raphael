@@ -467,6 +467,9 @@ int RaphaelNNUE::quiescence(
             continue;
         }
 
+        // qs see pruning
+        if (!SEE::good_capture(move, board, QS_SEE_THRESH)) continue;
+
         net.make_move(ply + 1, move, board);
         board.makeMove(move);
 

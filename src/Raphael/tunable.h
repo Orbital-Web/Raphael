@@ -152,7 +152,7 @@ Tunable(NMP_REDUCTION, 4, 1, 8);  // depth reduction for nmp
 
 Tunable(LMR_DEPTH, 3, 1, 5);                    // depth to apply lmr from
 Tunable(LMR_FROMMOVE, 5, 2, 8);                 // movei to apply lmr from
-inline MultiArray<int, 2, 256, 256> LMR_TABLE;  // lmr reduction[quiet][ply][movei]
+inline MultiArray<int, 2, 256, 256> LMR_TABLE;  // lmr reduction[quiet][ply][move_searched]
 TunableCallback(LMR_QUIET_BASE, 1456, 500, 2000, update_lmr_table);
 TunableCallback(LMR_NOISY_BASE, 202, -500, 750, update_lmr_table);
 TunableCallback(LMR_QUIET_DIVISOR, 2835, 1000, 4000, update_lmr_table);

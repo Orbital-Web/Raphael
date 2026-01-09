@@ -8,17 +8,16 @@
 void Raphael::update_lmr_table() {
     for (const bool is_quiet : {false, true}) {
         for (int depth = 0; depth <= MAX_DEPTH; depth++) {
-            for (int movei = 0; movei < 256; movei++) {
-                if (depth == 0 || movei == 0) {
-                    LMR_TABLE[is_quiet][depth][movei] = 0;
+            for (int move_searched = 0; move_searched < 256; move_searched++) {
+                if (depth == 0 || move_searched == 0) {
+                    LMR_TABLE[is_quiet][depth][move_searched] = 0;
                     continue;
                 }
 
-                constexpr int qf = 1024 * 1024;
-                LMR_TABLE[is_quiet][depth][movei]
-                    = (is_quiet)
-                          ? LMR_QUIET_BASE + log(depth) * log(movei + 1) * qf / LMR_QUIET_DIVISOR
-                          : LMR_NOISY_BASE + log(depth) * log(movei + 1) * qf / LMR_NOISY_DIVISOR;
+                const double scale = 1024 * 1024 * log(depth) * log(move_searched);
+                LMR_TABLE[is_quiet][depth][move_searched]
+                    = (is_quiet) ? LMR_QUIET_BASE + scale / LMR_QUIET_DIVISOR
+                                 : LMR_NOISY_BASE + scale / LMR_NOISY_DIVISOR;
             }
         }
     }

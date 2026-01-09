@@ -365,15 +365,18 @@ int RaphaelNNUE::negamax(
     chess::Move bestmove = chess::Move::NO_MOVE;
     (ss + 1)->killer = chess::Move::NO_MOVE;
 
-    for (int movei = 0; movei < movelist.size(); movei++) {
-        const auto move = pick_move(movei, movelist);
+    int move_searched = 0;
+    for (int _movei = 0; _movei < movelist.size(); _movei++) {
+        const auto move = pick_move(_movei, movelist);
         const bool is_quiet = !board.isCapture(move) && move.typeOf() != chess::Move::PROMOTION;
         if (is_quiet) quietlist.add(move);
 
         net.make_move(ply + 1, move, board);
         board.makeMove(move);
         tt.prefetch(board.hash());
+
         ss->move = move;
+        move_searched++;
 
         // check extension
         if (board.inCheck()) extension++;
@@ -381,17 +384,17 @@ int RaphaelNNUE::negamax(
         // principle variation search
         int eval;
         const int new_depth = depth - 1 + extension;
-        if (depth >= LMR_DEPTH && movei >= LMR_FROMMOVE && is_quiet) {
+        if (depth >= LMR_DEPTH && move_searched > LMR_FROMMOVE && is_quiet) {
             // late move reduction
-            const int red_factor = LMR_TABLE[is_quiet][depth][movei] + !is_PV * LMR_NONPV;
+            const int red_factor = LMR_TABLE[is_quiet][depth][move_searched] + !is_PV * LMR_NONPV;
             const int red_depth = max(new_depth - red_factor / 1024, 0);
             eval = -negamax<false>(board, red_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
             if (eval > alpha && red_depth < new_depth)
                 eval = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
-        } else if (!is_PV || movei >= 1)
+        } else if (!is_PV || move_searched > 1)
             eval = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
 
-        if (is_PV && (movei == 0 || eval > alpha))
+        if (is_PV && (move_searched == 1 || eval > alpha))
             eval = -negamax<true>(board, new_depth, ply + 1, -beta, -alpha, ss + 1, halt);
 
         board.unmakeMove(move);
@@ -455,8 +458,8 @@ int RaphaelNNUE::quiescence(
     const int futility = besteval + QS_FUTILITY_MARGIN;
     const bool in_check = board.inCheck();
 
-    for (int movei = 0; movei < movelist.size(); movei++) {
-        const auto move = pick_move(movei, movelist);
+    for (int _movei = 0; _movei < movelist.size(); _movei++) {
+        const auto move = pick_move(_movei, movelist);
 
         // qs futility pruning
         if (!in_check && futility <= alpha && !SEE::good_capture(move, board, 1)) {

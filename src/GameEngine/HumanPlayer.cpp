@@ -47,7 +47,7 @@ HumanPlayer::MoveEval HumanPlayer::get_move(
                 if (sq_from != chess::Square::NO_SQ && sq_from != sq) {
                     chess::Move move = move_if_valid(sq_from, sq, movelist, board);
                     if (move != chess::Move::NO_MOVE)
-                        return {move, 0};
+                        return {move, 0, false};
                     else
                         sq_from = chess::Square::NO_SQ;
                 }
@@ -55,7 +55,7 @@ HumanPlayer::MoveEval HumanPlayer::get_move(
         }
         if (mouse.event == MouseEvent::RMBDOWN) sq_from = chess::Square::NO_SQ;
     }
-    return {chess::Move::NO_MOVE, 0};
+    return {chess::Move::NO_MOVE, 0, false};
 }
 
 

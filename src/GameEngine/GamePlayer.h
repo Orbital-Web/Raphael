@@ -20,6 +20,7 @@ public:
     struct MoveEval {
         chess::Move move;
         int eval;
+        bool is_mate;
     };
 
 

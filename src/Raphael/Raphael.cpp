@@ -178,24 +178,20 @@ RaphaelNNUE::MoveEval RaphaelNNUE::get_move(
     if (UCI) {
         lock_guard<mutex> lock(cout_mutex);
         cout << "bestmove " << chess::uci::moveToUci(bestmove) << "\n" << flush;
-    } else {
-        lock_guard<mutex> lock(cout_mutex);
-        if (TranspositionTable::is_mate(eval)) {
-            const int mate_dist
-                = (((eval >= 0) == whiteturn) ? 1 : -1) * (MATE_EVAL - abs(eval) + 1) / 2;
-            cout << "Eval: #" << mate_dist;
-        } else {
-            const auto eval_p = ((whiteturn) ? 1 : -1) * eval / 100.0f;
-            cout << "Eval: " << fixed << setprecision(2) << eval_p;
-        }
-
-        cout << "\tDepth: " << depth - 1 << "\tNodes: " << nodes << "\n" << flush;
     }
 
-    return {bestmove, eval};
+    // return result
+    if (TranspositionTable::is_mate(eval)) {
+        const int mate_dist = ((eval >= 0) ? 1 : -1) * (MATE_EVAL - abs(eval) + 1) / 2;
+        return {bestmove, mate_dist, true};
+    }
+    return {bestmove, eval, false};
 }
 
-void RaphaelNNUE::ponder(chess::Board board, volatile bool& halt) {  // FIXME:
+void RaphaelNNUE::ponder(chess::Board board, volatile bool& halt) {
+    // just get move with infinite time to fill up the transposition table
+    cge::MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
+    get_move(board, 0, 0, mouse, halt);
 }
 
 

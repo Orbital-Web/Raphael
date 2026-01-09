@@ -103,6 +103,8 @@ You can also play with different time controls, increments, and player combinati
     - [x] Null move pruning                 (`v2.2+`)
     - [ ] Futility pruning
     - [ ] Late move pruning
+    - [ ] Improving heuristics
+    - [ ] Multi-cut pruning
   - [x] Transposition table                 (`v1.1+`)
   - [x] Principle variation search          (`v2.1+`)
   - [x] Extensions                          (`v1.4+`)
@@ -123,6 +125,9 @@ You can also play with different time controls, increments, and player combinati
     - [ ] Correction history
     - [x] SEE                               (`v1.7+`)
 - [x] Quiescence search                     (`v1.0+`)
+  - [x] Delta pruning                       (`v2.1+`)
+  - [ ] SEE pruning
+  - [ ] Transposition table probing
 - [x] Evaluation                            (`v1.0+`)
   - [x] Hand-crafted evaluation             (`v1.0+`)
     - [x] Materials                         (`v1.0+`)
@@ -137,13 +142,12 @@ You can also play with different time controls, increments, and player combinati
     - [x] Bishop pair                       (`v1.8+`)
     - [x] Bishop-colored corner             (`v1.8+`)
     - [x] Draw evaluation                   (`v1.8+`)
-    - [x] Evaluation tuning                 (`v1.8+`)
+    - [x] Evaluation texel tuning           (`v1.8+`)
   - [x] NNUE                                (`v2.0+`)
     - [x] NNUE lazy updates                 (`v2.1+`)
     - [ ] NNUE output buckets
 - [x] Time management                       (`v1.0+`)
 - [x] Pondering                             (`v1.2+`)
-  - [x] Pondering with pv                   (`v1.6+`)
 - [x] Performance                           (`v1.8+`)
   - [x] Compiler optimizations              (`v1.8+`)
   - [x] Incremental selection sort          (`v2.2+`)

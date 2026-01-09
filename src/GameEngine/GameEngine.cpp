@@ -1,4 +1,5 @@
 #include <GameEngine/GameEngine.h>
+#include <GameEngine/HumanPlayer.h>
 #include <GameEngine/consts.h>
 
 #include <fstream>
@@ -8,6 +9,7 @@ using namespace cge;
 using std::async;
 using std::cout;
 using std::fixed;
+using std::flush;
 using std::future_status;
 using std::ios_base;
 using std::lock_guard;
@@ -84,8 +86,10 @@ void GameEngine::run_match(const GameOptions& options) {
         );
         auto status = future_status::timeout;
 
-        // allow other player to ponder
-        auto _ = async(&GamePlayer::ponder, oth_player, board, ref(halt));
+        // allow other player to ponder if current player is human
+        std::future<void> _;
+        if (dynamic_cast<HumanPlayer*>(cur_player) != nullptr)
+            _ = async(&GamePlayer::ponder, oth_player, board, ref(halt));
 
         // timings
         std::chrono::_V2::system_clock::time_point start, stop;
@@ -116,18 +120,21 @@ void GameEngine::run_match(const GameOptions& options) {
         }
 
         // play move
-        auto toPlay = movereceiver.get().move;
+        auto recv = movereceiver.get();
+        auto toPlay = recv.move;
         if (toPlay == chess::Move::NO_MOVE
             || std::find(movelist.begin(), movelist.end(), toPlay) == movelist.end()) {
             if (toPlay == chess::Move::NO_MOVE) {
                 lock_guard<mutex> lock(cout_mutex);
                 cout << "Warning, no move returned. Remaining time of player: " << fixed
-                     << setprecision(2) << cur_t_remain / 1000.0f << "\n";
+                     << setprecision(2) << cur_t_remain / 1000.0f << "\n"
+                     << flush;
             } else {
                 lock_guard<mutex> lock(cout_mutex);
                 cout << "Warning, illegal move " << chess::uci::moveToUci(toPlay)
                      << " played. Remaining time of player: " << fixed << setprecision(2)
-                     << cur_t_remain / 1000.0f << "\n";
+                     << cur_t_remain / 1000.0f << "\n"
+                     << flush;
             }
             timeout = true;
             timeoutwins[(p1_is_white != turn)]++;
@@ -135,8 +142,21 @@ void GameEngine::run_match(const GameOptions& options) {
             goto game_end;
         }
         halt = true;  // force stop pondering
+
+        // print info
+        if (recv.is_mate) {
+            lock_guard<mutex> lock(cout_mutex);
+            cout << "Eval: #" << ((whiteturn) ? 1 : -1) * recv.eval << "\n" << flush;
+        } else {
+            lock_guard<mutex> lock(cout_mutex);
+            cout << "Eval: " << fixed << setprecision(2)
+                 << ((whiteturn) ? 1 : -1) * recv.eval / 100.0f << "\n"
+                 << flush;
+        }
+
         // pgn saving
         if (savepgn) pgn_moves << nmoves << ". " << chess::uci::moveToSan(board, toPlay) << " ";
+
         // play move and update everything
         move(toPlay);
         turn = !turn;
@@ -185,7 +205,8 @@ void GameEngine::print_report() const {
     cout << "   Draw: \t\x1b[90m" << results[1] << "\x1b[0m\n";
     cout << "   " << players[1]->name << "\t\x1b[31m" << results[2] << " (white: " << whitewins[1]
          << ", black: " << results[2] - whitewins[1] - timeoutwins[1]
-         << ", timeout: " << timeoutwins[1] << ")\x1b[0m\n";
+         << ", timeout: " << timeoutwins[1] << ")\x1b[0m\n"
+         << flush;
 }
 
 
@@ -207,7 +228,7 @@ void GameEngine::generate_assets() {
     font_loaded &= font.openFromFile("src/assets/fonts/Roboto-Regular.ttf");
     if (!font_loaded) {
         lock_guard<mutex> lock(cout_mutex);
-        cout << "Warning, could not load font\n";
+        cout << "Warning, could not load font\n" << flush;
     }
     timers.reserve(2);
     names.reserve(2);
@@ -225,7 +246,7 @@ void GameEngine::generate_assets() {
     sound_loaded &= soundbuffers[2].loadFromFile("src/assets/sounds/GenericNotify.ogg");
     if (!sound_loaded) {
         lock_guard<mutex> lock(cout_mutex);
-        cout << "Warning, could not load 1 or more sound files\n";
+        cout << "Warning, could not load 1 or more sound files\n" << flush;
     }
     sounds.reserve(3);
     for (int i = 0; i < 3; i++) sounds.emplace_back(soundbuffers[i]);

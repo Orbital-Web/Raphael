@@ -78,15 +78,6 @@ public:
     /** Clears the table */
     void clear();
 
-    /** Whether the entry is valid or not at the current depth
-     *
-     * \param entry the entry to check
-     * \param key key looking up
-     * \param depth the current depth
-     * \returns whether entry is valid
-     */
-    static bool valid(const Entry& entry, uint64_t key, int depth);
-
     /** Whether the given eval implies a mate
      *
      * \param eval the eval score

@@ -303,16 +303,17 @@ int RaphaelNNUE::negamax(
 
     // probe transposition table
     const auto ttkey = board.hash();
-    const auto entry = tt.get(ttkey, ply);
-    const auto ttmove = (entry.key == ttkey) ? entry.move : chess::Move::NO_MOVE;
-    if (ply && tt.valid(entry, ttkey, depth)) {
-        if (entry.flag == tt.LOWER)
-            alpha = max(alpha, entry.eval);
-        else
-            beta = min(beta, entry.eval);
+    const auto ttentry = tt.get(ttkey, ply);
+    const bool tthit = ttentry.key == ttkey;
+    const auto ttmove = (tthit) ? ttentry.move : chess::Move::NO_MOVE;
 
-        if (alpha >= beta) return entry.eval;  // prune
-    }
+    // tt cutoff
+    if (!is_PV && tthit && ttentry.depth >= depth
+        && (ttentry.flag == tt.EXACT                                // exact
+            || (ttentry.flag == tt.LOWER && ttentry.eval >= beta)   // lower
+            || (ttentry.flag == tt.UPPER && ttentry.eval <= alpha)  // upper
+    ))
+        return ttentry.eval;
 
     const bool in_check = board.inCheck();
     ss->static_eval = net.evaluate(ply, whiteturn);

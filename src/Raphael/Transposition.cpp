@@ -89,11 +89,6 @@ void TranspositionTable::clear() {
 }
 
 
-bool TranspositionTable::valid(const Entry& entry, uint64_t key, int depth) {
-    return ((entry.flag != INVALID) && (entry.depth >= depth) && (entry.key == key));
-}
-
-
 bool TranspositionTable::is_mate(int eval) {
     int abseval = abs(eval);
     return ((abseval <= MATE_EVAL) && (abseval > MATE_EVAL - 1000));

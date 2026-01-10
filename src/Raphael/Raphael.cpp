@@ -510,10 +510,12 @@ void RaphaelNNUE::score_moves(
         if (!is_quiet) {
             // noisy moves
             if (is_capture) {
-                // captures
+                // captures (MVV/LVA)
                 auto attacker = board.at<chess::PieceType>(move.from());
-                auto victim = board.at<chess::PieceType>(move.to());
-                score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
+                auto victim = (move.typeOf() == chess::Move::ENPASSANT)
+                                  ? chess::PieceType::PAWN
+                                  : board.at<chess::PieceType>(move.to());
+                score += 128 * (int)victim + 5 - (int)attacker;
             }
 
             score += SEE::good_capture(move, board, GOOD_NOISY_SEE_THRESH) ? GOOD_NOISY_FLOOR
@@ -536,10 +538,12 @@ void RaphaelNNUE::score_moves(chess::Movelist& movelist, const chess::Board& boa
 
         // assume noisy
         if (board.isCapture(move)) {
-            // captures
+            // captures (MVV/LVA)
             auto attacker = board.at<chess::PieceType>(move.from());
-            auto victim = board.at<chess::PieceType>(move.to());
-            score += 100 * (int)victim + 5 - (int)attacker;  // MVV/LVA
+            auto victim = (move.typeOf() == chess::Move::ENPASSANT)
+                              ? chess::PieceType::PAWN
+                              : board.at<chess::PieceType>(move.to());
+            score += 128 * (int)victim + 5 - (int)attacker;
         }
 
         score += SEE::good_capture(move, board, GOOD_NOISY_SEE_THRESH) ? GOOD_NOISY_FLOOR

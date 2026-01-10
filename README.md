@@ -99,6 +99,7 @@ You can also play with different time controls, increments, and player combinati
   - [x] Pruning                             (`v1.0+`)
     - [x] Alpha-beta pruning                (`v1.0+`)
     - [x] Mate distance pruning             (`v1.6+`)
+    - [x] Transposition table cutoff        (`v1.1+`)
     - [x] Reverse futility pruning          (`v2.2+`)
     - [x] Null move pruning                 (`v2.2+`)
     - [ ] Razoring
@@ -113,6 +114,7 @@ You can also play with different time controls, increments, and player combinati
   - [x] Principle variation search          (`v2.1+`)
   - [x] Extensions                          (`v1.4+`)
     - [x] Check extensions                  (`v1.4+`)
+    - ~~Pawn push extensions~~              (`v1.4+`)
     - [x] One reply extensions              (`v1.7+`)
     - [ ] Singular extensions
   - [x] Reductions                          (`v1.5+`)
@@ -129,7 +131,7 @@ You can also play with different time controls, increments, and player combinati
     - [ ] Correction history
     - [x] SEE                               (`v1.7+`)
 - [x] Quiescence search                     (`v1.0+`)
-  - ~~[x] Delta pruning~~                   (`v2.1+`)
+  - ~~Delta pruning~~                       (`v2.1+`)
   - [x] Futility pruning                    (`v2.3+`)
   - [x] SEE pruning                         (`v2.3+`)
   - [ ] Transposition table probing

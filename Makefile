@@ -2,7 +2,8 @@
 CC = g++
 LD = ld
 CCFLAGS = -std=c++20 -O3 -Wall -Isrc -Ichess-library/include -ISFML-3.0.2/include
-LDFLAGS = -LSFML-3.0.2/lib -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
+LDFLAGS =
+SFML_LIBS = -LSFML-3.0.2/lib -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
 
 ifneq ($(OS),Windows_NT)
     LDFLAGS += -Wl,-rpath,'$$ORIGIN/SFML-3.0.2/lib',-z,noexecstack
@@ -10,27 +11,28 @@ endif
 
 # Architecture
 ARCH ?=
-CCFLAGS_NATIVE = -march=native -DNDEBUG
-CCFLAGS_AVX2_BMI2 = -march=haswell -DNDEBUG
-CCFLAGS_AVX2 = -march=haswell -mno-bmi2 -DNDEBUG
-CCFLAGS_GENERIC = -march=x86-64 -DNDEBUG
-CCFLAGS_TUNABLE = -march=native -DTUNE -DNDEBUG
-CCFLAGS_DEBUG = -march=native
+CCFLAGS_RELEASE   = -DNDEBUG
+CCFLAGS_NATIVE    = $(CCFLAGS_RELEASE) -march=native
+CCFLAGS_AVX2_BMI2 = $(CCFLAGS_RELEASE) -march=haswell
+CCFLAGS_AVX2      = $(CCFLAGS_RELEASE) -march=haswell -mno-bmi2
+CCFLAGS_GENERIC   = $(CCFLAGS_RELEASE) -march=x86-64
+CCFLAGS_TUNABLE   = $(CCFLAGS_RELEASE) -march=native -DTUNE
+CCFLAGS_DEBUG     = -march=native -g
 
 ifeq ($(ARCH),)
-    $(warning ARCH not set, building for native)
+    $(warning ARCH not set, building for ARCH=native (release))
     EXTRA_CCFLAGS = $(CCFLAGS_NATIVE)
 else ifeq ($(ARCH),native)
-    $(info Building for ARCH=native)
+    $(info Building for ARCH=native (release))
     EXTRA_CCFLAGS = $(CCFLAGS_NATIVE)
 else ifeq ($(ARCH),avx2_bmi2)
-    $(info Building for ARCH=avx2_bmi2)
+    $(info Building for ARCH=avx2_bmi2 (release))
     EXTRA_CCFLAGS = $(CCFLAGS_AVX2_BMI2)
 else ifeq ($(ARCH),avx2)
-    $(info Building for ARCH=avx2)
+    $(info Building for ARCH=avx2 (release))
     EXTRA_CCFLAGS = $(CCFLAGS_AVX2)
 else ifeq ($(ARCH),generic)
-    $(info Building for ARCH=generic)
+    $(info Building for ARCH=generic (release))
     EXTRA_CCFLAGS = $(CCFLAGS_GENERIC)
 else ifeq ($(ARCH),tunable)
     $(info Building for ARCH=tunable)
@@ -67,11 +69,11 @@ $(NNUE_OBJ): $(NNUE_FILE)
 
 # Linking the main executable
 main: $(MAIN_OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS) $(SFML_LIBS)
 
 # Linking the UCI executable
 uci: $(UCI_OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS) -static
 
 # Generic rules for compiling a source file to an object file
 %.o: %.cpp

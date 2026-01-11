@@ -1,5 +1,5 @@
 #include <Raphael/Transposition.h>
-#include <Raphael/consts.h>
+#include <Raphael/utils.h>
 
 #include <cstring>
 
@@ -50,9 +50,9 @@ TranspositionTable::Entry TranspositionTable::get(uint64_t key, int ply) const {
     };
 
     // correct mate eval when retrieving (https://youtu.be/XfeuxubYlT0)
-    if (entry.eval < -MATE_EVAL + 1000)
+    if (is_loss(entry.eval))
         entry.eval += ply;
-    else if (entry.eval > MATE_EVAL - 1000)
+    else if (is_win(entry.eval))
         entry.eval -= ply;
     return entry;
 }
@@ -64,9 +64,9 @@ void TranspositionTable::prefetch(uint64_t key) const { __builtin_prefetch(&_tab
 void TranspositionTable::set(const Entry& entry, int ply) {
     // correct mate eval when storing (https://youtu.be/XfeuxubYlT0)
     int eval = entry.eval;
-    if (eval < -MATE_EVAL + 1000)
+    if (is_loss(eval))
         eval -= ply;
-    else if (eval > MATE_EVAL - 1000)
+    else if (is_win(eval))
         eval += ply;
 
     // pack value to get entry storage (63-32: eval, 31-16: move, 15-14: flag, 13-0: depth)
@@ -86,12 +86,6 @@ void TranspositionTable::clear() {
     assert(size > 0);
 
     memset(_table, 0, size * ENTRY_SIZE);
-}
-
-
-bool TranspositionTable::is_mate(int eval) {
-    int abseval = abs(eval);
-    return ((abseval <= MATE_EVAL) && (abseval > MATE_EVAL - 1000));
 }
 
 

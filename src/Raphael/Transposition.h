@@ -78,13 +78,6 @@ public:
     /** Clears the table */
     void clear();
 
-    /** Whether the given eval implies a mate
-     *
-     * \param eval the eval score
-     * \returns whether the eval implies a mate or not
-     */
-    static bool is_mate(int eval);
-
 private:
     /** Computes the index on the table
      *

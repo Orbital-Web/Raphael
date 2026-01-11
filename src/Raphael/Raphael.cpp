@@ -2,24 +2,22 @@
 #include <Raphael/Raphael.h>
 #include <Raphael/SEE.h>
 #include <Raphael/consts.h>
+#include <Raphael/utils.h>
 
 #include <climits>
 #include <cmath>
 #include <future>
-#include <iomanip>
 
 using namespace Raphael;
 using std::async;
 using std::copy;
 using std::cout;
-using std::fixed;
 using std::flush;
 using std::lock_guard;
 using std::max;
 using std::min;
 using std::mutex;
 using std::ref;
-using std::setprecision;
 using std::string;
 using std::swap;
 namespace ch = std::chrono;
@@ -181,7 +179,7 @@ RaphaelNNUE::MoveEval RaphaelNNUE::get_move(
     }
 
     // return result
-    if (TranspositionTable::is_mate(eval)) {
+    if (is_mate(eval)) {
         const int mate_dist = ((eval >= 0) ? 1 : -1) * (MATE_EVAL - abs(eval) + 1) / 2;
         return {bestmove, mate_dist, true};
     }
@@ -256,7 +254,7 @@ void RaphaelNNUE::print_uci_info(int depth, int eval, const SearchStack* ss) con
     cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime << " nodes "
          << nodes;
 
-    if (TranspositionTable::is_mate(eval)) {
+    if (is_mate(eval)) {
         const int mate_dist = ((eval >= 0) ? 1 : -1) * (MATE_EVAL - abs(eval) + 1) / 2;
         cout << " score mate " << mate_dist;
     } else
@@ -341,7 +339,7 @@ int RaphaelNNUE::negamax(
 
             board.unmakeNullMove();
 
-            if (eval >= beta) return (eval >= MATE_EVAL - 1000) ? beta : eval;
+            if (eval >= beta) return (is_win(eval)) ? beta : eval;
         }
     }
 

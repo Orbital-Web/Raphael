@@ -376,9 +376,9 @@ int Raphael::negamax(
             }
         }
 
+        tt.prefetch(board.zobristAfter<false>(move));
         net.make_move(ply + 1, move, board);
         board.makeMove(move);
-        tt.prefetch(board.hash());
         ss->move = move;
         move_searched++;
 

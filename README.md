@@ -104,13 +104,14 @@ You can also play with different time controls, increments, and player combinati
     - [x] Null move pruning                 (`v2.2+`)
     - [ ] Razoring
     - [ ] Probcut
-    - [ ] Futility pruning
+    - [x] Futility pruning                  (`v2.3+`)
     - [ ] Late move pruning
     - [ ] SEE pruning
     - [ ] History pruning
     - [ ] Multi-cut
     - [ ] Improving heuristics
   - [x] Transposition table                 (`v1.1+`)
+    - [x] Prefetching                       (`v2.2+`)
   - [x] Principle variation search          (`v2.1+`)
   - [x] Extensions                          (`v1.4+`)
     - [x] Check extensions                  (`v1.4+`)

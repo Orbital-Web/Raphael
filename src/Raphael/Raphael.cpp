@@ -9,7 +9,6 @@
 #include <future>
 
 using namespace raphael;
-using std::async;
 using std::copy;
 using std::cout;
 using std::flush;
@@ -17,7 +16,6 @@ using std::lock_guard;
 using std::max;
 using std::min;
 using std::mutex;
-using std::ref;
 using std::string;
 using std::swap;
 namespace ch = std::chrono;
@@ -323,7 +321,7 @@ int Raphael::negamax(
         const auto side = board.sideToMove();
         const bool non_pk
             = ((board.us(side) ^ board.pieces(chess::PieceType::PAWN, side)).count() > 1);
-        if (depth >= NMP_DEPTH && non_pk && ss->static_eval >= beta
+        if (depth >= NMP_DEPTH && ss->static_eval >= beta
             && (ss - 1)->move != chess::Move::NULL_MOVE && non_pk) {
             board.makeNullMove();
             net.make_move(ply + 1, chess::Move::NULL_MOVE, board);
@@ -359,19 +357,32 @@ int Raphael::negamax(
     int besteval = -INT_MAX;
     chess::Move bestmove = chess::Move::NO_MOVE;
     (ss + 1)->killer = chess::Move::NO_MOVE;
+    bool skip_quiets = false;
 
     int move_searched = 0;
     for (int _movei = 0; _movei < movelist.size(); _movei++) {
         const auto move = pick_move(_movei, movelist);
         const bool is_quiet = !board.isCapture(move) && move.typeOf() != chess::Move::PROMOTION;
-        if (is_quiet) quietlist.add(move);
+
+        if (is_quiet && skip_quiets) continue;
+
+        // moveloop pruning
+        if (ply && !is_loss(besteval)) {
+            // futility pruning
+            const int futility = ss->static_eval + FP_MARGIN_BASE + FP_DEPTH_SCALE * depth;
+            if (!in_check && is_quiet && depth <= FP_DEPTH && futility <= alpha) {
+                skip_quiets = true;
+                continue;
+            }
+        }
 
         net.make_move(ply + 1, move, board);
         board.makeMove(move);
         tt.prefetch(board.hash());
-
         ss->move = move;
         move_searched++;
+
+        if (is_quiet) quietlist.add(move);
 
         // check extension
         if (board.inCheck()) extension++;

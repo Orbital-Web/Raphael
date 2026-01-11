@@ -98,8 +98,8 @@ You can also play with different time controls, increments, and player combinati
 - [x] Alpha-beta search                     (`v1.0+`)
   - [x] Pruning                             (`v1.0+`)
     - [x] Alpha-beta pruning                (`v1.0+`)
-    - [x] Mate distance pruning             (`v1.6+`)
     - [x] Transposition table cutoff        (`v1.1+`)
+    - [x] Mate distance pruning             (`v1.6+`)
     - [x] Reverse futility pruning          (`v2.2+`)
     - [x] Null move pruning                 (`v2.2+`)
     - [ ] Razoring

@@ -547,9 +547,6 @@ void RaphaelNNUE::score_moves(chess::Movelist& movelist, const chess::Board& boa
             score += 128 * (int)victim + 5 - (int)attacker;
         }
 
-        score += SEE::good_capture(move, board, GOOD_NOISY_SEE_THRESH) ? GOOD_NOISY_FLOOR
-                                                                       : BAD_NOISY_FLOOR;
-
         move.setScore(score);
     }
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include <Raphael/utils.h>
+#include <Raphael/types.h>
 
 #include <array>
 #include <chess.hpp>

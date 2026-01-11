@@ -242,6 +242,10 @@ int main() {
             } else if (keyword == "go") {
                 halt = true;
                 search(tokens);
+
+            } else {
+                lock_guard<mutex> lock(cout_mutex);
+                cout << "info string unknown command: '" << keyword << "'\n" << flush;
             }
         }
     }

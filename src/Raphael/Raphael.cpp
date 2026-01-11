@@ -179,10 +179,7 @@ Raphael::MoveEval Raphael::get_move(
     }
 
     // return result
-    if (is_mate(eval)) {
-        const int mate_dist = ((eval >= 0) ? 1 : -1) * (MATE_EVAL - abs(eval) + 1) / 2;
-        return {bestmove, mate_dist, true};
-    }
+    if (is_mate(eval)) return {bestmove, mate_distance(eval), true};
     return {bestmove, eval, false};
 }
 
@@ -254,10 +251,9 @@ void Raphael::print_uci_info(int depth, int eval, const SearchStack* ss) const {
     cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime << " nodes "
          << nodes;
 
-    if (is_mate(eval)) {
-        const int mate_dist = ((eval >= 0) ? 1 : -1) * (MATE_EVAL - abs(eval) + 1) / 2;
-        cout << " score mate " << mate_dist;
-    } else
+    if (is_mate(eval))
+        cout << " score mate " << mate_distance(eval);
+    else
         cout << " score cp " << eval;
 
     cout << " nps " << nps << " pv " << get_pv_line(ss->pv) << "\n" << flush;

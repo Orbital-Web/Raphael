@@ -23,4 +23,11 @@ bool is_loss(int eval);
  * \returns whether the eval implies a win/loss
  */
 bool is_mate(int eval);
+
+/** Computes the mate distance from a mate eval
+ *
+ * \param eval eval with mate score
+ * \returns mate distance
+ */
+int mate_distance(int eval);
 };  // namespace raphael

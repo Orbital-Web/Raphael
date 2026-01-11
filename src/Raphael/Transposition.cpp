@@ -9,7 +9,7 @@
     #include <sys/mman.h>
 #endif
 
-using namespace Raphael;
+using namespace raphael;
 
 
 

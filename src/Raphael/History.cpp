@@ -3,7 +3,7 @@
 
 #include <cstring>
 
-using namespace Raphael;
+using namespace raphael;
 using std::memset;
 using std::min;
 

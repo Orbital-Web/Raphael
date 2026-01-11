@@ -11,8 +11,8 @@
 
 
 
-namespace Raphael {
-class RaphaelNNUE: public cge::GamePlayer {
+namespace raphael {
+class Raphael: public cge::GamePlayer {
 public:
     static const std::string version;
 
@@ -76,7 +76,7 @@ public:
      *
      * \param name_in player name
      */
-    RaphaelNNUE(const std::string& name_in);
+    Raphael(const std::string& name_in);
 
 
     /** Sets Raphael's engine options
@@ -222,4 +222,4 @@ private:
      */
     chess::Move pick_move(int movei, chess::Movelist& movelist) const;
 };
-};  // namespace Raphael
+};  // namespace raphael

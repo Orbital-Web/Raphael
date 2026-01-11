@@ -7,7 +7,7 @@
 
 #define TAPERED 1
 
-using namespace Raphael;
+using namespace raphael;
 using std::cout, std::endl;
 using std::fixed, std::setprecision;
 using std::max, std::min;

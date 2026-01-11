@@ -8,7 +8,7 @@
 
 
 
-namespace Raphael {
+namespace raphael {
 class Nnue {
 private:
     static constexpr int N_INPUTS = 12 * 64;  // all features
@@ -114,4 +114,4 @@ public:
      */
     void make_move(int ply, const chess::Move& move, const chess::Board& board);
 };
-}  // namespace Raphael
+}  // namespace raphael

@@ -7,7 +7,7 @@
 
 
 
-namespace Raphael {
+namespace raphael {
 
 // inspired by https://github.com/Quinniboi10/Lazarus/blob/main/src/tunable.h and
 // https://github.com/Ciekce/Stormphrax/blob/main/src/tunable.h
@@ -110,10 +110,10 @@ inline bool set_tunable(const std::string& name, int value) {
 }
 
     #define Tunable(name, value, min, max) \
-        inline Raphael::SpinOption<true> name { #name, value, min, max, nullptr }
+        inline raphael::SpinOption<true> name { #name, value, min, max, nullptr }
 
     #define TunableCallback(name, value, min, max, callback) \
-        inline Raphael::SpinOption<true> name { #name, value, min, max, callback }
+        inline raphael::SpinOption<true> name { #name, value, min, max, callback }
 #else
     #define Tunable(name, value, min, max) static constexpr int name = value
 
@@ -178,4 +178,4 @@ static constexpr int HISTORY_MAX = 16384;
 
 #undef Tunable
 #undef TunableCallback
-}  // namespace Raphael
+}  // namespace raphael

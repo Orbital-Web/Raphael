@@ -30,14 +30,14 @@ extern const bool UCI = true;
 
 // engine
 mutex engine_mutex;
-Raphael::RaphaelNNUE engine("Raphael");
+raphael::Raphael engine("Raphael");
 
 // search globals
 mutex search_mutex;
 condition_variable search_cv;
 struct SearchRequest {
     chess::Board board;
-    Raphael::RaphaelNNUE::SearchOptions options;
+    raphael::Raphael::SearchOptions options;
     int t_remain;
     int t_inc;
     bool go = false;
@@ -103,7 +103,7 @@ void setoption(const vector<string>& tokens) {
 
     lock_guard<mutex> engine_lock(engine_mutex);
 #ifdef TUNE
-    if (Raphael::set_tunable(tokens[2], value)) {
+    if (raphael::set_tunable(tokens[2], value)) {
         lock_guard<mutex> lock(cout_mutex);
         cout << "info string set " << tokens[2] << " to " << value << "\n" << flush;
         return;
@@ -201,7 +201,7 @@ int main() {
                  << engine.default_params().hash.uci() << engine.default_params().softnodes.uci()
                  << engine.default_params().softhardmult.uci();
 #ifdef TUNE
-            for (const auto tunable : Raphael::tunables) cout << tunable->uci();
+            for (const auto tunable : raphael::tunables) cout << tunable->uci();
 #endif
             cout << "uciok\n" << flush;
 

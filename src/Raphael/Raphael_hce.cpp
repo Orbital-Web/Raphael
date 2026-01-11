@@ -1,6 +1,6 @@
 #include <Raphael/Raphael_hce.h>
 
-using namespace Raphael;
+using namespace raphael;
 using std::max;
 using std::min;
 

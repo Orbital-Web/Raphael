@@ -6,7 +6,7 @@
 
 
 
-namespace Raphael {
+namespace raphael {
 // legacy, kept for future references
 class RaphaelHCE {
 private:
@@ -61,4 +61,4 @@ public:
      */
     static int evaluate(const chess::Board& board);
 };
-};  // namespace Raphael
+};  // namespace raphael

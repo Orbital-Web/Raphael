@@ -74,7 +74,7 @@ string parse_args(int argc, char* argv[]) {
  *
  * \param net the pointer to a NNUE model to test with
  */
-void test_make_move(Raphael::Nnue& net, chess::Board& board) {
+void test_make_move(raphael::Nnue& net, chess::Board& board) {
     cout << "Testing make_move..." << endl;
 
     // test suite
@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
     string nnue_file = parse_args(argc, argv);
 
     // load nnue
-    Raphael::Nnue net(nnue_file);
+    raphael::Nnue net(nnue_file);
 
     // continuously listen for input
     string command;

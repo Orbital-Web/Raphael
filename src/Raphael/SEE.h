@@ -4,7 +4,7 @@
 
 
 
-namespace Raphael {
+namespace raphael {
 // Static Exchange Evaluation
 namespace SEE {
 const int VAL[13] = {
@@ -50,4 +50,4 @@ chess::Square lva(chess::Bitboard attackers, const chess::Board& board);
  */
 bool good_capture(const chess::Move& move, const chess::Board& board, int threshold);
 }  // namespace SEE
-}  // namespace Raphael
+}  // namespace raphael

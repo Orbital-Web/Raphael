@@ -2,7 +2,7 @@
 
 
 
-namespace Raphael {
+namespace raphael {
 /** Whether the current score implies delivering a mate
  *
  * \param eval eval to check
@@ -23,4 +23,4 @@ bool is_loss(int eval);
  * \returns whether the eval implies a win/loss
  */
 bool is_mate(int eval);
-};  // namespace Raphael
+};  // namespace raphael

@@ -2,7 +2,7 @@
 
 
 
-namespace Raphael {
+namespace raphael {
 namespace SEE {
 int pieceval(chess::Square sq, const chess::Board& board) { return VAL[(int)board.at(sq)]; }
 
@@ -86,4 +86,4 @@ bool good_capture(const chess::Move& move, const chess::Board& board, int thresh
     return color != board.sideToMove();
 }
 }  // namespace SEE
-}  // namespace Raphael
+}  // namespace raphael

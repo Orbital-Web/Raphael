@@ -8,7 +8,7 @@
 #include <cmath>
 #include <future>
 
-using namespace Raphael;
+using namespace raphael;
 using std::async;
 using std::copy;
 using std::cout;
@@ -28,9 +28,9 @@ extern const bool UCI;
 
 
 
-const string RaphaelNNUE::version = "2.2.0.0";
+const string Raphael::version = "2.2.0.0";
 
-const RaphaelNNUE::EngineOptions& RaphaelNNUE::default_params() {
+const Raphael::EngineOptions& Raphael::default_params() {
     static EngineOptions opts{
         .hash = {
             "Hash",
@@ -55,7 +55,7 @@ const RaphaelNNUE::EngineOptions& RaphaelNNUE::default_params() {
 };
 
 
-void RaphaelNNUE::PVList::update(const chess::Move move, const PVList& child) {
+void Raphael::PVList::update(const chess::Move move, const PVList& child) {
     moves[0] = move;
     copy(child.moves, child.moves + child.length, moves + 1);
     length = child.length + 1;
@@ -63,14 +63,14 @@ void RaphaelNNUE::PVList::update(const chess::Move move, const PVList& child) {
 }
 
 
-RaphaelNNUE::RaphaelNNUE(const string& name_in)
+Raphael::Raphael(const string& name_in)
     : GamePlayer(name_in), params(default_params()), tt(params.hash) {
     params.hash.set_callback([this]() { tt.resize(params.hash); });
     init_tunables();
 }
 
 
-void RaphaelNNUE::set_option(const std::string& name, int value) {
+void Raphael::set_option(const std::string& name, int value) {
     for (const auto p : {&params.hash, &params.softhardmult}) {
         if (p->name != name) continue;
 
@@ -94,7 +94,7 @@ void RaphaelNNUE::set_option(const std::string& name, int value) {
     lock_guard<mutex> lock(cout_mutex);
     cout << "info string error: unknown spin option '" << name << "'\n" << flush;
 }
-void RaphaelNNUE::set_option(const std::string& name, bool value) {
+void Raphael::set_option(const std::string& name, bool value) {
     for (CheckOption* p : {&params.softnodes}) {
         if (p->name != name) continue;
 
@@ -113,10 +113,10 @@ void RaphaelNNUE::set_option(const std::string& name, bool value) {
     cout << "info string error: unknown check option '" << name << "'\n" << flush;
 }
 
-void RaphaelNNUE::set_searchoptions(SearchOptions options) { searchopt = options; }
+void Raphael::set_searchoptions(SearchOptions options) { searchopt = options; }
 
 
-RaphaelNNUE::MoveEval RaphaelNNUE::get_move(
+Raphael::MoveEval Raphael::get_move(
     chess::Board board,
     const int t_remain,
     const int t_inc,
@@ -186,14 +186,14 @@ RaphaelNNUE::MoveEval RaphaelNNUE::get_move(
     return {bestmove, eval, false};
 }
 
-void RaphaelNNUE::ponder(chess::Board board, volatile bool& halt) {
+void Raphael::ponder(chess::Board board, volatile bool& halt) {
     // just get move with infinite time to fill up the transposition table
     cge::MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
     get_move(board, 0, 0, mouse, halt);
 }
 
 
-void RaphaelNNUE::reset() {
+void Raphael::reset() {
     nodes = 0;
     seldepth = 0;
     tt.clear();
@@ -202,7 +202,7 @@ void RaphaelNNUE::reset() {
 }
 
 
-void RaphaelNNUE::start_search_timer(const chess::Board& board, int t_remain, int t_inc) {
+void Raphael::start_search_timer(const chess::Board& board, int t_remain, int t_inc) {
     // if movetime is specified, use that instead
     if (searchopt.movetime != -1) {
         search_t = searchopt.movetime;
@@ -228,7 +228,7 @@ void RaphaelNNUE::start_search_timer(const chess::Board& board, int t_remain, in
     start_t = ch::high_resolution_clock::now();
 }
 
-bool RaphaelNNUE::is_time_over(volatile bool& halt) const {
+bool Raphael::is_time_over(volatile bool& halt) const {
     // if max nodes is specified, check that instead
     if (searchopt.maxnodes != -1
         && nodes >= searchopt.maxnodes * ((params.softnodes) ? params.softhardmult : 1)) {
@@ -245,7 +245,7 @@ bool RaphaelNNUE::is_time_over(volatile bool& halt) const {
 }
 
 
-void RaphaelNNUE::print_uci_info(int depth, int eval, const SearchStack* ss) const {
+void Raphael::print_uci_info(int depth, int eval, const SearchStack* ss) const {
     const auto now = ch::high_resolution_clock::now();
     const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
     const auto nps = (dtime) ? nodes * 1000 / dtime : 0;
@@ -263,7 +263,7 @@ void RaphaelNNUE::print_uci_info(int depth, int eval, const SearchStack* ss) con
     cout << " nps " << nps << " pv " << get_pv_line(ss->pv) << "\n" << flush;
 }
 
-string RaphaelNNUE::get_pv_line(const PVList& pv) const {
+string Raphael::get_pv_line(const PVList& pv) const {
     string pvline = "";
     for (int i = 0; i < pv.length; i++) pvline += chess::uci::moveToUci(pv.moves[i]) + " ";
     return pvline;
@@ -271,7 +271,7 @@ string RaphaelNNUE::get_pv_line(const PVList& pv) const {
 
 
 template <bool is_PV>
-int RaphaelNNUE::negamax(
+int Raphael::negamax(
     chess::Board& board,
     const int depth,
     const int ply,
@@ -433,7 +433,7 @@ int RaphaelNNUE::negamax(
     return besteval;
 }
 
-int RaphaelNNUE::quiescence(
+int Raphael::quiescence(
     chess::Board& board, const int ply, int alpha, int beta, volatile bool& halt
 ) {
     // timeout
@@ -489,7 +489,7 @@ int RaphaelNNUE::quiescence(
 }
 
 
-void RaphaelNNUE::score_moves(
+void Raphael::score_moves(
     chess::Movelist& movelist,
     const chess::Move& ttmove,
     const chess::Board& board,
@@ -531,7 +531,7 @@ void RaphaelNNUE::score_moves(
     }
 }
 
-void RaphaelNNUE::score_moves(chess::Movelist& movelist, const chess::Board& board) const {
+void Raphael::score_moves(chess::Movelist& movelist, const chess::Board& board) const {
     for (auto& move : movelist) {
         int16_t score = 0;
 
@@ -549,7 +549,7 @@ void RaphaelNNUE::score_moves(chess::Movelist& movelist, const chess::Board& boa
     }
 }
 
-chess::Move RaphaelNNUE::pick_move(int movei, chess::Movelist& movelist) const {
+chess::Move Raphael::pick_move(int movei, chess::Movelist& movelist) const {
     int besti = movei;
     auto bestscore = movelist[movei].score();
 

@@ -3,7 +3,7 @@
 #include <cstring>
 #include <fstream>
 
-using namespace Raphael;
+using namespace raphael;
 using std::copy;
 using std::cout;
 using std::endl;

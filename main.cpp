@@ -25,13 +25,13 @@ cge::GamePlayer* player_factory(char* playertype, char* name) {
     if (!strcmp(playertype, "human") || !strcmp(playertype, "Human"))
         return new cge::HumanPlayer(name);
     else if (!strcmp(playertype, "Raphael"))
-        return new Raphael::RaphaelNNUE(name);
+        return new raphael::Raphael(name);
 
     // invalid
     printf("Invalid player type: %s\n", playertype);
     printf("Valid player types are:\n");
     printf("   human:         Human-controlled player\n");
-    printf("   Raphael:       Raphael %s\n", Raphael::RaphaelNNUE::version.c_str());
+    printf("   Raphael:       Raphael %s\n", raphael::Raphael::version.c_str());
     return nullptr;
 }
 

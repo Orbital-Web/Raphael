@@ -5,7 +5,7 @@
 
 
 
-namespace Raphael {
+namespace raphael {
 class TranspositionTable {
 private:
     // table entry storage type (16 bytes)
@@ -95,4 +95,4 @@ private:
     /** Deallocates the table (if allocated) and sets capacity and _table (not size) */
     void deallocate();
 };
-}  // namespace Raphael
+}  // namespace raphael

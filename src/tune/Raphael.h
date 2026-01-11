@@ -8,7 +8,7 @@
 
 
 
-namespace Raphael {
+namespace raphael {
 struct RaphaelParams {
     int KING_DIST_WEIGHT[2] = {0, 20};
 
@@ -190,4 +190,4 @@ public:
     );
     static void print_parameters(const parameters_t& parameters);
 };
-}  // namespace Raphael
+}  // namespace raphael

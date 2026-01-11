@@ -22,7 +22,7 @@ extern const bool UCI = false;
 
 
 
-namespace Raphael {
+namespace raphael {
 class v1_8_traingen: public RaphaelHCE {
 public:
     v1_8_traingen(string name_in): RaphaelHCE(name_in) {}
@@ -74,8 +74,8 @@ public:
 
     // Returns the relative static eval of the board
     int static_eval(const chess::Board& board) { return evaluate(board); }
-};  // Raphael
-}  // namespace Raphael
+};  // raphael
+}  // namespace raphael
 
 
 
@@ -87,7 +87,7 @@ struct GenArgs {
     int b_end = -1;
 
     // eval
-    int depth = Raphael::MAX_DEPTH;
+    int depth = raphael::MAX_DEPTH;
     int64_t maxnodes;
     int64_t maxnodes_soft = -1;
 
@@ -116,7 +116,7 @@ void print_help() {
             "  \"fen [wdl]\" in each row to generate the NNUE training data in OUTPUT_DIR, using\n"
             "  the evals at the specified MAX_NODES\n\n"
          << "Options:\n"
-         << "  -d DEPTH Max depths to search. Defaults to " << Raphael::MAX_DEPTH << "\n"
+         << "  -d DEPTH Max depths to search. Defaults to " << raphael::MAX_DEPTH << "\n"
          << "  -n N     Max number of soft nodes (depth at N nodes) to search. Defaults to -1 "
          << "(infinite)\n"
          << "  -b BS BE Start and end (inclusive) epd index to generate for. Defaults to 1, -1\n"
@@ -178,8 +178,8 @@ GenArgs parse_args(int argc, char* argv[]) {
         cout << "error: maxnodes_soft must be positive (unless it is -1)" << endl;
         exit(1);
     }
-    if (args.depth <= 0 || args.depth > Raphael::MAX_DEPTH) {
-        cout << "error: depth must be positive and under " << Raphael::MAX_DEPTH << endl;
+    if (args.depth <= 0 || args.depth > raphael::MAX_DEPTH) {
+        cout << "error: depth must be positive and under " << raphael::MAX_DEPTH << endl;
         exit(1);
     }
     if (args.b_start <= 0 || (args.b_end != -1 && args.b_end <= 0)) {
@@ -208,7 +208,7 @@ enum Flags {
  * \returns whether the data was added to outfile
  */
 bool generate_one(
-    ofstream& outfile, string line, Raphael::v1_8_traingen& engine, const GenArgs& args
+    ofstream& outfile, string line, raphael::v1_8_traingen& engine, const GenArgs& args
 ) {
     // read line
     size_t split = line.find("[");
@@ -225,7 +225,7 @@ bool generate_one(
 
     // eval and skip mate
     auto [eval, bestmove] = engine.get_eval(board);
-    if (eval == Raphael::MATE_EVAL) return false;
+    if (eval == raphael::MATE_EVAL) return false;
 
     // record
     assert(bestmove != chess::Move::NO_MOVE);
@@ -259,8 +259,8 @@ int main(int argc, char* argv[]) {
 
     // load engine
     cout << "Loading engine" << endl;
-    Raphael::v1_8_traingen engine("Raphael");
-    Raphael::RaphaelHCE::SearchOptions searchopt;
+    raphael::v1_8_traingen engine("Raphael");
+    raphael::RaphaelHCE::SearchOptions searchopt;
     searchopt.maxdepth = args.depth;
     searchopt.maxnodes = args.maxnodes;
     searchopt.maxnodes_soft = args.maxnodes_soft;

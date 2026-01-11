@@ -3,7 +3,7 @@
 
 
 
-namespace Raphael {
+namespace raphael {
 class History {  // based on https://www.chessprogramming.org/History_Heuristic
 private:
     int _history[2][64][64];
@@ -32,4 +32,4 @@ public:
     /** Zeros out the history */
     void clear();
 };
-}  // namespace Raphael
+}  // namespace raphael

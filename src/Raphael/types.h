@@ -3,7 +3,7 @@
 
 
 
-namespace Raphael {
+namespace raphael {
 
 namespace internal {
 template <typename T, std::size_t kN, std::size_t... kNs>
@@ -20,4 +20,4 @@ struct MultiArrayImpl<T, kN> {
 template <typename T, std::size_t... kNs>
 using MultiArray = typename internal::MultiArrayImpl<T, kNs...>::Type;
 
-};  // namespace Raphael
+};  // namespace raphael

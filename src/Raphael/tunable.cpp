@@ -5,7 +5,7 @@
 
 
 
-void Raphael::update_lmr_table() {
+void raphael::update_lmr_table() {
     for (const bool is_quiet : {false, true}) {
         for (int depth = 0; depth <= MAX_DEPTH; depth++) {
             for (int move_searched = 0; move_searched < 256; move_searched++) {
@@ -23,4 +23,4 @@ void Raphael::update_lmr_table() {
     }
 }
 
-void Raphael::init_tunables() { update_lmr_table(); }
+void raphael::init_tunables() { update_lmr_table(); }

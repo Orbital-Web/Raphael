@@ -163,11 +163,11 @@ Tunable(FP_MARGIN_BASE, 100, 0, 400);  // base margin for fp
 Tunable(LMR_DEPTH, 3, 1, 5);                    // depth to apply lmr from
 Tunable(LMR_FROMMOVE, 5, 2, 8);                 // movei to apply lmr from
 inline MultiArray<int, 2, 256, 256> LMR_TABLE;  // lmr reduction[quiet][ply][move_searched]
-TunableCallback(LMR_QUIET_BASE, 1456, 500, 2000, update_lmr_table);
-TunableCallback(LMR_NOISY_BASE, 202, -500, 750, update_lmr_table);
-TunableCallback(LMR_QUIET_DIVISOR, 2835, 1000, 4000, update_lmr_table);
-TunableCallback(LMR_NOISY_DIVISOR, 3319, 2500, 4500, update_lmr_table);
-TunableCallback(LMR_NONPV, 1046, 500, 2000, update_lmr_table);
+TunableCallback(LMR_QUIET_BASE, 182, 0, 384, update_lmr_table);
+TunableCallback(LMR_NOISY_BASE, 25, 0, 384, update_lmr_table);
+TunableCallback(LMR_QUIET_DIVISOR, 354, 32, 512, update_lmr_table);
+TunableCallback(LMR_NOISY_DIVISOR, 414, 32, 512, update_lmr_table);
+TunableCallback(LMR_NONPV, 130, 0, 384, update_lmr_table);
 
 // quiescence
 Tunable(QS_FUTILITY_MARGIN, 150, 50, 400);  // margin for qs futility pruning

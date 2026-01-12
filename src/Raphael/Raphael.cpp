@@ -323,8 +323,8 @@ int Raphael::negamax(
             = ((board.us(side) ^ board.pieces(chess::PieceType::PAWN, side)).count() > 1);
         if (depth >= NMP_DEPTH && ss->static_eval >= beta
             && (ss - 1)->move != chess::Move::NULL_MOVE && non_pk) {
-            board.makeNullMove();
             net.make_move(ply + 1, chess::Move::NULL_MOVE, board);
+            board.makeNullMove();
             ss->move = chess::Move::NULL_MOVE;
 
             const int red_depth = depth - NMP_REDUCTION;
@@ -368,6 +368,12 @@ int Raphael::negamax(
 
         // moveloop pruning
         if (ply && !is_loss(besteval)) {
+            // late move pruning
+            if (move_searched >= LMP_TABLE[improving][depth]) {
+                skip_quiets = true;
+                continue;
+            }
+
             // futility pruning
             const int futility = ss->static_eval + FP_MARGIN_BASE + FP_DEPTH_SCALE * depth;
             if (!in_check && is_quiet && depth <= FP_DEPTH && futility <= alpha) {

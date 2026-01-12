@@ -104,8 +104,8 @@ You can also play with different time controls, increments, and player combinati
     - [x] Null move pruning                 (`v2.2+`)
     - [ ] Razoring
     - [ ] Probcut
+    - [x] Late move pruning                 (`v2.3+`)
     - [x] Futility pruning                  (`v2.3+`)
-    - [ ] Late move pruning
     - [ ] SEE pruning
     - [ ] History pruning
     - [ ] Multi-cut

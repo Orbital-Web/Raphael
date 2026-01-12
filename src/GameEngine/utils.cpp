@@ -43,7 +43,7 @@ Arrow::Arrow(chess::Square from_in, chess::Square to_in): from(from_in), to(to_i
     arrowhead.setFillColor(PALETTE::TILE_SEL);
 }
 
-void Arrow::draw(sf::RenderTarget& target, sf::RenderStates states) const {
+void Arrow::draw(sf::RenderTarget& target, sf::RenderStates) const {
     target.draw(arrowhead);
     target.draw(arrowbody);
 }
@@ -128,7 +128,7 @@ void Timer::update(float time, bool active) {
     timertext.setPosition({820.0f - textbounds.size.x, (top) ? 10.0f : 880.0f});
 }
 
-void Timer::draw(sf::RenderTarget& target, sf::RenderStates states) const {
+void Timer::draw(sf::RenderTarget& target, sf::RenderStates) const {
     target.draw(timerbox);
     target.draw(timertext);
 }

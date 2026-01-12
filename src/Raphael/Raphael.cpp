@@ -118,7 +118,7 @@ Raphael::MoveEval Raphael::get_move(
     chess::Board board,
     const int t_remain,
     const int t_inc,
-    volatile cge::MouseInfo& mouse,
+    volatile cge::MouseInfo&,
     volatile bool& halt
 ) {
     nodes = 0;
@@ -399,7 +399,7 @@ int Raphael::negamax(
         if (board.inCheck()) extension++;
 
         // principle variation search
-        int eval;
+        int eval = INT_MIN;
         const int new_depth = depth - 1 + extension;
         if (depth >= LMR_DEPTH && move_searched > LMR_FROMMOVE && is_quiet) {
             // late move reduction
@@ -411,8 +411,10 @@ int Raphael::negamax(
         } else if (!is_PV || move_searched > 1)
             eval = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
 
+        assert(!(is_PV && move_searched != 1 && eval == INT_MIN));
         if (is_PV && (move_searched == 1 || eval > alpha))
             eval = -negamax<true>(board, new_depth, ply + 1, -beta, -alpha, ss + 1, halt);
+        assert(eval != INT_MIN);
 
         board.unmakeMove(move);
         extension = 0;

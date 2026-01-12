@@ -12,11 +12,7 @@ HumanPlayer::HumanPlayer(const string& name_in): GamePlayer(name_in) {}
 
 
 HumanPlayer::MoveEval HumanPlayer::get_move(
-    chess::Board board,
-    const int t_remain,
-    const int t_inc,
-    volatile MouseInfo& mouse,
-    volatile bool& halt
+    chess::Board board, const int, const int, volatile MouseInfo& mouse, volatile bool& halt
 ) {
     chess::Square sq_from = chess::Square::NO_SQ;
     chess::Square sq_to = chess::Square::NO_SQ;

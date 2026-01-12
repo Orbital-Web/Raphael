@@ -1,7 +1,7 @@
 # Compiler & flags
 CC = g++
 LD = ld
-CCFLAGS = -std=c++20 -O3 -Wall -Isrc -Ichess-library/include -ISFML-3.0.2/include
+CCFLAGS = -std=c++20 -O3 -Wall -Wextra -Isrc -Ichess-library/include -ISFML-3.0.2/include
 LDFLAGS =
 SFML_LIBS = -LSFML-3.0.2/lib -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
 

@@ -68,7 +68,7 @@ Raphael::Raphael(const string& name_in)
 }
 
 
-void Raphael::set_option(const std::string& name, int value) {
+void Raphael::set_option(const std::string& name, i32 value) {
     for (const auto p : {&params.hash, &params.softhardmult}) {
         if (p->name != name) continue;
 
@@ -116,8 +116,8 @@ void Raphael::set_searchoptions(SearchOptions options) { searchopt = options; }
 
 Raphael::MoveEval Raphael::get_move(
     chess::Board board,
-    const int t_remain,
-    const int t_inc,
+    const i32 t_remain,
+    const i32 t_inc,
     volatile cge::MouseInfo&,
     volatile bool& halt
 ) {
@@ -125,10 +125,10 @@ Raphael::MoveEval Raphael::get_move(
     seldepth = 0;
     net.set_board(board);
 
-    int depth = 1;
-    int eval = -INT_MAX;
-    int alpha = -INT_MAX;
-    int beta = INT_MAX;
+    i32 depth = 1;
+    i32 eval = -INT32_MAX;
+    i32 alpha = -INT32_MAX;
+    i32 beta = INT32_MAX;
     chess::Move bestmove = chess::Move::NO_MOVE;
 
     SearchStack stack[MAX_DEPTH + 3];
@@ -145,13 +145,13 @@ Raphael::MoveEval Raphael::get_move(
         // soft nodes override
         if (params.softnodes && searchopt.maxnodes != -1 && nodes >= searchopt.maxnodes) break;
 
-        const int itereval = negamax<true>(board, depth, 0, alpha, beta, ss, halt);
+        const i32 itereval = negamax<true>(board, depth, 0, alpha, beta, ss, halt);
         if (halt) break;  // don't use results if timeout
 
         // re-search required
         if ((itereval <= alpha) || (itereval >= beta)) {
-            alpha = -INT_MAX;
-            beta = INT_MAX;
+            alpha = -INT32_MAX;
+            beta = INT32_MAX;
             continue;
         }
 
@@ -197,7 +197,7 @@ void Raphael::reset() {
 }
 
 
-void Raphael::start_search_timer(const chess::Board& board, int t_remain, int t_inc) {
+void Raphael::start_search_timer(const chess::Board& board, i32 t_remain, i32 t_inc) {
     // if movetime is specified, use that instead
     if (searchopt.movetime != -1) {
         search_t = searchopt.movetime;
@@ -216,7 +216,7 @@ void Raphael::start_search_timer(const chess::Board& board, int t_remain, int t_
     // 0~1, higher the more time it uses (max at 20 pieces left)
     const float ratio = 0.0044f * (n - 32) * (-n / 32) * pow(2.5f + n / 32, 3);
     // use 1~5% of the remaining time based on the ratio + buffered increment
-    int duration = t_remain * (0.01f + 0.04f * ratio) + max(t_inc - 30, 1);
+    i32 duration = t_remain * (0.01f + 0.04f * ratio) + max(t_inc - 30, 1);
     // try to use all of our time if timer resets after movestogo (unless it's 1, then be fast)
     if (searchopt.movestogo > 1) duration += (t_remain - duration) / searchopt.movestogo;
     search_t = min(duration, t_remain);
@@ -240,7 +240,7 @@ bool Raphael::is_time_over(volatile bool& halt) const {
 }
 
 
-void Raphael::print_uci_info(int depth, int eval, const SearchStack* ss) const {
+void Raphael::print_uci_info(i32 depth, i32 eval, const SearchStack* ss) const {
     const auto now = ch::high_resolution_clock::now();
     const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
     const auto nps = (dtime) ? nodes * 1000 / dtime : 0;
@@ -259,18 +259,18 @@ void Raphael::print_uci_info(int depth, int eval, const SearchStack* ss) const {
 
 string Raphael::get_pv_line(const PVList& pv) const {
     string pvline = "";
-    for (int i = 0; i < pv.length; i++) pvline += chess::uci::moveToUci(pv.moves[i]) + " ";
+    for (i32 i = 0; i < pv.length; i++) pvline += chess::uci::moveToUci(pv.moves[i]) + " ";
     return pvline;
 }
 
 
 template <bool is_PV>
-int Raphael::negamax(
+i32 Raphael::negamax(
     chess::Board& board,
-    const int depth,
-    const int ply,
-    int alpha,
-    int beta,
+    const i32 depth,
+    const i32 ply,
+    i32 alpha,
+    i32 beta,
     SearchStack* ss,
     volatile bool& halt
 ) {
@@ -314,7 +314,7 @@ int Raphael::negamax(
     // pre-moveloop pruning
     if (!is_PV && ply && !in_check) {
         // reverse futility pruning
-        const int rfp_margin = RFP_DEPTH_SCALE * depth - RFP_IMPROV_SCALE * improving;
+        const i32 rfp_margin = RFP_DEPTH_SCALE * depth - RFP_IMPROV_SCALE * improving;
         if (depth <= RFP_DEPTH && ss->static_eval - rfp_margin >= beta) return ss->static_eval;
 
         // null move pruning
@@ -327,8 +327,8 @@ int Raphael::negamax(
             board.makeNullMove();
             ss->move = chess::Move::NULL_MOVE;
 
-            const int red_depth = depth - NMP_REDUCTION;
-            const int eval
+            const i32 red_depth = depth - NMP_REDUCTION;
+            const i32 eval
                 = -negamax<false>(board, red_depth, ply + 1, -beta, -beta + 1, ss + 1, halt);
 
             board.unmakeNullMove();
@@ -346,21 +346,21 @@ int Raphael::negamax(
 
 
     // one reply extension
-    int extension = 0;
+    i32 extension = 0;
     if (movelist.size() > 1)
         score_moves(movelist, ttmove, board, ss);
     else
         extension++;
 
     // search
-    const int alphaorig = alpha;
-    int besteval = -INT_MAX;
+    const i32 alphaorig = alpha;
+    i32 besteval = -INT32_MAX;
     chess::Move bestmove = chess::Move::NO_MOVE;
     (ss + 1)->killer = chess::Move::NO_MOVE;
     bool skip_quiets = false;
 
-    int move_searched = 0;
-    for (int _movei = 0; _movei < movelist.size(); _movei++) {
+    i32 move_searched = 0;
+    for (i32 _movei = 0; _movei < movelist.size(); _movei++) {
         const auto move = pick_move(_movei, movelist);
         const bool is_quiet = !board.isCapture(move) && move.typeOf() != chess::Move::PROMOTION;
 
@@ -375,14 +375,14 @@ int Raphael::negamax(
             }
 
             // futility pruning
-            const int futility = ss->static_eval + FP_MARGIN_BASE + FP_DEPTH_SCALE * depth;
+            const i32 futility = ss->static_eval + FP_MARGIN_BASE + FP_DEPTH_SCALE * depth;
             if (!in_check && is_quiet && depth <= FP_DEPTH && futility <= alpha) {
                 skip_quiets = true;
                 continue;
             }
 
             // SEE pruning
-            const int see_thresh = (is_quiet) ? SEE_QUIET_DEPTH_SCALE * depth * depth
+            const i32 see_thresh = (is_quiet) ? SEE_QUIET_DEPTH_SCALE * depth * depth
                                               : SEE_NOISY_DEPTH_SCALE * depth;
             if (!SEE::see(move, board, see_thresh)) continue;
         }
@@ -399,22 +399,22 @@ int Raphael::negamax(
         if (board.inCheck()) extension++;
 
         // principle variation search
-        int eval = INT_MIN;
-        const int new_depth = depth - 1 + extension;
+        i32 eval = INT32_MIN;
+        const i32 new_depth = depth - 1 + extension;
         if (depth >= LMR_DEPTH && move_searched > LMR_FROMMOVE && is_quiet) {
             // late move reduction
-            const int red_factor = LMR_TABLE[is_quiet][depth][move_searched] + !is_PV * LMR_NONPV;
-            const int red_depth = max(new_depth - red_factor / 128, 0);
+            const i32 red_factor = LMR_TABLE[is_quiet][depth][move_searched] + !is_PV * LMR_NONPV;
+            const i32 red_depth = max(new_depth - red_factor / 128, 0);
             eval = -negamax<false>(board, red_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
             if (eval > alpha && red_depth < new_depth)
                 eval = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
         } else if (!is_PV || move_searched > 1)
             eval = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
 
-        assert(!(is_PV && move_searched != 1 && eval == INT_MIN));
+        assert(!(is_PV && move_searched != 1 && eval == INT32_MIN));
         if (is_PV && (move_searched == 1 || eval > alpha))
             eval = -negamax<true>(board, new_depth, ply + 1, -beta, -alpha, ss + 1, halt);
-        assert(eval != INT_MIN);
+        assert(eval != INT32_MIN);
 
         board.unmakeMove(move);
         extension = 0;
@@ -453,8 +453,8 @@ int Raphael::negamax(
     return besteval;
 }
 
-int Raphael::quiescence(
-    chess::Board& board, const int ply, int alpha, int beta, volatile bool& halt
+i32 Raphael::quiescence(
+    chess::Board& board, const i32 ply, i32 alpha, i32 beta, volatile bool& halt
 ) {
     // timeout
     if (is_time_over(halt)) return 0;
@@ -462,7 +462,7 @@ int Raphael::quiescence(
     seldepth = max(seldepth, ply);
 
     // get standing pat and prune
-    int besteval = net.evaluate(ply, whiteturn);
+    i32 besteval = net.evaluate(ply, whiteturn);
     if (besteval >= beta) return besteval;
     alpha = max(alpha, besteval);
 
@@ -474,10 +474,10 @@ int Raphael::quiescence(
     chess::movegen::legalmoves<chess::movegen::MoveGenType::CAPTURE>(movelist, board);
     score_moves(movelist, board);
 
-    const int futility = besteval + QS_FUTILITY_MARGIN;
+    const i32 futility = besteval + QS_FUTILITY_MARGIN;
     const bool in_check = board.inCheck();
 
-    for (int _movei = 0; _movei < movelist.size(); _movei++) {
+    for (i32 _movei = 0; _movei < movelist.size(); _movei++) {
         const auto move = pick_move(_movei, movelist);
 
         // qs futility pruning
@@ -492,7 +492,7 @@ int Raphael::quiescence(
         net.make_move(ply + 1, move, board);
         board.makeMove(move);
 
-        const int eval = -quiescence(board, ply + 1, -beta, -alpha, halt);
+        const i32 eval = -quiescence(board, ply + 1, -beta, -alpha, halt);
         board.unmakeMove(move);
 
         if (eval > besteval) {
@@ -522,7 +522,7 @@ void Raphael::score_moves(
             continue;
         }
 
-        int16_t score = 0;
+        i16 score = 0;
         const bool is_capture = board.isCapture(move);
         const bool is_quiet = !is_capture && move.typeOf() != chess::Move::PROMOTION;
 
@@ -534,7 +534,7 @@ void Raphael::score_moves(
                 auto victim = (move.typeOf() == chess::Move::ENPASSANT)
                                   ? chess::PieceType::PAWN
                                   : board.at<chess::PieceType>(move.to());
-                score += 128 * (int)victim + 5 - (int)attacker;
+                score += 128 * victim + 5 - attacker;
             }
 
             score += SEE::see(move, board, GOOD_NOISY_SEE_THRESH) ? GOOD_NOISY_FLOOR
@@ -553,7 +553,7 @@ void Raphael::score_moves(
 
 void Raphael::score_moves(chess::Movelist& movelist, const chess::Board& board) const {
     for (auto& move : movelist) {
-        int16_t score = 0;
+        i16 score = 0;
 
         // assume noisy
         if (board.isCapture(move)) {
@@ -562,18 +562,18 @@ void Raphael::score_moves(chess::Movelist& movelist, const chess::Board& board) 
             auto victim = (move.typeOf() == chess::Move::ENPASSANT)
                               ? chess::PieceType::PAWN
                               : board.at<chess::PieceType>(move.to());
-            score += 128 * (int)victim + 5 - (int)attacker;
+            score += 128 * victim + 5 - attacker;
         }
 
         move.setScore(score);
     }
 }
 
-chess::Move Raphael::pick_move(int movei, chess::Movelist& movelist) const {
-    int besti = movei;
+chess::Move Raphael::pick_move(i32 movei, chess::Movelist& movelist) const {
+    i32 besti = movei;
     auto bestscore = movelist[movei].score();
 
-    for (int i = movei + 1; i < movelist.size(); i++) {
+    for (i32 i = movei + 1; i < movelist.size(); i++) {
         if (movelist[i].score() > bestscore) {
             bestscore = movelist[i].score();
             besti = i;

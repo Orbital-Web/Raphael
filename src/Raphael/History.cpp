@@ -13,14 +13,14 @@ History::History(): _history{0} {}
 
 
 void History::update(
-    const chess::Move& bestmove, const chess::Movelist& quietlist, int depth, int side
+    const chess::Move& bestmove, const chess::Movelist& quietlist, i32 depth, i32 side
 ) {
-    const int bonus
-        = min(HISTORY_BONUS_SCALE * depth + HISTORY_BONUS_OFFSET, (int)HISTORY_BONUS_MAX);
+    const i32 bonus
+        = min<i32>(HISTORY_BONUS_SCALE * depth + HISTORY_BONUS_OFFSET, HISTORY_BONUS_MAX);
 
     for (const auto& move : quietlist) {
-        const int from = move.from().index();
-        const int to = move.to().index();
+        const i32 from = move.from().index();
+        const i32 to = move.to().index();
 
         _history[side][from][to] -= _history[side][from][to] * bonus / HISTORY_MAX;
         _history[side][from][to] += (move == bestmove) ? bonus : -bonus;
@@ -28,9 +28,9 @@ void History::update(
 }
 
 
-int History::get(const chess::Move& move, bool side) const {
-    const int from = move.from().index();
-    const int to = move.to().index();
+i32 History::get(const chess::Move& move, bool side) const {
+    const i32 from = move.from().index();
+    const i32 to = move.to().index();
     return _history[side][from][to];
 }
 

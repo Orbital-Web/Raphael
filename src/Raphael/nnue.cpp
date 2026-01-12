@@ -93,9 +93,9 @@ void Nnue::load(const char* nnue_path) {
 
 /* ------------------------------- Evaluate ------------------------------- */
 
-int32_t Nnue::evaluate(int ply, bool side) {
+i32 Nnue::evaluate(i32 ply, bool side) {
     // lazy update accumulators
-    int p = ply;
+    i32 p = ply;
     while (accumulator_states[p].dirty) p--;
     while (p++ < ply) {
         auto& state = accumulator_states[p];
@@ -127,12 +127,12 @@ int32_t Nnue::evaluate(int ply, bool side) {
     const auto them_w_base = params.W1 + N_HIDDEN;
 
 #ifdef USE_SIMD
-    constexpr int regw = ALIGNMENT / sizeof(int16_t);
+    constexpr i32 regw = ALIGNMENT / sizeof(i16);
     static_assert(N_HIDDEN % regw == 0);
-    constexpr int n_chunks = N_HIDDEN / regw;
+    constexpr i32 n_chunks = N_HIDDEN / regw;
 
     VecI32 sum = zeros;
-    for (int i = 0; i < n_chunks; i++) {
+    for (i32 i = 0; i < n_chunks; i++) {
         const VecI16 us = load_i16(&us_base[i * regw]);
         const VecI16 them = load_i16(&them_base[i * regw]);
         const VecI16 us_w = load_i16(&us_w_base[i * regw]);
@@ -147,15 +147,15 @@ int32_t Nnue::evaluate(int ply, bool side) {
         sum = add_i32(sum, add_i32(us_screlu, them_screlu));
     }
 
-    const int32_t eval = (int32_t)QA * params.b1 + hadd_i32(sum);
+    const i32 eval = QA * params.b1 + hadd_i32(sum);
     return (eval / QA) * OUTPUT_SCALE / (QA * QB);
 #else
-    int32_t eval = (int32_t)QA * params.b1;
+    i32 eval = QA * params.b1;
 
     // compute W1 dot SCReLU(acc)
-    for (int i = 0; i < N_HIDDEN; i++) {
-        const int32_t us_clamped = min(max((int32_t)us_base[i], 0), QA);
-        const int32_t them_clamped = min(max((int32_t)them_base[i], 0), QA);
+    for (i32 i = 0; i < N_HIDDEN; i++) {
+        const i32 us_clamped = min(max((i32)us_base[i], 0), QA);
+        const i32 them_clamped = min(max((i32)them_base[i], 0), QA);
 
         eval += us_w_base[i] * us_clamped * us_clamped;
         eval += them_w_base[i] * them_clamped * them_clamped;
@@ -165,87 +165,87 @@ int32_t Nnue::evaluate(int ply, bool side) {
 #endif
 }
 
-int16_t* Nnue::NnueAccumulator::operator[](bool side) { return v[side]; }
-const int16_t* Nnue::NnueAccumulator::operator[](bool side) const { return v[side]; }
+i16* Nnue::NnueAccumulator::operator[](bool side) { return v[side]; }
+const i16* Nnue::NnueAccumulator::operator[](bool side) const { return v[side]; }
 
-void Nnue::refresh_accumulator(NnueAccumulator& new_acc, const vector<int>& features, bool side) {
+void Nnue::refresh_accumulator(NnueAccumulator& new_acc, const vector<i32>& features, bool side) {
 #ifdef USE_SIMD
-    constexpr int regw = ALIGNMENT / sizeof(int16_t);
+    constexpr i32 regw = ALIGNMENT / sizeof(i16);
     static_assert(N_HIDDEN % regw == 0);
-    constexpr int n_chunks = N_HIDDEN / regw;
+    constexpr i32 n_chunks = N_HIDDEN / regw;
     VecI16 regs[n_chunks];
 
     // load bias into registers
-    for (int i = 0; i < n_chunks; i++) regs[i] = load_i16(&params.b0[i * regw]);
+    for (i32 i = 0; i < n_chunks; i++) regs[i] = load_i16(&params.b0[i * regw]);
 
     // add active features
-    for (int f : features)
-        for (int i = 0; i < n_chunks; i++)
+    for (i32 f : features)
+        for (i32 i = 0; i < n_chunks; i++)
             regs[i] = adds_i16(regs[i], load_i16(&params.W0[f * N_HIDDEN + i * regw]));
 
     // store result in accumulator
-    for (int i = 0; i < n_chunks; i++) store_i16(&new_acc[side][i * regw], regs[i]);
+    for (i32 i = 0; i < n_chunks; i++) store_i16(&new_acc[side][i * regw], regs[i]);
 #else
     // copy bias
     copy(params.b0, params.b0 + N_HIDDEN, new_acc.v[side]);
 
     // accumulate columns of active features
-    for (int f : features)
-        for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[f * N_HIDDEN + i];
+    for (i32 f : features)
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[f * N_HIDDEN + i];
 #endif
 }
 
 void Nnue::update_accumulator(
     NnueAccumulator& new_acc,
     const NnueAccumulator& old_acc,
-    int add1,
-    int add2,
-    int rem1,
-    int rem2,
+    i32 add1,
+    i32 add2,
+    i32 rem1,
+    i32 rem2,
     bool side
 ) {
 #ifdef USE_SIMD
-    constexpr int regw = ALIGNMENT / sizeof(int16_t);
+    constexpr i32 regw = ALIGNMENT / sizeof(i16);
     static_assert(N_HIDDEN % regw == 0);
-    constexpr int n_chunks = N_HIDDEN / regw;
+    constexpr i32 n_chunks = N_HIDDEN / regw;
     VecI16 regs[n_chunks];
 
     // load previous accumulator values into registers
-    for (int i = 0; i < n_chunks; i++) regs[i] = load_i16(&old_acc[side][i * regw]);
+    for (i32 i = 0; i < n_chunks; i++) regs[i] = load_i16(&old_acc[side][i * regw]);
 
     // subtract rem_features
     if (rem1 >= 0)
-        for (int i = 0; i < n_chunks; i++)
+        for (i32 i = 0; i < n_chunks; i++)
             regs[i] = subs_i16(regs[i], load_i16(&params.W0[rem1 * N_HIDDEN + i * regw]));
     if (rem2 >= 0)
-        for (int i = 0; i < n_chunks; i++)
+        for (i32 i = 0; i < n_chunks; i++)
             regs[i] = subs_i16(regs[i], load_i16(&params.W0[rem2 * N_HIDDEN + i * regw]));
 
     // add add_features
     if (add1 >= 0)
-        for (int i = 0; i < n_chunks; i++)
+        for (i32 i = 0; i < n_chunks; i++)
             regs[i] = adds_i16(regs[i], load_i16(&params.W0[add1 * N_HIDDEN + i * regw]));
     if (add2 >= 0)
-        for (int i = 0; i < n_chunks; i++)
+        for (i32 i = 0; i < n_chunks; i++)
             regs[i] = adds_i16(regs[i], load_i16(&params.W0[add2 * N_HIDDEN + i * regw]));
 
     // store results in new accumulator
-    for (int i = 0; i < n_chunks; i++) store_i16(&new_acc[side][i * regw], regs[i]);
+    for (i32 i = 0; i < n_chunks; i++) store_i16(&new_acc[side][i * regw], regs[i]);
 #else
     // copy old_acc into new_acc
     copy(old_acc[side], old_acc[side] + N_HIDDEN, new_acc[side]);
 
     // subtract rem_features
     if (rem1 >= 0)
-        for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] -= params.W0[rem1 * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[side][i] -= params.W0[rem1 * N_HIDDEN + i];
     if (rem2 >= 0)
-        for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] -= params.W0[rem2 * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[side][i] -= params.W0[rem2 * N_HIDDEN + i];
 
     // add add_features
     if (add1 >= 0)
-        for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[add1 * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[add1 * N_HIDDEN + i];
     if (add2 >= 0)
-        for (int i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[add2 * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[add2 * N_HIDDEN + i];
 #endif
 }
 
@@ -254,7 +254,7 @@ void Nnue::update_accumulator(
 /* ------------------------------- Update ------------------------------- */
 
 void Nnue::set_board(const chess::Board& board) {
-    vector<int> w_features, b_features;
+    vector<i32> w_features, b_features;
     w_features.reserve(32);
     b_features.reserve(32);
 
@@ -262,8 +262,8 @@ void Nnue::set_board(const chess::Board& board) {
     while (!pieces.empty()) {
         const auto sqi = pieces.pop();
 
-        const int wpiece = (int)board.at(sqi);  // 0...5, 6...11
-        const int bpiece = (wpiece + 6) % 12;   // 6...11, 0...5
+        const i32 wpiece = board.at(sqi);      // 0...5, 6...11
+        const i32 bpiece = (wpiece + 6) % 12;  // 6...11, 0...5
 
         w_features.push_back(64 * wpiece + sqi);
         b_features.push_back(64 * bpiece + (sqi ^ 56));
@@ -272,7 +272,7 @@ void Nnue::set_board(const chess::Board& board) {
     refresh_accumulator(accumulators[0], b_features, false);
 }
 
-void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board) {
+void Nnue::make_move(i32 ply, const chess::Move& move, const chess::Board& board) {
     assert((ply != 0));
 
     const auto from_sq = move.from();
@@ -298,12 +298,12 @@ void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board
     for (const bool side : {false, true}) {
         // do incremental update
         const bool moving = (board.sideToMove() == chess::Color::WHITE) == side;
-        const int from_sqi = (side) ? from_sq.index() : (from_sq.index() ^ 56);
-        const int to_sqi = (side) ? to_sq.index() : (to_sq.index() ^ 56);
+        const i32 from_sqi = (side) ? from_sq.index() : (from_sq.index() ^ 56);
+        const i32 to_sqi = (side) ? to_sq.index() : (to_sq.index() ^ 56);
         const auto from_piece = board.at(from_sq);
         const auto to_piece = board.at(to_sq);
-        const int from_piecei = (side) ? (int)from_piece : ((int)from_piece + 6) % 12;
-        const int to_piecei = (side) ? (int)to_piece : ((int)to_piece + 6) % 12;
+        const i32 from_piecei = (side) ? from_piece : (from_piece + 6) % 12;
+        const i32 to_piecei = (side) ? to_piece : (to_piece + 6) % 12;
         assert(from_piece != chess::Piece::NONE);
 
         // remove moving piece
@@ -314,11 +314,11 @@ void Nnue::make_move(int ply, const chess::Move& move, const chess::Board& board
 
         // add moved piece to add_features (handle promotion and enemy castling)
         if (move_type == move.PROMOTION) {
-            const int promote_piecei = !moving * 6 + (int)move.promotionType();
+            const i32 promote_piecei = !moving * 6 + move.promotionType();
             state.add1[side] = 64 * promote_piecei + to_sqi;
         } else if (move_type == move.CASTLING) {
-            const int new_ksqi = (to_sqi % 8 == 7) ? to_sqi - 1 : to_sqi + 2;
-            const int new_rsqi = (to_sqi % 8 == 7) ? to_sqi - 2 : to_sqi + 3;
+            const i32 new_ksqi = (to_sqi % 8 == 7) ? to_sqi - 1 : to_sqi + 2;
+            const i32 new_rsqi = (to_sqi % 8 == 7) ? to_sqi - 2 : to_sqi + 3;
             state.add1[side] = 64 * from_piecei + new_ksqi;
             state.add2[side] = 64 * to_piecei + new_rsqi;
         } else

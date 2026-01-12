@@ -13,7 +13,7 @@ using namespace raphael;
 
 
 
-TranspositionTable::TranspositionTable(uint32_t size_mb): capacity(0), _table(nullptr) {
+TranspositionTable::TranspositionTable(u32 size_mb): capacity(0), _table(nullptr) {
     resize(size_mb);
 }
 
@@ -21,8 +21,8 @@ TranspositionTable::TranspositionTable(uint32_t size_mb): capacity(0), _table(nu
 TranspositionTable::~TranspositionTable() { deallocate(); }
 
 
-void TranspositionTable::resize(uint32_t size_mb) {
-    const uint64_t newsize = (uint64_t)size_mb * 1024 * 1024 / ENTRY_SIZE;
+void TranspositionTable::resize(u32 size_mb) {
+    const u64 newsize = (u64)size_mb * 1024 * 1024 / ENTRY_SIZE;
     assert((newsize > 0 && newsize <= MAX_TABLE_SIZE));
 
     // re-allocate if necessary
@@ -36,17 +36,17 @@ void TranspositionTable::resize(uint32_t size_mb) {
 }
 
 
-TranspositionTable::Entry TranspositionTable::get(uint64_t key, int ply) const {
+TranspositionTable::Entry TranspositionTable::get(u64 key, i32 ply) const {
     // get
     const EntryStorage& entryst = _table[index(key)];
 
     // unpack value to get entry (63-32: eval, 31-16: move, 15-14: flag, 13-0: depth)
     Entry entry = {
         .key = entryst.key,
-        .depth = int(entryst.val & 0x3FFF),
+        .depth = i32(entryst.val & 0x3FFF),
         .flag = Flag((entryst.val >> 14) & 0b11),
-        .move = chess::Move(uint16_t((entryst.val >> 16) & 0xFFFF)),
-        .eval = int32_t(uint32_t(entryst.val >> 32)),
+        .move = chess::Move(u16((entryst.val >> 16) & 0xFFFF)),
+        .eval = i32(u32(entryst.val >> 32)),
     };
 
     // correct mate eval when retrieving (https://youtu.be/XfeuxubYlT0)
@@ -58,23 +58,23 @@ TranspositionTable::Entry TranspositionTable::get(uint64_t key, int ply) const {
 }
 
 
-void TranspositionTable::prefetch(uint64_t key) const { __builtin_prefetch(&_table[index(key)]); }
+void TranspositionTable::prefetch(u64 key) const { __builtin_prefetch(&_table[index(key)]); }
 
 
-void TranspositionTable::set(const Entry& entry, int ply) {
+void TranspositionTable::set(const Entry& entry, i32 ply) {
     // correct mate eval when storing (https://youtu.be/XfeuxubYlT0)
-    int eval = entry.eval;
+    i32 eval = entry.eval;
     if (is_loss(eval))
         eval -= ply;
     else if (is_win(eval))
         eval += ply;
 
     // pack value to get entry storage (63-32: eval, 31-16: move, 15-14: flag, 13-0: depth)
-    uint64_t val = 0;
+    u64 val = 0;
     val |= (entry.depth & 0x3FFF);
-    val |= (uint64_t(entry.flag) << 14);
-    val |= (uint64_t(entry.move.move()) << 16);
-    val |= (uint64_t(uint32_t(eval)) << 32);  // eval may be negative
+    val |= (u64(entry.flag) << 14);
+    val |= (u64(entry.move.move()) << 16);
+    val |= (u64(u32(eval)) << 32);  // eval may be negative
 
     // set
     _table[index(entry.key)] = {.key = entry.key, .val = val};
@@ -89,10 +89,10 @@ void TranspositionTable::clear() {
 }
 
 
-uint64_t TranspositionTable::index(uint64_t key) const { return key % size; }
+u64 TranspositionTable::index(u64 key) const { return key % size; }
 
 
-void TranspositionTable::allocate(uint64_t newsize) {
+void TranspositionTable::allocate(u64 newsize) {
     assert(_table == nullptr);
     assert(capacity == 0);
 

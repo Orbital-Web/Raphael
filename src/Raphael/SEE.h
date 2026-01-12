@@ -1,4 +1,5 @@
 #pragma once
+#include <Raphael/types.h>
 
 #include <chess.hpp>
 
@@ -7,7 +8,7 @@
 namespace raphael::SEE {
 
 namespace internal {
-const int VAL[13] = {
+const i32 VAL[13] = {
     100,
     422,
     437,
@@ -30,7 +31,7 @@ const int VAL[13] = {
  * \param board current board
  * \returns the value of the piece
  */
-int pieceval(chess::Square sq, const chess::Board& board);
+i32 pieceval(chess::Square sq, const chess::Board& board);
 
 /** Returns the square of the least valuable attacker
  *
@@ -51,5 +52,5 @@ chess::Square lva(chess::Bitboard attackers, const chess::Board& board);
  * \param threshold minimum evaluation to count as good
  * \returns whether the move is "good" or not
  */
-bool see(const chess::Move& move, const chess::Board& board, int threshold);
+bool see(const chess::Move& move, const chess::Board& board, i32 threshold);
 }  // namespace raphael::SEE

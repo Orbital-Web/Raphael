@@ -1,4 +1,6 @@
 #pragma once
+#include <Raphael/types.h>
+
 #include <chess.hpp>
 #include <vector>
 
@@ -9,17 +11,17 @@ class TranspositionTable {
 private:
     // table entry storage type (16 bytes)
     struct EntryStorage {
-        uint64_t key;
-        uint64_t val;  // 63-32: eval, 31-16: move, 15-14: flag, 13-0: depth
+        u64 key;
+        u64 val;  // 63-32: eval, 31-16: move, 15-14: flag, 13-0: depth
     };
 
-    uint64_t size;
-    uint64_t capacity;
+    u64 size;
+    u64 capacity;
     EntryStorage* _table;
 
 public:
-    static constexpr uint64_t MAX_TABLE_SIZE = 201326592;       // 3GB
-    static constexpr uint64_t DEF_TABLE_SIZE = 4194304;         // 64MB
+    static constexpr u64 MAX_TABLE_SIZE = 201326592;            // 3GB
+    static constexpr u64 DEF_TABLE_SIZE = 4194304;              // 64MB
     static constexpr size_t ENTRY_SIZE = sizeof(EntryStorage);  // 16 bytes
     static_assert(ENTRY_SIZE == 16);
 
@@ -27,11 +29,11 @@ public:
 
     // table entry interface
     struct Entry {
-        uint64_t key;      // zobrist hash of move
-        int depth;         // max 2^14 (16384)
+        u64 key;           // zobrist hash of move
+        i32 depth;         // max 2^14 (16384)
         Flag flag;         // invalid, lower, exact, or upper
         chess::Move move;  // score is ignored
-        int eval;          // evaluation of the move
+        i32 eval;          // evaluation of the move
     };
 
 
@@ -40,7 +42,7 @@ public:
      *
      * \param size_mb the size of the table (in MB)
      */
-    explicit TranspositionTable(uint32_t size_mb);
+    explicit TranspositionTable(u32 size_mb);
 
     /** Destructs and deallocates the table */
     ~TranspositionTable();
@@ -52,7 +54,7 @@ public:
      *
      * \param size_mb the size of the table (in MB)
      */
-    void resize(uint32_t size_mb);
+    void resize(u32 size_mb);
 
     /** Retrieves the table value for a given key (assumes valid is true)
      *
@@ -60,20 +62,20 @@ public:
      * \param ply current distance from root
      * \returns the Entry in the table
      */
-    Entry get(uint64_t key, int ply) const;
+    Entry get(u64 key, i32 ply) const;
 
     /** Prefetches a table entry
      *
      * \param key key to prefetch
      */
-    void prefetch(uint64_t key) const;
+    void prefetch(u64 key) const;
 
     /** Sets an entry for a given key
      *
      * \param entry the entry to store
      * \param ply current distance from root
      */
-    void set(const Entry& entry, int ply);
+    void set(const Entry& entry, i32 ply);
 
     /** Clears the table */
     void clear();
@@ -84,13 +86,13 @@ private:
      * \param key the key to use
      * \returns the index of the key in the table
      */
-    uint64_t index(uint64_t key) const;
+    u64 index(u64 key) const;
 
     /** Allocates the table and sets capacity and _table (not size)
      *
      * \param newsize new size in number of entries
      */
-    void allocate(uint64_t newsize);
+    void allocate(u64 newsize);
 
     /** Deallocates the table (if allocated) and sets capacity and _table (not size) */
     void deallocate();

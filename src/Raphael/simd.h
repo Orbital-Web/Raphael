@@ -1,31 +1,30 @@
 #pragma once
+#include <Raphael/types.h>
 #include <immintrin.h>
-
-#include <cstdint>
 
 #if defined(__AVX__) || defined(__AVX2__)
     #define USE_SIMD 256
     #define ALIGNMENT 32
-typedef __m256i VecI16;  // a list of 16x int16_t
-typedef __m256i VecI32;  // a list of 8x int32_t
+typedef __m256i VecI16;  // a list of 16x i16
+typedef __m256i VecI32;  // a list of 8x i32
 
 
 
-/** Loads an int16_t[16] array into a VecI16 register
+/** Loads an i16[16] array into a VecI16 register
  *
- * \param src an array of 16x int16_t elements
+ * \param src an array of 16x i16 elements
  * \returns the loaded register
  */
-inline VecI16 load_i16(const int16_t* src) {
+inline VecI16 load_i16(const i16* src) {
     return _mm256_load_si256(reinterpret_cast<const VecI16*>(src));
 }
 
-/** Stores a VecI16 register into an int16_t[16] array
+/** Stores a VecI16 register into an i16[16] array
  *
- * \param dst the array of 16x int16_t elements to store into
+ * \param dst the array of 16x i16 elements to store into
  * \param src the register to store
  */
-inline void store_i16(int16_t* dst, VecI16& src) {
+inline void store_i16(i16* dst, VecI16& src) {
     _mm256_store_si256(reinterpret_cast<VecI16*>(dst), src);
 }
 
@@ -41,7 +40,7 @@ inline VecI16 zero_i16() { return _mm256_setzero_si256(); }
  * \param val the value to set to
  * \returns an all val register
  */
-inline VecI16 full_i16(int16_t val) { return _mm256_set1_epi16(val); }
+inline VecI16 full_i16(i16 val) { return _mm256_set1_epi16(val); }
 
 
 /** Does an element-wise saturated addition of two VecI16 registers
@@ -101,11 +100,11 @@ inline VecI32 add_i32(VecI32 a, VecI32 b) { return _mm256_add_epi32(a, b); }
 /** Computes the horizontal sum of a VecI32 register
  *
  * \param reg register to sum up
- * \returns the sum of the 8 int32_t in the register
+ * \returns the sum of the 8 i32 in the register
  */
-inline int32_t hadd_i32(VecI32 reg) {
-    __m128i lo = _mm256_castsi256_si128(reg);       // get bottom 4x int32_t from reg
-    __m128i hi = _mm256_extracti128_si256(reg, 1);  // get top 4x int32_t from reg
+inline i32 hadd_i32(VecI32 reg) {
+    __m128i lo = _mm256_castsi256_si128(reg);       // get bottom 4x i32 from reg
+    __m128i hi = _mm256_extracti128_si256(reg, 1);  // get top 4x i32 from reg
 
     __m128i sum = _mm_add_epi32(lo, hi);  // add pairs [s0, s1, s2, s3]
     sum = _mm_hadd_epi32(sum, sum);       // add adjacent pairs [s0 + s1, s2 + s3, ...]

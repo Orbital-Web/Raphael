@@ -5,11 +5,11 @@
 namespace raphael::SEE {
 
 namespace internal {
-int pieceval(chess::Square sq, const chess::Board& board) { return VAL[(int)board.at(sq)]; }
+i32 pieceval(chess::Square sq, const chess::Board& board) { return VAL[board.at(sq)]; }
 
 
 chess::Square lva(chess::Bitboard attackers, const chess::Board& board) {
-    for (int p = 0; p < 6; p++) {
+    for (i32 p = 0; p < 6; p++) {
         auto attacker_of_type
             = attackers & board.pieces(static_cast<chess::PieceType::underlying>(p));
         if (attacker_of_type) return attacker_of_type.pop();
@@ -20,12 +20,12 @@ chess::Square lva(chess::Bitboard attackers, const chess::Board& board) {
 
 
 
-bool see(const chess::Move& move, const chess::Board& board, int threshold) {
+bool see(const chess::Move& move, const chess::Board& board, i32 threshold) {
     const auto to = move.to();                        // where the exchange happens
     auto victim_sq = move.from();                     // capturer becomes next victim
     auto occ = board.occ().clear(victim_sq.index());  // remove capturer from occ
     auto color = ~board.sideToMove();
-    int gain = -threshold;
+    i32 gain = -threshold;
 
     // add material gain
     if (move.typeOf() == chess::Move::ENPASSANT) {
@@ -38,7 +38,7 @@ bool see(const chess::Move& move, const chess::Board& board, int threshold) {
     } else if (move.typeOf() == chess::Move::PROMOTION) {
         // promotion + any capture - pawn
         const auto promo = move.promotionType();
-        gain += internal::VAL[(int)promo] + internal::pieceval(to, board) - internal::VAL[0];
+        gain += internal::VAL[promo] + internal::pieceval(to, board) - internal::VAL[0];
     } else if (move.typeOf() != chess::Move::CASTLING)
         gain += internal::pieceval(to, board);
 
@@ -47,7 +47,7 @@ bool see(const chess::Move& move, const chess::Board& board, int threshold) {
     // initial capture
     if (move.typeOf() == chess::Move::PROMOTION) {
         const auto promo = move.promotionType();
-        gain -= internal::VAL[(int)promo];
+        gain -= internal::VAL[promo];
     } else
         gain -= internal::pieceval(victim_sq, board);
 

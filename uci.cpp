@@ -38,8 +38,8 @@ condition_variable search_cv;
 struct SearchRequest {
     chess::Board board;
     raphael::Raphael::SearchOptions options;
-    int t_remain;
-    int t_inc;
+    i32 t_remain;
+    i32 t_inc;
     bool go = false;
 };
 SearchRequest pending_request;
@@ -94,7 +94,7 @@ void setoption(const vector<string>& tokens) {
     }
 
     // spin option
-    int value;
+    i32 value;
     try {
         value = stoi(tokens[4]);
     } catch (const exception& e) {

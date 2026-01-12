@@ -8,10 +8,10 @@ using std::min;
 
 
 
-const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
-    MultiArray<int, 12, 64, 2> pst{};
+const MultiArray<i32, 12, 64, 2> RaphaelHCE::PST = [] {
+    MultiArray<i32, 12, 64, 2> pst{};
 
-    static constexpr int PAWN_MID[64] = {
+    static constexpr i32 PAWN_MID[64] = {
         0,  0,   0,   0,   0,   0,   0,   0,     //
         43, 144, 79,  113, 29,  152, -31, -198,  //
         65, 89,  111, 127, 171, 228, 143, 82,    //
@@ -21,7 +21,7 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
         5,  21,  5,   20,  35,  91,  99,  31,    //
         0,  0,   0,   0,   0,   0,   0,   0,     //
     };
-    static constexpr int PAWN_END[64] = {
+    static constexpr i32 PAWN_END[64] = {
         0,   0,   0,   0,  0,   0,   0,   0,    //
         183, 160, 123, 83, 123, 100, 163, 203,  //
         85,  70,  46,  1,  -11, 11,  49,  61,   //
@@ -31,7 +31,7 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
         29,  21,  29,  16, 24,  15,  9,   3,    //
         0,   0,   0,   0,  0,   0,   0,   0,    //
     };
-    static constexpr int KNIGHT_MID[64] = {
+    static constexpr i32 KNIGHT_MID[64] = {
         -78, -24, 109, 152, 287, -12, 157, -21,  //
         56,  113, 284, 256, 276, 287, 150, 156,  //
         103, 295, 262, 306, 396, 428, 309, 281,  //
@@ -41,7 +41,7 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
         143, 101, 168, 204, 205, 224, 153, 191,  //
         -17, 173, 139, 159, 195, 197, 173, 154,  //
     };
-    static constexpr int KNIGHT_END[64] = {
+    static constexpr i32 KNIGHT_END[64] = {
         94,  126, 136, 115, 112, 128, 60,  35,   //
         131, 155, 130, 157, 139, 123, 132, 96,   //
         133, 132, 173, 171, 139, 142, 136, 106,  //
@@ -51,7 +51,7 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
         118, 148, 149, 153, 157, 133, 142, 100,  //
         142, 99,  134, 144, 127, 120, 91,  73,   //
     };
-    static constexpr int BISHOP_MID[64] = {
+    static constexpr i32 BISHOP_MID[64] = {
         69,  98,  -96, -34, -13, 29,  11,  74,   //
         49,  92,  46,  59,  143, 132, 91,  21,   //
         70,  123, 122, 135, 153, 212, 141, 113,  //
@@ -61,7 +61,7 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
         140, 119, 122, 90,  102, 136, 147, 112,  //
         40,  131, 121, 111, 144, 100, 58,  85,   //
     };
-    static constexpr int BISHOP_END[64] = {
+    static constexpr i32 BISHOP_END[64] = {
         93,  95,  110, 111, 119, 109, 97,  80,   //
         107, 115, 123, 103, 105, 106, 109, 105,  //
         121, 101, 112, 101, 98,  102, 118, 113,  //
@@ -72,7 +72,7 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
         97,  106, 86,  107, 100, 100, 111, 102,  //
 
     };
-    static constexpr int ROOK_MID[64] = {
+    static constexpr i32 ROOK_MID[64] = {
         238, 234, 228, 275, 284, 190, 180, 252,  //
         214, 206, 257, 279, 307, 320, 239, 269,  //
         150, 228, 214, 258, 211, 286, 356, 220,  //
@@ -82,7 +82,7 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
         110, 149, 147, 169, 183, 181, 195, 85,   //
         148, 146, 152, 166, 176, 171, 147, 173,  //
     };
-    static constexpr int ROOK_END[64] = {
+    static constexpr i32 ROOK_END[64] = {
         291, 291, 300, 295, 290, 295, 296, 284,  //
         298, 299, 295, 288, 272, 269, 288, 280,  //
         302, 290, 289, 283, 285, 268, 264, 280,  //
@@ -92,7 +92,7 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
         280, 275, 284, 282, 269, 265, 262, 279,  //
         274, 285, 289, 282, 275, 269, 278, 246,  //
     };
-    static constexpr int QUEEN_MID[64] = {
+    static constexpr i32 QUEEN_MID[64] = {
         613, 599, 613, 621, 778, 814, 757, 662,  //
         578, 541, 618, 618, 617, 745, 646, 718,  //
         601, 591, 613, 619, 688, 765, 752, 714,  //
@@ -102,7 +102,7 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
         555, 612, 639, 631, 631, 647, 615, 671,  //
         618, 593, 607, 640, 600, 584, 539, 549,  //
     };
-    static constexpr int QUEEN_END[64] = {
+    static constexpr i32 QUEEN_END[64] = {
         583, 643, 660, 651, 593, 578, 569, 629,  //
         594, 645, 654, 677, 682, 622, 648, 594,  //
         590, 630, 626, 670, 668, 645, 614, 615,  //
@@ -112,7 +112,7 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
         576, 562, 546, 567, 575, 553, 545, 518,  //
         548, 552, 564, 522, 585, 539, 578, 521,  //
     };
-    static constexpr int KING_MID[64] = {
+    static constexpr i32 KING_MID[64] = {
         -49, 336, 374, 89,   -138, -87,  135,  -25,   //
         283, 40,  -92, 141,  59,   -137, -120, -207,  //
         45,  -31, 5,   -6,   -28,  142,  52,   -31,   //
@@ -122,7 +122,7 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
         55,  17,  -45, -119, -86,  -40,  32,   53,    //
         -35, 71,  50,  -113, 30,   -40,  92,   64,    //
     };
-    static constexpr int KING_END[64] = {
+    static constexpr i32 KING_END[64] = {
         -108, -106, -90, -41, 1,   19,  0,   -41,  // A8, B8, ...
         -55,  29,   32,  22,  35,  62,  56,  33,   //
         15,   35,   39,  31,  39,  58,  64,  25,   //
@@ -132,7 +132,7 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
         -45,  -11,  17,  28,  28,  14,  -10, -37,  //
         -77,  -51,  -33, -9,  -44, -18, -53, -88,  // A1, B1, ...
     };
-    static const int* PST_MID[6] = {
+    static const i32* PST_MID[6] = {
         PAWN_MID,
         KNIGHT_MID,
         BISHOP_MID,
@@ -140,7 +140,7 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
         QUEEN_MID,
         KING_MID,
     };
-    static const int* PST_END[6] = {
+    static const i32* PST_END[6] = {
         PAWN_END,
         KNIGHT_END,
         BISHOP_END,
@@ -149,8 +149,8 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
         KING_END,
     };
 
-    for (int p = 0; p < 6; p++) {
-        for (int sq = 0; sq < 64; sq++) {
+    for (i32 p = 0; p < 6; p++) {
+        for (i32 sq = 0; sq < 64; sq++) {
             // flip to put sq56 -> A1 and so on
             pst[p][sq][0] = PST_MID[p][sq ^ 56];
             pst[p][sq][1] = PST_END[p][sq ^ 56];
@@ -165,13 +165,13 @@ const MultiArray<int, 12, 64, 2> RaphaelHCE::PST = [] {
 const RaphaelHCE::PMasks RaphaelHCE::PMASK = [] {
     PMasks pmask{};
 
-    static constexpr uint64_t filemask = 0x0101010101010101;  // A-file
-    static constexpr uint64_t rankregion = 0xFFFFFFFFFF;      // ranks 1~5
+    static constexpr u64 filemask = 0x0101010101010101;  // A-file
+    static constexpr u64 rankregion = 0xFFFFFFFFFF;      // ranks 1~5
 
-    for (int sq = 0; sq < 64; sq++) {
+    for (i32 sq = 0; sq < 64; sq++) {
         pmask.ISOLATED[sq] = 0;
-        int file = sq % 8;
-        int rank = sq / 8;
+        i32 file = sq % 8;
+        i32 rank = sq / 8;
 
         // left file of pawn
         if (file > 0) pmask.ISOLATED[sq] |= filemask << (file - 1);
@@ -201,22 +201,22 @@ const RaphaelHCE::PMasks RaphaelHCE::PMASK = [] {
 }();
 
 
-int RaphaelHCE::evaluate(const chess::Board& board) {
-    int eval_mid = 0, eval_end = 0;
-    int phase = 0;
+i32 RaphaelHCE::evaluate(const chess::Board& board) {
+    i32 eval_mid = 0, eval_end = 0;
+    i32 phase = 0;
     auto pieces = board.occ();
 
     // draw evaluation
-    int wbish_on_w = 0, wbish_on_b = 0;  // number of white bishop on light and dark tiles
-    int bbish_on_w = 0, bbish_on_b = 0;  // number of black bishop on light and dark tiles
-    int wbish = 0, bbish = 0;
-    int wknight = 0, bknight = 0;
+    i32 wbish_on_w = 0, wbish_on_b = 0;  // number of white bishop on light and dark tiles
+    i32 bbish_on_w = 0, bbish_on_b = 0;  // number of black bishop on light and dark tiles
+    i32 wbish = 0, bbish = 0;
+    i32 wknight = 0, bknight = 0;
     bool minor_only = true;
 
     // mobility
-    int wkr = 0, bkr = 0;          // king rank
-    int wkf = 0, bkf = 0;          // king file
-    int bishmob = 0, rookmob = 0;  // number of squares bishop and rooks see (white - black)
+    i32 wkr = 0, bkr = 0;          // king rank
+    i32 wkf = 0, bkf = 0;          // king file
+    i32 bishmob = 0, rookmob = 0;  // number of squares bishop and rooks see (white - black)
     // xray bitboards
     auto wbishx = pieces & ~board.pieces(chess::PieceType::QUEEN, chess::Color::WHITE);
     auto bbishx = pieces & ~board.pieces(chess::PieceType::QUEEN, chess::Color::BLACK);
@@ -229,7 +229,7 @@ int RaphaelHCE::evaluate(const chess::Board& board) {
     while (pieces) {
         auto sqi = pieces.pop();
         chess::Square sq = sqi;
-        int piece = (int)board.at(sq);
+        i32 piece = board.at(sq);
 
         // add material value
         eval_mid += PVAL[piece][0];
@@ -317,12 +317,12 @@ int RaphaelHCE::evaluate(const chess::Board& board) {
 
             // king proximity
             case 5:
-                wkr = (int)sq.rank();
-                wkf = (int)sq.file();
+                wkr = sq.rank();
+                wkf = sq.file();
                 break;
             case 11:
-                bkr = (int)sq.rank();
-                bkf = (int)sq.file();
+                bkr = sq.rank();
+                bkf = sq.file();
                 break;
         }
     }
@@ -352,17 +352,17 @@ int RaphaelHCE::evaluate(const chess::Board& board) {
     }
 
     // King proximity bonus (if winning)
-    int king_dist = abs(wkr - bkr) + abs(wkf - bkf);
+    i32 king_dist = abs(wkr - bkr) + abs(wkf - bkf);
     if (eval_mid >= 0) eval_mid += KING_DIST_WEIGHT[0] * (14 - king_dist);
     if (eval_end >= 0) eval_end += KING_DIST_WEIGHT[1] * (14 - king_dist);
 
     // Bishop corner (if winning)
-    int ourbish_on_w = (whiteturn) ? wbish_on_w : bbish_on_w;
-    int ourbish_on_b = (whiteturn) ? wbish_on_b : bbish_on_b;
-    int ekr = (whiteturn) ? bkr : wkr;
-    int ekf = (whiteturn) ? bkf : wkf;
-    int wtile_dist = min(ekf + (7 - ekr), (7 - ekf) + ekr);  // to A8 and H1
-    int btile_dist = min(ekf + ekr, (7 - ekf) + (7 - ekr));  // to A1 and H8
+    i32 ourbish_on_w = (whiteturn) ? wbish_on_w : bbish_on_w;
+    i32 ourbish_on_b = (whiteturn) ? wbish_on_b : bbish_on_b;
+    i32 ekr = (whiteturn) ? bkr : wkr;
+    i32 ekf = (whiteturn) ? bkf : wkf;
+    i32 wtile_dist = min(ekf + (7 - ekr), (7 - ekf) + ekr);  // to A8 and H1
+    i32 btile_dist = min(ekf + ekr, (7 - ekf) + (7 - ekr));  // to A1 and H8
     if (eval_mid >= 0) {
         if (ourbish_on_w) eval_mid += BISH_CORNER_WEIGHT[0] * (7 - wtile_dist);
         if (ourbish_on_b) eval_mid += BISH_CORNER_WEIGHT[0] * (7 - btile_dist);
@@ -373,12 +373,12 @@ int RaphaelHCE::evaluate(const chess::Board& board) {
     }
 
     // apply phase
-    int eg_weight = 256 * max(0, 24 - phase) / 24;
-    int eval = ((256 - eg_weight) * eval_mid + eg_weight * eval_end) / 256;
+    i32 eg_weight = 256 * max(0, 24 - phase) / 24;
+    i32 eval = ((256 - eg_weight) * eval_mid + eg_weight * eval_end) / 256;
 
     // draw division
-    int wminor = wbish + wknight;
-    int bminor = bbish + bknight;
+    i32 wminor = wbish + wknight;
+    i32 bminor = bbish + bknight;
     if (minor_only && wminor <= 2 && bminor <= 2) {
         if ((wminor == 1 && bminor == 1) ||                                      // 1 vs 1
             ((wbish + bbish == 3) && (wminor + bminor == 3)) ||                  // 2B vs B

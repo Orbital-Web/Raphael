@@ -27,10 +27,10 @@ public:
     static const EngineOptions& default_params();
 
     struct SearchOptions {
-        int64_t maxnodes = -1;
-        int maxdepth = -1;
-        int movetime = -1;
-        int movestogo = 0;
+        i64 maxnodes = -1;
+        i32 maxdepth = -1;
+        i32 movetime = -1;
+        i32 movestogo = 0;
         bool infinite = false;
     };
 
@@ -44,15 +44,15 @@ private:
     // nnue
     Nnue net;
     // info
-    int64_t nodes;  // number of nodes visited
-    int seldepth;   // maximum search depth reached
+    i64 nodes;     // number of nodes visited
+    i32 seldepth;  // maximum search depth reached
     // timing
     std::chrono::time_point<std::chrono::high_resolution_clock> start_t;  // search start time
-    int64_t search_t;                                                     // search duration (ms)
+    i64 search_t;                                                         // search duration (ms)
 
     struct PVList {
         chess::Move moves[MAX_DEPTH] = {chess::Move::NO_MOVE};
-        int length = 0;
+        i32 length = 0;
 
         /** Updates the PV
          *
@@ -66,7 +66,7 @@ private:
         PVList pv;
         chess::Move move = chess::Move::NO_MOVE;
         chess::Move killer = chess::Move::NO_MOVE;
-        int static_eval = 0;
+        i32 static_eval = 0;
     };
 
 
@@ -84,7 +84,7 @@ public:
      * \param name name of option to set
      * \param value value to set to
      */
-    void set_option(const std::string& name, int value);
+    void set_option(const std::string& name, i32 value);
     void set_option(const std::string& name, bool value);
 
     /** Sets Raphael's search options
@@ -106,8 +106,8 @@ public:
      */
     MoveEval get_move(
         chess::Board board,
-        const int t_remain,
-        const int t_inc,
+        const i32 t_remain,
+        const i32 t_inc,
         volatile cge::MouseInfo& mouse,
         volatile bool& halt
     );
@@ -131,7 +131,7 @@ private:
      * \param t_remain remaining time in ms
      * \param t_inc increment after move in ms
      */
-    void start_search_timer(const chess::Board& board, int t_remain, int t_inc);
+    void start_search_timer(const chess::Board& board, i32 t_remain, i32 t_inc);
 
     /** Sets and returns halt = true if search_t ms has passed. Will return false indefinetely if
      * search_t = 0.
@@ -148,7 +148,7 @@ private:
      * \param eval evaluation to print
      * \param search stack at current ply
      */
-    void print_uci_info(int depth, int eval, const SearchStack* ss) const;
+    void print_uci_info(i32 depth, i32 eval, const SearchStack* ss) const;
 
     /** Returns the stringified PV line
      *
@@ -171,12 +171,12 @@ private:
      * \returns eval of current board
      */
     template <bool is_PV>
-    int negamax(
+    i32 negamax(
         chess::Board& board,
-        const int depth,
-        const int ply,
-        int alpha,
-        int beta,
+        const i32 depth,
+        const i32 ply,
+        i32 alpha,
+        i32 beta,
         SearchStack* ss,
         volatile bool& halt
     );
@@ -190,7 +190,7 @@ private:
      * \param halt bool reference which will turn false to indicate search should stop
      * \returns eval of current board
      */
-    int quiescence(chess::Board& board, const int ply, int alpha, int beta, volatile bool& halt);
+    i32 quiescence(chess::Board& board, const i32 ply, i32 alpha, i32 beta, volatile bool& halt);
 
 
     /** Assigns scores to a list of moves
@@ -220,6 +220,6 @@ private:
      * \param movelist movelist to pick from
      * \returns the chosen move in the movelist
      */
-    chess::Move pick_move(int movei, chess::Movelist& movelist) const;
+    chess::Move pick_move(i32 movei, chess::Movelist& movelist) const;
 };
 };  // namespace raphael

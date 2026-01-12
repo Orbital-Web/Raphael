@@ -1,4 +1,6 @@
 #pragma once
+#include <Raphael/types.h>
+
 #include <chess.hpp>
 
 
@@ -6,7 +8,7 @@
 namespace raphael {
 class History {  // based on https://www.chessprogramming.org/History_Heuristic
 private:
-    int _history[2][64][64];
+    i32 _history[2][64][64];
 
 public:
     /** Initializes the history with zeros */
@@ -19,7 +21,7 @@ public:
      * \param depth depth of that move
      * \param side side playing the move
      */
-    void update(const chess::Move& bestmove, const chess::Movelist& quietlist, int depth, int side);
+    void update(const chess::Move& bestmove, const chess::Movelist& quietlist, i32 depth, i32 side);
 
     /** Returns the history heuristic
      *
@@ -27,7 +29,7 @@ public:
      * \param side side playing the move
      * \returns the stored history of that move
      */
-    int get(const chess::Move& move, bool side) const;
+    i32 get(const chess::Move& move, bool side) const;
 
     /** Zeros out the history */
     void clear();

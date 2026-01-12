@@ -4,9 +4,9 @@
 
 
 
-namespace raphael {
-// Static Exchange Evaluation
-namespace SEE {
+namespace raphael::SEE {
+
+namespace internal {
 const int VAL[13] = {
     100,
     422,
@@ -39,15 +39,17 @@ int pieceval(chess::Square sq, const chess::Board& board);
  * \returns the square of the lva
  */
 chess::Square lva(chess::Bitboard attackers, const chess::Board& board);
+};  // namespace internal
 
-/** A quick version of SEE to just compute if a capture is good or bad
+
+
+/** Simulates exchanges on the move destination square to evaluate if it's winning or losing
  * https://github.com/rafid-dev/rice/blob/main/src/see.cpp#L5
  *
- * \param move the capture move
+ * \param move the move to evaluate
  * \param board current board
  * \param threshold minimum evaluation to count as good
- * \returns whether the capture is "good" or not
+ * \returns whether the move is "good" or not
  */
-bool good_capture(const chess::Move& move, const chess::Board& board, int threshold);
-}  // namespace SEE
-}  // namespace raphael
+bool see(const chess::Move& move, const chess::Board& board, int threshold);
+}  // namespace raphael::SEE

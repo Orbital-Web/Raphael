@@ -5,13 +5,14 @@
 
 
 
-void raphael::update_lmp_table() {
+namespace raphael {
+void update_lmp_table() {
     for (const bool improving : {false, true})
         for (int depth = 0; depth <= MAX_DEPTH; depth++)
             LMP_TABLE[improving][depth] = (LMP_THRESH_BASE + depth * depth) / (2 - improving);
 }
 
-void raphael::update_lmr_table() {
+void update_lmr_table() {
     for (const bool is_quiet : {false, true}) {
         for (int depth = 0; depth <= MAX_DEPTH; depth++) {
             for (int move_searched = 0; move_searched < 256; move_searched++) {
@@ -29,7 +30,8 @@ void raphael::update_lmr_table() {
     }
 }
 
-void raphael::init_tunables() {
+void init_tunables() {
     update_lmp_table();
     update_lmr_table();
 }
+};  // namespace raphael

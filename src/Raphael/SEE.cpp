@@ -2,8 +2,9 @@
 
 
 
-namespace raphael {
-namespace SEE {
+namespace raphael::SEE {
+
+namespace internal {
 int pieceval(chess::Square sq, const chess::Board& board) { return VAL[(int)board.at(sq)]; }
 
 
@@ -15,9 +16,11 @@ chess::Square lva(chess::Bitboard attackers, const chess::Board& board) {
     }
     return chess::Square::NO_SQ;
 }
+}  // namespace internal
 
 
-bool good_capture(const chess::Move& move, const chess::Board& board, int threshold) {
+
+bool see(const chess::Move& move, const chess::Board& board, int threshold) {
     const auto to = move.to();                        // where the exchange happens
     auto victim_sq = move.from();                     // capturer becomes next victim
     auto occ = board.occ().clear(victim_sq.index());  // remove capturer from occ
@@ -26,25 +29,27 @@ bool good_capture(const chess::Move& move, const chess::Board& board, int thresh
 
     // add material gain
     if (move.typeOf() == chess::Move::ENPASSANT) {
-        gain += VAL[0];  // pawn captured
+        // pawn captured
+        gain += internal::VAL[0];
         const auto enpsq = (board.sideToMove() == chess::Color::WHITE)
                                ? to + chess::Direction::SOUTH
                                : to + chess::Direction::NORTH;
         occ.clear(enpsq.index());
     } else if (move.typeOf() == chess::Move::PROMOTION) {
+        // promotion + any capture - pawn
         const auto promo = move.promotionType();
-        gain += VAL[(int)promo] + pieceval(to, board) - VAL[0];  // promotion + any capture - pawn
+        gain += internal::VAL[(int)promo] + internal::pieceval(to, board) - internal::VAL[0];
     } else if (move.typeOf() != chess::Move::CASTLING)
-        gain += pieceval(to, board);
+        gain += internal::pieceval(to, board);
 
     if (gain < 0) return false;
 
     // initial capture
     if (move.typeOf() == chess::Move::PROMOTION) {
         const auto promo = move.promotionType();
-        gain -= VAL[(int)promo];
+        gain -= internal::VAL[(int)promo];
     } else
-        gain -= pieceval(victim_sq, board);
+        gain -= internal::pieceval(victim_sq, board);
 
     if (gain >= 0) return true;
 
@@ -68,8 +73,8 @@ bool good_capture(const chess::Move& move, const chess::Board& board, int thresh
         if (!attackers) break;
 
         color = ~color;
-        victim_sq = lva(attackers, board);  // capturer becomes next victim
-        gain = -gain - 1 - pieceval(victim_sq, board);
+        victim_sq = internal::lva(attackers, board);  // capturer becomes next victim
+        gain = -gain - 1 - internal::pieceval(victim_sq, board);
         if (gain >= 0) {
             if (board.at<chess::PieceType>(victim_sq) == chess::PieceType::KING
                 && attackers & board.us(color))
@@ -85,5 +90,4 @@ bool good_capture(const chess::Move& move, const chess::Board& board, int thresh
 
     return color != board.sideToMove();
 }
-}  // namespace SEE
-}  // namespace raphael
+}  // namespace raphael::SEE

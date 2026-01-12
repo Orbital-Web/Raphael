@@ -380,6 +380,11 @@ int Raphael::negamax(
                 skip_quiets = true;
                 continue;
             }
+
+            // SEE pruning
+            const int see_thresh = (is_quiet) ? SEE_QUIET_DEPTH_SCALE * depth * depth
+                                              : SEE_NOISY_DEPTH_SCALE * depth;
+            if (!SEE::see(move, board, see_thresh)) continue;
         }
 
         tt.prefetch(board.zobristAfter<false>(move));
@@ -474,13 +479,13 @@ int Raphael::quiescence(
         const auto move = pick_move(_movei, movelist);
 
         // qs futility pruning
-        if (!in_check && futility <= alpha && !SEE::good_capture(move, board, 1)) {
+        if (!in_check && futility <= alpha && !SEE::see(move, board, 1)) {
             besteval = max(besteval, futility);
             continue;
         }
 
         // qs see pruning
-        if (!SEE::good_capture(move, board, QS_SEE_THRESH)) continue;
+        if (!SEE::see(move, board, QS_SEE_THRESH)) continue;
 
         net.make_move(ply + 1, move, board);
         board.makeMove(move);
@@ -530,8 +535,8 @@ void Raphael::score_moves(
                 score += 128 * (int)victim + 5 - (int)attacker;
             }
 
-            score += SEE::good_capture(move, board, GOOD_NOISY_SEE_THRESH) ? GOOD_NOISY_FLOOR
-                                                                           : BAD_NOISY_FLOOR;
+            score += SEE::see(move, board, GOOD_NOISY_SEE_THRESH) ? GOOD_NOISY_FLOOR
+                                                                  : BAD_NOISY_FLOOR;
 
         } else if (move == ss->killer)
             // killer moves

@@ -106,7 +106,7 @@ You can also play with different time controls, increments, and player combinati
     - [ ] Probcut
     - [x] Late move pruning                 (`v2.3+`)
     - [x] Futility pruning                  (`v2.3+`)
-    - [ ] SEE pruning
+    - [x] SEE pruning                       (`v2.3+`)
     - [ ] History pruning
     - [ ] Multi-cut
     - [ ] Improving heuristics

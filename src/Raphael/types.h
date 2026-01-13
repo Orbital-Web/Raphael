@@ -13,7 +13,6 @@ using u64 = std::uint64_t;
 
 
 namespace raphael {
-
 namespace internal {
 template <typename T, std::size_t kN, std::size_t... kNs>
 struct MultiArrayImpl {

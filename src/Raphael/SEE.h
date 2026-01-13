@@ -6,7 +6,6 @@
 
 
 namespace raphael::SEE {
-
 namespace internal {
 const i32 VAL[13] = {
     100,

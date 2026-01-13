@@ -4,6 +4,7 @@
 #include <Raphael/tunable.h>
 
 #include <condition_variable>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -184,14 +185,25 @@ void search(const vector<string>& tokens) {
 }
 
 
-int main() {
+int main(int argc, char** argv) {
     std::ios::sync_with_stdio(false);
-    string uci_command;
+
+    // handle command line arguments
+    if (argc > 1) {
+        if (!strcmp(argv[1], "bench")) {
+            lock_guard<mutex> engine_lock(engine_mutex);
+            raphael::bench::run(engine);
+            return 0;
+        }
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string ignoring unknown command line arguments\n" << flush;
+    }
 
     // start search handler
     thread search_handler(handle_search);
 
     // listen for commands
+    string uci_command;
     while (!quit) {
         getline(cin, uci_command);
 

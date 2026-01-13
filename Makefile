@@ -1,85 +1,142 @@
-# Compiler & flags
-CC = g++
-LD = ld
-CCFLAGS = -std=c++20 -O3 -Wall -Wextra -Isrc -Ichess-library/include -ISFML-3.0.2/include
-LDFLAGS =
-SFML_LIBS = -LSFML-3.0.2/lib -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
+#---------------------------------------------------------------------------------------------------
+# Project Configuration (Makefile inspired by https://github.com/KierenP/Halogen)
+#---------------------------------------------------------------------------------------------------
 
-ifneq ($(OS),Windows_NT)
+.DEFAULT_GOAL := all
+
+# Executables
+MAIN_EXE := main
+UCI_EXE  := uci
+
+# NNUE file
+NNUE_FILE := net.nnue
+
+# Architecture configuration
+ARCH ?= native
+
+#---------------------------------------------------------------------------------------------------
+# Source Files
+#---------------------------------------------------------------------------------------------------
+
+MAIN_SOURCES := \
+    $(wildcard src/GameEngine/*.cpp) \
+    $(wildcard src/Raphael/*.cpp) \
+    main.cpp
+
+UCI_SOURCES := \
+    src/GameEngine/consts.cpp \
+    src/GameEngine/GamePlayer.cpp \
+    $(wildcard src/Raphael/*.cpp) \
+    uci.cpp
+
+NNUE_OBJ  := net.o
+MAIN_OBJS := $(MAIN_SOURCES:.cpp=.o) $(NNUE_OBJ)
+UCI_OBJS  := $(UCI_SOURCES:.cpp=.o)  $(NNUE_OBJ)
+
+#---------------------------------------------------------------------------------------------------
+# Platform and Compiler Detection
+#---------------------------------------------------------------------------------------------------
+
+ifeq ($(OS),Windows_NT)
+    DETECTED_OS := Windows
+else
+    DETECTED_OS := $(shell uname)
+endif
+$(info Detected OS: $(DETECTED_OS))
+
+ifeq ($(DETECTED_OS),Windows)
+	CXX_VERSION := $(shell $(CXX) --version 2>nul)
+else
+	CXX_VERSION := $(shell $(CXX) --version 2>/dev/null)
+endif
+ifneq ($(findstring clang,$(CXX_VERSION)),)
+    COMPILER := clang++
+else
+    COMPILER := g++
+endif
+$(info Detected compiler: $(COMPILER))
+
+CXX := $(COMPILER)
+
+#---------------------------------------------------------------------------------------------------
+# Compiler and Linker Flags
+#---------------------------------------------------------------------------------------------------
+
+WARN_FLAGS := -Wall -Wextra
+
+CXXFLAGS := -std=c++20 -O3 $(WARN_FLAGS) \
+    -Isrc -Ichess-library/include -ISFML-3.0.2/include
+
+LDFLAGS  :=
+
+# SFML dynamic libs
+SFML_LIBS := -LSFML-3.0.2/lib \
+    -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
+
+# Non-Windows: fixes sfml libs not found issue
+ifneq ($(DETECTED_OS),Windows)
     LDFLAGS += -Wl,-rpath,'$$ORIGIN/SFML-3.0.2/lib',-z,noexecstack
 endif
 
-# Architecture
-ARCH ?=
-CCFLAGS_RELEASE   = -DNDEBUG
-CCFLAGS_NATIVE    = $(CCFLAGS_RELEASE) -march=native
-CCFLAGS_AVX2_BMI2 = $(CCFLAGS_RELEASE) -march=haswell
-CCFLAGS_AVX2      = $(CCFLAGS_RELEASE) -march=haswell -mno-bmi2
-CCFLAGS_GENERIC   = $(CCFLAGS_RELEASE) -march=x86-64
-CCFLAGS_TUNABLE   = $(CCFLAGS_RELEASE) -march=native -DTUNE
-CCFLAGS_DEBUG     = -march=native -g
+#---------------------------------------------------------------------------------------------------
+# Architecture Flags
+#---------------------------------------------------------------------------------------------------
 
-ifeq ($(ARCH),)
-    $(warning ARCH not set, building for ARCH=native (release))
-    EXTRA_CCFLAGS = $(CCFLAGS_NATIVE)
-else ifeq ($(ARCH),native)
-    $(info Building for ARCH=native (release))
-    EXTRA_CCFLAGS = $(CCFLAGS_NATIVE)
+CCFLAGS_RELEASE   := -DNDEBUG
+CCFLAGS_NATIVE    := $(CCFLAGS_RELEASE) -march=native
+CCFLAGS_AVX2_BMI2 := $(CCFLAGS_RELEASE) -march=haswell
+CCFLAGS_AVX2      := $(CCFLAGS_RELEASE) -march=haswell -mno-bmi2
+CCFLAGS_GENERIC   := $(CCFLAGS_RELEASE) -march=x86-64
+CCFLAGS_TUNABLE   := $(CCFLAGS_RELEASE) -march=native -DTUNE
+CCFLAGS_DEBUG     := -march=native -g
+
+ifeq ($(ARCH),native)
+    EXTRA_FLAGS := $(CCFLAGS_NATIVE)
 else ifeq ($(ARCH),avx2_bmi2)
-    $(info Building for ARCH=avx2_bmi2 (release))
-    EXTRA_CCFLAGS = $(CCFLAGS_AVX2_BMI2)
+    EXTRA_FLAGS := $(CCFLAGS_AVX2_BMI2)
 else ifeq ($(ARCH),avx2)
-    $(info Building for ARCH=avx2 (release))
-    EXTRA_CCFLAGS = $(CCFLAGS_AVX2)
+    EXTRA_FLAGS := $(CCFLAGS_AVX2)
 else ifeq ($(ARCH),generic)
-    $(info Building for ARCH=generic (release))
-    EXTRA_CCFLAGS = $(CCFLAGS_GENERIC)
+    EXTRA_FLAGS := $(CCFLAGS_GENERIC)
 else ifeq ($(ARCH),tunable)
-    $(info Building for ARCH=tunable)
-    EXTRA_CCFLAGS = $(CCFLAGS_TUNABLE)
+    EXTRA_FLAGS := $(CCFLAGS_TUNABLE)
 else ifeq ($(ARCH),debug)
-    $(info Building for ARCH=debug)
-    EXTRA_CCFLAGS = $(CCFLAGS_DEBUG)
+    EXTRA_FLAGS := $(CCFLAGS_DEBUG)
 else
     $(error Unknown architecture '$(ARCH)')
 endif
 
-override CCFLAGS += $(EXTRA_CCFLAGS)
+override CXXFLAGS += $(EXTRA_FLAGS)
 
-# NNUE binary
-NNUE_FILE = net.nnue
-NNUE_OBJ = net.o
+$(info Building for ARCH=$(ARCH))
+$(info )
 
-# sources
-MAIN_SOURCES = $(wildcard src/GameEngine/*.cpp) $(wildcard src/Raphael/*.cpp) main.cpp
-UCI_SOURCES = src/GameEngine/consts.cpp src/GameEngine/GamePlayer.cpp $(wildcard src/Raphael/*.cpp) uci.cpp
+#---------------------------------------------------------------------------------------------------
+# Main Build Targets
+#---------------------------------------------------------------------------------------------------
 
+all: uci main
 
-
-# obj files
-MAIN_OBJS = $(MAIN_SOURCES:.cpp=.o) $(NNUE_OBJ)
-UCI_OBJS = $(UCI_SOURCES:.cpp=.o) $(NNUE_OBJ)
-
-# Default rule
-all: main uci
-
-# Building NNUE object
+# NNUE embeddings
 $(NNUE_OBJ): $(NNUE_FILE)
-	$(LD) -r -b binary $< -o $@
+	ld -r -b binary $< -o $@
 
-# Linking the main executable
+# main executable
 main: $(MAIN_OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS) $(SFML_LIBS)
+	$(CXX) -o $(MAIN_EXE) $^ $(LDFLAGS) $(SFML_LIBS)
 
-# Linking the UCI executable
+# uci executable
 uci: $(UCI_OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS) -static
+	$(CXX) -o $(UCI_EXE) $^ $(LDFLAGS) -static
 
-# Generic rules for compiling a source file to an object file
+# compile .cpp -> .o
 %.o: %.cpp
-	$(CC) $(CCFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Rule to download SFML if not present
+#---------------------------------------------------------------------------------------------------
+# Packages
+#---------------------------------------------------------------------------------------------------
+
 packages:
 ifeq ($(OS),Windows_NT)
 	@if not exist SFML-3.0.2 ( \
@@ -87,7 +144,7 @@ ifeq ($(OS),Windows_NT)
 		powershell -Command "Invoke-WebRequest https://www.sfml-dev.org/files/SFML-3.0.2-windows-gcc-14.2.0-mingw-64-bit.zip -OutFile sfml.zip" && \
 		tar -xf sfml.zip && \
 		del sfml.zip && \
-		echo Copying SFML DLLs next to executables... && \
+		echo Copying SFML DLLs... && \
 		copy SFML-3.0.2\bin\*.dll . >nul 2>&1 || true \
 	) else ( \
 		echo SFML-3.0.2 already installed. \
@@ -103,16 +160,20 @@ else
 	fi
 endif
 
-# Clean rule
+
+#---------------------------------------------------------------------------------------------------
+# Cleaning
+#---------------------------------------------------------------------------------------------------
+
 clean:
-ifeq ($(OS),Windows_NT)
+ifeq ($(DETECTED_OS),Windows)
 	del /Q $(subst /,\,$(MAIN_OBJS) $(UCI_OBJS)) 2>nul
 else
 	rm -f $(MAIN_OBJS) $(UCI_OBJS)
 endif
 
 clean_all: clean
-ifeq ($(OS),Windows_NT)
+ifeq ($(DETECTED_OS),Windows)
 	del /Q main.exe uci.exe 2>nul
 else
 	rm -f main uci

@@ -34,4 +34,4 @@ void init_tunables() {
     update_lmp_table();
     update_lmr_table();
 }
-};  // namespace raphael
+}  // namespace raphael

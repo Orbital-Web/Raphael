@@ -222,4 +222,4 @@ private:
      */
     chess::Move pick_move(i32 movei, chess::Movelist& movelist) const;
 };
-};  // namespace raphael
+}  // namespace raphael

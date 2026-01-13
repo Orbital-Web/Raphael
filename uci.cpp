@@ -1,5 +1,6 @@
 #include <GameEngine/consts.h>
 #include <Raphael/Raphael.h>
+#include <Raphael/tests.h>
 #include <Raphael/tunable.h>
 
 #include <condition_variable>
@@ -221,6 +222,9 @@ int main() {
             halt = true;
             lock_guard<mutex> engine_lock(engine_mutex);
             engine.reset();
+
+        } else if (uci_command == "test") {
+            raphael::test::run_all(false);
 
         } else {
             // tokenize command

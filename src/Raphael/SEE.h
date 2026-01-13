@@ -40,7 +40,7 @@ i32 pieceval(chess::Square sq, const chess::Board& board);
  * \returns the square of the lva
  */
 chess::Square lva(chess::Bitboard attackers, const chess::Board& board);
-};  // namespace internal
+}  // namespace internal
 
 
 

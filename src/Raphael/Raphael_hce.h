@@ -61,4 +61,4 @@ public:
      */
     static i32 evaluate(const chess::Board& board);
 };
-};  // namespace raphael
+}  // namespace raphael

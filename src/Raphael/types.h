@@ -29,4 +29,4 @@ struct MultiArrayImpl<T, kN> {
 template <typename T, std::size_t... kNs>
 using MultiArray = typename internal::MultiArrayImpl<T, kNs...>::Type;
 
-};  // namespace raphael
+}  // namespace raphael

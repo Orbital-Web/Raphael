@@ -31,4 +31,4 @@ bool is_mate(i32 eval);
  * \returns mate distance
  */
 i32 mate_distance(i32 eval);
-};  // namespace raphael
+}  // namespace raphael

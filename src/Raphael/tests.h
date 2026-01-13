@@ -1,4 +1,4 @@
-#include <Raphael/types.h>
+#include <Raphael/Raphael.h>
 
 
 
@@ -17,4 +17,14 @@ i32 test_see();
  */
 i32 run_all(bool raise);
 }  // namespace test
+
+
+
+namespace bench {
+/** Runs the benchmark
+ *
+ * \param engine engine to benchmark
+ */
+void run(Raphael& engine);
+}  // namespace bench
 }  // namespace raphael

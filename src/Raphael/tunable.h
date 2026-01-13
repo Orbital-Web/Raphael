@@ -188,6 +188,9 @@ Tunable(HISTORY_BONUS_OFFSET, 100, 0, 200);
 Tunable(HISTORY_BONUS_MAX, 2000, 500, 4000);
 static constexpr i32 HISTORY_MAX = 16384;
 
+// misc
+static constexpr i32 BENCH_DEPTH = 14;
+
 
 #undef Tunable
 #undef TunableCallback

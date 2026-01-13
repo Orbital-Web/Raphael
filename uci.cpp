@@ -226,6 +226,12 @@ int main() {
         } else if (uci_command == "test") {
             raphael::test::run_all(false);
 
+        } else if (uci_command == "bench") {
+            lock_guard<mutex> engine_lock(engine_mutex);
+            engine.set_option("Hash", 16);
+            engine.reset();
+            raphael::bench::run(engine);
+
         } else {
             // tokenize command
             vector<string> tokens;

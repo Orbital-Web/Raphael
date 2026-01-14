@@ -177,8 +177,8 @@ Raphael::MoveEval Raphael::get_move(
     }
 
     // return result
-    if (is_mate(eval)) return {bestmove, mate_distance(eval), true};
-    return {bestmove, eval, false};
+    if (utils::is_mate(eval)) return {bestmove, utils::mate_distance(eval), true, nodes};
+    return {bestmove, eval, false, nodes};
 }
 
 void Raphael::ponder(chess::Board board, volatile bool& halt) {
@@ -249,8 +249,8 @@ void Raphael::print_uci_info(i32 depth, i32 eval, const SearchStack* ss) const {
     cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime << " nodes "
          << nodes;
 
-    if (is_mate(eval))
-        cout << " score mate " << mate_distance(eval);
+    if (utils::is_mate(eval))
+        cout << " score mate " << utils::mate_distance(eval);
     else
         cout << " score cp " << eval;
 
@@ -340,7 +340,7 @@ i32 Raphael::negamax(
 
             board.unmakeNullMove();
 
-            if (eval >= beta) return (is_win(eval)) ? beta : eval;
+            if (eval >= beta) return (utils::is_win(eval)) ? beta : eval;
         }
     }
 
@@ -369,12 +369,12 @@ i32 Raphael::negamax(
     i32 move_searched = 0;
     for (i32 _movei = 0; _movei < movelist.size(); _movei++) {
         const auto move = pick_move(_movei, movelist);
-        const bool is_quiet = !board.isCapture(move) && move.typeOf() != chess::Move::PROMOTION;
+        const bool is_quiet = utils::is_quiet(move, board);
 
         if (is_quiet && skip_quiets) continue;
 
         // moveloop pruning
-        if (ply && !is_loss(besteval)) {
+        if (ply && !utils::is_loss(besteval)) {
             // late move pruning
             if (move_searched >= LMP_TABLE[improving][depth]) {
                 skip_quiets = true;
@@ -531,7 +531,7 @@ void Raphael::score_moves(
 
         i16 score = 0;
         const bool is_capture = board.isCapture(move);
-        const bool is_quiet = !is_capture && move.typeOf() != chess::Move::PROMOTION;
+        const bool is_quiet = utils::is_quiet(move, board);
 
         if (!is_quiet) {
             // noisy moves

@@ -211,19 +211,24 @@ void run(Raphael& engine) {
         cout << "bench: starting\n" << flush;
     }
 
-    const auto start_t = ch::high_resolution_clock::now();
+    i64 runtime = 0;
+    i64 nodes = 0;
     for (auto fen : bench_data) {
         halt = false;
         const chess::Board board(fen);
-        engine.get_move(board, 0, 0, mouse, halt);
+
+        const auto start_t = ch::high_resolution_clock::now();
+        const auto res = engine.get_move(board, 0, 0, mouse, halt);
+        const auto now = ch::high_resolution_clock::now();
+        runtime += ch::duration_cast<ch::milliseconds>(now - start_t).count();
+        nodes += res.nodes;
     }
 
-    const auto now = ch::high_resolution_clock::now();
-    const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
-
-
+    const i64 knps = nodes / runtime;
     lock_guard<mutex> lock(cout_mutex);
-    cout << "\nbench: finished in " << dtime << "ms \n" << flush;
+    cout << "\nbench: finished in " << runtime << "ms, " << nodes << " nodes, averaging " << knps
+         << "knps\n"
+         << flush;
 }
 }  // namespace bench
 }  // namespace raphael

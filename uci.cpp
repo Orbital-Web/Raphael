@@ -194,6 +194,9 @@ int main(int argc, char** argv) {
             lock_guard<mutex> engine_lock(engine_mutex);
             raphael::bench::run(engine);
             return 0;
+        } else if (!strcmp(argv[1], "test")) {
+            raphael::test::run_all(false);
+            return 0;
         }
         lock_guard<mutex> lock(cout_mutex);
         cout << "info string ignoring unknown command line arguments\n" << flush;

@@ -50,9 +50,9 @@ TranspositionTable::Entry TranspositionTable::get(u64 key, i32 ply) const {
     };
 
     // correct mate eval when retrieving (https://youtu.be/XfeuxubYlT0)
-    if (is_loss(entry.eval))
+    if (utils::is_loss(entry.eval))
         entry.eval += ply;
-    else if (is_win(entry.eval))
+    else if (utils::is_win(entry.eval))
         entry.eval -= ply;
     return entry;
 }
@@ -64,9 +64,9 @@ void TranspositionTable::prefetch(u64 key) const { __builtin_prefetch(&_table[in
 void TranspositionTable::set(const Entry& entry, i32 ply) {
     // correct mate eval when storing (https://youtu.be/XfeuxubYlT0)
     i32 eval = entry.eval;
-    if (is_loss(eval))
+    if (utils::is_loss(eval))
         eval -= ply;
-    else if (is_win(eval))
+    else if (utils::is_win(eval))
         eval += ply;
 
     // pack value to get entry storage (63-32: eval, 31-16: move, 15-14: flag, 13-0: depth)

@@ -21,6 +21,7 @@ public:
         chess::Move move;
         int eval;
         bool is_mate;
+        int64_t nodes = 0;
     };
 
 

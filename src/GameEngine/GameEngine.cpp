@@ -1,6 +1,5 @@
 #include <GameEngine/GameEngine.h>
 #include <GameEngine/HumanPlayer.h>
-#include <GameEngine/consts.h>
 
 #include <fstream>
 #include <future>
@@ -12,9 +11,7 @@ using std::fixed;
 using std::flush;
 using std::future_status;
 using std::ios_base;
-using std::lock_guard;
 using std::min;
-using std::mutex;
 using std::ofstream;
 using std::optional;
 using std::ref;
@@ -125,12 +122,10 @@ void GameEngine::run_match(const GameOptions& options) {
         if (toPlay == chess::Move::NO_MOVE
             || std::find(movelist.begin(), movelist.end(), toPlay) == movelist.end()) {
             if (toPlay == chess::Move::NO_MOVE) {
-                lock_guard<mutex> lock(cout_mutex);
                 cout << "Warning, no move returned. Remaining time of player: " << fixed
                      << setprecision(2) << cur_t_remain / 1000.0f << "\n"
                      << flush;
             } else {
-                lock_guard<mutex> lock(cout_mutex);
                 cout << "Warning, illegal move " << chess::uci::moveToUci(toPlay)
                      << " played. Remaining time of player: " << fixed << setprecision(2)
                      << cur_t_remain / 1000.0f << "\n"
@@ -144,11 +139,9 @@ void GameEngine::run_match(const GameOptions& options) {
         halt = true;  // force stop pondering
 
         // print info
-        if (recv.is_mate) {
-            lock_guard<mutex> lock(cout_mutex);
+        if (recv.is_mate)
             cout << "Eval: #" << ((whiteturn) ? 1 : -1) * recv.eval << "\n" << flush;
-        } else {
-            lock_guard<mutex> lock(cout_mutex);
+        else {
             cout << "Eval: " << fixed << setprecision(2)
                  << ((whiteturn) ? 1 : -1) * recv.eval / 100.0f << "\n"
                  << flush;
@@ -196,7 +189,6 @@ game_end:
 
 
 void GameEngine::print_report() const {
-    lock_guard<mutex> lock(cout_mutex);
     int total_matches = results[0] + results[1] + results[2];
     cout << "Out of " << total_matches << " total matches:\n";
     cout << "   " << players[0]->name << "\t\x1b[32m" << results[0] << " (white: " << whitewins[0]
@@ -226,10 +218,7 @@ void GameEngine::generate_assets() {
     // timer and player names
     bool font_loaded = true;
     font_loaded &= font.openFromFile("src/assets/fonts/Roboto-Regular.ttf");
-    if (!font_loaded) {
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "Warning, could not load font\n" << flush;
-    }
+    if (!font_loaded) cout << "Warning, could not load font\n" << flush;
     timers.reserve(2);
     names.reserve(2);
     for (int i = 0; i < 2; i++) {
@@ -244,10 +233,7 @@ void GameEngine::generate_assets() {
     sound_loaded &= soundbuffers[0].loadFromFile("src/assets/sounds/Move.ogg");
     sound_loaded &= soundbuffers[1].loadFromFile("src/assets/sounds/Capture.ogg");
     sound_loaded &= soundbuffers[2].loadFromFile("src/assets/sounds/GenericNotify.ogg");
-    if (!sound_loaded) {
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "Warning, could not load 1 or more sound files\n" << flush;
-    }
+    if (!sound_loaded) cout << "Warning, could not load 1 or more sound files\n" << flush;
     sounds.reserve(3);
     for (int i = 0; i < 3; i++) sounds.emplace_back(soundbuffers[i]);
 }

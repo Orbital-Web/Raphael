@@ -102,7 +102,7 @@ You can also play with different time controls, increments, and player combinati
     - [x] Mate distance pruning             (`v1.6+`)
     - [x] Reverse futility pruning          (`v2.2+`)
     - [x] Null move pruning                 (`v2.2+`)
-    - [ ] Razoring
+    - [x] Razoring                          (`v2.3+`)
     - [ ] Probcut
     - [x] Late move pruning                 (`v2.3+`)
     - [x] Futility pruning                  (`v2.3+`)
@@ -169,4 +169,5 @@ For a more in-depth documentation on the NNUE and how it was trained, refer to t
 
 - [Sebastian Lague](https://www.youtube.com/c/SebastianLague) for inspiring me to start the development of Raphael through the Coding Adventures series
 - [Disservin](https://github.com/Disservin) for creating the [C++ chess library](https://github.com/Disservin/chess-library), [fastchess](https://github.com/Disservin/fastchess), and [Python Chess Engine](https://github.com/Disservin/python-chess-engine), all of which I've used extensively while developing my engine
-- Those on the Stockfish Discord for teaching me and helping me out with the NNUE dataset collection, training, and evaluation, as well as engine development in general. Without their help, my engine wouldn't be as good as it is now.
+- Those on the Stockfish Discord for teaching me and helping me out with the NNUE dataset collection, training, and evaluation, as well as engine development in general. Without their help, my engine wouldn't be as good as it is now
+- [GediminasMasaitis's Texel Tuner](https://github.com/GediminasMasaitis/texel-tuner) which I've used to tune my parameters back when I was using a HCE

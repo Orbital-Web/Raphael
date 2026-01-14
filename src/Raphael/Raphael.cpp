@@ -317,6 +317,13 @@ i32 Raphael::negamax(
         const i32 rfp_margin = RFP_DEPTH_SCALE * depth - RFP_IMPROV_SCALE * improving;
         if (depth <= RFP_DEPTH && ss->static_eval - rfp_margin >= beta) return ss->static_eval;
 
+        // razoring
+        const i32 razor_margin = RAZORING_MARGIN_BASE + RAZORING_DEPTH_SCALE * depth * depth;
+        if (depth <= RAZORING_DEPTH && alpha <= 2048 && ss->static_eval + razor_margin <= alpha) {
+            const i32 eval = quiescence(board, ply, alpha, alpha + 1, halt);
+            if (eval <= alpha) return eval;
+        }
+
         // null move pruning
         const auto side = board.sideToMove();
         const bool non_pk

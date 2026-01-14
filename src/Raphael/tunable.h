@@ -150,8 +150,12 @@ Tunable(RFP_DEPTH, 6, 1, 10);           // max depth to apply rfp from
 Tunable(RFP_DEPTH_SCALE, 77, 25, 150);  // margin depth scale for rfp
 Tunable(RFP_IMPROV_SCALE, 0, 0, 100);   // margin improving scale for rfp
 
-Tunable(NMP_DEPTH, 3, 1, 8);      // depth to apply nmp from
-Tunable(NMP_REDUCTION, 4, 1, 8);  // depth reduction for nmp
+Tunable(RAZORING_DEPTH, 4, 1, 10);             // max depth to apply razoring from
+Tunable(RAZORING_DEPTH_SCALE, 250, 100, 800);  // margin depth scale for razoring
+Tunable(RAZORING_MARGIN_BASE, 300, 0, 400);    // base margin for razoring
+
+Tunable(NMP_DEPTH, 3, 1, 10);      // depth to apply nmp from
+Tunable(NMP_REDUCTION, 4, 1, 10);  // depth reduction for nmp
 
 inline MultiArray<i32, 2, 256> LMP_TABLE;  // lmp threshold[improving][depth]
 TunableCallback(LMP_THRESH_BASE, 3, 1, 12, update_lmp_table);

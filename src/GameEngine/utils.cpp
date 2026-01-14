@@ -1,3 +1,4 @@
+#include <GameEngine/consts.h>
 #include <GameEngine/utils.h>
 
 #include <cmath>
@@ -5,6 +6,8 @@
 using namespace cge;
 using std::cout;
 using std::fixed;
+using std::lock_guard;
+using std::mutex;
 using std::setfill;
 using std::setprecision;
 using std::setw;
@@ -73,7 +76,10 @@ PieceDrawer::PieceDrawer(): textures(13) {
     loaded &= textures[12].loadFromFile("src/assets/themes/check.png");
     textures[12].setSmooth(true);
 
-    if (!loaded) cout << "Warning, could not load 1 or more texture files\n";
+    if (!loaded) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "Warning, could not load 1 or more texture files\n";
+    }
     sprites.reserve(13);
     for (int i = 0; i < 13; i++) sprites.emplace_back(textures[i]);
 }

@@ -1,3 +1,4 @@
+#include <GameEngine/consts.h>
 #include <Raphael/Raphael.h>
 #include <Raphael/tests.h>
 #include <Raphael/tunable.h>
@@ -105,6 +106,7 @@ void setoption(const vector<string>& tokens) {
     lock_guard<mutex> engine_lock(engine_mutex);
 #ifdef TUNE
     if (raphael::set_tunable(tokens[2], value)) {
+        lock_guard<mutex> lock(cout_mutex);
         cout << "info string set " << tokens[2] << " to " << value << "\n" << flush;
         return;
     }
@@ -192,10 +194,8 @@ int main(int argc, char** argv) {
             lock_guard<mutex> engine_lock(engine_mutex);
             raphael::bench::run(engine);
             return 0;
-        } else if (!strcmp(argv[1], "test")) {
-            raphael::test::run_all(false);
-            return 0;
         }
+        lock_guard<mutex> lock(cout_mutex);
         cout << "info string ignoring unknown command line arguments\n" << flush;
     }
 
@@ -208,6 +208,7 @@ int main(int argc, char** argv) {
         getline(cin, uci_command);
 
         if (uci_command == "uci") {
+            lock_guard<mutex> lock(cout_mutex);
             cout << "id name " << engine.name << " " << engine.version << "\n"
                  << "id author Rei Meguro\n"
                  << engine.default_params().hash.uci() << engine.default_params().softnodes.uci()
@@ -217,10 +218,11 @@ int main(int argc, char** argv) {
 #endif
             cout << "uciok\n" << flush;
 
-        } else if (uci_command == "isready")
+        } else if (uci_command == "isready") {
+            lock_guard<mutex> lock(cout_mutex);
             cout << "readyok\n" << flush;
 
-        else if (uci_command == "stop")
+        } else if (uci_command == "stop")
             halt = true;
 
         else if (uci_command == "quit") {
@@ -263,8 +265,10 @@ int main(int argc, char** argv) {
                 halt = true;
                 search(tokens);
 
-            } else
+            } else {
+                lock_guard<mutex> lock(cout_mutex);
                 cout << "info string unknown command: '" << keyword << "'\n" << flush;
+            }
         }
     }
 

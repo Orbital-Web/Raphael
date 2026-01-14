@@ -1,3 +1,4 @@
+#include <GameEngine/consts.h>
 #include <Raphael/Raphael.h>
 #include <Raphael/SEE.h>
 #include <Raphael/consts.h>
@@ -11,8 +12,10 @@ using namespace raphael;
 using std::copy;
 using std::cout;
 using std::flush;
+using std::lock_guard;
 using std::max;
 using std::min;
+using std::mutex;
 using std::string;
 using std::swap;
 namespace ch = std::chrono;
@@ -71,6 +74,7 @@ void Raphael::set_option(const std::string& name, i32 value) {
 
         // error checking
         if (value < p->min || value > p->max) {
+            lock_guard<mutex> lock(cout_mutex);
             cout << "info string error: option '" << p->name << "' value must be within min "
                  << p->min << " max " << p->max << "\n"
                  << flush;
@@ -80,10 +84,12 @@ void Raphael::set_option(const std::string& name, i32 value) {
         // set value
         p->set(value);
 
+        lock_guard<mutex> lock(cout_mutex);
         cout << "info string set " << p->name << " to " << value << "\n" << flush;
         return;
     }
 
+    lock_guard<mutex> lock(cout_mutex);
     cout << "info string error: unknown spin option '" << name << "'\n" << flush;
 }
 void Raphael::set_option(const std::string& name, bool value) {
@@ -93,6 +99,7 @@ void Raphael::set_option(const std::string& name, bool value) {
         // set value
         p->set(value);
 
+        lock_guard<mutex> lock(cout_mutex);
         if (value)
             cout << "info string enabled " << p->name << "\n" << flush;
         else
@@ -100,6 +107,7 @@ void Raphael::set_option(const std::string& name, bool value) {
         return;
     }
 
+    lock_guard<mutex> lock(cout_mutex);
     cout << "info string error: unknown check option '" << name << "'\n" << flush;
 }
 
@@ -163,11 +171,14 @@ Raphael::MoveEval Raphael::get_move(
     if (bestmove == chess::Move::NO_MOVE) bestmove = ss->pv.moves[0];
 
     // print bestmove
-    if (UCI) cout << "bestmove " << chess::uci::moveToUci(bestmove) << "\n" << flush;
+    if (UCI) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "bestmove " << chess::uci::moveToUci(bestmove) << "\n" << flush;
+    }
 
     // return result
-    if (is_mate(eval)) return {bestmove, mate_distance(eval), true, nodes};
-    return {bestmove, eval, false, nodes};
+    if (is_mate(eval)) return {bestmove, mate_distance(eval), true};
+    return {bestmove, eval, false};
 }
 
 void Raphael::ponder(chess::Board board, volatile bool& halt) {
@@ -234,6 +245,7 @@ void Raphael::print_uci_info(i32 depth, i32 eval, const SearchStack* ss) const {
     const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
     const auto nps = (dtime) ? nodes * 1000 / dtime : 0;
 
+    lock_guard<mutex> lock(cout_mutex);
     cout << "info depth " << depth - 1 << " seldepth " << seldepth << " time " << dtime << " nodes "
          << nodes;
 

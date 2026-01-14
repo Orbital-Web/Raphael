@@ -1,9 +1,12 @@
+#include <GameEngine/consts.h>
 #include <Raphael/SEE.h>
 #include <Raphael/tests.h>
 
 
 using std::cout;
 using std::flush;
+using std::lock_guard;
+using std::mutex;
 using std::runtime_error;
 using std::vector;
 namespace ch = std::chrono;
@@ -98,7 +101,10 @@ i32 test_see() {
         {"r1bqk1nr/pppp1ppp/2n5/1B2p3/1b2P3/5N2/PPPP1PPP/RNBQK2R w KQkq -",   "e1g1",  0                                },
     };
 
-    cout << "test_see: starting\n" << flush;
+    {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "test_see: starting\n" << flush;
+    }
 
     i32 failed = 0;
     for (const auto& testdata : see_testdata) {
@@ -109,6 +115,7 @@ i32 test_see() {
         const bool res2 = SEE::see(move, board, testdata.exchange);
         const bool res3 = SEE::see(move, board, testdata.exchange + 1);
         if (!(res1 && res2 && !res3)) {
+            lock_guard<mutex> lock(cout_mutex);
             cout << "test_see: FAIL: " << testdata.fen << " " << testdata.mv
                  << ": expected 1 1 0, got " << res1 << " " << res2 << " " << res3 << "\n"
                  << flush;
@@ -116,10 +123,13 @@ i32 test_see() {
         }
     }
 
-    if (failed == 0)
+    if (failed == 0) {
+        lock_guard<mutex> lock(cout_mutex);
         cout << "test_see: all passed\n" << flush;
-    else
+    } else {
+        lock_guard<mutex> lock(cout_mutex);
         cout << "test_see: failed " << failed << " test cases\n" << flush;
+    }
 
     return failed;
 }
@@ -196,24 +206,24 @@ void run(Raphael& engine) {
     bool halt = false;
     cge::MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
 
-    cout << "bench: starting\n" << flush;
+    {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "bench: starting\n" << flush;
+    }
 
-    i64 runtime = 0;
-    i64 nodes = 0;
+    const auto start_t = ch::high_resolution_clock::now();
     for (auto fen : bench_data) {
         halt = false;
         const chess::Board board(fen);
-
-        const auto start_t = ch::high_resolution_clock::now();
-        const auto res = engine.get_move(board, 0, 0, mouse, halt);
-        const auto now = ch::high_resolution_clock::now();
-        runtime += ch::duration_cast<ch::milliseconds>(now - start_t).count();
-        nodes += res.nodes;
+        engine.get_move(board, 0, 0, mouse, halt);
     }
 
-    const i64 knps = nodes / runtime;
+    const auto now = ch::high_resolution_clock::now();
+    const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t).count();
 
-    cout << "\nbench: finished in " << runtime << "ms, averaging " << knps << "knps\n" << flush;
+
+    lock_guard<mutex> lock(cout_mutex);
+    cout << "\nbench: finished in " << dtime << "ms \n" << flush;
 }
 }  // namespace bench
 }  // namespace raphael

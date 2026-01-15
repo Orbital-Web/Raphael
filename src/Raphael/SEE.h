@@ -7,23 +7,6 @@
 
 namespace raphael::SEE {
 namespace internal {
-const i32 VAL[13] = {
-    100,
-    422,
-    437,
-    694,
-    1313,
-    10000,
-    100,
-    422,
-    437,
-    694,
-    1313,
-    10000,
-    0,
-};
-
-
 /** Returns the value of a piece on a square
  *
  * \param sq the square to look at

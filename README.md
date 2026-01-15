@@ -126,10 +126,11 @@ You can also play with different time controls, increments, and player combinati
     - [x] Promotions                        (`v1.0+`)
     - [x] Hash move                         (`v1.6+`)
     - [x] Killer heuristics                 (`v1.3+`)
-    - [x] Quiet history                     (`v1.5+`)
-    - [ ] Continuation history
+    - [x] Butterfly history                 (`v1.5+`)
     - [ ] Capture history
+    - [ ] Continuation history
     - [ ] Correction history
+    - [ ] Threats in history
     - [x] SEE                               (`v1.7+`)
 - [x] Quiescence search                     (`v1.0+`)
   - ~~Delta pruning~~                       (`v2.1+`)

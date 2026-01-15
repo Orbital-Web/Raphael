@@ -16,11 +16,11 @@ namespace ch = std::chrono;
 namespace raphael {
 namespace test {
 i32 test_see() {
-    const i32 P = SEE::internal::VAL[0];
-    const i32 N = SEE::internal::VAL[1];
-    const i32 B = SEE::internal::VAL[2];
-    const i32 R = SEE::internal::VAL[3];
-    const i32 Q = SEE::internal::VAL[4];
+    const i32 P = SEE_PAWN_VAL;
+    const i32 N = SEE_KNIGHT_VAL;
+    const i32 B = SEE_BISHOP_VAL;
+    const i32 R = SEE_ROOK_VAL;
+    const i32 Q = SEE_QUEEN_VAL;
 
     struct TestData {
         const char* fen;

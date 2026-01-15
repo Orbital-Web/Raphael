@@ -30,8 +30,25 @@ void update_lmr_table() {
     }
 }
 
+void update_see_table() {
+    SEE_TABLE[0] = SEE_PAWN_VAL;
+    SEE_TABLE[1] = SEE_KNIGHT_VAL;
+    SEE_TABLE[2] = SEE_BISHOP_VAL;
+    SEE_TABLE[3] = SEE_ROOK_VAL;
+    SEE_TABLE[4] = SEE_QUEEN_VAL;
+    SEE_TABLE[5] = 10000;
+    SEE_TABLE[6] = SEE_PAWN_VAL;
+    SEE_TABLE[7] = SEE_KNIGHT_VAL;
+    SEE_TABLE[8] = SEE_BISHOP_VAL;
+    SEE_TABLE[9] = SEE_ROOK_VAL;
+    SEE_TABLE[10] = SEE_QUEEN_VAL;
+    SEE_TABLE[11] = 10000;
+    SEE_TABLE[12] = 0;
+}
+
 void init_tunables() {
     update_lmp_table();
     update_lmr_table();
+    update_see_table();
 }
 }  // namespace raphael

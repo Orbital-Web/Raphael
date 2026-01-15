@@ -69,6 +69,12 @@ private:
         i32 static_eval = 0;
     };
 
+    struct MoveStack {
+        chess::Movelist movelist;
+        chess::Movelist bad_quiets;
+    };
+    MoveStack movestack[MAX_DEPTH];
+
 
 
 public:

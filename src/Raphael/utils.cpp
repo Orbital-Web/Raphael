@@ -16,11 +16,19 @@ i32 mate_distance(i32 eval) { return ((eval >= 0) ? 1 : -1) * (MATE_EVAL - abs(e
 
 
 
+bool stm(const chess::Board& board) { return board.sideToMove() == chess::Color::WHITE; }
+
 bool is_quiet(const chess::Move& move, const chess::Board& board) {
     return !(
         board.isCapture(move)
         || (move.typeOf() == chess::Move::PROMOTION
             && move.promotionType() == chess::PieceType::QUEEN)
     );
+}
+
+chess::Piece piece_captured(const chess::Move& move, const chess::Board& board) {
+    return (move.typeOf() == chess::Move::ENPASSANT)
+               ? (stm(board) ? chess::Piece::BLACKPAWN : chess::Piece::WHITEPAWN)
+               : board.at(move.to());
 }
 }  // namespace raphael::utils

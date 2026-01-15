@@ -1,11 +1,12 @@
 #include <Raphael/SEE.h>
+#include <Raphael/tunable.h>
 
 
 
 namespace raphael::SEE {
 
 namespace internal {
-i32 pieceval(chess::Square sq, const chess::Board& board) { return VAL[board.at(sq)]; }
+i32 pieceval(chess::Square sq, const chess::Board& board) { return SEE_TABLE[board.at(sq)]; }
 
 
 chess::Square lva(chess::Bitboard attackers, const chess::Board& board) {
@@ -30,7 +31,7 @@ bool see(const chess::Move& move, const chess::Board& board, i32 threshold) {
     // add material gain
     if (move.typeOf() == chess::Move::ENPASSANT) {
         // pawn captured
-        gain += internal::VAL[0];
+        gain += SEE_TABLE[0];
         const auto enpsq = (board.sideToMove() == chess::Color::WHITE)
                                ? to + chess::Direction::SOUTH
                                : to + chess::Direction::NORTH;
@@ -38,7 +39,7 @@ bool see(const chess::Move& move, const chess::Board& board, i32 threshold) {
     } else if (move.typeOf() == chess::Move::PROMOTION) {
         // promotion + any capture - pawn
         const auto promo = move.promotionType();
-        gain += internal::VAL[promo] + internal::pieceval(to, board) - internal::VAL[0];
+        gain += SEE_TABLE[promo] + internal::pieceval(to, board) - SEE_TABLE[0];
     } else if (move.typeOf() != chess::Move::CASTLING)
         gain += internal::pieceval(to, board);
 
@@ -47,7 +48,7 @@ bool see(const chess::Move& move, const chess::Board& board, i32 threshold) {
     // initial capture
     if (move.typeOf() == chess::Move::PROMOTION) {
         const auto promo = move.promotionType();
-        gain -= internal::VAL[promo];
+        gain -= SEE_TABLE[promo];
     } else
         gain -= internal::pieceval(victim_sq, board);
 

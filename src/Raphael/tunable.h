@@ -137,6 +137,9 @@ void update_lmp_table();
 /** Updates the lmr table */
 void update_lmr_table();
 
+/** Updates the see table */
+void update_see_table();
+
 /** Initializes the tunable dependent parameters */
 void init_tunables();
 
@@ -180,17 +183,28 @@ TunableCallback(LMR_NONPV, 130, 0, 384, update_lmr_table);
 Tunable(QS_FUTILITY_MARGIN, 150, 50, 400);  // margin for qs futility pruning
 Tunable(QS_SEE_THRESH, -100, -500, 200);    // SEE threshold for qs SEE pruning
 
+// SEE
+inline MultiArray<i32, 13> SEE_TABLE;
+TunableCallback(SEE_PAWN_VAL, 100, 100, 100, update_see_table);
+TunableCallback(SEE_KNIGHT_VAL, 422, 200, 600, update_see_table);
+TunableCallback(SEE_BISHOP_VAL, 437, 200, 600, update_see_table);
+TunableCallback(SEE_ROOK_VAL, 694, 200, 600, update_see_table);
+TunableCallback(SEE_QUEEN_VAL, 1313, 200, 600, update_see_table);
+
 // move ordering
-static constexpr i32 GOOD_NOISY_FLOOR = 30000;  // good captures/promotions <=30500
-static constexpr i32 KILLER_FLOOR = 21000;      // killer moves
-static constexpr i32 BAD_NOISY_FLOOR = -20000;  // bad captures/promotions <=-19500
+static constexpr i32 TT_MOVE_FLOOR = INT16_MAX;  // tt move                 32767
+static constexpr i32 GOOD_NOISY_FLOOR = 25000;   // good captures/queening  20000 to 300000
+static constexpr i32 KILLER_FLOOR = 17000;       // killer moves            17000
+static constexpr i32 HISTORY_MAX = 16384;        // quiet moves            -16384 to 16384
+static constexpr i32 BAD_NOISY_FLOOR = -25000;   // bad captures/queening  -30000 to -20000
+static constexpr i32 CAPTHIST_DIVISOR = 8;
+static_assert(GOOD_NOISY_FLOOR + HISTORY_MAX / CAPTHIST_DIVISOR < TT_MOVE_FLOOR);
 
 Tunable(GOOD_NOISY_SEE_THRESH, -15, -200, 200);  // SEE threshold for good capture/promotion
 
 Tunable(HISTORY_BONUS_SCALE, 100, 5, 500);
 Tunable(HISTORY_BONUS_OFFSET, 100, 0, 200);
 Tunable(HISTORY_BONUS_MAX, 2000, 500, 4000);
-static constexpr i32 HISTORY_MAX = 16384;
 
 // misc
 static constexpr i32 BENCH_DEPTH = 14;

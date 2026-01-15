@@ -36,6 +36,13 @@ i32 mate_distance(i32 eval);
 
 
 
+/** Returns the current side to move
+ *
+ * \param board current board
+ * \returns the stm (white = true)
+ */
+bool stm(const chess::Board& board);
+
 /** Determines if a move is quiet
  *
  * \param move move to classify
@@ -43,4 +50,12 @@ i32 mate_distance(i32 eval);
  * \return whether the move is quiet or not
  */
 bool is_quiet(const chess::Move& move, const chess::Board& board);
+
+/** Returns the Piece that was captured
+ *
+ * \param move either a normal capture or enpassant move (not castling)
+ * \param board current board
+ * \param the piece that was captured
+ */
+chess::Piece piece_captured(const chess::Move& move, const chess::Board& board);
 }  // namespace raphael::utils

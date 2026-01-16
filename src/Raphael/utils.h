@@ -51,11 +51,18 @@ bool stm(const chess::Board& board);
  */
 bool is_quiet(const chess::Move& move, const chess::Board& board);
 
+/** Determines whether the board only contains pawns and kings for the current stm
+ *
+ * \param board current board
+ * \return whether it is a pk position
+ */
+bool is_pk(const chess::Board& board);
+
 /** Returns the Piece that was captured
  *
  * \param move either a normal capture or enpassant move (not castling)
  * \param board current board
- * \param the piece that was captured
+ * \returns the piece that was captured
  */
 chess::Piece piece_captured(const chess::Move& move, const chess::Board& board);
 }  // namespace raphael::utils

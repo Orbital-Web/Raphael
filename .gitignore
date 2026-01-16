@@ -225,6 +225,7 @@ SFML-*/
 # Helper Repositories (not submodules)
 fastchess
 texel-tuner
+weather-factory
 
 # Chess Games
 src/Games/stockfish/

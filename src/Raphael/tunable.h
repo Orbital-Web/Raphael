@@ -188,8 +188,8 @@ inline MultiArray<i32, 13> SEE_TABLE;
 TunableCallback(SEE_PAWN_VAL, 100, 100, 100, update_see_table);
 TunableCallback(SEE_KNIGHT_VAL, 422, 200, 600, update_see_table);
 TunableCallback(SEE_BISHOP_VAL, 437, 200, 600, update_see_table);
-TunableCallback(SEE_ROOK_VAL, 694, 200, 600, update_see_table);
-TunableCallback(SEE_QUEEN_VAL, 1313, 200, 600, update_see_table);
+TunableCallback(SEE_ROOK_VAL, 694, 300, 800, update_see_table);
+TunableCallback(SEE_QUEEN_VAL, 1313, 600, 1800, update_see_table);
 
 // move ordering
 static constexpr i32 TT_MOVE_FLOOR = INT16_MAX;  // tt move                 32767
@@ -202,9 +202,19 @@ static_assert(GOOD_NOISY_FLOOR + HISTORY_MAX / CAPTHIST_DIVISOR < TT_MOVE_FLOOR)
 
 Tunable(GOOD_NOISY_SEE_THRESH, -15, -200, 200);  // SEE threshold for good capture/promotion
 
-Tunable(HISTORY_BONUS_SCALE, 100, 5, 500);
-Tunable(HISTORY_BONUS_OFFSET, 100, 0, 200);
-Tunable(HISTORY_BONUS_MAX, 2000, 500, 4000);
+Tunable(HISTORY_BONUS_DEPTH_SCALE, 100, 128, 512);
+Tunable(HISTORY_BONUS_OFFSET, 100, 128, 768);
+Tunable(HISTORY_BONUS_MAX, 2000, 1024, 4096);
+Tunable(HISTORY_PENALTY_DEPTH_SCALE, 100, 128, 512);
+Tunable(HISTORY_PENALTY_OFFSET, 100, 128, 768);
+Tunable(HISTORY_PENALTY_MAX, 2000, 1024, 4096);
+
+Tunable(CAPTHIST_BONUS_DEPTH_SCALE, 100, 128, 512);
+Tunable(CAPTHIST_BONUS_OFFSET, 100, 128, 768);
+Tunable(CAPTHIST_BONUS_MAX, 2000, 1024, 4096);
+Tunable(CAPTHIST_PENALTY_DEPTH_SCALE, 100, 128, 512);
+Tunable(CAPTHIST_PENALTY_OFFSET, 100, 128, 768);
+Tunable(CAPTHIST_PENALTY_MAX, 2000, 1024, 4096);
 
 // misc
 static constexpr i32 BENCH_DEPTH = 14;

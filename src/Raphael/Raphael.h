@@ -71,7 +71,7 @@ private:
 
     struct MoveStack {
         chess::Movelist movelist;
-        chess::Movelist bad_quiets;
+        chess::Movelist quietlist;
     };
     MoveStack movestack[MAX_DEPTH];
 

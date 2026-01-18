@@ -325,7 +325,8 @@ i32 Raphael::negamax(
 
         // null move pruning
         if (depth >= NMP_DEPTH && ss->static_eval >= beta
-            && (ss - 1)->move != chess::Move::NULL_MOVE && !utils::is_pk(board)) {
+            && (ss - 1)->move != chess::Move::NULL_MOVE
+            && board.hasNonPawnMaterial(board.sideToMove())) {
             net.make_move(ply + 1, chess::Move::NULL_MOVE, board);
             board.makeNullMove();
             ss->move = chess::Move::NULL_MOVE;
@@ -344,6 +345,7 @@ i32 Raphael::negamax(
     if (board.isInsufficientMaterial()) return 0;
     auto& mvstack = movestack[ply];
     mvstack.quietlist.clear();
+    mvstack.noisylist.clear();
     chess::movegen::legalmoves<chess::movegen::MoveGenType::ALL>(mvstack.movelist, board);
     if (mvstack.movelist.empty()) return (in_check) ? -MATE_EVAL + ply : 0;  // reward faster mate
 
@@ -396,7 +398,10 @@ i32 Raphael::negamax(
         ss->move = move;
         move_searched++;
 
-        if (is_quiet) mvstack.quietlist.add(move);
+        if (is_quiet)
+            mvstack.quietlist.add(move);
+        else
+            mvstack.noisylist.add(move);
 
         // check extension
         if (board.inCheck()) extension++;
@@ -422,6 +427,8 @@ i32 Raphael::negamax(
         board.unmakeMove(move);
         extension = 0;
 
+        if (halt) return 0;
+
         if (eval > besteval) {
             besteval = eval;
             bestmove = move;
@@ -445,6 +452,18 @@ i32 Raphael::negamax(
                                 quietmove, side, (quietmove == move) ? quiet_bonus : quiet_penalty
                             );
                     }
+
+                    // always update capthist
+                    const auto noisy_bonus = history.noisy_bonus(depth);
+                    const auto noisy_penalty = history.noisy_penalty(depth);
+
+                    for (const auto noisymove : mvstack.noisylist) {
+                        const auto captured = utils::piece_captured(noisymove, board);
+                        history.update_noisy(
+                            noisymove, captured, (noisymove == move) ? noisy_bonus : noisy_penalty
+                        );
+                    }
+
                     break;  // prune
                 }
             }
@@ -452,14 +471,12 @@ i32 Raphael::negamax(
     }
 
     // update transposition table
-    if (!halt) {
-        auto flag = tt.INVALID;
-        if (besteval >= beta)
-            flag = tt.LOWER;
-        else
-            flag = (alpha != alphaorig) ? tt.EXACT : tt.UPPER;
-        tt.set({ttkey, depth, flag, bestmove, besteval}, ply);
-    }
+    auto flag = tt.INVALID;
+    if (besteval >= beta)
+        flag = tt.LOWER;
+    else
+        flag = (alpha != alphaorig) ? tt.EXACT : tt.UPPER;
+    tt.set({ttkey, depth, flag, bestmove, besteval}, ply);
     return besteval;
 }
 
@@ -483,6 +500,7 @@ i32 Raphael::quiescence(
     // search
     auto& mvstack = movestack[ply];
     mvstack.quietlist.clear();
+    mvstack.noisylist.clear();
     chess::movegen::legalmoves<chess::movegen::MoveGenType::CAPTURE>(mvstack.movelist, board);
     score_moves(mvstack.movelist, board);
 
@@ -530,51 +548,39 @@ void Raphael::score_moves(
     const bool side = utils::stm(board);
 
     for (auto& move : movelist) {
-        // prioritize transposition table move
-        if (move == ttmove) {
-            move.setScore(TT_MOVE_FLOOR);
-            continue;
-        }
+        if (move == ttmove)
+            move.setScore(TT_MOVE_FLOOR);  // tt move
 
-        i16 score = 0;
-        const bool is_capture = board.isCapture(move);
-        const bool is_quiet = utils::is_quiet(move, board);
-
-        if (!is_quiet) {
+        else if (!utils::is_quiet(move, board)) {
             // noisy moves
-            if (is_capture) {
-                // captures (MVV/LVA)
-                auto attacker = board.at<chess::PieceType>(move.from());
-                auto victim = utils::piece_captured(move, board) % 6;
-                score += 128 * victim + 5 - attacker;
-            }
+            const auto victim = utils::piece_captured(move, board);
+
+            i16 score = 0;
+            score += history.get_noisyscore(move, victim) / CAPTHIST_DIVISOR;
+            score += SEE_TABLE[victim];
+            if (move.typeOf() == chess::Move::PROMOTION)
+                score += SEE_TABLE[move.promotionType()] - SEE_TABLE[(i32)chess::PieceType::PAWN];
 
             score += SEE::see(move, board, GOOD_NOISY_SEE_THRESH) ? GOOD_NOISY_FLOOR
                                                                   : BAD_NOISY_FLOOR;
-
+            move.setScore(score);
         } else if (move == ss->killer)
-            // killer moves
-            score = KILLER_FLOOR;
+            move.setScore(KILLER_FLOOR);  // killer moves
         else
-            // quiet moves
-            score = history.get_quietscore(move, side);
-
-        move.setScore(score);
+            move.setScore(history.get_quietscore(move, side));  // quiet moves
     }
 }
 
 void Raphael::score_moves(chess::Movelist& movelist, const chess::Board& board) const {
     for (auto& move : movelist) {
-        i16 score = 0;
-
         // assume noisy
-        if (board.isCapture(move)) {
-            // captures (MVV/LVA)
-            auto attacker = board.at<chess::PieceType>(move.from());
-            auto victim = utils::piece_captured(move, board) % 6;
-            score += 128 * victim + 5 - attacker;
-        }
+        const auto victim = utils::piece_captured(move, board);
 
+        i16 score = 0;
+        score += history.get_noisyscore(move, victim) / CAPTHIST_DIVISOR;
+        score += SEE_TABLE[victim];
+        if (move.typeOf() == chess::Move::PROMOTION)
+            score += SEE_TABLE[move.promotionType()] - SEE_TABLE[(i32)chess::PieceType::PAWN];
         move.setScore(score);
     }
 }

@@ -83,8 +83,8 @@ endif
 #---------------------------------------------------------------------------------------------------
 
 CCFLAGS_RELEASE   := -DNDEBUG
-CCFLAGS_NATIVE    := $(CCFLAGS_RELEASE) -march=native
-CCFLAGS_AVX2_BMI2 := $(CCFLAGS_RELEASE) -march=haswell
+CCFLAGS_NATIVE    := $(CCFLAGS_RELEASE) -march=native -DCHESS_USE_PEXT
+CCFLAGS_AVX2_BMI2 := $(CCFLAGS_RELEASE) -march=haswell -DCHESS_USE_PEXT
 CCFLAGS_AVX2      := $(CCFLAGS_RELEASE) -march=haswell -mno-bmi2
 CCFLAGS_GENERIC   := $(CCFLAGS_RELEASE) -march=x86-64
 CCFLAGS_TUNABLE   := $(CCFLAGS_RELEASE) -march=native -DTUNE

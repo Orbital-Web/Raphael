@@ -26,12 +26,6 @@ bool is_quiet(const chess::Move& move, const chess::Board& board) {
     );
 }
 
-bool is_pk(const chess::Board& board) {
-    // remove pawns and see if only king remains
-    const auto color = board.sideToMove();
-    return (board.us(color) ^ board.pieces(chess::PieceType::PAWN, color)).count() == 1;
-}
-
 chess::Piece piece_captured(const chess::Move& move, const chess::Board& board) {
     return (move.typeOf() == chess::Move::ENPASSANT)
                ? (stm(board) ? chess::Piece::BLACKPAWN : chess::Piece::WHITEPAWN)

@@ -22,8 +22,8 @@ Note that Elos with an asterics next to them are estimates and not official, and
         <th><a href="https://www.computerchess.org.uk/ccrl/404/">CCRL Blitz</a></th>
         <th><a href="https://www.computerchess.org.uk/ccrl/4040/">CCRL 40/15</a></th>
     </tr>
-    <tr align="center"><td>2.2.0</td> <td>3035*</td> <td>3005*</td></tr>
-    <tr align="center"><td>2.1.0</td> <td>2739*</td> <td>2691</td></tr>
+    <tr align="center"><td>2.2.0</td> <td>3035*</td> <td>2970</td></tr>
+    <tr align="center"><td>2.1.0</td> <td>2739*</td> <td>2692</td></tr>
     <tr align="center"><td>2.0.0</td> <td>2646*</td> <td></td></tr>
     <tr align="center"><td>1.8.0</td> <td>2223*</td> <td></td></tr>
     <tr align="center"><td>1.7.6</td> <td>1967</td>  <td></td></tr>

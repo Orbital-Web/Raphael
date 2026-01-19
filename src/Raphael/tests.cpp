@@ -224,10 +224,10 @@ void run(Raphael& engine) {
         nodes += res.nodes;
     }
 
-    const i64 knps = nodes / runtime;
+    const i64 nps = 1000.0f * nodes / runtime;
     lock_guard<mutex> lock(cout_mutex);
-    cout << "\nbench: finished in " << runtime << "ms, " << nodes << " nodes, averaging " << knps
-         << "knps\n"
+    cout << "bench: completed in " << runtime << "ms:\n"
+         << nodes << " nodes " << nps << " nps\n"
          << flush;
 }
 }  // namespace bench

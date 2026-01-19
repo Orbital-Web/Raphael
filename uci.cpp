@@ -211,11 +211,12 @@ int main(int argc, char** argv) {
         getline(cin, uci_command);
 
         if (uci_command == "uci") {
+            const auto params = engine.default_params();
             lock_guard<mutex> lock(cout_mutex);
             cout << "id name " << engine.name << " " << engine.version << "\n"
                  << "id author Rei Meguro\n"
-                 << engine.default_params().hash.uci() << engine.default_params().softnodes.uci()
-                 << engine.default_params().softhardmult.uci();
+                 << params.hash.uci() << params.threads.uci() << params.datagen.uci()
+                 << params.softnodes.uci() << params.softhardmult.uci();
 #ifdef TUNE
             for (const auto tunable : raphael::tunables) cout << tunable->uci();
 #endif

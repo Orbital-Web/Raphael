@@ -2,11 +2,11 @@
 # Project Configuration (Makefile inspired by https://github.com/KierenP/Halogen)
 #---------------------------------------------------------------------------------------------------
 
-.DEFAULT_GOAL := all
+.DEFAULT_GOAL := uci
 
 # Executables
 MAIN_EXE := main
-UCI_EXE  := uci
+EXE  := uci
 
 # NNUE file
 NNUE_FILE := net.nnue
@@ -46,9 +46,12 @@ $(info Detected OS: $(DETECTED_OS))
 
 ifeq ($(DETECTED_OS),Windows)
 	CXX_VERSION := $(shell $(CXX) --version 2>nul)
+	override MAIN_EXE := $(MAIN_EXE).exe
+	override EXE := $(EXE).exe
 else
 	CXX_VERSION := $(shell $(CXX) --version 2>/dev/null)
 endif
+
 ifneq ($(findstring clang,$(CXX_VERSION)),)
     COMPILER := clang++
 else
@@ -115,7 +118,7 @@ $(info )
 # Main Build Targets
 #---------------------------------------------------------------------------------------------------
 
-all: uci main
+all: uci packages main
 
 # NNUE embeddings
 $(NNUE_OBJ): $(NNUE_FILE)
@@ -127,7 +130,7 @@ main: $(MAIN_OBJS)
 
 # uci executable
 uci: $(UCI_OBJS)
-	$(CXX) -o $(UCI_EXE) $^ $(LDFLAGS) -static
+	$(CXX) -o $(EXE) $^ $(LDFLAGS) -static
 
 # compile .cpp -> .o
 %.o: %.cpp
@@ -137,6 +140,7 @@ uci: $(UCI_OBJS)
 # Packages
 #---------------------------------------------------------------------------------------------------
 
+.PHONY: packages
 packages:
 ifeq ($(OS),Windows_NT)
 	@if not exist SFML-3.0.2 ( \
@@ -165,6 +169,7 @@ endif
 # Cleaning
 #---------------------------------------------------------------------------------------------------
 
+.PHONY: clean clean_all
 clean:
 ifeq ($(DETECTED_OS),Windows)
 	del /Q $(subst /,\,$(MAIN_OBJS) $(UCI_OBJS)) 2>nul
@@ -174,7 +179,7 @@ endif
 
 clean_all: clean
 ifeq ($(DETECTED_OS),Windows)
-	del /Q main.exe uci.exe 2>nul
+	del /Q $(MAIN_EXE) $(EXE) 2>nul
 else
-	rm -f main uci
+	rm -f $(MAIN_EXE) $(EXE)
 endif

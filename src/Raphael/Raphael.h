@@ -19,8 +19,10 @@ public:
     struct EngineOptions {
         // uci options
         SpinOption<false> hash;
+        SpinOption<false> threads;
 
         // other options
+        CheckOption datagen;
         CheckOption softnodes;
         SpinOption<false> softhardmult;
     };

@@ -35,6 +35,17 @@ const Raphael::EngineOptions& Raphael::default_params() {
             TranspositionTable::MAX_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
             nullptr,
         },
+        .threads = {
+            "Threads",
+            1,
+            1,
+            1,
+            nullptr,
+        },
+        .datagen = {
+            "Datagen",
+            false,
+        },
         .softnodes = {
             "Softnodes",
             false,
@@ -67,7 +78,7 @@ Raphael::Raphael(const string& name_in)
 
 
 void Raphael::set_option(const std::string& name, i32 value) {
-    for (const auto p : {&params.hash, &params.softhardmult}) {
+    for (const auto p : {&params.hash, &params.threads, &params.softhardmult}) {
         if (p->name != name) continue;
 
         // error checking
@@ -91,7 +102,7 @@ void Raphael::set_option(const std::string& name, i32 value) {
     cout << "info string error: unknown spin option '" << name << "'\n" << flush;
 }
 void Raphael::set_option(const std::string& name, bool value) {
-    for (CheckOption* p : {&params.softnodes}) {
+    for (CheckOption* p : {&params.datagen, &params.softnodes}) {
         if (p->name != name) continue;
 
         // set value
@@ -372,7 +383,7 @@ i32 Raphael::negamax(
         if (is_quiet && skip_quiets) continue;
 
         // moveloop pruning
-        if (ply && !utils::is_loss(besteval)) {
+        if (ply && !utils::is_loss(besteval) && (!params.datagen || !is_PV)) {
             // late move pruning
             if (move_searched >= LMP_TABLE[improving][depth]) {
                 skip_quiets = true;

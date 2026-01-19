@@ -239,6 +239,15 @@ int main(int argc, char** argv) {
             lock_guard<mutex> engine_lock(engine_mutex);
             engine.reset();
 
+        } else if (uci_command == "obspsa") {
+#ifdef TUNE
+            lock_guard<mutex> lock(cout_mutex);
+            for (const auto tunable : raphael::tunables) cout << tunable->ob();
+            cout << flush;
+#else
+            cout << "info string this is not a tunable build\n" << flush;
+#endif
+
         } else if (uci_command == "test") {
             raphael::test::run_all(false);
 

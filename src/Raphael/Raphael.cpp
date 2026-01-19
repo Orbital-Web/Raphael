@@ -33,30 +33,11 @@ const Raphael::EngineOptions& Raphael::default_params() {
             TranspositionTable::DEF_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
             1,
             TranspositionTable::MAX_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
-            nullptr,
         },
-        .threads = {
-            "Threads",
-            1,
-            1,
-            1,
-            nullptr,
-        },
-        .datagen = {
-            "Datagen",
-            false,
-        },
-        .softnodes = {
-            "Softnodes",
-            false,
-        },
-        .softhardmult = {
-            "SoftNodeHardLimitMultiplier",
-            1678,
-            1,
-            5000,
-            nullptr,
-        }
+        .threads = {"Threads", 1, 1, 1},
+        .datagen = {"Datagen", false},
+        .softnodes = {"Softnodes", false},
+        .softhardmult = {"SoftNodeHardLimitMultiplier", 1678, 1, 5000}
     };
     return opts;
 };

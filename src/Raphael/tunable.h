@@ -20,6 +20,7 @@ struct SpinOption {
     i32 def;
     i32 min;
     i32 max;
+    i32 step;
     SpinOptionCB callback;
 
     /** Initializes a SpinOption
@@ -28,9 +29,17 @@ struct SpinOption {
      * \param value default value of the option
      * \param min minimum value of the option
      * \param max maximum value of the option
+     * \param step step size of the option when tuning
      * \param callback function to call when the option is set
      */
-    SpinOption(const std::string& name, i32 value, i32 min, i32 max, SpinOptionCB callback);
+    SpinOption(
+        const std::string& name,
+        i32 value,
+        i32 min,
+        i32 max,
+        i32 step = 0,
+        SpinOptionCB callback = nullptr
+    );
 
     /** Sets the value of the option
      *
@@ -55,6 +64,15 @@ struct SpinOption {
     std::string uci() const {
         return "option name " + name + " type spin default " + std::to_string(def) + " min "
                + std::to_string(min) + " max " + std::to_string(max) + "\n";
+    }
+
+    /** Returns the OB SPSA tuning input string
+     *
+     * \returns stringified option tuning info
+     */
+    std::string ob() const {
+        return name + ", int, " + std::to_string(def) + ", " + std::to_string(min) + ", "
+               + std::to_string(max) + ", " + std::to_string(step) + ", 0.002\n";
     }
 };
 
@@ -109,22 +127,23 @@ inline bool set_tunable(const std::string& name, i32 value) {
     return false;
 }
 
-    #define Tunable(name, value, min, max) \
-        inline raphael::SpinOption<true> name { #name, value, min, max, nullptr }
+    #define Tunable(name, value, min, max, step, tunable) \
+        inline raphael::SpinOption<tunable> name { #name, value, min, max, step, nullptr }
 
-    #define TunableCallback(name, value, min, max, callback) \
-        inline raphael::SpinOption<true> name { #name, value, min, max, callback }
+    #define TunableCallback(name, value, min, max, step, callback, tunable) \
+        inline raphael::SpinOption<tunable> name { #name, value, min, max, step, callback }
 #else
-    #define Tunable(name, value, min, max) static constexpr i32 name = value
+    #define Tunable(name, value, min, max, step, tunable) static constexpr i32 name = value
 
-    #define TunableCallback(name, value, min, max, callback) static constexpr i32 name = value
+    #define TunableCallback(name, value, min, max, step, callback, tunable) \
+        static constexpr i32 name = value
 #endif
 
 template <bool tunable>
 inline SpinOption<tunable>::SpinOption(
-    const std::string& name, i32 value, i32 min, i32 max, SpinOptionCB callback
+    const std::string& name, i32 value, i32 min, i32 max, i32 step, SpinOptionCB callback
 )
-    : name(name), value(value), def(value), min(min), max(max), callback(callback) {
+    : name(name), value(value), def(value), min(min), max(max), step(step), callback(callback) {
 #ifdef TUNE
     if constexpr (tunable) tunables.push_back(this);
 #endif
@@ -146,50 +165,50 @@ void init_tunables();
 
 
 // search
-Tunable(ASPIRATION_WINDOW, 50, 5, 100);
+Tunable(ASPIRATION_WINDOW, 50, 5, 100, 5, true);
 
 // negamax
-Tunable(RFP_DEPTH, 6, 1, 10);           // max depth to apply rfp from
-Tunable(RFP_DEPTH_SCALE, 77, 25, 150);  // margin depth scale for rfp
-Tunable(RFP_IMPROV_SCALE, 0, 0, 100);   // margin improving scale for rfp
+Tunable(RFP_DEPTH, 6, 1, 10, 1, true);           // max depth to apply rfp from
+Tunable(RFP_DEPTH_SCALE, 77, 25, 150, 8, true);  // margin depth scale for rfp
+Tunable(RFP_IMPROV_SCALE, 0, 0, 100, 8, true);   // margin improving scale for rfp
 
-Tunable(RAZORING_DEPTH, 4, 1, 10);             // max depth to apply razoring from
-Tunable(RAZORING_DEPTH_SCALE, 250, 100, 800);  // margin depth scale for razoring
-Tunable(RAZORING_MARGIN_BASE, 300, 0, 400);    // base margin for razoring
+Tunable(RAZORING_DEPTH, 4, 1, 10, 1, true);              // max depth to apply razoring from
+Tunable(RAZORING_DEPTH_SCALE, 250, 100, 350, 40, true);  // margin depth scale for razoring
+Tunable(RAZORING_MARGIN_BASE, 300, 0, 400, 40, true);    // base margin for razoring
 
-Tunable(NMP_DEPTH, 3, 1, 10);      // depth to apply nmp from
-Tunable(NMP_REDUCTION, 4, 1, 10);  // depth reduction for nmp
+Tunable(NMP_DEPTH, 3, 1, 10, 1, true);      // depth to apply nmp from
+Tunable(NMP_REDUCTION, 4, 1, 10, 1, true);  // depth reduction for nmp
 
 inline MultiArray<i32, 2, 256> LMP_TABLE;  // lmp threshold[improving][depth]
-TunableCallback(LMP_THRESH_BASE, 3, 1, 12, update_lmp_table);
+TunableCallback(LMP_THRESH_BASE, 3, 1, 12, 1, update_lmp_table, true);
 
-Tunable(FP_DEPTH, 7, 4, 12);           // max depth to apply fp from
-Tunable(FP_DEPTH_SCALE, 80, 50, 200);  // margin depth scale for fp
-Tunable(FP_MARGIN_BASE, 100, 0, 400);  // base margin for fp
+Tunable(FP_DEPTH, 7, 4, 12, 1, true);            // max depth to apply fp from
+Tunable(FP_DEPTH_SCALE, 80, 40, 200, 10, true);  // margin depth scale for fp
+Tunable(FP_MARGIN_BASE, 100, 0, 400, 20, true);  // base margin for fp
 
-Tunable(SEE_QUIET_DEPTH_SCALE, -30, -128, 0);  // threshold depth scale for quiet SEE pruning
-Tunable(SEE_NOISY_DEPTH_SCALE, -90, -128, 0);  // threshold depth scale for noisy SEE pruning
+Tunable(SEE_QUIET_DEPTH_SCALE, -30, -128, -1, 12, true);   // depth scale for quiet SEE pruning
+Tunable(SEE_NOISY_DEPTH_SCALE, -90, -128, -30, 20, true);  // depth scale for noisy SEE pruning
 
-Tunable(LMR_DEPTH, 3, 1, 5);                    // depth to apply lmr from
-Tunable(LMR_FROMMOVE, 5, 2, 8);                 // movei to apply lmr from
+Tunable(LMR_DEPTH, 3, 1, 5, 1, true);           // depth to apply lmr from
+Tunable(LMR_FROMMOVE, 5, 2, 8, 1, true);        // movei to apply lmr from
 inline MultiArray<i32, 2, 256, 256> LMR_TABLE;  // lmr reduction[quiet][ply][move_searched]
-TunableCallback(LMR_QUIET_BASE, 182, 0, 384, update_lmr_table);
-TunableCallback(LMR_NOISY_BASE, 25, 0, 384, update_lmr_table);
-TunableCallback(LMR_QUIET_DIVISOR, 354, 32, 512, update_lmr_table);
-TunableCallback(LMR_NOISY_DIVISOR, 414, 32, 512, update_lmr_table);
-TunableCallback(LMR_NONPV, 130, 0, 384, update_lmr_table);
+TunableCallback(LMR_QUIET_BASE, 182, 0, 384, 20, update_lmr_table, true);
+TunableCallback(LMR_NOISY_BASE, 25, 0, 384, 20, update_lmr_table, true);
+TunableCallback(LMR_QUIET_DIVISOR, 354, 32, 512, 12, update_lmr_table, true);
+TunableCallback(LMR_NOISY_DIVISOR, 414, 32, 512, 12, update_lmr_table, true);
+TunableCallback(LMR_NONPV, 130, 0, 384, 20, update_lmr_table, true);
 
 // quiescence
-Tunable(QS_FUTILITY_MARGIN, 150, 50, 400);  // margin for qs futility pruning
-Tunable(QS_SEE_THRESH, -100, -500, 200);    // SEE threshold for qs SEE pruning
+Tunable(QS_FUTILITY_MARGIN, 150, 50, 400, 20, true);  // margin for qs futility pruning
+Tunable(QS_SEE_THRESH, -100, -500, 200, 30, true);    // SEE threshold for qs SEE pruning
 
 // SEE
 inline MultiArray<i32, 13> SEE_TABLE;
-TunableCallback(SEE_PAWN_VAL, 100, 100, 100, update_see_table);
-TunableCallback(SEE_KNIGHT_VAL, 422, 200, 600, update_see_table);
-TunableCallback(SEE_BISHOP_VAL, 437, 200, 600, update_see_table);
-TunableCallback(SEE_ROOK_VAL, 694, 300, 800, update_see_table);
-TunableCallback(SEE_QUEEN_VAL, 1313, 600, 1800, update_see_table);
+TunableCallback(SEE_PAWN_VAL, 100, 100, 100, 0, update_see_table, false);
+TunableCallback(SEE_KNIGHT_VAL, 422, 200, 600, 25, update_see_table, true);
+TunableCallback(SEE_BISHOP_VAL, 437, 200, 600, 25, update_see_table, true);
+TunableCallback(SEE_ROOK_VAL, 694, 300, 800, 30, update_see_table, true);
+TunableCallback(SEE_QUEEN_VAL, 1313, 600, 1800, 40, update_see_table, true);
 
 // move ordering
 static constexpr i32 TT_MOVE_FLOOR = INT16_MAX;  // tt move                 32767
@@ -200,21 +219,21 @@ static constexpr i32 BAD_NOISY_FLOOR = -25000;   // bad captures/queening  -3000
 static constexpr i32 CAPTHIST_DIVISOR = 8;
 static_assert(GOOD_NOISY_FLOOR + HISTORY_MAX / CAPTHIST_DIVISOR < TT_MOVE_FLOOR);
 
-Tunable(GOOD_NOISY_SEE_THRESH, -15, -200, 200);  // SEE threshold for good capture/promotion
+Tunable(GOOD_NOISY_SEE_THRESH, -15, -200, 200, 30, true);  // SEE threshold for good tacticals
 
-Tunable(HISTORY_BONUS_DEPTH_SCALE, 100, 128, 512);
-Tunable(HISTORY_BONUS_OFFSET, 100, 128, 768);
-Tunable(HISTORY_BONUS_MAX, 2000, 1024, 4096);
-Tunable(HISTORY_PENALTY_DEPTH_SCALE, 100, 128, 512);
-Tunable(HISTORY_PENALTY_OFFSET, 100, 128, 768);
-Tunable(HISTORY_PENALTY_MAX, 2000, 1024, 4096);
+Tunable(HISTORY_BONUS_DEPTH_SCALE, 100, 128, 512, 32, true);
+Tunable(HISTORY_BONUS_OFFSET, 100, 128, 768, 64, true);
+Tunable(HISTORY_BONUS_MAX, 2000, 1024, 4096, 256, true);
+Tunable(HISTORY_PENALTY_DEPTH_SCALE, 100, 128, 512, 32, true);
+Tunable(HISTORY_PENALTY_OFFSET, 100, 128, 768, 64, true);
+Tunable(HISTORY_PENALTY_MAX, 2000, 1024, 4096, 256, true);
 
-Tunable(CAPTHIST_BONUS_DEPTH_SCALE, 100, 128, 512);
-Tunable(CAPTHIST_BONUS_OFFSET, 100, 128, 768);
-Tunable(CAPTHIST_BONUS_MAX, 2000, 1024, 4096);
-Tunable(CAPTHIST_PENALTY_DEPTH_SCALE, 100, 128, 512);
-Tunable(CAPTHIST_PENALTY_OFFSET, 100, 128, 768);
-Tunable(CAPTHIST_PENALTY_MAX, 2000, 1024, 4096);
+Tunable(CAPTHIST_BONUS_DEPTH_SCALE, 100, 128, 512, 32, true);
+Tunable(CAPTHIST_BONUS_OFFSET, 100, 128, 768, 64, true);
+Tunable(CAPTHIST_BONUS_MAX, 2000, 1024, 4096, 256, true);
+Tunable(CAPTHIST_PENALTY_DEPTH_SCALE, 100, 128, 512, 32, true);
+Tunable(CAPTHIST_PENALTY_OFFSET, 100, 128, 768, 64, true);
+Tunable(CAPTHIST_PENALTY_MAX, 2000, 1024, 4096, 256, true);
 
 // misc
 static constexpr i32 BENCH_DEPTH = 14;

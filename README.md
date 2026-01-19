@@ -127,7 +127,7 @@ You can also play with different time controls, increments, and player combinati
     - [x] Hash move                         (`v1.6+`)
     - [x] Killer heuristics                 (`v1.3+`)
     - [x] Butterfly history                 (`v1.5+`)
-    - [ ] Capture history
+    - [x] Capture history                   (`v2.3+`)
     - [ ] Continuation history
     - [ ] Correction history
     - [ ] Threats in history

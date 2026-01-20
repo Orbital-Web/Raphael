@@ -17,18 +17,40 @@ public:
     explicit constexpr BitBoard(File file): bits_(0x0101010101010101ULL << file) {}
     explicit constexpr BitBoard(Rank rank): bits_(0xFFULL << (8 * rank)) {}
 
-    [[nodiscard]] constexpr operator u64() const { return bits_; }
+    [[nodiscard]] explicit constexpr operator u64() const { return bits_; }
+    [[nodiscard]] explicit operator bool() const { return bits_ != 0; }
 
-    constexpr BitBoard& operator&=(const BitBoard& rhs) {
-        bits_ &= rhs;
+    [[nodiscard]] constexpr BitBoard operator&(BitBoard rhs) const { return bits_ & rhs.bits_; }
+    [[nodiscard]] constexpr BitBoard operator|(BitBoard rhs) const { return bits_ | rhs.bits_; }
+    [[nodiscard]] constexpr BitBoard operator^(BitBoard rhs) const { return bits_ ^ rhs.bits_; }
+    [[nodiscard]] constexpr BitBoard operator<<(BitBoard rhs) const { return bits_ << rhs.bits_; }
+    [[nodiscard]] constexpr BitBoard operator>>(BitBoard rhs) const { return bits_ >> rhs.bits_; }
+    [[nodiscard]] constexpr bool operator==(BitBoard rhs) const { return bits_ == rhs.bits_; }
+    [[nodiscard]] constexpr bool operator!=(BitBoard rhs) const { return bits_ != rhs.bits_; }
+    [[nodiscard]] constexpr bool operator||(BitBoard rhs) const { return bits_ || rhs.bits_; }
+    [[nodiscard]] constexpr bool operator&&(BitBoard rhs) const { return bits_ && rhs.bits_; }
+    [[nodiscard]] constexpr BitBoard operator~() const { return ~bits_; }
+
+    [[nodiscard]] constexpr BitBoard operator&(u64 rhs) const { return bits_ & rhs; }
+    [[nodiscard]] constexpr BitBoard operator|(u64 rhs) const { return bits_ | rhs; }
+    [[nodiscard]] constexpr BitBoard operator^(u64 rhs) const { return bits_ ^ rhs; }
+    [[nodiscard]] constexpr BitBoard operator<<(u64 rhs) const { return bits_ << rhs; }
+    [[nodiscard]] constexpr BitBoard operator>>(u64 rhs) const { return bits_ >> rhs; }
+    [[nodiscard]] constexpr bool operator==(u64 rhs) const { return bits_ == rhs; }
+    [[nodiscard]] constexpr bool operator!=(u64 rhs) const { return bits_ != rhs; }
+    [[nodiscard]] constexpr bool operator||(u64 rhs) const { return bits_ || rhs; }
+    [[nodiscard]] constexpr bool operator&&(u64 rhs) const { return bits_ && rhs; }
+
+    constexpr BitBoard& operator&=(BitBoard rhs) {
+        bits_ &= rhs.bits_;
         return *this;
     }
-    constexpr BitBoard& operator|=(const BitBoard& rhs) {
-        bits_ |= rhs;
+    constexpr BitBoard& operator|=(BitBoard rhs) {
+        bits_ |= rhs.bits_;
         return *this;
     }
-    constexpr BitBoard& operator^=(const BitBoard& rhs) {
-        bits_ ^= rhs;
+    constexpr BitBoard& operator^=(BitBoard rhs) {
+        bits_ ^= rhs.bits_;
         return *this;
     }
 
@@ -56,10 +78,16 @@ public:
 
     [[nodiscard]] i32 count() const { return __builtin_popcountll(bits_); }
 
+    [[nodiscard]] i32 msb() const {
+        assert(bits_ != 0);
+        return 63 ^ __builtin_clzll(bits_);
+    }
+
     [[nodiscard]] i32 lsb() const {
         assert(bits_ != 0);
         return __builtin_ctzll(bits_);
     }
+
     [[nodiscard]] i32 poplsb() {
         i32 index = lsb();
         bits_ &= bits_ - 1;

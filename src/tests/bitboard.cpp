@@ -19,6 +19,20 @@ TEST_SUITE("Bitboard") {
         CHECK(b.lsb() == 2);
     }
 
+    TEST_CASE("msb") {
+        BitBoard b = 0x8000000000000000ULL;
+        CHECK(b.msb() == 63);
+
+        b = 0x4000000000000000ULL;
+        CHECK(b.msb() == 62);
+
+        b = 0x2000000000000000ULL;
+        CHECK(b.msb() == 61);
+
+        b = 0x1000000002000000ULL;
+        CHECK(b.msb() == 60);
+    }
+
     TEST_CASE("count") {
         BitBoard b = 0x0000000000000001ULL;
         CHECK(b.count() == 1);

@@ -55,6 +55,7 @@ public:
         : file_(underlying((file[0] <= 'Z') ? (file[0] - 'A') : (file[0] - 'a'))) {}
 
     [[nodiscard]] constexpr operator i32() const { return file_; }
+    [[nodiscard]] explicit operator std::string() const { return std::string(1, file_ + 'a'); }
 };
 
 class Rank {
@@ -73,6 +74,7 @@ public:
     explicit constexpr Rank(std::string_view rank): rank_(underlying(rank[0] - '1')) {}
 
     [[nodiscard]] constexpr operator i32() const { return rank_; }
+    [[nodiscard]] explicit operator std::string() const { return std::string(1, rank_ + '1'); }
 };
 
 class Square {
@@ -105,6 +107,9 @@ public:
         : sq_(underlying((str[0] - 'a') + (str[1] - '1') * 8)) {}
 
     [[nodiscard]] constexpr operator i32() const { return sq_; }
+    [[nodiscard]] explicit operator std::string() const {
+        return std::string(file()) + std::string(rank());
+    }
 
     [[nodiscard]] constexpr File file() const { return File(sq_ & 7); }
     [[nodiscard]] constexpr Rank rank() const { return Rank(sq_ >> 3); }
@@ -190,6 +195,10 @@ public:
     }
 
     [[nodiscard]] constexpr operator i32() const { return pt_; }
+    [[nodiscard]] explicit operator std::string() const {
+        constexpr static const char* ptstr[] = {"p", "n", "b", "r", "q", "k", "."};
+        return ptstr[pt_];
+    }
 };
 
 class Piece {
@@ -252,6 +261,11 @@ public:
     }
 
     [[nodiscard]] constexpr operator i32() const { return piece_; }
+    [[nodiscard]] explicit operator std::string() const {
+        constexpr static const char* piecestr[]
+            = {"P", "N", "B", "R", "Q", "K", "p", "n", "b", "r", "q", "k", "."};
+        return piecestr[piece_];
+    }
 
     [[nodiscard]] constexpr PieceType type() const {
         assert(piece_ != NONE);

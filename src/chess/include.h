@@ -1,3 +1,3 @@
 #pragma once
 
-#include <chess/bitboard.h>
+#include <chess/board.h>

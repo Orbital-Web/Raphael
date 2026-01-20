@@ -36,6 +36,8 @@ using MultiArray = typename internal::MultiArrayImpl<T, kNs...>::Type;
 
 
 namespace chess {
+enum Color : u8 { WHITE, BLACK };
+
 class File {
 public:
     enum underlying : u8 { A, B, C, D, E, F, G, H, NONE };
@@ -52,7 +54,7 @@ public:
     explicit constexpr File(std::string_view file)
         : file_(underlying((file[0] <= 'Z') ? (file[0] - 'A') : (file[0] - 'a'))) {}
 
-    [[nodiscard]] operator i32() const { return file_; }
+    [[nodiscard]] constexpr operator i32() const { return file_; }
 };
 
 class Rank {
@@ -70,7 +72,7 @@ public:
     explicit constexpr Rank(i32 rank): rank_(underlying(rank)) {}
     explicit constexpr Rank(std::string_view rank): rank_(underlying(rank[0] - '1')) {}
 
-    [[nodiscard]] operator i32() const { return rank_; }
+    [[nodiscard]] constexpr operator i32() const { return rank_; }
 };
 
 class Square {
@@ -102,7 +104,7 @@ public:
     explicit constexpr Square(std::string_view str)
         : sq_(underlying((str[0] - 'a') + (str[1] - '1') * 8)) {}
 
-    [[nodiscard]] operator i32() const { return sq_; }
+    [[nodiscard]] constexpr operator i32() const { return sq_; }
 
     [[nodiscard]] constexpr File file() const { return File(sq_ & 7); }
     [[nodiscard]] constexpr Rank rank() const { return Rank(sq_ >> 3); }
@@ -118,14 +120,32 @@ public:
         return *this;
     }
 
+    [[nodiscard]] constexpr Square relative(Color color) const {
+        return Square(sq_ ^ (color * 56));
+    }
+
+    [[nodiscard]] constexpr Square ep_square() const {
+        assert(
+            rank() == Rank::RANK_3     // capture
+            || rank() == Rank::RANK_4  // push
+            || rank() == Rank::RANK_5  // push
+            || rank() == Rank::RANK_6  // capture
+        );
+        return Square(sq_ ^ 8);
+    }
+
+    [[nodiscard]] static constexpr Square castling_king_dest(bool is_king_side, Color color) {
+        return Square(is_king_side ? Square::G1 : Square::C1).relative(color);
+    }
+
+    [[nodiscard]] static constexpr Square castling_rook_dest(bool is_king_side, Color color) {
+        return Square(is_king_side ? Square::F1 : Square::D1).relative(color);
+    }
+
     [[nodiscard]] static constexpr bool same_color(Square sq1, Square sq2) {
         return ((9 * (sq1 ^ sq2)) & 8) == 0;
     }
 };
-
-
-
-enum Color : u8 { WHITE, BLACK };
 
 
 

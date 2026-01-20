@@ -7,6 +7,7 @@
 # Executables
 MAIN_EXE := main
 EXE  := uci
+TEST_EXE := test
 
 # NNUE file
 NNUE_FILE := net.nnue
@@ -32,9 +33,16 @@ UCI_SOURCES := \
     $(wildcard src/Raphael/*.cpp) \
     uci.cpp
 
+TEST_SOURCES := \
+	src/GameEngine/consts.cpp \
+    src/GameEngine/GamePlayer.cpp \
+    $(wildcard src/Raphael/*.cpp) \
+	$(wildcard src/tests/*.cpp)
+
 NNUE_OBJ  := net.o
 MAIN_OBJS := $(MAIN_SOURCES:.cpp=.o) $(NNUE_OBJ)
 UCI_OBJS  := $(UCI_SOURCES:.cpp=.o)  $(NNUE_OBJ)
+TEST_OBJS := $(TEST_SOURCES:.cpp=.o) $(NNUE_OBJ)
 
 #---------------------------------------------------------------------------------------------------
 # Platform and Compiler Detection
@@ -144,7 +152,7 @@ $(info )
 # Main Build Targets
 #---------------------------------------------------------------------------------------------------
 
-all: uci packages main
+all: uci packages main test
 
 # NNUE embeddings
 $(NNUE_OBJ): $(NNUE_FILE)
@@ -157,6 +165,10 @@ main: $(MAIN_OBJS)
 # uci executable
 uci: $(UCI_OBJS)
 	$(CXX) -o $(EXE) $^ $(LDFLAGS) $(LDFLAGS_UCI)
+
+.PHONY: test
+test: $(TEST_OBJS)
+	$(CXX) -o $(TEST_EXE) $^ $(LDFLAGS)
 
 # compile .cpp -> .o
 %.o: %.cpp
@@ -198,14 +210,14 @@ endif
 .PHONY: clean clean_all
 clean:
 ifeq ($(DETECTED_OS),Windows)
-	del /Q $(subst /,\,$(MAIN_OBJS) $(UCI_OBJS)) 2>nul
+	del /Q $(subst /,\,$(MAIN_OBJS) $(UCI_OBJS) $(TEST_OBJS)) 2>nul
 else
-	rm -f $(MAIN_OBJS) $(UCI_OBJS)
+	rm -f $(MAIN_OBJS) $(UCI_OBJS) $(TEST_OBJS)
 endif
 
 clean_all: clean
 ifeq ($(DETECTED_OS),Windows)
-	del /Q $(MAIN_EXE) $(EXE) 2>nul
+	del /Q $(MAIN_EXE) $(EXE) $(TEST_EXE) 2>nul
 else
-	rm -f $(MAIN_EXE) $(EXE)
+	rm -f $(MAIN_EXE) $(EXE) $(TEST_EXE)
 endif

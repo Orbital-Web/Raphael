@@ -14,16 +14,10 @@ public:
     constexpr BitBoard(): bits_(0) {}
 
     constexpr BitBoard(u64 bits): bits_(bits) {}
-    explicit constexpr BitBoard(Square sq): bits_(u64(1) << sq) {}
     explicit constexpr BitBoard(File file): bits_(0x0101010101010101ULL << file) {}
     explicit constexpr BitBoard(Rank rank): bits_(0xFFULL << (8 * rank)) {}
 
     [[nodiscard]] constexpr operator u64() const { return bits_; }
-
-    [[nodiscard]] constexpr BitBoard operator&(BitBoard rhs) const { return bits_ & rhs; }
-    [[nodiscard]] constexpr BitBoard operator|(BitBoard rhs) const { return bits_ | rhs; }
-    [[nodiscard]] constexpr BitBoard operator^(BitBoard rhs) const { return bits_ ^ rhs; }
-    [[nodiscard]] constexpr BitBoard operator~() const { return ~bits_; }
 
     constexpr BitBoard& operator&=(const BitBoard& rhs) {
         bits_ &= rhs;
@@ -70,6 +64,10 @@ public:
         i32 index = lsb();
         bits_ &= bits_ - 1;
         return index;
+    }
+
+    [[nodiscard]] static constexpr BitBoard from_square(Square sq) {
+        return BitBoard(u64(1) << sq);
     }
 };
 }  // namespace chess

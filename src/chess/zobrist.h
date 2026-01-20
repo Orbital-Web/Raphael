@@ -223,27 +223,27 @@ private:
 
     static constexpr i32 MAP_HASH_PIECE[12] = {1, 3, 5, 7, 9, 11, 0, 2, 4, 6, 8, 10};
 
-    [[nodiscard]] static u64 piece(Piece piece, Square sq) noexcept {
+    [[nodiscard]] static u64 piece(Piece piece, Square sq) {
         assert(piece < 12);
         return RANDOM_ARRAY[64 * MAP_HASH_PIECE[piece] + sq];
     }
 
-    [[nodiscard]] static u64 enpassant(File file) noexcept {
+    [[nodiscard]] static u64 enpassant(File file) {
         assert(file < 8);
         return RANDOM_ARRAY[772 + file];
     }
 
-    [[nodiscard]] static u64 castling(i32 castling) noexcept {
+    [[nodiscard]] static u64 castling(i32 castling) {
         assert(castling >= 0 && castling < 16);
         return castlingKey[castling];
     }
 
-    [[nodiscard]] static u64 castlingIndex(i32 idx) noexcept {
+    [[nodiscard]] static u64 castlingIndex(i32 idx) {
         assert(idx >= 0 && idx < 4);
         return RANDOM_ARRAY[768 + idx];
     }
 
-    [[nodiscard]] static u64 sideToMove() noexcept { return RANDOM_ARRAY[780]; }
+    [[nodiscard]] static u64 sideToMove() { return RANDOM_ARRAY[780]; }
 
 public:
     friend class Board;

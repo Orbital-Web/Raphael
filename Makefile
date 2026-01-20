@@ -67,7 +67,7 @@ CXX := $(COMPILER)
 
 WARN_FLAGS := -Wall -Wextra
 
-CXXFLAGS := -std=c++20 -O3 $(WARN_FLAGS) \
+CXXFLAGS := -std=c++20 -O3 -flto=auto $(WARN_FLAGS) \
     -Isrc -Ichess-library/include -ISFML-3.0.2/include
 
 LDFLAGS  :=

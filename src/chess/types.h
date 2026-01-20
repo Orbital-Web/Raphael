@@ -2,6 +2,7 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
+#include <string>
 
 using i8 = std::int8_t;
 using i16 = std::int16_t;
@@ -13,29 +14,64 @@ using u16 = std::uint16_t;
 using u32 = std::uint32_t;
 using u64 = std::uint64_t;
 
+using usize = std::size_t;
+
 
 
 namespace internal {
-template <typename T, std::size_t kN, std::size_t... kNs>
+template <typename T, usize kN, usize... kNs>
 struct MultiArrayImpl {
     using Type = std::array<typename MultiArrayImpl<T, kNs...>::Type, kN>;
 };
 
-template <typename T, std::size_t kN>
+template <typename T, usize kN>
 struct MultiArrayImpl<T, kN> {
     using Type = std::array<T, kN>;
 };
 }  // namespace internal
 
-template <typename T, std::size_t... kNs>
+template <typename T, usize... kNs>
 using MultiArray = typename internal::MultiArrayImpl<T, kNs...>::Type;
 
 
 
 namespace chess {
-enum File : u8 { A, B, C, D, E, F, G, H, NONE };
+class File {
+public:
+    enum underlying : u8 { A, B, C, D, E, F, G, H, NONE };
 
-enum Rank : u8 { R1, R2, R3, R4, R5, R6, R7, R8, NONE };
+private:
+    underlying file_;
+
+
+public:
+    constexpr File(): file_(underlying::NONE) {}
+
+    constexpr File(underlying file): file_(file) {}
+    explicit constexpr File(i32 file): file_(underlying(file)) {}
+    explicit constexpr File(std::string_view file)
+        : file_(underlying((file[0] <= 'Z') ? (file[0] - 'A') : (file[0] - 'a'))) {}
+
+    [[nodiscard]] operator i32() const { return file_; }
+};
+
+class Rank {
+public:
+    enum underlying : u8 { R1, R2, R3, R4, R5, R6, R7, R8, NONE };
+
+private:
+    underlying rank_;
+
+
+public:
+    constexpr Rank(): rank_(underlying::NONE) {}
+
+    constexpr Rank(underlying rank): rank_(rank) {}
+    explicit constexpr Rank(i32 rank): rank_(underlying(rank)) {}
+    explicit constexpr Rank(std::string_view rank): rank_(underlying(rank[0] - '1')) {}
+
+    [[nodiscard]] operator i32() const { return rank_; }
+};
 
 class Square {
 public:
@@ -63,6 +99,8 @@ public:
     constexpr Square(underlying sq): sq_(sq) {}
     explicit constexpr Square(i32 sq): sq_(underlying(sq)) {}
     constexpr Square(File file, Rank rank): sq_(underlying(file + rank * 8)) {}
+    explicit constexpr Square(std::string_view str)
+        : sq_(underlying((str[0] - 'a') + (str[1] - '1') * 8)) {}
 
     [[nodiscard]] operator i32() const { return sq_; }
 
@@ -71,6 +109,8 @@ public:
 
     [[nodiscard]] constexpr bool is_light() const { return (file() + rank()) & 1; }
     [[nodiscard]] constexpr bool is_dark() const { return !is_light(); }
+
+    [[nodiscard]] constexpr bool is_valid() const { return sq_ < 64; }
 
     [[nodiscard]] constexpr Square flipped() const { return Square(sq_ ^ 56); }
     constexpr Square& flip() {
@@ -110,6 +150,24 @@ public:
 
     constexpr PieceType(underlying pt): pt_(pt) {}
     explicit constexpr PieceType(i32 pt): pt_(underlying(pt)) {}
+    explicit constexpr PieceType(std::string_view pt): pt_(underlying::NONE) {
+        char c = pt[0];
+
+        if (c == 'P' || c == 'p')
+            pt_ = PAWN;
+        else if (c == 'N' || c == 'n')
+            pt_ = KNIGHT;
+        else if (c == 'B' || c == 'b')
+            pt_ = BISHOP;
+        else if (c == 'R' || c == 'r')
+            pt_ = ROOK;
+        else if (c == 'Q' || c == 'q')
+            pt_ = QUEEN;
+        else if (c == 'K' || c == 'k')
+            pt_ = KING;
+        else
+            pt_ = NONE;
+    }
 
     [[nodiscard]] constexpr operator i32() const { return pt_; }
 };
@@ -142,6 +200,36 @@ public:
     constexpr Piece(underlying piece): piece_(piece) {}
     explicit constexpr Piece(i32 piece): piece_(underlying(piece)) {}
     constexpr Piece(PieceType pt, Color color): piece_(underlying(pt + color * 6)) {}
+    explicit constexpr Piece(std::string_view piece): piece_(underlying::NONE) {
+        char c = piece[0];
+
+        if (c == 'P')
+            piece_ = WHITEPAWN;
+        else if (c == 'p')
+            piece_ = BLACKPAWN;
+        else if (c == 'N')
+            piece_ = WHITEKNIGHT;
+        else if (c == 'n')
+            piece_ = BLACKKNIGHT;
+        else if (c == 'B')
+            piece_ = WHITEBISHOP;
+        else if (c == 'b')
+            piece_ = BLACKBISHOP;
+        else if (c == 'R')
+            piece_ = WHITEROOK;
+        else if (c == 'r')
+            piece_ = BLACKROOK;
+        else if (c == 'Q')
+            piece_ = WHITEQUEEN;
+        else if (c == 'q')
+            piece_ = BLACKQUEEN;
+        else if (c == 'K')
+            piece_ = WHITEKING;
+        else if (c == 'k')
+            piece_ = BLACKKING;
+        else
+            piece_ = NONE;
+    }
 
     [[nodiscard]] constexpr operator i32() const { return piece_; }
 

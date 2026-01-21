@@ -36,7 +36,57 @@ using MultiArray = typename internal::MultiArrayImpl<T, kNs...>::Type;
 
 
 namespace chess {
-enum Color : u8 { WHITE, BLACK };
+class Color {
+public:
+    enum underlying : u8 { WHITE, BLACK, NONE };
+
+private:
+    underlying color_;
+
+
+public:
+    constexpr Color(): color_(underlying::NONE) {}
+
+    constexpr Color(underlying color): color_(color) {}
+    explicit constexpr Color(i32 color): color_(static_cast<underlying>(color)) {}
+
+    [[nodiscard]] constexpr operator i32() const { return color_; }
+
+    [[nodiscard]] constexpr Color operator~() const {
+        assert(color_ != NONE);
+        return Color(color_ ^ 1);
+    }
+};
+
+class Direction {
+public:
+    enum underlying : i8 {
+        NORTH = 8,
+        WEST = -1,
+        SOUTH = -8,
+        EAST = 1,
+        NORTH_EAST = 9,
+        NORTH_WEST = 7,
+        SOUTH_WEST = -9,
+        SOUTH_EAST = -7
+    };
+
+private:
+    underlying dir_;
+
+
+public:
+    Direction() = delete;
+
+    constexpr Direction(underlying dir): dir_(dir) {}
+
+    [[nodiscard]] constexpr operator i32() const { return dir_; }
+
+    [[nodiscard]] constexpr Direction relative(Color color) const {
+        return (color == Color::WHITE) ? Direction(dir_)
+                                       : Direction(static_cast<underlying>(-dir_));
+    }
+};
 
 class File {
 public:
@@ -50,9 +100,9 @@ public:
     constexpr File(): file_(underlying::NONE) {}
 
     constexpr File(underlying file): file_(file) {}
-    explicit constexpr File(i32 file): file_(underlying(file)) {}
+    explicit constexpr File(i32 file): file_(static_cast<underlying>(file)) {}
     explicit constexpr File(std::string_view file)
-        : file_(underlying((file[0] <= 'Z') ? (file[0] - 'A') : (file[0] - 'a'))) {}
+        : file_(static_cast<underlying>((file[0] <= 'Z') ? (file[0] - 'A') : (file[0] - 'a'))) {}
 
     [[nodiscard]] constexpr operator i32() const { return file_; }
     [[nodiscard]] explicit operator std::string() const { return std::string(1, file_ + 'a'); }
@@ -70,8 +120,8 @@ public:
     constexpr Rank(): rank_(underlying::NONE) {}
 
     constexpr Rank(underlying rank): rank_(rank) {}
-    explicit constexpr Rank(i32 rank): rank_(underlying(rank)) {}
-    explicit constexpr Rank(std::string_view rank): rank_(underlying(rank[0] - '1')) {}
+    explicit constexpr Rank(i32 rank): rank_(static_cast<underlying>(rank)) {}
+    explicit constexpr Rank(std::string_view rank): rank_(static_cast<underlying>(rank[0] - '1')) {}
 
     [[nodiscard]] constexpr operator i32() const { return rank_; }
     [[nodiscard]] explicit operator std::string() const { return std::string(1, rank_ + '1'); }
@@ -101,15 +151,17 @@ public:
     constexpr Square(): sq_(underlying::NONE) {}
 
     constexpr Square(underlying sq): sq_(sq) {}
-    explicit constexpr Square(i32 sq): sq_(underlying(sq)) {}
-    constexpr Square(File file, Rank rank): sq_(underlying(file + rank * 8)) {}
+    explicit constexpr Square(i32 sq): sq_(static_cast<underlying>(sq)) {}
+    constexpr Square(File file, Rank rank): sq_(static_cast<underlying>(file + rank * 8)) {}
     explicit constexpr Square(std::string_view str)
-        : sq_(underlying((str[0] - 'a') + (str[1] - '1') * 8)) {}
+        : sq_(static_cast<underlying>((str[0] - 'a') + (str[1] - '1') * 8)) {}
 
     [[nodiscard]] constexpr operator i32() const { return sq_; }
     [[nodiscard]] explicit operator std::string() const {
         return std::string(file()) + std::string(rank());
     }
+
+    [[nodiscard]] constexpr Square operator+(Direction dir) const { return Square(sq_ + dir); }
 
     [[nodiscard]] constexpr File file() const { return File(sq_ & 7); }
     [[nodiscard]] constexpr Rank rank() const { return Rank(sq_ >> 3); }
@@ -121,7 +173,7 @@ public:
 
     [[nodiscard]] constexpr Square flipped() const { return Square(sq_ ^ 56); }
     constexpr Square& flip() {
-        sq_ = underlying(sq_ ^ 56);
+        sq_ = static_cast<underlying>(sq_ ^ 56);
         return *this;
     }
 
@@ -131,10 +183,10 @@ public:
 
     [[nodiscard]] constexpr Square ep_square() const {
         assert(
-            rank() == Rank::RANK_3     // capture
-            || rank() == Rank::RANK_4  // push
-            || rank() == Rank::RANK_5  // push
-            || rank() == Rank::RANK_6  // capture
+            rank() == Rank::R3     // capture
+            || rank() == Rank::R4  // push
+            || rank() == Rank::R5  // push
+            || rank() == Rank::R6  // capture
         );
         return Square(sq_ ^ 8);
     }
@@ -151,7 +203,6 @@ public:
         return ((9 * (sq1 ^ sq2)) & 8) == 0;
     }
 };
-
 
 
 class PieceType {
@@ -174,7 +225,7 @@ public:
     constexpr PieceType(): pt_(underlying::NONE) {}
 
     constexpr PieceType(underlying pt): pt_(pt) {}
-    explicit constexpr PieceType(i32 pt): pt_(underlying(pt)) {}
+    explicit constexpr PieceType(i32 pt): pt_(static_cast<underlying>(pt)) {}
     explicit constexpr PieceType(std::string_view pt): pt_(underlying::NONE) {
         char c = pt[0];
 
@@ -227,8 +278,8 @@ public:
     constexpr Piece(): piece_(underlying::NONE) {}
 
     constexpr Piece(underlying piece): piece_(piece) {}
-    explicit constexpr Piece(i32 piece): piece_(underlying(piece)) {}
-    constexpr Piece(PieceType pt, Color color): piece_(underlying(pt + color * 6)) {}
+    explicit constexpr Piece(i32 piece): piece_(static_cast<underlying>(piece)) {}
+    constexpr Piece(PieceType pt, Color color): piece_(static_cast<underlying>(pt + color * 6)) {}
     explicit constexpr Piece(std::string_view piece): piece_(underlying::NONE) {
         char c = piece[0];
 
@@ -268,22 +319,22 @@ public:
     }
 
     [[nodiscard]] constexpr PieceType type() const {
-        assert(piece_ != NONE);
+        if (piece_ == Piece::NONE) return PieceType::NONE;
         return PieceType(piece_ % 6);
     }
 
     [[nodiscard]] constexpr Color color() const {
-        assert(piece_ != NONE);
+        if (piece_ == Piece::NONE) return Color::NONE;
         return Color(piece_ / 6);
     }
 
     [[nodiscard]] constexpr Piece color_flipped() const {
-        assert(piece_ != NONE);
+        if (piece_ == Piece::NONE) return Piece::NONE;
         return Piece((piece_ + 6) % 12);
     }
     constexpr Piece& color_flip() {
-        assert(piece_ != NONE);
-        piece_ = underlying((piece_ + 6) % 12);
+        if (piece_ == Piece::NONE) return *this;
+        piece_ = static_cast<underlying>((piece_ + 6) % 12);
         return *this;
     }
 };

@@ -208,20 +208,19 @@ public:
         plies_ = utils::stringview_to_int(fullmoves).value_or(1);
         plies_ = plies_ * 2 - 2;
 
+        // parse stm
+        stm_ = (stm == "w") ? Color::WHITE : Color::BLACK;
+        if (stm_ == Color::BLACK) plies_++;
+
         // parse enpassant square
         if (enpassant != "-") {
             enpassant_ = Square(enpassant);
 
             assert(enpassant_.is_valid());
-            assert(
-                (enpassant_.rank() == Rank::R3 && stm_ == Color::BLACK)
-                || (enpassant_.rank() == Rank::R6 && stm_ == Color::WHITE)
-            );
+            if (!(enpassant_.rank() == Rank::R3 && stm_ == Color::BLACK)
+                && !(enpassant_.rank() == Rank::R6 && stm_ == Color::WHITE))
+                enpassant_ = Square::NONE;
         }
-
-        // parse stm
-        stm_ = (stm == "w") ? Color::WHITE : Color::BLACK;
-        if (stm_ == Color::BLACK) plies_++;
 
         // parse pieces
         i32 square = 56;
@@ -316,7 +315,7 @@ public:
                         gap = 0;
                     }
 
-                    fen += std::string(piece);
+                    fen += static_cast<std::string>(piece);
                 } else
                     gap++;
             }
@@ -346,7 +345,7 @@ public:
 
         // write enpassant
         fen += ' ';
-        fen += (enpassant_ == Square::NONE ? "-" : std::string(enpassant_));
+        fen += (enpassant_ == Square::NONE ? "-" : static_cast<std::string>(enpassant_));
 
         // write halfmove and fullmoves
         fen += ' ';

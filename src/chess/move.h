@@ -47,4 +47,10 @@ public:
     static constexpr u16 ENPASSANT = 2 << 14;
     static constexpr u16 CASTLING = 3 << 14;
 };
+
+struct ScoredMove {
+    u32 score;
+    u16 move;
+    bool is_quiet;
+};
 }  // namespace chess

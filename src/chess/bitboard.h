@@ -14,8 +14,8 @@ public:
     constexpr BitBoard(): bits_(0) {}
 
     constexpr BitBoard(u64 bits): bits_(bits) {}
-    explicit constexpr BitBoard(File file): bits_(0x0101010101010101ULL << file) {}
-    explicit constexpr BitBoard(Rank rank): bits_(0xFFULL << (8 * rank)) {}
+    explicit constexpr BitBoard(File file): bits_(u64(0x101010101010101) << file) {}
+    explicit constexpr BitBoard(Rank rank): bits_(u64(0xFF) << (8 * rank)) {}
 
     [[nodiscard]] explicit constexpr operator u64() const { return bits_; }
     [[nodiscard]] explicit operator bool() const { return bits_ != 0; }

@@ -1,7 +1,6 @@
 #pragma once
-#include <chess/types.h>
-
-#include <cassert>
+#include <chess/coords.h>
+#include <chess/piece.h>
 
 
 
@@ -14,8 +13,6 @@ public:
     constexpr BitBoard(): bits_(0) {}
 
     constexpr BitBoard(u64 bits): bits_(bits) {}
-    explicit constexpr BitBoard(File file): bits_(u64(0x101010101010101) << file) {}
-    explicit constexpr BitBoard(Rank rank): bits_(u64(0xFF) << (8 * rank)) {}
 
     [[nodiscard]] explicit constexpr operator u64() const { return bits_; }
     [[nodiscard]] explicit operator bool() const { return bits_ != 0; }
@@ -94,8 +91,40 @@ public:
         return index;
     }
 
+    template <Direction dir>
+    [[nodiscard]] constexpr BitBoard shifted() const {
+        switch (dir) {
+            case Direction::UP: return bits_ << 8;
+            case Direction::DOWN: return bits_ >> 8;
+            case Direction::UP_LEFT: return (bits_ & ~FILEA) << 7;
+            case Direction::LEFT: return (bits_ & ~FILEA) >> 1;
+            case Direction::DOWN_LEFT: return (bits_ & ~FILEA) >> 9;
+            case Direction::UP_RIGHT: return (bits_ & ~FILEH) << 9;
+            case Direction::RIGHT: return (bits_ & ~FILEH) << 1;
+            case Direction::DOWN_RIGHT: return (bits_ & ~FILEH) >> 7;
+        }
+    }
+
     [[nodiscard]] static constexpr BitBoard from_square(Square sq) {
         return BitBoard(u64(1) << sq);
     }
+
+    static constexpr auto FILEA = u64(0x0101010101010101);
+    static constexpr auto FILEB = u64(0x0202020202020202);
+    static constexpr auto FILEC = u64(0x0404040404040404);
+    static constexpr auto FILED = u64(0x0808080808080808);
+    static constexpr auto FILEE = u64(0x1010101010101010);
+    static constexpr auto FILEF = u64(0x2020202020202020);
+    static constexpr auto FILEG = u64(0x4040404040404040);
+    static constexpr auto FILEH = u64(0x8080808080808080);
+
+    static constexpr auto RANK1 = u64(0x00000000000000FF);
+    static constexpr auto RANK2 = u64(0x000000000000FF00);
+    static constexpr auto RANK3 = u64(0x0000000000FF0000);
+    static constexpr auto RANK4 = u64(0x00000000FF000000);
+    static constexpr auto RANK5 = u64(0x000000FF00000000);
+    static constexpr auto RANK6 = u64(0x0000FF0000000000);
+    static constexpr auto RANK7 = u64(0x00FF000000000000);
+    static constexpr auto RANK8 = u64(0xFF00000000000000);
 };
 }  // namespace chess

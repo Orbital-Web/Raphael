@@ -257,6 +257,34 @@ TEST_SUITE("Bitboard") {
         CHECK(b == 0x0000000000000000ULL);
     }
 
+    TEST_CASE("shift") {
+        BitBoard b = 0x0000000000008300ULL;
+
+        auto up = b.shifted<Direction::UP>();
+        CHECK(up == 0x0000000000830000ULL);
+
+        auto down = b.shifted<Direction::DOWN>();
+        CHECK(down == 0x0000000000000083ULL);
+
+        auto left = b.shifted<Direction::LEFT>();
+        CHECK(left == 0x0000000000004100ULL);
+
+        auto right = b.shifted<Direction::RIGHT>();
+        CHECK(right == 0x0000000000000600ULL);
+
+        auto upleft = b.shifted<Direction::UP_LEFT>();
+        CHECK(upleft == 0x0000000000410000ULL);
+
+        auto upright = b.shifted<Direction::UP_RIGHT>();
+        CHECK(upright == 0x0000000000060000ULL);
+
+        auto downleft = b.shifted<Direction::DOWN_LEFT>();
+        CHECK(downleft == 0x0000000000000041ULL);
+
+        auto downright = b.shifted<Direction::DOWN_RIGHT>();
+        CHECK(downright == 0x0000000000000006ULL);
+    }
+
     TEST_CASE("from_square") {
         BitBoard b = BitBoard::from_square(Square::A1);
         CHECK(b == 0x0000000000000001ULL);

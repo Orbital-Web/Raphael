@@ -7,7 +7,7 @@ using namespace chess;
 
 
 // https://github.com/Disservin/chess-library/blob/master/tests/coords.cpp
-TEST_SUITE("Types") {
+TEST_SUITE("File") {
     TEST_CASE("File operator int") {
         File f = File::A;
         CHECK(static_cast<int>(f) == 0);
@@ -240,10 +240,29 @@ TEST_SUITE("Square") {
         CHECK(Square(Square::A6).ep_square() == Square::A5);
     }
 
-    TEST_CASE("Square castling_king_square") {
+    TEST_CASE("Square castling_king_dest") {
         CHECK(Square::castling_king_dest(true, Color::WHITE) == Square::G1);
         CHECK(Square::castling_king_dest(false, Color::WHITE) == Square::C1);
         CHECK(Square::castling_king_dest(true, Color::BLACK) == Square::G8);
         CHECK(Square::castling_king_dest(false, Color::BLACK) == Square::C8);
+    }
+
+    TEST_CASE("Square castling_rook_dest") {
+        CHECK(Square::castling_rook_dest(true, Color::WHITE) == Square::F1);
+        CHECK(Square::castling_rook_dest(false, Color::WHITE) == Square::D1);
+        CHECK(Square::castling_rook_dest(true, Color::BLACK) == Square::F8);
+        CHECK(Square::castling_rook_dest(false, Color::BLACK) == Square::D8);
+    }
+
+    TEST_CASE("Square operator +Direction") {
+        Square s = Square::B3;
+        CHECK(s + Direction::UP == Square::B4);
+        CHECK(s + Direction::DOWN == Square::B2);
+        CHECK(s + Direction::LEFT == Square::A3);
+        CHECK(s + Direction::RIGHT == Square::C3);
+        CHECK(s + Direction::UP_LEFT == Square::A4);
+        CHECK(s + Direction::UP_RIGHT == Square::C4);
+        CHECK(s + Direction::DOWN_LEFT == Square::A2);
+        CHECK(s + Direction::DOWN_RIGHT == Square::C2);
     }
 }

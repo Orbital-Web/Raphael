@@ -14,6 +14,9 @@ NNUE_FILE := net.nnue
 # Architecture configuration
 ARCH ?= native
 
+# Debug option
+DEBUG ?= off
+
 #---------------------------------------------------------------------------------------------------
 # Source Files
 #---------------------------------------------------------------------------------------------------
@@ -70,7 +73,8 @@ WARN_FLAGS := -Wall -Wextra
 CXXFLAGS := -std=c++20 -O3 -flto=auto $(WARN_FLAGS) \
     -Isrc -Ichess-library/include -ISFML-3.0.2/include
 
-LDFLAGS  :=
+LDFLAGS     :=
+LDFLAGS_UCI :=
 
 # SFML dynamic libs
 SFML_LIBS := -LSFML-3.0.2/lib \
@@ -85,33 +89,55 @@ endif
 # Architecture Flags
 #---------------------------------------------------------------------------------------------------
 
-CCFLAGS_RELEASE   := -DNDEBUG
-CCFLAGS_NATIVE    := $(CCFLAGS_RELEASE) -march=native
-CCFLAGS_AVX2_BMI2 := $(CCFLAGS_RELEASE) -march=haswell -DCHESS_USE_PEXT
-CCFLAGS_AVX2      := $(CCFLAGS_RELEASE) -march=haswell -mno-bmi2
-CCFLAGS_GENERIC   := $(CCFLAGS_RELEASE) -march=x86-64
-CCFLAGS_TUNABLE   := $(CCFLAGS_RELEASE) -march=native -DTUNE
-CCFLAGS_DEBUG     := -march=native -g
+CCFLAGS_NATIVE    := -march=native
+CCFLAGS_AVX2_BMI2 := -march=haswell -DCHESS_USE_PEXT
+CCFLAGS_AVX2      := -march=haswell -mno-bmi2
+CCFLAGS_GENERIC   := -march=x86-64
+CCFLAGS_TUNABLE   := -march=native -DTUNE
 
 ifeq ($(ARCH),native)
-    EXTRA_FLAGS := $(CCFLAGS_NATIVE)
+    ARCH_FLAGS := $(CCFLAGS_NATIVE)
 else ifeq ($(ARCH),avx2_bmi2)
-    EXTRA_FLAGS := $(CCFLAGS_AVX2_BMI2)
+    ARCH_FLAGS := $(CCFLAGS_AVX2_BMI2)
 else ifeq ($(ARCH),avx2)
-    EXTRA_FLAGS := $(CCFLAGS_AVX2)
+    ARCH_FLAGS := $(CCFLAGS_AVX2)
 else ifeq ($(ARCH),generic)
-    EXTRA_FLAGS := $(CCFLAGS_GENERIC)
+    ARCH_FLAGS := $(CCFLAGS_GENERIC)
 else ifeq ($(ARCH),tunable)
-    EXTRA_FLAGS := $(CCFLAGS_TUNABLE)
-else ifeq ($(ARCH),debug)
-    EXTRA_FLAGS := $(CCFLAGS_DEBUG)
+    ARCH_FLAGS := $(CCFLAGS_TUNABLE)
 else
     $(error Unknown architecture '$(ARCH)')
 endif
 
-override CXXFLAGS += $(EXTRA_FLAGS)
+override CXXFLAGS += $(ARCH_FLAGS)
 
 $(info Building for ARCH=$(ARCH))
+
+#---------------------------------------------------------------------------------------------------
+# Debug Flags
+#---------------------------------------------------------------------------------------------------
+
+CCFLAGS_RELEASE  := -DNDEBUG
+CCFLAGS_DEBUG    := -g
+CCFLAGS_SANITIZE := -g -fsanitize=address,undefined
+
+ifeq ($(DEBUG),on)
+    $(info Debug enabled)
+    DEBUG_FLAGS := $(CCFLAGS_DEBUG)
+else ifeq ($(DEBUG),off)
+    $(info Building for release)
+    DEBUG_FLAGS := $(CCFLAGS_RELEASE)
+	override LDFLAGS_UCI += -static
+else ifeq ($(DEBUG),san)
+    $(info Debug and address, ub sanitization enabled)
+    DEBUG_FLAGS := $(CCFLAGS_SANITIZE)
+	override LDFLAGS += -fsanitize=address,undefined
+else
+    $(error Unknown debug flag '$(DEBUG)')
+endif
+
+override CXXFLAGS += $(DEBUG_FLAGS)
+
 $(info )
 
 #---------------------------------------------------------------------------------------------------
@@ -130,7 +156,7 @@ main: $(MAIN_OBJS)
 
 # uci executable
 uci: $(UCI_OBJS)
-	$(CXX) -o $(EXE) $^ $(LDFLAGS) -static
+	$(CXX) -o $(EXE) $^ $(LDFLAGS) $(LDFLAGS_UCI)
 
 # compile .cpp -> .o
 %.o: %.cpp

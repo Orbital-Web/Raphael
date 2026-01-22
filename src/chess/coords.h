@@ -121,6 +121,11 @@ public:
         return Square(sq_ + static_cast<i8>(dir));
     }
 
+    constexpr Square& operator++(i32) {
+        sq_ = static_cast<underlying>(sq_ + 1);
+        return *this;
+    }
+
     [[nodiscard]] constexpr File file() const { return File(sq_ & 7); }
     [[nodiscard]] constexpr Rank rank() const { return Rank(sq_ >> 3); }
 

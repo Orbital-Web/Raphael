@@ -26,6 +26,7 @@ public:
     [[nodiscard]] constexpr bool operator!=(BitBoard rhs) const { return bits_ != rhs.bits_; }
     [[nodiscard]] constexpr bool operator||(BitBoard rhs) const { return bits_ || rhs.bits_; }
     [[nodiscard]] constexpr bool operator&&(BitBoard rhs) const { return bits_ && rhs.bits_; }
+    [[nodiscard]] constexpr BitBoard operator-(BitBoard rhs) const { return bits_ - rhs.bits_; }
     [[nodiscard]] constexpr BitBoard operator~() const { return ~bits_; }
 
     [[nodiscard]] constexpr BitBoard operator&(u64 rhs) const { return bits_ & rhs; }
@@ -56,6 +57,7 @@ public:
         bits_ |= (u64(1) << index);
         return *this;
     }
+
     constexpr BitBoard& unset(i32 index) {
         assert(index >= 0 && index < 64);
         bits_ &= ~(u64(1) << index);
@@ -71,6 +73,7 @@ public:
         assert(index >= 0 && index < 64);
         return bits_ & (u64(1) << index);
     }
+
     [[nodiscard]] constexpr bool is_empty() const { return bits_ == 0; }
 
     [[nodiscard]] i32 count() const { return __builtin_popcountll(bits_); }
@@ -106,7 +109,18 @@ public:
     }
 
     [[nodiscard]] static constexpr BitBoard from_square(Square sq) {
+        assert(sq.is_valid());
         return BitBoard(u64(1) << sq);
+    }
+
+    [[nodiscard]] static constexpr BitBoard from_file(File file) {
+        assert(file != File::NONE);
+        return BitBoard(u64(0x0101010101010101) << file);
+    }
+
+    [[nodiscard]] static constexpr BitBoard from_rank(Rank rank) {
+        assert(rank != Rank::NONE);
+        return BitBoard(u64(0xFF) << (8 * rank));
     }
 
     static constexpr auto FILEA = u64(0x0101010101010101);

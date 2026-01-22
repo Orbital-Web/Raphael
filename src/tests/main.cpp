@@ -1,4 +1,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT
+#include <Raphael/tunable.h>
+#include <chess/include.h>
+
 #include <tests/doctest/doctest.hpp>
 
 extern const bool UCI = false;
@@ -6,6 +9,9 @@ extern const bool UCI = false;
 
 
 int main(int argc, char** argv) {
+    chess::Attacks::init();
+    raphael::init_tunables();
+
     doctest::Context ctx;
 
     ctx.setOption("abort-after", 1);

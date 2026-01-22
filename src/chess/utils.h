@@ -16,7 +16,7 @@ namespace chess::utils {
  * \param delimiter character to split by
  * \returns an array of size N
  */
-template <int N>
+template <i32 N>
 inline std::array<std::optional<std::string_view>, N> split_string_view(
     std::string_view str, char delimiter = ' '
 ) {

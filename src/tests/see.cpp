@@ -9,8 +9,6 @@ using std::vector;
 
 TEST_SUITE("Raphael SEE") {
     TEST_CASE("SEE") {
-        raphael::init_tunables();
-
         const i32 P = raphael::SEE_PAWN_VAL;
         const i32 N = raphael::SEE_KNIGHT_VAL;
         const i32 B = raphael::SEE_BISHOP_VAL;

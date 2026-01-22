@@ -295,4 +295,20 @@ TEST_SUITE("Bitboard") {
         b = BitBoard::from_square(Square::C1);
         CHECK(b == 0x0000000000000004ULL);
     }
+
+    TEST_CASE("from_file") {
+        BitBoard b = BitBoard::from_file(File::A);
+        CHECK(b == BitBoard::FILEA);
+
+        b = BitBoard::from_file(File::H);
+        CHECK(b == BitBoard::FILEH);
+    }
+
+    TEST_CASE("from_rank") {
+        BitBoard b = BitBoard::from_rank(Rank::R1);
+        CHECK(b == BitBoard::RANK1);
+
+        b = BitBoard::from_rank(Rank::R8);
+        CHECK(b == BitBoard::RANK8);
+    }
 }

@@ -6,6 +6,7 @@ using namespace chess;
 
 
 
+// https://github.com/Disservin/chess-library/blob/master/tests/piece.cpp
 TEST_SUITE("PieceType") {
     TEST_CASE("operator std::string") {
         CHECK(static_cast<std::string>(PieceType(PieceType::PAWN)) == "p");

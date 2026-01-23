@@ -251,9 +251,59 @@ private:
     // pre-calculated lookup table for rook attacks
     static inline AttackEntry ROOK_TABLE[64] = {};
 
+    // pre-calculated lookup table of ray between squares from (exclusive) and to (inclusive)
+    static const MultiArray<BitBoard, 64, 64> SQUARES_BETWEEN;
+
 
 public:
-    static void init() {
+    template <Color::underlying color>
+    [[nodiscard]] static BitBoard pawn_left(BitBoard pawns) {
+        constexpr auto dir = relative_direction(Direction::UP_LEFT, color);
+        return pawns.shifted<dir>();
+    }
+
+    template <Color::underlying color>
+    [[nodiscard]] static BitBoard pawn_right(BitBoard pawns) {
+        constexpr auto dir = relative_direction(Direction::UP_RIGHT, color);
+        return pawns.shifted<dir>();
+    }
+
+    [[nodiscard]] static BitBoard pawn(Square sq, Color color) { return PAWN_ATTACKS[color][sq]; }
+
+    [[nodiscard]] static BitBoard knight(Square sq) { return KNIGHT_ATTACKS[sq]; }
+
+    [[nodiscard]] static BitBoard bishop(Square sq, BitBoard occupied) {
+        const auto& entry = BISHOP_TABLE[sq];
+#ifdef CHESS_USE_PEXT
+        u64 index = _pext_u64(static_cast<u64>(occupied), static_cast<u64>(entry.mask));
+#else
+        u64 index = (static_cast<u64>(occupied | entry.negmask) * entry.magic) >> 55;
+#endif
+        return entry.attacks[index];
+    }
+
+    [[nodiscard]] static BitBoard rook(Square sq, BitBoard occupied) {
+        const auto& entry = ROOK_TABLE[sq];
+#ifdef CHESS_USE_PEXT
+        u64 index = _pext_u64(static_cast<u64>(occupied), static_cast<u64>(entry.mask));
+#else
+        u64 index = (static_cast<u64>(occupied | entry.negmask) * entry.magic) >> 52;
+#endif
+        return entry.attacks[index];
+    }
+
+    [[nodiscard]] static BitBoard queen(Square sq, BitBoard occupied) {
+        return bishop(sq, occupied) | rook(sq, occupied);
+    }
+
+    [[nodiscard]] static BitBoard king(Square sq) { return KING_ATTACKS[sq]; }
+
+    [[nodiscard]] static BitBoard between(Square sq1, Square sq2) {
+        return SQUARES_BETWEEN[sq1][sq2];
+    }
+
+private:
+    static void init_attacks() {
 #ifdef CHESS_USE_PEXT
         i32 bishop_offset = 0;
         i32 rook_offset = 0;
@@ -318,49 +368,6 @@ public:
         }
     }
 
-    template <Color::underlying color>
-    [[nodiscard]] static BitBoard pawn_left(BitBoard pawns) {
-        constexpr auto dir = relative_direction(Direction::UP_LEFT, color);
-        return pawns.shifted<dir>();
-    }
-
-    template <Color::underlying color>
-    [[nodiscard]] static BitBoard pawn_right(BitBoard pawns) {
-        constexpr auto dir = relative_direction(Direction::UP_RIGHT, color);
-        return pawns.shifted<dir>();
-    }
-
-    [[nodiscard]] static BitBoard pawn(Square sq, Color color) { return PAWN_ATTACKS[color][sq]; }
-
-    [[nodiscard]] static BitBoard knight(Square sq) { return KNIGHT_ATTACKS[sq]; }
-
-    [[nodiscard]] static BitBoard bishop(Square sq, BitBoard occupied) {
-        const auto& entry = BISHOP_TABLE[sq];
-#ifdef CHESS_USE_PEXT
-        u64 index = _pext_u64(static_cast<u64>(occupied), static_cast<u64>(entry.mask));
-#else
-        u64 index = (static_cast<u64>(occupied | entry.negmask) * entry.magic) >> 55;
-#endif
-        return entry.attacks[index];
-    }
-
-    [[nodiscard]] static BitBoard rook(Square sq, BitBoard occupied) {
-        const auto& entry = ROOK_TABLE[sq];
-#ifdef CHESS_USE_PEXT
-        u64 index = _pext_u64(static_cast<u64>(occupied), static_cast<u64>(entry.mask));
-#else
-        u64 index = (static_cast<u64>(occupied | entry.negmask) * entry.magic) >> 52;
-#endif
-        return entry.attacks[index];
-    }
-
-    [[nodiscard]] static BitBoard queen(Square sq, BitBoard occupied) {
-        return bishop(sq, occupied) | rook(sq, occupied);
-    }
-
-    [[nodiscard]] static BitBoard king(Square sq) { return KING_ATTACKS[sq]; }
-
-private:
     template <bool is_rook>
     [[nodiscard]] static BitBoard get_slider_attacks(Square sq, BitBoard occupied) {
         static constexpr int dirs[2][4][2] = {
@@ -388,4 +395,27 @@ private:
         return attacks;
     }
 };
+
+
+inline const MultiArray<BitBoard, 64, 64> Attacks::SQUARES_BETWEEN = [] {
+    init_attacks();
+
+    MultiArray<BitBoard, 64, 64> squares_between{};
+    for (Square sq1 = Square::A1; sq1 <= Square::H8; sq1++) {
+        const BitBoard sq1bb = BitBoard::from_square(sq1);
+
+        for (Square sq2 = Square::A1; sq2 <= Square::H8; sq2++) {
+            const BitBoard sq2bb = BitBoard::from_square(sq2);
+
+            const bool bishop_sees = bishop(sq1, 0).is_set(sq2);
+            if (bishop_sees) squares_between[sq1][sq2] = bishop(sq1, sq2bb) & bishop(sq2, sq1bb);
+
+            const bool rook_sees = rook(sq1, 0).is_set(sq2);
+            if (rook_sees) squares_between[sq1][sq2] = rook(sq1, sq2bb) & rook(sq2, sq1bb);
+
+            squares_between[sq1][sq2].set(sq2);
+        }
+    }
+    return squares_between;
+}();
 }  // namespace chess

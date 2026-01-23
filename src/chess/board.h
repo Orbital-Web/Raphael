@@ -50,8 +50,8 @@ public:
             return !has(Color::WHITE) && !has(Color::BLACK);
         }
 
-        [[nodiscard]] static constexpr Side closest_side(File sq, File pred) {
-            return sq > pred ? Side::KING_SIDE : Side::QUEEN_SIDE;
+        [[nodiscard]] static constexpr Side closest_side(File file, File pred) {
+            return file > pred ? Side::KING_SIDE : Side::QUEEN_SIDE;
         }
 
     private:

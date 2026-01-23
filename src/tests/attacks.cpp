@@ -107,4 +107,14 @@ TEST_SUITE("Attacks") {
         CHECK(Attacks::king(Square::D3) == 0x1c141c00ULL);
         CHECK(Attacks::king(Square::H4) == 0xc040c00000ULL);
     }
+
+    TEST_CASE("Between") {
+        CHECK(Attacks::between(Square::A1, Square::H1) == 0xfeULL);
+        CHECK(Attacks::between(Square::C3, Square::C6) == 0x40404000000ULL);
+        CHECK(Attacks::between(Square::A1, Square::C6) == 0x40000000000ULL);
+
+        CHECK(Attacks::between(Square::F8, Square::A3) == 0x10080402010000ULL);
+        CHECK(Attacks::between(Square::F1, Square::C4) == 0x4081000ULL);
+        CHECK(Attacks::between(Square::F5, Square::C4) == 0x4000000ULL);
+    }
 }

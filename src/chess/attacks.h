@@ -302,6 +302,15 @@ public:
         return SQUARES_BETWEEN[sq1][sq2];
     }
 
+    template <PieceType::underlying pt>
+    [[nodiscard]] static BitBoard slider(Square sq, BitBoard occupied) {
+        static_assert(pt == PieceType::BISHOP || pt == PieceType::ROOK || pt == PieceType::QUEEN);
+
+        if constexpr (pt == PieceType::BISHOP) return bishop(sq, occupied);
+        if constexpr (pt == PieceType::ROOK) return rook(sq, occupied);
+        if constexpr (pt == PieceType::QUEEN) return queen(sq, occupied);
+    }
+
 private:
     static void init_attacks() {
 #ifdef CHESS_USE_PEXT
@@ -370,7 +379,7 @@ private:
 
     template <bool is_rook>
     [[nodiscard]] static BitBoard get_slider_attacks(Square sq, BitBoard occupied) {
-        static constexpr int dirs[2][4][2] = {
+        static constexpr i32 dirs[2][4][2] = {
             {{1, 1}, {1, -1}, {-1, -1}, {-1, 1}}, // bishops
             {{1, 0}, {0, -1}, {-1, 0},  {0, 1} }  // rooks
         };

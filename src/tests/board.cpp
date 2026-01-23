@@ -28,9 +28,13 @@ TEST_SUITE("Board") {
         board.set_fen("4k1n1/pppppppp/8/8/8/8/PPPPPPPP/4K3 w KQkq - 0 1");
         CHECK(board.get_fen() == "4k1n1/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1");
 
-        // TODO: invalid enpassant
-        // board.set_fen("4k1n1/pppppppp/8/8/8/8/PPPPPPPP/4K3 w KQkq e3 0 1");
-        // CHECK(board.get_fen() == "4k1n1/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1");
+        // invalid enpassant 1 (no pawns)
+        board.set_fen("4k1n1/pppppppp/8/8/8/8/PPPPPPPP/4K3 w KQkq e3 0 1");
+        CHECK(board.get_fen() == "4k1n1/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1");
+
+        // invalid enpassant 2 (pinned)
+        board.set_fen("4k1n1/pppp1ppp/8/8/4pP2/8/PPPPQ1PP/4K3 b - f3 0 1");
+        CHECK(board.get_fen() == "4k1n1/pppp1ppp/8/8/4pP2/8/PPPPQ1PP/4K3 b - - 0 1");
 
         // missing halfmoves fullmoves
         board.set_fen("r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R w KQkq -");
@@ -39,7 +43,7 @@ TEST_SUITE("Board") {
         );
     }
 
-    // TEST_CASE("Board makeMove/unmakeMove") {
+    // TEST_CASE("Board make_move") {
     //     SUBCASE("makeMove") {
     //         Board board = Board();
     //         board.makeMove(Move::make(Square::SQ_E2, Square::SQ_E4));
@@ -57,7 +61,7 @@ TEST_SUITE("Board") {
     //         CHECK(board.zobrist() == Board().zobrist());
     //     }
 
-    //     SUBCASE("makeNullMove") {
+    //     SUBCASE("make_null_move") {
     //         Board board = Board();
     //         board.makeNullMove();
 

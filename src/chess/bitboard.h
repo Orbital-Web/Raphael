@@ -1,5 +1,4 @@
 #pragma once
-#include <chess/coords.h>
 #include <chess/piece.h>
 
 

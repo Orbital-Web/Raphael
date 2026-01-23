@@ -21,6 +21,9 @@ public:
         return PieceType(((move_ >> 12) & 3) + PieceType::KNIGHT);
     }
 
+    [[nodiscard]] constexpr bool operator==(const Move& rhs) const { return move_ == rhs.move_; }
+    [[nodiscard]] constexpr bool operator!=(const Move& rhs) const { return move_ != rhs.move_; }
+
     /** Creates a move from source and target square
      * https://github.com/Disservin/chess-library/blob/master/src/move.hpp
      *
@@ -49,8 +52,50 @@ public:
 };
 
 struct ScoredMove {
-    u32 score;
-    u16 move;
-    bool is_quiet;
+    i32 score = 0;
+    Move move;
+    bool is_quiet = false;
+};
+
+
+class ScoredMoveList {
+private:
+    static constexpr usize MAX_MOVES = 256;
+
+    std::array<ScoredMove, MAX_MOVES> list_ = {};
+    usize size_ = 0;
+
+
+public:
+    void push(const ScoredMove& move) {
+        assert(size_ < MAX_MOVES);
+        list_[size_++] = move;
+    }
+    void push(ScoredMove&& move) {
+        assert(size_ < MAX_MOVES);
+        list_[size_++] = std::move(move);
+    }
+
+    ScoredMove pop() {
+        assert(size_ > 0);
+        return std::move(list_[--size_]);
+    }
+
+    void clear() { size_ = 0; }
+
+    [[nodiscard]] usize size() const { return size_; }
+
+    [[nodiscard]] usize empty() const { return size_ == 0; }
+
+    [[nodiscard]] const ScoredMove& operator[](usize i) const {
+        assert(i < size_);
+        return list_[i];
+    }
+
+    [[nodiscard]] auto begin() { return list_.begin(); }
+    [[nodiscard]] auto end() { return list_.begin() + size_; }
+
+    [[nodiscard]] auto begin() const { return list_.begin(); }
+    [[nodiscard]] auto end() const { return list_.begin() + size_; }
 };
 }  // namespace chess

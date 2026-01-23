@@ -1,6 +1,5 @@
 #pragma once
-#include <chess/bitboard.h>
-#include <chess/move.h>
+#include <chess/movegen_fwd.h>
 #include <chess/utils.h>
 #include <chess/zobrist.h>
 
@@ -55,7 +54,7 @@ public:
         }
 
     private:
-        MultiArray<File, 2, 2> rooks;
+        MultiArray<File, 2, 2> rooks = {};
     };
 
 private:
@@ -99,13 +98,15 @@ public:
 
     [[nodiscard]] u64 hash() const { return hash_; }
 
+    [[nodiscard]] bool chess960() const { return chess960_; }
+
 
     [[nodiscard]] Square king_square(Color color) const {
         return Square(occ(PieceType::KING, color).lsb());
     }
 
     [[nodiscard]] bool is_kingpawn(Color color) const {
-        return (occ(color) ^ occ(chess::PieceType::PAWN, color)).count() == 1;
+        return (occ(color) ^ occ(PieceType::PAWN, color)).count() == 1;
     }
 
 
@@ -261,17 +262,16 @@ public:
             }
         }
 
-        // TODO: validate enpassant
-        // if (enpassant_ != Square::NONE) {
-        //     bool valid;
+        // validate enpassant
+        if (enpassant_ != Square::NONE) {
+            bool valid;
+            if (stm_ == Color::WHITE)
+                valid = Movegen::is_ep_valid<Color::WHITE>(*this, enpassant_);
+            else
+                valid = Movegen::is_ep_valid<Color::BLACK>(*this, enpassant_);
 
-        //     if (stm_ == Color::WHITE)
-        //         valid = movegen::isEpSquareValid<Color::WHITE>(*this, enpassant_);
-        //     else
-        //         valid = movegen::isEpSquareValid<Color::BLACK>(*this, enpassant_);
-
-        //     if (!valid) enpassant_ = Square::NONE;
-        // }
+            if (!valid) enpassant_ = Square::NONE;
+        }
 
         // TODO: init castling_path
         // for (const Color color : {Color::WHITE, Color::BLACK}) {

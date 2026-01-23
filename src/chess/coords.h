@@ -41,7 +41,7 @@ enum class Direction : i8 {
 };
 
 [[nodiscard]] constexpr Direction relative_direction(Direction dir, Color c) {
-    return (c == Color::WHITE) ? dir : static_cast<Direction>(-static_cast<std::int8_t>(dir));
+    return (c == Color::WHITE) ? dir : static_cast<Direction>(-static_cast<i8>(dir));
 }
 
 class File {

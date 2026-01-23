@@ -30,14 +30,14 @@ public:
 };
 
 enum class Direction : i8 {
-    UP = 8,
-    DOWN = -8,
-    LEFT = -1,
-    RIGHT = 1,
-    UP_LEFT = 7,
-    UP_RIGHT = 9,
-    DOWN_LEFT = -9,
-    DOWN_RIGHT = -7
+    NORTH = 8,
+    SOUTH = -8,
+    WEST = -1,
+    EAST = 1,
+    NORTH_WEST = 7,
+    NORTH_EAST = 9,
+    SOUTH_WEST = -9,
+    SOUTH_EAST = -7
 };
 
 [[nodiscard]] constexpr Direction relative_direction(Direction dir, Color c) {
@@ -81,6 +81,12 @@ public:
 
     [[nodiscard]] constexpr operator i32() const { return rank_; }
     [[nodiscard]] explicit operator std::string() const { return std::string(1, rank_ + '1'); }
+
+    [[nodiscard]] constexpr bool is_back_rank(Color color) const {
+        return rank_ == static_cast<underlying>(color * 7);
+    }
+
+    [[nodiscard]] constexpr Rank relative(Color color) const { return Rank(rank_ ^ (color * 7)); }
 };
 
 class Square {
@@ -142,6 +148,10 @@ public:
 
     [[nodiscard]] constexpr Square relative(Color color) const {
         return Square(sq_ ^ (color * 56));
+    }
+
+    [[nodiscard]] constexpr bool is_back_rank(Color color) const {
+        return rank().is_back_rank(color);
     }
 
     [[nodiscard]] constexpr Square ep_square() const {

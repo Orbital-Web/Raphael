@@ -96,14 +96,14 @@ public:
     template <Direction dir>
     [[nodiscard]] constexpr BitBoard shifted() const {
         switch (dir) {
-            case Direction::UP: return bits_ << 8;
-            case Direction::DOWN: return bits_ >> 8;
-            case Direction::UP_LEFT: return (bits_ & ~FILEA) << 7;
-            case Direction::LEFT: return (bits_ & ~FILEA) >> 1;
-            case Direction::DOWN_LEFT: return (bits_ & ~FILEA) >> 9;
-            case Direction::UP_RIGHT: return (bits_ & ~FILEH) << 9;
-            case Direction::RIGHT: return (bits_ & ~FILEH) << 1;
-            case Direction::DOWN_RIGHT: return (bits_ & ~FILEH) >> 7;
+            case Direction::NORTH: return bits_ << 8;
+            case Direction::SOUTH: return bits_ >> 8;
+            case Direction::NORTH_WEST: return (bits_ & ~FILEA) << 7;
+            case Direction::WEST: return (bits_ & ~FILEA) >> 1;
+            case Direction::SOUTH_WEST: return (bits_ & ~FILEA) >> 9;
+            case Direction::NORTH_EAST: return (bits_ & ~FILEH) << 9;
+            case Direction::EAST: return (bits_ & ~FILEH) << 1;
+            case Direction::SOUTH_EAST: return (bits_ & ~FILEH) >> 7;
         }
     }
 
@@ -139,5 +139,7 @@ public:
     static constexpr auto RANK6 = u64(0x0000FF0000000000);
     static constexpr auto RANK7 = u64(0x00FF000000000000);
     static constexpr auto RANK8 = u64(0xFF00000000000000);
+
+    static constexpr auto FULL = u64(0xFFFFFFFFFFFFFFFF);
 };
 }  // namespace chess

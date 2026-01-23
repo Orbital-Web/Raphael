@@ -14,9 +14,6 @@ class Movegen {
 public:
     enum class MoveGenType : u8 { ALL, CAPTURE, QUIET };  // FIXME: switch to ALL, NOISY, QUIET
 
-private:
-    static constexpr BitBoard DEFAULT_CHECKMASK = BitBoard(0xFFFFFFFFFFFFFFFFull);
-
 
 public:
     /** Clears and populates movelist with a list of legal moves
@@ -50,7 +47,7 @@ private:
     );
 
     template <Color::underlying color>
-    [[nodiscard]] static BitBoard seen_squares(const Board& board, BitBoard negocc_opp);
+    [[nodiscard]] static BitBoard seen_squares(const Board& board, BitBoard opp_empty);
 
 
     template <Color::underlying color, MoveGenType mt>

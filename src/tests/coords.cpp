@@ -220,10 +220,21 @@ TEST_SUITE("Square") {
         CHECK(Square::same_color(Square::A1, Square::B2));
     }
 
-    TEST_CASE("Square flip") {
+    TEST_CASE("Square back_rank") {
+        CHECK(Square(Square::A1).is_back_rank(Color::WHITE));
+        CHECK(!Square(Square::A1).is_back_rank(Color::BLACK));
+        CHECK(!Square(Square::B8).is_back_rank(Color::WHITE));
+        CHECK(Square(Square::B8).is_back_rank(Color::BLACK));
+    }
+
+    TEST_CASE("Square flip/flipped") {
         CHECK(Square(Square::A1).flip() == Square::A8);
         CHECK(Square(Square::A2).flip() == Square::A7);
         CHECK(Square(Square::A3).flip() == Square::A6);
+
+        CHECK(Square(Square::A1).flipped() == Square::A8);
+        CHECK(Square(Square::A2).flipped() == Square::A7);
+        CHECK(Square(Square::A3).flipped() == Square::A6);
     }
 
     TEST_CASE("Square relative_square") {
@@ -256,13 +267,13 @@ TEST_SUITE("Square") {
 
     TEST_CASE("Square operator +Direction") {
         Square s = Square::B3;
-        CHECK(s + Direction::UP == Square::B4);
-        CHECK(s + Direction::DOWN == Square::B2);
-        CHECK(s + Direction::LEFT == Square::A3);
-        CHECK(s + Direction::RIGHT == Square::C3);
-        CHECK(s + Direction::UP_LEFT == Square::A4);
-        CHECK(s + Direction::UP_RIGHT == Square::C4);
-        CHECK(s + Direction::DOWN_LEFT == Square::A2);
-        CHECK(s + Direction::DOWN_RIGHT == Square::C2);
+        CHECK(s + Direction::NORTH == Square::B4);
+        CHECK(s + Direction::SOUTH == Square::B2);
+        CHECK(s + Direction::WEST == Square::A3);
+        CHECK(s + Direction::EAST == Square::C3);
+        CHECK(s + Direction::NORTH_WEST == Square::A4);
+        CHECK(s + Direction::NORTH_EAST == Square::C4);
+        CHECK(s + Direction::SOUTH_WEST == Square::A2);
+        CHECK(s + Direction::SOUTH_EAST == Square::C2);
     }
 }

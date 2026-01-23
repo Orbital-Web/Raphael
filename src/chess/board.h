@@ -92,6 +92,12 @@ public:
 
     [[nodiscard]] Piece at(Square sq) const { return mailbox_[sq]; }
 
+    [[nodiscard]] CastlingRights castle_rights() const { return castle_rights_; }
+    [[nodiscard]] BitBoard castle_path(Color color, bool is_king_side) const {
+        return castle_path_[color][is_king_side];
+    }
+    [[nodiscard]] Square enpassant_square() const { return enpassant_; }
+
     [[nodiscard]] Color stm() const { return stm_; }
     [[nodiscard]] i32 halfmoves() const { return halfmoves_; }
     [[nodiscard]] i32 fullmoves() const { return 1 + plies_ / 2; }

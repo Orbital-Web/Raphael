@@ -258,13 +258,13 @@ private:
 public:
     template <Color::underlying color>
     [[nodiscard]] static BitBoard pawn_left(BitBoard pawns) {
-        constexpr auto dir = relative_direction(Direction::UP_LEFT, color);
+        constexpr auto dir = relative_direction(Direction::NORTH_WEST, color);
         return pawns.shifted<dir>();
     }
 
     template <Color::underlying color>
     [[nodiscard]] static BitBoard pawn_right(BitBoard pawns) {
-        constexpr auto dir = relative_direction(Direction::UP_RIGHT, color);
+        constexpr auto dir = relative_direction(Direction::NORTH_EAST, color);
         return pawns.shifted<dir>();
     }
 

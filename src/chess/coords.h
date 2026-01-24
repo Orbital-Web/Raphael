@@ -175,5 +175,7 @@ public:
     [[nodiscard]] static constexpr bool same_color(Square sq1, Square sq2) {
         return ((9 * (sq1 ^ sq2)) & 8) == 0;
     }
+
+    [[nodiscard]] static i32 value_distance(Square sq1, Square sq2) { return std::abs(sq1 - sq2); }
 };
 }  // namespace chess

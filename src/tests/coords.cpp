@@ -220,6 +220,13 @@ TEST_SUITE("Square") {
         CHECK(Square::same_color(Square::A1, Square::B2));
     }
 
+    TEST_CASE("Square value_distance") {
+        CHECK(Square::value_distance(Square::A1, Square::A1) == 0);
+        CHECK(Square::value_distance(Square::A1, Square::A2) == 8);
+        CHECK(Square::value_distance(Square::A1, Square::B1) == 1);
+        CHECK(Square::value_distance(Square::A1, Square::B2) == 9);
+    }
+
     TEST_CASE("Square back_rank") {
         CHECK(Square(Square::A1).is_back_rank(Color::WHITE));
         CHECK(!Square(Square::A1).is_back_rank(Color::BLACK));

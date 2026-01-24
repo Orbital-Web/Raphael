@@ -43,37 +43,28 @@ TEST_SUITE("Board") {
         );
     }
 
-    // TEST_CASE("Board make_move") {
-    //     SUBCASE("makeMove") {
-    //         Board board = Board();
-    //         board.makeMove(Move::make(Square::SQ_E2, Square::SQ_E4));
-    //         board.makeMove(Move::make(Square::SQ_E7, Square::SQ_E5));
+    TEST_CASE("Board make_move") {
+        SUBCASE("makeMove") {
+            Board board = Board();
+            board = board.make_move(Move::make(Square::E2, Square::E4));
 
-    //         CHECK(board.at(Square::SQ_E4) == Piece::WHITEPAWN);
-    //         CHECK(board.at(Square::SQ_E5) == Piece::BLACKPAWN);
+            CHECK(board.at(Square::E2) == Piece::NONE);
+            CHECK(board.at(Square::E4) == Piece::WHITEPAWN);
 
-    //         board.unmakeMove(Move::make(Square::SQ_E7, Square::SQ_E5));
-    //         board.unmakeMove(Move::make(Square::SQ_E2, Square::SQ_E4));
+            board = board.make_move(Move::make(Square::E7, Square::E5));
 
-    //         CHECK(board.at(Square::SQ_E2) == Piece::WHITEPAWN);
-    //         CHECK(board.at(Square::SQ_E7) == Piece::BLACKPAWN);
+            CHECK(board.at(Square::E7) == Piece::NONE);
+            CHECK(board.at(Square::E5) == Piece::BLACKPAWN);
+        }
 
-    //         CHECK(board.zobrist() == Board().zobrist());
-    //     }
+        SUBCASE("make_null_move") {
+            Board board = Board();
+            Board newboard = board.make_nullmove();
 
-    //     SUBCASE("make_null_move") {
-    //         Board board = Board();
-    //         board.makeNullMove();
-
-    //         CHECK(board.zobrist() != Board().zobrist());
-    //         CHECK(board.sideToMove() == Color::BLACK);
-
-    //         board.unmakeNullMove();
-
-    //         CHECK(board.zobrist() == Board().zobrist());
-    //         CHECK(board.sideToMove() == Color::WHITE);
-    //     }
-    // }
+            CHECK(newboard.hash() != board.hash());
+            CHECK(newboard.stm() == Color::BLACK);
+        }
+    }
 
     TEST_CASE("Board is_kingpawn") {
         Board board = Board("4k1n1/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1");
@@ -165,28 +156,27 @@ TEST_SUITE("Board") {
             CHECK(board.get_captured(mv) == Piece::NONE);
         }
 
-        // TODO: wait until makemove is done
-        // SUBCASE("is_capture True") {
-        //     Board board = Board("8/8/8/2nk4/4r3/5P2/2B3K1/8 w - - 0 1");
-        //     auto mv = Move::make(Square::F3, Square::E4);
-        //     CHECK(board.is_capture(mv) == true);
-        //     CHECK(board.get_captured(mv) == Piece::BLACKROOK);
-        //     board.make_move(mv);
+        SUBCASE("is_capture True") {
+            Board board = Board("8/8/8/2nk4/4r3/5P2/2B3K1/8 w - - 0 1");
+            auto mv = Move::make(Square::F3, Square::E4);
+            CHECK(board.is_capture(mv) == true);
+            CHECK(board.get_captured(mv) == Piece::BLACKROOK);
+            board = board.make_move(mv);
 
-        //     mv = Move::make(Square::C5, Square::E4);
-        //     CHECK(board.is_capture(mv) == true);
-        //     CHECK(board.get_captured(mv) == Piece::WHITEPAWN);
-        //     board.make_move(mv);
+            mv = Move::make(Square::C5, Square::E4);
+            CHECK(board.is_capture(mv) == true);
+            CHECK(board.get_captured(mv) == Piece::WHITEPAWN);
+            board = board.make_move(mv);
 
-        //     mv = Move::make(Square::C2, Square::E4);
-        //     CHECK(board.is_capture(mv) == true);
-        //     CHECK(board.get_captured(mv) == Piece::BLACKKNIGHT);
-        //     board.make_move(mv);
+            mv = Move::make(Square::C2, Square::E4);
+            CHECK(board.is_capture(mv) == true);
+            CHECK(board.get_captured(mv) == Piece::BLACKKNIGHT);
+            board = board.make_move(mv);
 
-        //     mv = Move::make(Square::D5, Square::E4);
-        //     CHECK(board.is_capture(mv) == true);
-        //     CHECK(board.get_captured(mv) == Piece::WHITEBISHOP);
-        // }
+            mv = Move::make(Square::D5, Square::E4);
+            CHECK(board.is_capture(mv) == true);
+            CHECK(board.get_captured(mv) == Piece::WHITEBISHOP);
+        }
 
         SUBCASE("is_capture True Enpassant") {
             {

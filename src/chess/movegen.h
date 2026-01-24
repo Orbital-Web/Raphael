@@ -363,7 +363,7 @@ template <Color::underlying color>
         if (!rights.has(static_cast<Color>(color), side)) continue;
 
         // skip if there are pieces on the castling path
-        const auto is_king_side = side == Board::CastlingRights::Side::KING_SIDE;
+        const auto is_king_side = (side == Board::CastlingRights::Side::KING_SIDE);
         if (board.occ() & board.castle_path(static_cast<Color>(color), is_king_side)) continue;
 
         // skip if king path is being attacked

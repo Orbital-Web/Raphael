@@ -207,7 +207,7 @@ private:
            0xF8D626AAAF278509};
 
     static constexpr std::array<u64, 16> castlingKey = []() constexpr {
-        auto generateCastlingKey = [](i32 index) constexpr -> u64 {
+        auto generate_castling_key = [](i32 index) constexpr -> u64 {
             u64 key = 0;
             for (i32 i = 0; i < 4; ++i)
                 if (index & (1 << i)) key ^= RANDOM_ARRAY[768 + i];
@@ -216,7 +216,7 @@ private:
         };
 
         std::array<u64, 16> arr{};
-        for (i32 i = 0; i < 16; ++i) arr[i] = generateCastlingKey(i);
+        for (i32 i = 0; i < 16; ++i) arr[i] = generate_castling_key(i);
 
         return arr;
     }();
@@ -238,12 +238,12 @@ private:
         return castlingKey[castling];
     }
 
-    [[nodiscard]] static u64 castlingIndex(i32 idx) {
+    [[nodiscard]] static u64 castle_index(i32 idx) {
         assert(idx >= 0 && idx < 4);
         return RANDOM_ARRAY[768 + idx];
     }
 
-    [[nodiscard]] static u64 sideToMove() { return RANDOM_ARRAY[780]; }
+    [[nodiscard]] static u64 stm() { return RANDOM_ARRAY[780]; }
 
 public:
     friend class Board;

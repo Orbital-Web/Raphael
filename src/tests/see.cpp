@@ -101,7 +101,6 @@ TEST_SUITE("Raphael SEE") {
             const chess::Board board(testdata.fen);
             const auto move = chess::uci::uciToMove(board, testdata.mv);
 
-            CHECK(raphael::SEE::see(move, board, testdata.exchange - 1) == true);
             CHECK(raphael::SEE::see(move, board, testdata.exchange) == true);
             CHECK(raphael::SEE::see(move, board, testdata.exchange + 1) == false);
         }

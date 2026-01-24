@@ -90,7 +90,10 @@ private:
 
 
     static void push_moves(
-        ScoredMoveList& movelist, BitBoard occ, std::function<BitBoard(Square)> generator
+        ScoredMoveList& movelist,
+        BitBoard occ,
+        BitBoard occ_opp,
+        std::function<BitBoard(Square)> generator
     );
 
     template <Color::underlying color, MoveGenType mt>

@@ -54,7 +54,7 @@ public:
 struct ScoredMove {
     i32 score = 0;
     Move move;
-    bool is_quiet = false;
+    bool is_quiet;
 };
 
 

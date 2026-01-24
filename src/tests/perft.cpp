@@ -23,12 +23,9 @@ public:
 
         u64 nodes = 0;
         for (const auto& move : moves) {
-            // const auto gives_check = board_.givesCheck(move) != CheckType::NO_CHECK;
+            // const auto gives_check = board.gives_check(move) != CheckType::NO_CHECK;
             const auto newboard = board.make_move(move.move);
-
-            // if (gives_check != board_.inCheck()) {
-            //     throw std::runtime_error("givesCheck() and inCheck() are inconsistent");
-            // }
+            // assert(gives_check == board.in_check());
 
             nodes += perft(newboard, depth - 1);
         }

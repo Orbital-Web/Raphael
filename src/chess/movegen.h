@@ -197,25 +197,39 @@ inline void Movegen::generate_legal_pawns(
         while (mt != MoveGenType::QUIET && promo_left) {
             const auto sq = static_cast<Square>(promo_left.poplsb());
             moves.push(
-                {.move = Move::make<Move::PROMOTION>(sq + DOWN_RIGHT, sq, PieceType::QUEEN)}
-            );
-            moves.push({.move = Move::make<Move::PROMOTION>(sq + DOWN_RIGHT, sq, PieceType::ROOK)});
-            moves.push(
-                {.move = Move::make<Move::PROMOTION>(sq + DOWN_RIGHT, sq, PieceType::BISHOP)}
+                {.move = Move::make<Move::PROMOTION>(sq + DOWN_RIGHT, sq, PieceType::QUEEN),
+                 .is_quiet = false}
             );
             moves.push(
-                {.move = Move::make<Move::PROMOTION>(sq + DOWN_RIGHT, sq, PieceType::KNIGHT)}
+                {.move = Move::make<Move::PROMOTION>(sq + DOWN_RIGHT, sq, PieceType::ROOK),
+                 .is_quiet = false}
+            );
+            moves.push(
+                {.move = Move::make<Move::PROMOTION>(sq + DOWN_RIGHT, sq, PieceType::BISHOP),
+                 .is_quiet = false}
+            );
+            moves.push(
+                {.move = Move::make<Move::PROMOTION>(sq + DOWN_RIGHT, sq, PieceType::KNIGHT),
+                 .is_quiet = false}
             );
         }
         while (mt != MoveGenType::QUIET && promo_right) {
             const auto sq = static_cast<Square>(promo_right.poplsb());
-            moves.push({.move = Move::make<Move::PROMOTION>(sq + DOWN_LEFT, sq, PieceType::QUEEN)});
-            moves.push({.move = Move::make<Move::PROMOTION>(sq + DOWN_LEFT, sq, PieceType::ROOK)});
             moves.push(
-                {.move = Move::make<Move::PROMOTION>(sq + DOWN_LEFT, sq, PieceType::BISHOP)}
+                {.move = Move::make<Move::PROMOTION>(sq + DOWN_LEFT, sq, PieceType::QUEEN),
+                 .is_quiet = false}
             );
             moves.push(
-                {.move = Move::make<Move::PROMOTION>(sq + DOWN_LEFT, sq, PieceType::KNIGHT)}
+                {.move = Move::make<Move::PROMOTION>(sq + DOWN_LEFT, sq, PieceType::ROOK),
+                 .is_quiet = false}
+            );
+            moves.push(
+                {.move = Move::make<Move::PROMOTION>(sq + DOWN_LEFT, sq, PieceType::BISHOP),
+                 .is_quiet = false}
+            );
+            moves.push(
+                {.move = Move::make<Move::PROMOTION>(sq + DOWN_LEFT, sq, PieceType::KNIGHT),
+                 .is_quiet = false}
             );
         }
 
@@ -225,10 +239,22 @@ inline void Movegen::generate_legal_pawns(
         // generate quiet promos for ALL or QUIET
         while (mt != MoveGenType::CAPTURE && promo_push) {
             const auto sq = static_cast<Square>(promo_push.poplsb());
-            moves.push({.move = Move::make<Move::PROMOTION>(sq + DOWN, sq, PieceType::QUEEN)});
-            moves.push({.move = Move::make<Move::PROMOTION>(sq + DOWN, sq, PieceType::ROOK)});
-            moves.push({.move = Move::make<Move::PROMOTION>(sq + DOWN, sq, PieceType::BISHOP)});
-            moves.push({.move = Move::make<Move::PROMOTION>(sq + DOWN, sq, PieceType::KNIGHT)});
+            moves.push(
+                {.move = Move::make<Move::PROMOTION>(sq + DOWN, sq, PieceType::QUEEN),
+                 .is_quiet = true}
+            );
+            moves.push(
+                {.move = Move::make<Move::PROMOTION>(sq + DOWN, sq, PieceType::ROOK),
+                 .is_quiet = true}
+            );
+            moves.push(
+                {.move = Move::make<Move::PROMOTION>(sq + DOWN, sq, PieceType::BISHOP),
+                 .is_quiet = true}
+            );
+            moves.push(
+                {.move = Move::make<Move::PROMOTION>(sq + DOWN, sq, PieceType::KNIGHT),
+                 .is_quiet = true}
+            );
         }
     }
     single_push &= ~RANK_PROMO;
@@ -238,21 +264,21 @@ inline void Movegen::generate_legal_pawns(
     // generate captures for ALL or CAPTURE
     while (mt != MoveGenType::QUIET && l_pawns) {
         const auto sq = static_cast<Square>(l_pawns.poplsb());
-        moves.push({.move = Move::make<Move::NORMAL>(sq + DOWN_RIGHT, sq)});
+        moves.push({.move = Move::make<Move::NORMAL>(sq + DOWN_RIGHT, sq), .is_quiet = false});
     }
     while (mt != MoveGenType::QUIET && r_pawns) {
         const auto sq = static_cast<Square>(r_pawns.poplsb());
-        moves.push({.move = Move::make<Move::NORMAL>(sq + DOWN_LEFT, sq)});
+        moves.push({.move = Move::make<Move::NORMAL>(sq + DOWN_LEFT, sq), .is_quiet = false});
     }
 
     // generate pushes for ALL or QUIET
     while (mt != MoveGenType::CAPTURE && single_push) {
         const auto sq = static_cast<Square>(single_push.poplsb());
-        moves.push({.move = Move::make<Move::NORMAL>(sq + DOWN, sq)});
+        moves.push({.move = Move::make<Move::NORMAL>(sq + DOWN, sq), .is_quiet = true});
     }
     while (mt != MoveGenType::CAPTURE && double_push) {
         const auto sq = static_cast<Square>(double_push.poplsb());
-        moves.push({.move = Move::make<Move::NORMAL>(sq + DOWN + DOWN, sq)});
+        moves.push({.move = Move::make<Move::NORMAL>(sq + DOWN + DOWN, sq), .is_quiet = true});
     }
 
     // generate enpassant for ALL or CAPTURE
@@ -262,7 +288,7 @@ inline void Movegen::generate_legal_pawns(
     if (ep != Square::NONE) {
         const auto ep_moves = generate_legal_ep<color>(board, checkmask, pin_d, pawns_lr, ep);
         for (const auto& move : ep_moves)
-            if (move != Move::NO_MOVE) moves.push({.move = move});
+            if (move != Move::NO_MOVE) moves.push({.move = move, .is_quiet = false});
     }
 }
 
@@ -383,14 +409,25 @@ template <Color::underlying color>
 
 
 inline void Movegen::push_moves(
-    ScoredMoveList& movelist, BitBoard occ, std::function<BitBoard(Square)> generator
+    ScoredMoveList& movelist,
+    BitBoard occ,
+    BitBoard occ_opp,
+    std::function<BitBoard(Square)> generator
 ) {
     while (occ) {
         const Square from = static_cast<Square>(occ.poplsb());
-        BitBoard moves = generator(from);
-        while (moves) {
-            const Square to = static_cast<Square>(moves.poplsb());
-            movelist.push({.move = Move::make<Move::NORMAL>(from, to)});
+        const BitBoard moves = generator(from);
+        BitBoard noisy_moves = moves & occ_opp;
+        BitBoard quiet_moves = moves & ~occ_opp;
+
+        // FIXME: this will affect bench, revert temporarily
+        while (noisy_moves) {
+            const Square to = static_cast<Square>(noisy_moves.poplsb());
+            movelist.push({.move = Move::make<Move::NORMAL>(from, to), .is_quiet = false});
+        }
+        while (quiet_moves) {
+            const Square to = static_cast<Square>(quiet_moves.poplsb());
+            movelist.push({.move = Move::make<Move::NORMAL>(from, to), .is_quiet = true});
         }
     }
 }
@@ -422,7 +459,7 @@ inline void Movegen::generate_legals(ScoredMoveList& movelist, const Board& boar
 
     // generate king moves
     auto seen = seen_squares<~color>(board, opp_empty);
-    push_moves(movelist, BitBoard::from_square(king_sq), [&](Square sq) {
+    push_moves(movelist, BitBoard::from_square(king_sq), occ_opp, [&](Square sq) {
         return generate_legal_kings(sq, seen, movable_square);
     });
 
@@ -430,7 +467,7 @@ inline void Movegen::generate_legals(ScoredMoveList& movelist, const Board& boar
         BitBoard moves = generate_legal_castles<color>(board, king_sq, seen, pin_hv);
         while (moves) {
             const auto to = static_cast<Square>(moves.poplsb());
-            movelist.push({.move = Move::make<Move::CASTLING>(king_sq, to)});
+            movelist.push({.move = Move::make<Move::CASTLING>(king_sq, to), .is_quiet = true});
         }
     }
 
@@ -446,26 +483,26 @@ inline void Movegen::generate_legals(ScoredMoveList& movelist, const Board& boar
     // generate knight moves
     const auto knights_mask
         = board.occ(PieceType::KNIGHT, static_cast<Color>(color)) & ~(pin_d | pin_hv);
-    push_moves(movelist, knights_mask, [&](Square sq) {
+    push_moves(movelist, knights_mask, occ_opp, [&](Square sq) {
         return generate_legal_knights(sq) & movable_square;
     });
 
     // generate bishop moves
     const auto bishops_mask = board.occ(PieceType::BISHOP, static_cast<Color>(color)) & ~pin_hv;
-    push_moves(movelist, bishops_mask, [&](Square sq) {
+    push_moves(movelist, bishops_mask, occ_opp, [&](Square sq) {
         return generate_legal_bishops(sq, pin_d, occ_all) & movable_square;
     });
 
     // generate rook moves
     const auto rooks_mask = board.occ(PieceType::ROOK, static_cast<Color>(color)) & ~pin_d;
-    push_moves(movelist, rooks_mask, [&](Square sq) {
+    push_moves(movelist, rooks_mask, occ_opp, [&](Square sq) {
         return generate_legal_rooks(sq, pin_hv, occ_all) & movable_square;
     });
 
     // generate queen moves
     const auto queens_mask
         = board.occ(PieceType::QUEEN, static_cast<Color>(color)) & ~(pin_d & pin_hv);
-    push_moves(movelist, queens_mask, [&](Square sq) {
+    push_moves(movelist, queens_mask, occ_opp, [&](Square sq) {
         return generate_legal_queens(sq, pin_d, pin_hv, occ_all) & movable_square;
     });
 }

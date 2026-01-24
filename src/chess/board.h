@@ -145,9 +145,7 @@ public:
     }
 
 
-    [[nodiscard]] bool in_check() const {
-        // TODO:
-    }
+    [[nodiscard]] bool in_check() const { return is_attacked(king_square(stm_), ~stm_); }
 
     [[nodiscard]] bool is_repetition(i32 count = 2) const {
         const i32 size = prev_states_.size();
@@ -194,6 +192,20 @@ public:
         if (move.type() == Move::ENPASSANT) return at(move.from()).color_flipped();
         if (move.type() != Move::CASTLING) return at(move.to());
         return Piece::NONE;
+    }
+
+    [[nodicard]] bool is_attacked(Square sq, Color color) const {
+        // cheap checks first
+        if (Attacks::pawn(sq, ~color) & occ(PieceType::PAWN, color)) return true;
+        if (Attacks::knight(sq) & occ(PieceType::KNIGHT, color)) return true;
+        if (Attacks::king(sq) & occ(PieceType::KING, color)) return true;
+        if (Attacks::bishop(sq, occ()) & (occ(PieceType::BISHOP) | occ(PieceType::QUEEN))
+            & occ(color))
+            return true;
+        if (Attacks::rook(sq, occ()) & (occ(PieceType::ROOK) | occ(PieceType::QUEEN)) & occ(color))
+            return true;
+
+        return false;
     }
 
 

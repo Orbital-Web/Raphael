@@ -82,6 +82,35 @@ TEST_SUITE("Board") {
         CHECK(!board.is_kingpawn(Color::BLACK));
     }
 
+    TEST_CASE("Board in_check") {
+        Board board = Board();
+        CHECK(!board.in_check());
+
+        board.set_fen("rnbqk1nr/pppp1ppp/4p3/8/1b6/3P4/PPP1PPPP/RNBQKBNR w KQkq - 0 1");
+        CHECK(board.in_check());
+
+        board.set_fen("rnbqk1nr/pppp1ppp/4p3/8/1b6/3P4/PPPBPPPP/RN1QKBNR w KQkq - 0 1");
+        CHECK(!board.in_check());
+
+        board.set_fen("rnb1k1nr/ppppqppp/8/8/1b6/3P4/PPPB1PPP/RN1QKBNR w KQkq - 0 1");
+        CHECK(board.in_check());
+
+        board.set_fen("rnb1k1nr/ppppqppp/8/8/1b6/3P4/PPPBRPPP/RN1QKBN1 w HQkq - 0 1");
+        CHECK(!board.in_check());
+
+        board.set_fen("rnb1k2r/ppppqppp/8/8/1b6/3P1n2/PPPBRPPP/RN1QKBN1 w Qkq - 0 1");
+        CHECK(board.in_check());
+
+        board.set_fen("rnb1k2r/ppppqppp/8/8/1b6/3P4/PPPBRpPP/RN1QKBN1 w Qkq - 0 1");
+        CHECK(board.in_check());
+
+        board.set_fen("rnb1k2r/ppppqppp/8/8/1b6/3P4/PPPBP1PP/RN1QK2r w Qkq - 0 1");
+        CHECK(board.in_check());
+
+        board.set_fen("rnb1k2r/ppppqppp/8/8/1b6/3P4/PPP1P1PP/RN1QK2r w Qkq - 0 1");
+        CHECK(board.in_check());
+    }
+
     TEST_CASE("Board Repetition") {
         Board board = Board("7k/8/8/8/8/Q7/8/3K4 w - - 0 1");
         CHECK(!board.is_repetition(1));

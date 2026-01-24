@@ -14,28 +14,32 @@ using namespace std::chrono;
 
 // https://github.com/Disservin/chess-library/blob/master/tests/perft.cpp
 class Perft {
+private:
+    Board board_;
+
+
 public:
-    u64 static perft(const Board& board, i32 depth) {
+    u64 perft(i32 depth) {
         ScoredMoveList moves;
-        Movegen::generate_legals(moves, board);
+        Movegen::generate_legals(moves, board_);
 
         if (depth == 1) return moves.size();
 
         u64 nodes = 0;
         for (const auto& move : moves) {
-            // const auto gives_check = board.gives_check(move) != CheckType::NO_CHECK;
-            const auto newboard = board.make_move(move.move);
-            // assert(gives_check == board.in_check());
-
-            nodes += perft(newboard, depth - 1);
+            board_.make_move(move.move);
+            nodes += perft(depth - 1);
+            board_.unmake_move(move.move);
         }
 
         return nodes;
     }
 
-    void static benchPerft(const Board& board, i32 depth, u64 expected_node_count) {
+    void benchPerft(Board& board, i32 depth, u64 expected_node_count) {
+        board_ = board;
+
         const auto t1 = high_resolution_clock::now();
-        const auto nodes = perft(board, depth);
+        const auto nodes = perft(depth);
         const auto t2 = high_resolution_clock::now();
         const auto ms = duration_cast<milliseconds>(t2 - t1).count();
 
@@ -72,9 +76,10 @@ TEST_SUITE("PERFT") {
              164075551,                                                                             5}
         };
 
+        Perft perft;
         for (const auto& test : test_positions) {
-            const Board board(test.fen);
-            Perft::benchPerft(board, test.depth, test.expected_node_count);
+            Board board(test.fen);
+            perft.benchPerft(board, test.depth, test.expected_node_count);
         }
     }
 }

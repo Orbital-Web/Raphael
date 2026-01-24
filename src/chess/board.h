@@ -74,11 +74,21 @@ private:
 
     bool chess960_ = false;
 
+    struct State {
+        u64 hash;
+        CastlingRights castling;
+        Square enpassant;
+        u8 halfmoves;
+        Piece captured;
+    };
+    std::vector<State> prev_states_;
+
 
 
 public:
     explicit Board(std::string_view fen = STARTPOS, bool chess960 = false): chess960_(chess960) {
         assert(chess960 == false);  // TODO: FRC not supported yet
+        prev_states_.reserve(256);
         set_fen(fen);
     }
 
@@ -130,11 +140,24 @@ public:
         plies_ = 1;
 
         hash_ = 0;
+
+        prev_states_.clear();
     }
 
 
     [[nodiscard]] bool in_check() const {
         // TODO:
+    }
+
+    [[nodiscard]] bool is_repetition(i32 count = 2) const {
+        const i32 size = prev_states_.size();
+
+        u8 c = 0;
+        for (i32 i = size - 2; i >= 0 && i >= size - halfmoves_ - 1; i -= 2) {
+            if (prev_states_[i].hash == hash_) c++;
+            if (c == count) return true;
+        }
+        return false;
     }
 
     [[nodiscard]] bool is_halfmovedraw() const { return halfmoves_ >= 100; }
@@ -178,32 +201,27 @@ public:
         // TODO:
     }
 
-    /** Copies the board and plays the move on the copied board
-     *
-     * \param move move to play
-     * \returns the board with the move applied
-     */
-    [[nodiscard]] Board make_move(Move move) const {
-        Board newboard = *this;
+
+    void make_move(Move move) {
+        assert((at(move.from()) < Piece::BLACKPAWN) == (stm_ == Color::WHITE));
 
         const auto captured = at(move.to());
         const auto capture = captured != Piece::NONE && move.type() != Move::CASTLING;
         const auto pt = at(move.from()).type();
 
-        // validate side to move
-        assert((at(move.from()) < Piece::BLACKPAWN) == (stm_ == Color::WHITE));
+        prev_states_.emplace_back(hash_, castle_rights_, enpassant_, halfmoves_, captured);
 
-        newboard.halfmoves_++;
-        newboard.plies_++;
+        halfmoves_++;
+        plies_++;
 
-        if (enpassant_ != Square::NONE) newboard.hash_ ^= Zobrist::enpassant(enpassant_.file());
-        newboard.enpassant_ = Square::NONE;
+        if (enpassant_ != Square::NONE) hash_ ^= Zobrist::enpassant(enpassant_.file());
+        enpassant_ = Square::NONE;
 
         if (capture) {
-            newboard.remove_piece(captured, move.to());
+            remove_piece(captured, move.to());
 
-            newboard.halfmoves_ = 0;
-            newboard.hash_ ^= Zobrist::piece(captured, move.to());
+            halfmoves_ = 0;
+            hash_ ^= Zobrist::piece(captured, move.to());
 
             // remove castling rights if rook is captured
             if (captured.type() == PieceType::ROOK && move.to().rank().is_back_rank(~stm_)) {
@@ -211,27 +229,26 @@ public:
                 const auto file = CastlingRights::closest_side(move.to().file(), king_sq.file());
 
                 if (castle_rights_.get_rook_file(~stm_, file) == move.to().file())
-                    newboard.hash_
-                        ^= Zobrist::castle_index(newboard.castle_rights_.clear(~stm_, file));
+                    hash_ ^= Zobrist::castle_index(castle_rights_.clear(~stm_, file));
             }
         }
 
-        if (pt == PieceType::KING && newboard.castle_rights_.has(stm_)) {
+        if (pt == PieceType::KING && castle_rights_.has(stm_)) {
             // remove castling rights if king moves
-            newboard.hash_ ^= Zobrist::castling(newboard.castle_rights_.hash_index());
-            newboard.castle_rights_.clear(stm_);
-            newboard.hash_ ^= Zobrist::castling(newboard.castle_rights_.hash_index());
+            hash_ ^= Zobrist::castling(castle_rights_.hash_index());
+            castle_rights_.clear(stm_);
+            hash_ ^= Zobrist::castling(castle_rights_.hash_index());
 
         } else if (pt == PieceType::ROOK && move.from().is_back_rank(stm_)) {
             // remove castling rights if rook moves from back rank
             const auto king_sq = king_square(stm_);
             const auto file = CastlingRights::closest_side(move.from().file(), king_sq.file());
 
-            if (newboard.castle_rights_.get_rook_file(stm_, file) == move.from().file())
-                newboard.hash_ ^= Zobrist::castle_index(newboard.castle_rights_.clear(stm_, file));
+            if (castle_rights_.get_rook_file(stm_, file) == move.from().file())
+                hash_ ^= Zobrist::castle_index(castle_rights_.clear(stm_, file));
 
         } else if (pt == PieceType::PAWN) {
-            newboard.halfmoves_ = 0;
+            halfmoves_ = 0;
 
             // double push
             if (Square::value_distance(move.to(), move.from()) == 16) {
@@ -240,8 +257,8 @@ public:
 
                 if (ep_mask & occ(PieceType::PAWN, ~stm_)) {
                     assert(at(move.to().ep_square()) == Piece::NONE);
-                    newboard.enpassant_ = move.to().ep_square();
-                    newboard.hash_ ^= Zobrist::enpassant(move.to().ep_square().file());
+                    enpassant_ = move.to().ep_square();
+                    hash_ ^= Zobrist::enpassant(move.to().ep_square().file());
                 }
             }
         }
@@ -257,14 +274,14 @@ public:
             const auto kingto = Square::castling_king_dest(is_king_side, stm_);
             const auto rookto = Square::castling_rook_dest(is_king_side, stm_);
 
-            newboard.remove_piece(king, move.from());
-            newboard.remove_piece(rook, move.to());
+            remove_piece(king, move.from());
+            remove_piece(rook, move.to());
 
-            newboard.place_piece(king, kingto);
-            newboard.place_piece(rook, rookto);
+            place_piece(king, kingto);
+            place_piece(rook, rookto);
 
-            newboard.hash_ ^= Zobrist::piece(king, move.from()) ^ Zobrist::piece(king, kingto);
-            newboard.hash_ ^= Zobrist::piece(rook, move.to()) ^ Zobrist::piece(rook, rookto);
+            hash_ ^= Zobrist::piece(king, move.from()) ^ Zobrist::piece(king, kingto);
+            hash_ ^= Zobrist::piece(rook, move.to()) ^ Zobrist::piece(rook, rookto);
 
         } else if (move.type() == Move::PROMOTION) {
             const auto pawn = at(move.from());
@@ -272,21 +289,21 @@ public:
 
             assert(pawn == Piece(PieceType::PAWN, stm_));
 
-            newboard.remove_piece(pawn, move.from());
-            newboard.place_piece(prom, move.to());
+            remove_piece(pawn, move.from());
+            place_piece(prom, move.to());
 
-            newboard.hash_ ^= Zobrist::piece(pawn, move.from()) ^ Zobrist::piece(prom, move.to());
+            hash_ ^= Zobrist::piece(pawn, move.from()) ^ Zobrist::piece(prom, move.to());
 
         } else {
-            assert(newboard.at(move.from()) != Piece::NONE);
-            assert(newboard.at(move.to()) == Piece::NONE);
+            assert(at(move.from()) != Piece::NONE);
+            assert(at(move.to()) == Piece::NONE);
 
             const auto piece = at(move.from());
 
-            newboard.remove_piece(piece, move.from());
-            newboard.place_piece(piece, move.to());
+            remove_piece(piece, move.from());
+            place_piece(piece, move.to());
 
-            newboard.hash_ ^= Zobrist::piece(piece, move.from()) ^ Zobrist::piece(piece, move.to());
+            hash_ ^= Zobrist::piece(piece, move.from()) ^ Zobrist::piece(piece, move.to());
         }
 
         if (move.type() == Move::ENPASSANT) {
@@ -294,31 +311,107 @@ public:
 
             const auto piece = Piece(PieceType::PAWN, ~stm_);
 
-            newboard.remove_piece(piece, move.to().ep_square());
+            remove_piece(piece, move.to().ep_square());
 
-            newboard.hash_ ^= Zobrist::piece(piece, move.to().ep_square());
+            hash_ ^= Zobrist::piece(piece, move.to().ep_square());
         }
 
-        newboard.hash_ ^= Zobrist::stm();
-        newboard.stm_ = ~stm_;
-        return newboard;
+        hash_ ^= Zobrist::stm();
+        stm_ = ~stm_;
     }
 
-    /** Copies the board and plays a nullmove on the copied board
-     *
-     * \returns the board with the nullmove applied
-     */
-    [[nodiscard]] Board make_nullmove() const {
-        Board newboard = *this;
+    void unmake_move(const Move move) {
+        const auto& prev = prev_states_.back();
 
-        newboard.hash_ ^= Zobrist::stm();
-        if (enpassant_ != Square::NONE) newboard.hash_ ^= Zobrist::enpassant(enpassant_.file());
-        newboard.enpassant_ = Square::NONE;
+        enpassant_ = prev.enpassant;
+        castle_rights_ = prev.castling;
+        halfmoves_ = prev.halfmoves;
+        stm_ = ~stm_;
+        plies_--;
 
-        newboard.plies_++;
-        newboard.stm_ = ~stm_;
+        if (move.type() == Move::CASTLING) {
+            const bool is_king_side = move.to() > move.from();
+            const auto rook_from_sq = Square(is_king_side ? File::F : File::D, move.from().rank());
+            const auto king_to_sq = Square(is_king_side ? File::G : File::C, move.from().rank());
 
-        return newboard;
+            const auto rook = at(rook_from_sq);
+            const auto king = at(king_to_sq);
+
+            assert(rook == Piece(PieceType::ROOK, stm_));
+            assert(king == Piece(PieceType::KING, stm_));
+
+            remove_piece(rook, rook_from_sq);
+            remove_piece(king, king_to_sq);
+
+            place_piece(king, move.from());
+            place_piece(rook, move.to());
+
+        } else if (move.type() == Move::PROMOTION) {
+            const auto pawn = Piece(PieceType::PAWN, stm_);
+            const auto promo = at(move.to());
+
+            assert(promo.type() == move.promotion_type());
+            assert(promo.type() != PieceType::PAWN);
+            assert(promo.type() != PieceType::KING);
+            assert(promo.type() != PieceType::NONE);
+
+            remove_piece(promo, move.to());
+            place_piece(pawn, move.from());
+
+            if (prev.captured != Piece::NONE) {
+                assert(at(move.to()) == Piece::NONE);
+                place_piece(prev.captured, move.to());
+            }
+
+        } else {
+            assert(at(move.to()) != Piece::NONE);
+            assert(at(move.from()) == Piece::NONE);
+
+            const auto piece = at(move.to());
+
+            remove_piece(piece, move.to());
+            place_piece(piece, move.from());
+
+            if (move.type() == Move::ENPASSANT) {
+                const auto pawn = Piece(PieceType::PAWN, ~stm_);
+                const auto pawnto = enpassant_.ep_square();
+
+                assert(at(pawnto) == Piece::NONE);
+                place_piece(pawn, pawnto);
+
+            } else if (prev.captured != Piece::NONE) {
+                assert(at(move.to()) == Piece::NONE);
+                place_piece(prev.captured, move.to());
+            }
+        }
+
+        hash_ = prev.hash;
+        prev_states_.pop_back();
+    }
+
+    void make_nullmove() {
+        prev_states_.emplace_back(hash_, castle_rights_, enpassant_, halfmoves_, Piece::NONE);
+
+        hash_ ^= Zobrist::stm();
+        if (enpassant_ != Square::NONE) hash_ ^= Zobrist::enpassant(enpassant_.file());
+        enpassant_ = Square::NONE;
+
+        plies_++;
+        stm_ = ~stm_;
+    }
+
+    void unmake_nullmove() {
+        const auto& prev = prev_states_.back();
+
+        enpassant_ = prev.enpassant;
+        castle_rights_ = prev.castling;
+        halfmoves_ = prev.halfmoves;
+        hash_ = prev.hash;
+
+        plies_--;
+        stm_ = ~stm_;
+
+        prev_states_.pop_back();
     }
 
     /** Returns the zobrist hash of the board after a move
@@ -535,6 +628,7 @@ public:
         }
 
         hash_ = compute_hash();
+        prev_states_.emplace_back(hash_, castle_rights_, enpassant_, halfmoves_, Piece::NONE);
     }
 
     [[nodiscard]] std::string get_fen() const {

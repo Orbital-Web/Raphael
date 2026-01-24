@@ -46,23 +46,32 @@ TEST_SUITE("Board") {
     TEST_CASE("Board make_move") {
         SUBCASE("makeMove") {
             Board board = Board();
-            board = board.make_move(Move::make(Square::E2, Square::E4));
-
+            board.make_move(Move::make(Square::E2, Square::E4));
             CHECK(board.at(Square::E2) == Piece::NONE);
             CHECK(board.at(Square::E4) == Piece::WHITEPAWN);
 
-            board = board.make_move(Move::make(Square::E7, Square::E5));
-
+            board.make_move(Move::make(Square::E7, Square::E5));
             CHECK(board.at(Square::E7) == Piece::NONE);
             CHECK(board.at(Square::E5) == Piece::BLACKPAWN);
+
+            board.unmake_move(Move::make(Square::E7, Square::E5));
+            CHECK(board.at(Square::E7) == Piece::BLACKPAWN);
+            CHECK(board.at(Square::E5) == Piece::NONE);
+
+            board.unmake_move(Move::make(Square::E2, Square::E4));
+            CHECK(board.at(Square::E2) == Piece::WHITEPAWN);
+            CHECK(board.at(Square::E4) == Piece::NONE);
         }
 
         SUBCASE("make_null_move") {
             Board board = Board();
-            Board newboard = board.make_nullmove();
+            board.make_nullmove();
+            CHECK(board.hash() != Board().hash());
+            CHECK(board.stm() == Color::BLACK);
 
-            CHECK(newboard.hash() != board.hash());
-            CHECK(newboard.stm() == Color::BLACK);
+            board.unmake_nullmove();
+            CHECK(board.hash() == Board().hash());
+            CHECK(board.stm() == Color::WHITE);
         }
     }
 
@@ -73,8 +82,34 @@ TEST_SUITE("Board") {
         CHECK(!board.is_kingpawn(Color::BLACK));
     }
 
+    TEST_CASE("Board Repetition") {
+        Board board = Board("7k/8/8/8/8/Q7/8/3K4 w - - 0 1");
+        CHECK(!board.is_repetition(1));
+        CHECK(!board.is_repetition(2));
+
+        board.make_move(Move::make(Square::D1, Square::D2));
+        board.make_move(Move::make(Square::H8, Square::H7));
+        CHECK(!board.is_repetition(1));
+        CHECK(!board.is_repetition(2));
+
+        board.make_move(Move::make(Square::D2, Square::D1));
+        board.make_move(Move::make(Square::H7, Square::H8));
+        CHECK(board.is_repetition(1));
+        CHECK(!board.is_repetition(2));
+
+        board.make_move(Move::make(Square::D1, Square::D2));
+        board.make_move(Move::make(Square::H8, Square::H7));
+        CHECK(board.is_repetition(1));
+        CHECK(!board.is_repetition(2));
+
+        board.make_move(Move::make(Square::D2, Square::D1));
+        board.make_move(Move::make(Square::H7, Square::H8));
+        CHECK(board.is_repetition(1));
+        CHECK(board.is_repetition(2));
+    }
+
     TEST_CASE("Board HalfMove Draw") {
-        SUBCASE("isHalfMoveDraw") {
+        SUBCASE("is_halfmovedraw") {
             Board board = Board("4k1n1/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1");
             CHECK(board.is_halfmovedraw() == false);
 
@@ -82,12 +117,12 @@ TEST_SUITE("Board") {
             CHECK(board.is_halfmovedraw() == false);
         }
 
-        SUBCASE("isHalfMoveDraw True") {
+        SUBCASE("is_halfmovedraw True") {
             Board board = Board("4k1n1/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 100 1");
             CHECK(board.is_halfmovedraw());
         }
 
-        SUBCASE("isHalfMoveDraw True and Checkmate") {
+        SUBCASE("is_halfmovedraw True and Checkmate") {
             Board board = Board("7k/8/5B1K/8/8/1B6/8/8 b - - 100 1");
             CHECK(board.is_halfmovedraw());  // no checkmate detection in is_halfmovedraw
         }
@@ -161,17 +196,17 @@ TEST_SUITE("Board") {
             auto mv = Move::make(Square::F3, Square::E4);
             CHECK(board.is_capture(mv) == true);
             CHECK(board.get_captured(mv) == Piece::BLACKROOK);
-            board = board.make_move(mv);
+            board.make_move(mv);
 
             mv = Move::make(Square::C5, Square::E4);
             CHECK(board.is_capture(mv) == true);
             CHECK(board.get_captured(mv) == Piece::WHITEPAWN);
-            board = board.make_move(mv);
+            board.make_move(mv);
 
             mv = Move::make(Square::C2, Square::E4);
             CHECK(board.is_capture(mv) == true);
             CHECK(board.get_captured(mv) == Piece::BLACKKNIGHT);
-            board = board.make_move(mv);
+            board.make_move(mv);
 
             mv = Move::make(Square::D5, Square::E4);
             CHECK(board.is_capture(mv) == true);

@@ -29,6 +29,13 @@ public:
     }
 };
 
+[[nodiscard]] constexpr Color::underlying operator~(Color::underlying color) {
+    return (color == Color::underlying::WHITE)
+               ? Color::underlying::BLACK
+               : ((color == Color::underlying::BLACK) ? Color::underlying::WHITE
+                                                      : Color::underlying::NONE);
+}
+
 enum class Direction : i8 {
     NORTH = 8,
     SOUTH = -8,

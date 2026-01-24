@@ -39,21 +39,21 @@ TEST_SUITE("Piece") {
     }
 
     TEST_CASE("operator int") {
-        CHECK(static_cast<int>(Piece(PieceType::PAWN, Color::WHITE)) == 0);
-        CHECK(static_cast<int>(Piece(PieceType::KNIGHT, Color::WHITE)) == 1);
-        CHECK(static_cast<int>(Piece(PieceType::BISHOP, Color::WHITE)) == 2);
-        CHECK(static_cast<int>(Piece(PieceType::ROOK, Color::WHITE)) == 3);
-        CHECK(static_cast<int>(Piece(PieceType::QUEEN, Color::WHITE)) == 4);
-        CHECK(static_cast<int>(Piece(PieceType::KING, Color::WHITE)) == 5);
-        CHECK(static_cast<int>(Piece(PieceType::NONE, Color::WHITE)) == 12);
+        CHECK(static_cast<i32>(Piece(PieceType::PAWN, Color::WHITE)) == 0);
+        CHECK(static_cast<i32>(Piece(PieceType::KNIGHT, Color::WHITE)) == 1);
+        CHECK(static_cast<i32>(Piece(PieceType::BISHOP, Color::WHITE)) == 2);
+        CHECK(static_cast<i32>(Piece(PieceType::ROOK, Color::WHITE)) == 3);
+        CHECK(static_cast<i32>(Piece(PieceType::QUEEN, Color::WHITE)) == 4);
+        CHECK(static_cast<i32>(Piece(PieceType::KING, Color::WHITE)) == 5);
+        CHECK(static_cast<i32>(Piece(PieceType::NONE, Color::WHITE)) == 12);
 
-        CHECK(static_cast<int>(Piece(PieceType::PAWN, Color::BLACK)) == 6);
-        CHECK(static_cast<int>(Piece(PieceType::KNIGHT, Color::BLACK)) == 7);
-        CHECK(static_cast<int>(Piece(PieceType::BISHOP, Color::BLACK)) == 8);
-        CHECK(static_cast<int>(Piece(PieceType::ROOK, Color::BLACK)) == 9);
-        CHECK(static_cast<int>(Piece(PieceType::QUEEN, Color::BLACK)) == 10);
-        CHECK(static_cast<int>(Piece(PieceType::KING, Color::BLACK)) == 11);
-        CHECK(static_cast<int>(Piece(PieceType::NONE, Color::BLACK)) == 12);
+        CHECK(static_cast<i32>(Piece(PieceType::PAWN, Color::BLACK)) == 6);
+        CHECK(static_cast<i32>(Piece(PieceType::KNIGHT, Color::BLACK)) == 7);
+        CHECK(static_cast<i32>(Piece(PieceType::BISHOP, Color::BLACK)) == 8);
+        CHECK(static_cast<i32>(Piece(PieceType::ROOK, Color::BLACK)) == 9);
+        CHECK(static_cast<i32>(Piece(PieceType::QUEEN, Color::BLACK)) == 10);
+        CHECK(static_cast<i32>(Piece(PieceType::KING, Color::BLACK)) == 11);
+        CHECK(static_cast<i32>(Piece(PieceType::NONE, Color::BLACK)) == 12);
     }
 
     TEST_CASE("color") {

@@ -89,11 +89,11 @@ private:
     );
 
 
-    void push_moves(
+    static void push_moves(
         ScoredMoveList& movelist, BitBoard occ, std::function<BitBoard(Square)> generator
     );
 
     template <Color::underlying color, MoveGenType mt>
-    void generate_legals(ScoredMoveList& movelist, const Board& board);
+    static void generate_legals(ScoredMoveList& movelist, const Board& board);
 };
 }  // namespace chess

@@ -105,8 +105,6 @@ template <Color::underlying color, PieceType::underlying pt>
 
 template <Color::underlying color>
 [[nodiscard]] inline BitBoard Movegen::seen_squares(const Board& board, BitBoard opp_empty) {
-    assert(board.stm() == color);
-
     const auto king_sq = board.king_square(~static_cast<Color>(color));
     BitBoard map_king_atk = Attacks::king(king_sq) & opp_empty;
     if (map_king_atk.is_empty() && !board.chess960()) return 0;
@@ -184,9 +182,10 @@ inline void Movegen::generate_legal_pawns(
 
     // prune moves that are not on the checkmask
     BitBoard single_push = (single_push_unpinned | single_push_pinned) & checkmask;
-    BitBoard double_push = ((single_push_unpinned & DOUBLE_PUSH_RANK).shifted<UP>() & ~board.occ()
-                            | (single_push_pinned & DOUBLE_PUSH_RANK).shifted<UP>() & ~board.occ())
-                           & checkmask;
+    BitBoard double_push
+        = (((single_push_unpinned & DOUBLE_PUSH_RANK).shifted<UP>() & ~board.occ())
+           | ((single_push_pinned & DOUBLE_PUSH_RANK).shifted<UP>() & ~board.occ()))
+          & checkmask;
 
     // generate promos
     if (pawns & RANK_B_PROMO) {
@@ -261,8 +260,8 @@ inline void Movegen::generate_legal_pawns(
 
     const Square ep = board.enpassant_square();
     if (ep != Square::NONE) {
-        auto moves = generate_legal_ep<color>(board, checkmask, pin_d, pawns_lr, ep);
-        for (const auto& move : moves)
+        const auto ep_moves = generate_legal_ep<color>(board, checkmask, pin_d, pawns_lr, ep);
+        for (const auto& move : ep_moves)
             if (move != Move::NO_MOVE) moves.push({.move = move});
     }
 }

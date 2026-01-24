@@ -10,7 +10,7 @@ using namespace chess;
 TEST_SUITE("File") {
     TEST_CASE("File operator int") {
         File f = File::A;
-        CHECK(static_cast<int>(f) == 0);
+        CHECK(static_cast<i32>(f) == 0);
     }
 
     TEST_CASE("File operator std::string") {
@@ -43,7 +43,7 @@ TEST_SUITE("File") {
 TEST_SUITE("Rank") {
     TEST_CASE("Rank operator int") {
         Rank r = Rank::R1;
-        CHECK(static_cast<int>(r) == 0);
+        CHECK(static_cast<i32>(r) == 0);
     }
 
     TEST_CASE("Rank operator std::string") {

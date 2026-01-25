@@ -14,6 +14,9 @@ using u64 = std::uint64_t;
 
 using usize = std::size_t;
 
+using f32 = float;
+using f64 = double;
+
 
 
 namespace internal {

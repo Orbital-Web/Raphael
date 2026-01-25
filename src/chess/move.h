@@ -21,8 +21,13 @@ public:
         return PieceType(((move_ >> 12) & 3) + PieceType::KNIGHT);
     }
 
+    [[nodiscard]] explicit constexpr operator u16() const { return move_; }
+
     [[nodiscard]] constexpr bool operator==(const Move& rhs) const { return move_ == rhs.move_; }
     [[nodiscard]] constexpr bool operator!=(const Move& rhs) const { return move_ != rhs.move_; }
+
+    [[nodiscard]] constexpr bool operator==(u16 rhs) const { return move_ == rhs; }
+    [[nodiscard]] constexpr bool operator!=(u16 rhs) const { return move_ != rhs; }
 
     /** Creates a move from source and target square
      * https://github.com/Disservin/chess-library/blob/master/src/move.hpp
@@ -87,6 +92,10 @@ public:
 
     [[nodiscard]] usize empty() const { return size_ == 0; }
 
+    [[nodiscard]] ScoredMove& operator[](usize i) {
+        assert(i < size_);
+        return list_[i];
+    }
     [[nodiscard]] const ScoredMove& operator[](usize i) const {
         assert(i < size_);
         return list_[i];
@@ -97,5 +106,11 @@ public:
 
     [[nodiscard]] auto begin() const { return list_.begin(); }
     [[nodiscard]] auto end() const { return list_.begin() + size_; }
+
+    [[nodiscard]] bool contains(Move move) const {
+        for (usize i = 0; i < size_; ++i)
+            if (list_[i].move == move) return true;
+        return false;
+    }
 };
 }  // namespace chess

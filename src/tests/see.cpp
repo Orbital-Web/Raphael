@@ -99,7 +99,7 @@ TEST_SUITE("Raphael SEE") {
 
         for (const auto& testdata : see_testdata) {
             const chess::Board board(testdata.fen);
-            const auto move = chess::uci::uciToMove(board, testdata.mv);
+            const auto move = chess::uci::to_move(board, testdata.mv);
 
             CHECK(raphael::SEE::see(move, board, testdata.exchange) == true);
             CHECK(raphael::SEE::see(move, board, testdata.exchange + 1) == false);

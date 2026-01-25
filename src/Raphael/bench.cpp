@@ -1,6 +1,7 @@
 #include <GameEngine/consts.h>
 #include <Raphael/bench.h>
 
+#include <iostream>
 
 using std::cout;
 using std::flush;

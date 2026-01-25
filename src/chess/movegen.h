@@ -416,17 +416,21 @@ inline void Movegen::push_moves(
 ) {
     while (occ) {
         const Square from = static_cast<Square>(occ.poplsb());
-        const BitBoard moves = generator(from);
-        BitBoard noisy_moves = moves & occ_opp;
-        BitBoard quiet_moves = moves & ~occ_opp;
+        BitBoard moves = generator(from);  // FIXME: make const
+        // BitBoard noisy_moves = moves & occ_opp;
+        // BitBoard quiet_moves = moves & ~occ_opp;
 
         // FIXME: this will affect bench, revert temporarily
-        while (noisy_moves) {
-            const Square to = static_cast<Square>(noisy_moves.poplsb());
-            movelist.push({.move = Move::make<Move::NORMAL>(from, to), .is_quiet = false});
-        }
-        while (quiet_moves) {
-            const Square to = static_cast<Square>(quiet_moves.poplsb());
+        // while (noisy_moves) {
+        //     const Square to = static_cast<Square>(noisy_moves.poplsb());
+        //     movelist.push({.move = Move::make<Move::NORMAL>(from, to), .is_quiet = false});
+        // }
+        // while (quiet_moves) {
+        //     const Square to = static_cast<Square>(quiet_moves.poplsb());
+        //     movelist.push({.move = Move::make<Move::NORMAL>(from, to), .is_quiet = true});
+        // }
+        while (moves) {
+            const Square to = static_cast<Square>(moves.poplsb());
             movelist.push({.move = Move::make<Move::NORMAL>(from, to), .is_quiet = true});
         }
     }

@@ -194,7 +194,7 @@ public:
         return Piece::NONE;
     }
 
-    [[nodicard]] bool is_attacked(Square sq, Color color) const {
+    [[nodiscard]] bool is_attacked(Square sq, Color color) const {
         // cheap checks first
         if (Attacks::pawn(sq, ~color) & occ(PieceType::PAWN, color)) return true;
         if (Attacks::knight(sq) & occ(PieceType::KNIGHT, color)) return true;
@@ -209,9 +209,9 @@ public:
     }
 
 
-    [[nodiscard]] bool is_legal(Move move) const {
-        // TODO:
-    }
+    // [[nodiscard]] bool is_legal(Move move) const {
+    //     // TODO:
+    // }
 
 
     void make_move(Move move) {

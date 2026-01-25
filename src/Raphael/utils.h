@@ -34,13 +34,6 @@ i32 mate_distance(i32 eval);
 
 
 
-/** Returns the current side to move
- *
- * \param board current board
- * \returns the stm (white = true)
- */
-bool stm(const chess::Board& board);
-
 /** Determines if a move is quiet
  *
  * \param move move to classify

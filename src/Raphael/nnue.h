@@ -47,8 +47,8 @@ private:
     struct NnueAccumulator {
         alignas(ALIGNMENT) i16 v[2][N_HIDDEN];
 
-        i16* operator[](bool side);
-        const i16* operator[](bool side) const;
+        i16* operator[](chess::Color color);
+        const i16* operator[](chess::Color color) const;
     };
     NnueAccumulator accumulators[MAX_DEPTH];  // accumulators[ply][black/white][index]
     struct AccumulatorState {
@@ -64,9 +64,11 @@ private:
      *
      * \param new_acc accumulator to refresh
      * \param features indicies of active features
-     * \param side which side accumulator to refresh (true for white)
+     * \param color which color accumulator to refresh
      */
-    void refresh_accumulator(NnueAccumulator& new_acc, const std::vector<i32>& features, bool side);
+    void refresh_accumulator(
+        NnueAccumulator& new_acc, const std::vector<i32>& features, chess::Color color
+    );
 
     /** Updates the accumulator as new_acc = old_acc + W1[add_features] - W1[rem_features]
      *
@@ -76,7 +78,7 @@ private:
      * \param add2 index of second feature to activate (-1 for none)
      * \param rem1 index of first feature to deactivate
      * \param rem2 index of second feature to deactivate (-1 for none)
-     * \param side which side accumulator to update (true for white)
+     * \param color which color accumulator to update
      */
     void update_accumulator(
         NnueAccumulator& new_acc,
@@ -85,7 +87,7 @@ private:
         i32 add2,
         i32 rem1,
         i32 rem2,
-        bool side
+        chess::Color color
     );
 
 public:
@@ -95,10 +97,10 @@ public:
     /** Evaluates the board specified by nnue_state[ply] from the given side's perspective
      *
      * \param ply which ply board to evaluate
-     * \param side side to evaluate from (true for white)
+     * \param color side to evaluate from
      * \returns the NNUE evaluation of the position in centipawns
      */
-    i32 evaluate(i32 ply, bool side);
+    i32 evaluate(i32 ply, chess::Color color);
 
     /** Sets nnue_state[ply=0] to reflect the given board
      *

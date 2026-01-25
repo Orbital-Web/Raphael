@@ -204,7 +204,6 @@ i32 RaphaelHCE::evaluate(const chess::Board& board) {
     i32 eval_mid = 0, eval_end = 0;
     i32 phase = 0;
     auto pieces = board.occ();
-    const auto stm = utils::stm(board);
 
     // draw evaluation
     i32 wbish_on_w = 0, wbish_on_b = 0;  // number of white bishop on light and dark tiles
@@ -345,7 +344,7 @@ i32 RaphaelHCE::evaluate(const chess::Board& board) {
     }
 
     // convert perspective
-    if (!stm) {
+    if (board.stm() == chess::Color::BLACK) {
         eval_mid *= -1;
         eval_end *= -1;
     }
@@ -356,10 +355,10 @@ i32 RaphaelHCE::evaluate(const chess::Board& board) {
     if (eval_end >= 0) eval_end += KING_DIST_WEIGHT[1] * (14 - king_dist);
 
     // Bishop corner (if winning)
-    i32 ourbish_on_w = (stm) ? wbish_on_w : bbish_on_w;
-    i32 ourbish_on_b = (stm) ? wbish_on_b : bbish_on_b;
-    i32 ekr = (stm) ? bkr : wkr;
-    i32 ekf = (stm) ? bkf : wkf;
+    i32 ourbish_on_w = (board.stm() == chess::Color::WHITE) ? wbish_on_w : bbish_on_w;
+    i32 ourbish_on_b = (board.stm() == chess::Color::WHITE) ? wbish_on_b : bbish_on_b;
+    i32 ekr = (board.stm() == chess::Color::WHITE) ? bkr : wkr;
+    i32 ekf = (board.stm() == chess::Color::WHITE) ? bkf : wkf;
     i32 wtile_dist = min(ekf + (7 - ekr), (7 - ekf) + ekr);  // to A8 and H1
     i32 btile_dist = min(ekf + ekr, (7 - ekf) + (7 - ekr));  // to A1 and H8
     if (eval_mid >= 0) {

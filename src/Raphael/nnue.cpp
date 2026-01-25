@@ -94,7 +94,7 @@ void Nnue::load(const char* nnue_path) {
 
 /* ------------------------------- Evaluate ------------------------------- */
 
-i32 Nnue::evaluate(i32 ply, bool side) {
+i32 Nnue::evaluate(i32 ply, chess::Color color) {
     // lazy update accumulators
     i32 p = ply;
     while (accumulator_states[p].dirty) p--;
@@ -103,27 +103,27 @@ i32 Nnue::evaluate(i32 ply, bool side) {
         update_accumulator(
             accumulators[p],
             accumulators[p - 1],
-            state.add1[0],
-            state.add2[0],
-            state.rem1[0],
-            state.rem2[0],
-            false
+            state.add1[chess::Color::WHITE],
+            state.add2[chess::Color::WHITE],
+            state.rem1[chess::Color::WHITE],
+            state.rem2[chess::Color::WHITE],
+            chess::Color::WHITE
         );
         update_accumulator(
             accumulators[p],
             accumulators[p - 1],
-            state.add1[1],
-            state.add2[1],
-            state.rem1[1],
-            state.rem2[1],
-            true
+            state.add1[chess::Color::BLACK],
+            state.add2[chess::Color::BLACK],
+            state.rem1[chess::Color::BLACK],
+            state.rem2[chess::Color::BLACK],
+            chess::Color::BLACK
         );
         state.dirty = false;
     }
 
     // get address to accumulators and weights
-    const auto us_base = accumulators[ply][side];
-    const auto them_base = accumulators[ply][!side];
+    const auto us_base = accumulators[ply][color];
+    const auto them_base = accumulators[ply][~color];
     const auto us_w_base = params.W1;
     const auto them_w_base = params.W1 + N_HIDDEN;
 
@@ -166,10 +166,12 @@ i32 Nnue::evaluate(i32 ply, bool side) {
 #endif
 }
 
-i16* Nnue::NnueAccumulator::operator[](bool side) { return v[side]; }
-const i16* Nnue::NnueAccumulator::operator[](bool side) const { return v[side]; }
+i16* Nnue::NnueAccumulator::operator[](chess::Color color) { return v[color]; }
+const i16* Nnue::NnueAccumulator::operator[](chess::Color color) const { return v[color]; }
 
-void Nnue::refresh_accumulator(NnueAccumulator& new_acc, const vector<i32>& features, bool side) {
+void Nnue::refresh_accumulator(
+    NnueAccumulator& new_acc, const vector<i32>& features, chess::Color color
+) {
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
     static_assert(N_HIDDEN % regw == 0);
@@ -185,14 +187,14 @@ void Nnue::refresh_accumulator(NnueAccumulator& new_acc, const vector<i32>& feat
             regs[i] = adds_i16(regs[i], load_i16(&params.W0[f * N_HIDDEN + i * regw]));
 
     // store result in accumulator
-    for (i32 i = 0; i < n_chunks; i++) store_i16(&new_acc[side][i * regw], regs[i]);
+    for (i32 i = 0; i < n_chunks; i++) store_i16(&new_acc[color][i * regw], regs[i]);
 #else
     // copy bias
-    copy(params.b0, params.b0 + N_HIDDEN, new_acc.v[side]);
+    copy(params.b0, params.b0 + N_HIDDEN, new_acc.v[color]);
 
     // accumulate columns of active features
     for (i32 f : features)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[f * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params.W0[f * N_HIDDEN + i];
 #endif
 }
 
@@ -203,7 +205,7 @@ void Nnue::update_accumulator(
     i32 add2,
     i32 rem1,
     i32 rem2,
-    bool side
+    chess::Color color
 ) {
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
@@ -212,7 +214,7 @@ void Nnue::update_accumulator(
     VecI16 regs[n_chunks];
 
     // load previous accumulator values into registers
-    for (i32 i = 0; i < n_chunks; i++) regs[i] = load_i16(&old_acc[side][i * regw]);
+    for (i32 i = 0; i < n_chunks; i++) regs[i] = load_i16(&old_acc[color][i * regw]);
 
     // subtract rem_features
     if (rem1 >= 0)
@@ -231,22 +233,22 @@ void Nnue::update_accumulator(
             regs[i] = adds_i16(regs[i], load_i16(&params.W0[add2 * N_HIDDEN + i * regw]));
 
     // store results in new accumulator
-    for (i32 i = 0; i < n_chunks; i++) store_i16(&new_acc[side][i * regw], regs[i]);
+    for (i32 i = 0; i < n_chunks; i++) store_i16(&new_acc[color][i * regw], regs[i]);
 #else
     // copy old_acc into new_acc
-    copy(old_acc[side], old_acc[side] + N_HIDDEN, new_acc[side]);
+    copy(old_acc[color], old_acc[color] + N_HIDDEN, new_acc[color]);
 
     // subtract rem_features
     if (rem1 >= 0)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[side][i] -= params.W0[rem1 * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] -= params.W0[rem1 * N_HIDDEN + i];
     if (rem2 >= 0)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[side][i] -= params.W0[rem2 * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] -= params.W0[rem2 * N_HIDDEN + i];
 
     // add add_features
     if (add1 >= 0)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[add1 * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params.W0[add1 * N_HIDDEN + i];
     if (add2 >= 0)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[side][i] += params.W0[add2 * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params.W0[add2 * N_HIDDEN + i];
 #endif
 }
 
@@ -269,8 +271,8 @@ void Nnue::set_board(const chess::Board& board) {
         w_features.push_back(64 * wpiece + sq);
         b_features.push_back(64 * bpiece + (sq ^ 56));
     }
-    refresh_accumulator(accumulators[0], w_features, true);
-    refresh_accumulator(accumulators[0], b_features, false);
+    refresh_accumulator(accumulators[0], w_features, chess::Color::WHITE);
+    refresh_accumulator(accumulators[0], b_features, chess::Color::BLACK);
 }
 
 void Nnue::make_move(i32 ply, chess::Move move, const chess::Board& board) {
@@ -295,40 +297,40 @@ void Nnue::make_move(i32 ply, chess::Move move, const chess::Board& board) {
         return;
     }
 
-    // update black and white states incrementally
-    for (const bool side : {false, true}) {
+    // update white and black states incrementally
+    for (const auto color : {chess::Color::WHITE, chess::Color::BLACK}) {
         // do incremental update
-        const bool moving = (board.stm() == chess::Color::WHITE) == side;
-        const i32 from_sqi = (side) ? from_sq : (from_sq ^ 56);
-        const i32 to_sqi = (side) ? to_sq : (to_sq ^ 56);
+        const bool moving = (board.stm() == color);
+        const i32 from_sqi = (color == chess::Color::WHITE) ? from_sq : (from_sq ^ 56);
+        const i32 to_sqi = (color == chess::Color::WHITE) ? to_sq : (to_sq ^ 56);
         const auto from_piece = board.at(from_sq);
         const auto to_piece = board.at(to_sq);
-        const i32 from_piecei = (side) ? from_piece : (from_piece + 6) % 12;
-        const i32 to_piecei = (side) ? to_piece : (to_piece + 6) % 12;
+        const i32 from_piecei = (color == chess::Color::WHITE) ? from_piece : (from_piece + 6) % 12;
+        const i32 to_piecei = (color == chess::Color::WHITE) ? to_piece : (to_piece + 6) % 12;
         assert(from_piece != chess::Piece::NONE);
 
         // remove moving piece
-        state.add1[side] = -1;
-        state.add2[side] = -1;
-        state.rem1[side] = 64 * from_piecei + from_sqi;
-        state.rem2[side] = -1;
+        state.add1[color] = -1;
+        state.add2[color] = -1;
+        state.rem1[color] = 64 * from_piecei + from_sqi;
+        state.rem2[color] = -1;
 
         // add moved piece to add_features (handle promotion and enemy castling)
         if (move_type == move.PROMOTION) {
             const i32 promote_piecei = !moving * 6 + move.promotion_type();
-            state.add1[side] = 64 * promote_piecei + to_sqi;
+            state.add1[color] = 64 * promote_piecei + to_sqi;
         } else if (move_type == move.CASTLING) {
             const i32 new_ksqi = (to_sqi % 8 == 7) ? to_sqi - 1 : to_sqi + 2;
             const i32 new_rsqi = (to_sqi % 8 == 7) ? to_sqi - 2 : to_sqi + 3;
-            state.add1[side] = 64 * from_piecei + new_ksqi;
-            state.add2[side] = 64 * to_piecei + new_rsqi;
+            state.add1[color] = 64 * from_piecei + new_ksqi;
+            state.add2[color] = 64 * to_piecei + new_rsqi;
         } else
-            state.add1[side] = 64 * from_piecei + to_sqi;
+            state.add1[color] = 64 * from_piecei + to_sqi;
 
         // add captured piece (castling is treated as rook capture) to rem_features
         if (to_piece != chess::Piece::NONE)
-            state.rem2[side] = 64 * to_piecei + to_sqi;
+            state.rem2[color] = 64 * to_piecei + to_sqi;
         else if (move_type == move.ENPASSANT)
-            state.rem2[side] = 64 * 6 * moving + (to_sqi + 8 - moving * 16);
+            state.rem2[color] = 64 * 6 * moving + (to_sqi + 8 - moving * 16);
     }
 }

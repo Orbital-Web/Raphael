@@ -16,8 +16,6 @@ i32 mate_distance(i32 eval) { return ((eval >= 0) ? 1 : -1) * (MATE_EVAL - abs(e
 
 
 
-bool stm(const chess::Board& board) { return board.stm() == chess::Color::WHITE; }
-
 bool is_quiet(chess::Move move, const chess::Board& board) {
     return !(
         board.is_capture(move)

@@ -298,9 +298,8 @@ i32 Raphael::negamax(
     ))
         return ttentry.eval;
 
-    const bool side = utils::stm(board);
     const bool in_check = board.in_check();
-    ss->static_eval = net.evaluate(ply, side);
+    ss->static_eval = net.evaluate(ply, board.stm());
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
 
     // pre-moveloop pruning
@@ -442,7 +441,7 @@ i32 Raphael::negamax(
                         for (const auto quietmove : mvstack.quietlist)
                             history.update_quiet(
                                 quietmove.move,
-                                side,
+                                board.stm(),
                                 (quietmove.move == move) ? quiet_bonus : quiet_penalty
                             );
                     }
@@ -485,8 +484,7 @@ i32 Raphael::quiescence(
     seldepth = max(seldepth, ply);
 
     // get standing pat and prune
-    const bool side = utils::stm(board);
-    i32 besteval = net.evaluate(ply, side);
+    i32 besteval = net.evaluate(ply, board.stm());
     if (besteval >= beta) return besteval;
     alpha = max(alpha, besteval);
 
@@ -541,8 +539,6 @@ void Raphael::score_moves(
     const chess::Board& board,
     const SearchStack* ss
 ) const {
-    const bool side = utils::stm(board);
-
     for (auto& move : movelist) {
         if (move.move == ttmove)
             move.score = TT_MOVE_FLOOR;  // tt move
@@ -563,7 +559,7 @@ void Raphael::score_moves(
         } else if (move.move == ss->killer)
             move.score = KILLER_FLOOR;  // killer moves
         else
-            move.score = history.get_quietscore(move.move, side);  // quiet moves
+            move.score = history.get_quietscore(move.move, board.stm());  // quiet moves
     }
 }
 

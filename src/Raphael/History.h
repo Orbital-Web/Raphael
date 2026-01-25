@@ -60,10 +60,10 @@ public:
     /** Applies a bonus to the quiet history score
      *
      * \param move quiet move
-     * \param side current side to move
+     * \param color current side to move
      * \param bonus bonus to apply, negative to apply penalty
      */
-    void update_quiet(chess::Move move, bool side, i32 bonus);
+    void update_quiet(chess::Move move, chess::Color color, i32 bonus);
 
     /** Applies a bonus to the noisy history score
      *
@@ -77,10 +77,10 @@ public:
     /** Returns the quiet history score
      *
      * \param move quiet move
-     * \param side current side to move
+     * \param color current side to move
      * \returns quiet history score
      */
-    i32 get_quietscore(chess::Move move, bool side) const;
+    i32 get_quietscore(chess::Move move, chess::Color color) const;
 
     /** Returns the noisy history score
      *
@@ -98,11 +98,11 @@ private:
     /** Returns a reference to the butterfly history entry
      *
      * \param move move to get history for
-     * \param side current side to move
+     * \param color current side to move
      * \returns butterfly history entry
      */
-    const HistoryEntry& butterfly_entry(chess::Move move, bool side) const;
-    HistoryEntry& butterfly_entry(chess::Move move, bool side);
+    const HistoryEntry& butterfly_entry(chess::Move move, chess::Color color) const;
+    HistoryEntry& butterfly_entry(chess::Move move, chess::Color color);
 
     /** Returns a reference to the capture history entry
      *

@@ -45,8 +45,8 @@ i32 History::noisy_penalty(i32 depth) const {
 }
 
 
-void History::update_quiet(chess::Move move, bool side, i32 bonus) {
-    butterfly_entry(move, side).update(bonus);
+void History::update_quiet(chess::Move move, chess::Color color, i32 bonus) {
+    butterfly_entry(move, color).update(bonus);
 }
 
 void History::update_noisy(chess::Move move, chess::Piece captured, i32 bonus) {
@@ -54,9 +54,9 @@ void History::update_noisy(chess::Move move, chess::Piece captured, i32 bonus) {
 }
 
 
-i32 History::get_quietscore(chess::Move move, bool side) const {
+i32 History::get_quietscore(chess::Move move, chess::Color color) const {
     i32 score = 0;
-    score += butterfly_entry(move, side);
+    score += butterfly_entry(move, color);
     return score;
 }
 
@@ -72,11 +72,11 @@ void History::clear() {
 
 
 
-const HistoryEntry& History::butterfly_entry(chess::Move move, bool side) const {
-    return butterfly_hist[side][move.from()][move.to()];
+const HistoryEntry& History::butterfly_entry(chess::Move move, chess::Color color) const {
+    return butterfly_hist[color][move.from()][move.to()];
 }
-HistoryEntry& History::butterfly_entry(chess::Move move, bool side) {
-    return butterfly_hist[side][move.from()][move.to()];
+HistoryEntry& History::butterfly_entry(chess::Move move, chess::Color color) {
+    return butterfly_hist[color][move.from()][move.to()];
 }
 
 const HistoryEntry& History::capt_entry(chess::Move move, chess::Piece captured) const {

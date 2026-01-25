@@ -408,11 +408,9 @@ template <Color::underlying color>
 }
 
 
+template <typename T>
 inline void Movegen::push_moves(
-    ScoredMoveList& movelist,
-    BitBoard occ,
-    BitBoard occ_opp,
-    std::function<BitBoard(Square)> generator
+    ScoredMoveList& movelist, BitBoard occ, BitBoard occ_opp, T generator
 ) {
     while (occ) {
         const Square from = static_cast<Square>(occ.poplsb());

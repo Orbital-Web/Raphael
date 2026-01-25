@@ -2,8 +2,6 @@
 #include <chess/bitboard.h>
 #include <chess/move.h>
 
-#include <functional>
-
 
 
 namespace chess {
@@ -89,12 +87,8 @@ private:
     );
 
 
-    static void push_moves(
-        ScoredMoveList& movelist,
-        BitBoard occ,
-        BitBoard occ_opp,
-        std::function<BitBoard(Square)> generator
-    );
+    template <typename T>
+    static void push_moves(ScoredMoveList& movelist, BitBoard occ, BitBoard occ_opp, T generator);
 
     template <Color::underlying color, MoveGenType mt>
     static void generate_legals(ScoredMoveList& movelist, const Board& board);

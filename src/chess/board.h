@@ -3,6 +3,8 @@
 #include <chess/utils.h>
 #include <chess/zobrist.h>
 
+#include <vector>
+
 
 
 namespace chess {

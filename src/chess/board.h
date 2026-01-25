@@ -640,7 +640,6 @@ public:
         }
 
         hash_ = compute_hash();
-        prev_states_.emplace_back(hash_, castle_rights_, enpassant_, halfmoves_, Piece::NONE);
     }
 
     [[nodiscard]] std::string get_fen() const {

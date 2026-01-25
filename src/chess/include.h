@@ -9,3 +9,4 @@
 #include <chess/movegen_fwd.h>
 #include <chess/piece.h>
 #include <chess/types.h>
+#include <chess/uci.h>

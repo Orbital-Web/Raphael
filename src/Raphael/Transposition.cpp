@@ -73,7 +73,7 @@ void TranspositionTable::set(const Entry& entry, i32 ply) {
     u64 val = 0;
     val |= (entry.depth & 0x3FFF);
     val |= (u64(entry.flag) << 14);
-    val |= (u64(entry.move.move()) << 16);
+    val |= (u64(u16(entry.move)) << 16);
     val |= (u64(u32(eval)) << 32);  // eval may be negative
 
     // set
@@ -97,12 +97,12 @@ void TranspositionTable::allocate(u64 newsize) {
     assert(capacity == 0);
 
 #ifdef _WIN32
-    static constexpr size_t page_size = 4096;
+    static constexpr usize page_size = 4096;
 #else
-    static constexpr size_t page_size = 2 * 1024 * 1024;
+    static constexpr usize page_size = 2 * 1024 * 1024;
 #endif
 
-    const size_t newsize_s = ((newsize * ENTRY_SIZE + page_size - 1) / page_size) * page_size;
+    const usize newsize_s = ((newsize * ENTRY_SIZE + page_size - 1) / page_size) * page_size;
     capacity = newsize_s / ENTRY_SIZE;
 
 #ifdef _WIN32

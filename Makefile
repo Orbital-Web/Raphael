@@ -79,7 +79,7 @@ CXX := $(COMPILER)
 WARN_FLAGS := -Wall -Wextra
 
 CXXFLAGS := -std=c++20 -O3 -flto=auto $(WARN_FLAGS) \
-    -Isrc -Ichess-library/include -ISFML-3.0.2/include
+    -Isrc -ISFML-3.0.2/include
 
 LDFLAGS     :=
 LDFLAGS_UCI :=
@@ -88,7 +88,7 @@ LDFLAGS_UCI :=
 SFML_LIBS := -LSFML-3.0.2/lib \
     -lsfml-graphics -lsfml-window -lsfml-audio -lsfml-system
 
-# Non-Windows: fixes sfml libs not found issue
+# Non-Windows: fixes SFML libs not found issue
 ifneq ($(DETECTED_OS),Windows)
     LDFLAGS += -Wl,-rpath,'$$ORIGIN/SFML-3.0.2/lib',-z,noexecstack
 endif

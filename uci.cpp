@@ -121,14 +121,14 @@ void setoption(const vector<string>& tokens) {
  * \param tokens list of tokens for the command
  */
 void setposition(const vector<string>& tokens) {
-    int ntokens = tokens.size();
+    i32 ntokens = tokens.size();
     if (ntokens < 2) return;
 
     // set position/fen
     lock_guard<mutex> search_lock(search_mutex);
-    int i = 2;
+    i32 i = 2;
     if (tokens[1] == "startpos")
-        pending_request.board.setFen(chess::constants::STARTPOS);
+        pending_request.board.set_fen(chess::Board::STARTPOS);
     else if (tokens[1] == "fen") {
         string fen = tokens[2];
         i = 3;
@@ -137,12 +137,12 @@ void setposition(const vector<string>& tokens) {
             fen += " " + tokens[i];
             i++;
         }
-        pending_request.board.setFen(fen);
+        pending_request.board.set_fen(fen);
     }
 
     // play moves
     while (++i < ntokens)
-        pending_request.board.makeMove(chess::uci::uciToMove(pending_request.board, tokens[i]));
+        pending_request.board.make_move(chess::uci::to_move(pending_request.board, tokens[i]));
 }
 
 
@@ -153,12 +153,12 @@ void setposition(const vector<string>& tokens) {
  */
 void search(const vector<string>& tokens) {
     // get arguments
-    int ntokens = tokens.size();
+    i32 ntokens = tokens.size();
 
     lock_guard<mutex> search_lock(search_mutex);
     pending_request.options = {};
-    bool is_white = pending_request.board.sideToMove() == chess::Color::WHITE;
-    int i = 1;
+    bool is_white = pending_request.board.stm() == chess::Color::WHITE;
+    i32 i = 1;
     while (i < ntokens) {
         if (tokens[i] == "depth") {
             pending_request.options.maxdepth = stoi(tokens[i + 1]);

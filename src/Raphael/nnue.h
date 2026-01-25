@@ -1,8 +1,8 @@
 #pragma once
 #include <Raphael/consts.h>
 #include <Raphael/simd.h>
+#include <chess/include.h>
 
-#include <chess.hpp>
 #include <string>
 #include <vector>
 
@@ -112,6 +112,6 @@ public:
      * \param move the move to make
      * \param board the board to make the move on, should match nnue_state[ply-1]
      */
-    void make_move(i32 ply, const chess::Move& move, const chess::Board& board);
+    void make_move(i32 ply, chess::Move move, const chess::Board& board);
 };
 }  // namespace raphael

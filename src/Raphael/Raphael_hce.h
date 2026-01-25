@@ -1,8 +1,7 @@
 #pragma once
-#include <Raphael/types.h>
+#include <chess/include.h>
 
 #include <array>
-#include <chess.hpp>
 
 
 
@@ -46,9 +45,9 @@ private:
     static constexpr i32 BISH_CORNER_WEIGHT[2] = {1, 20};      // enemy king to bishop corner bonus
 
     struct PMasks {
-        std::array<u64, 64> WPASSED;   // white passed pawn mask bitboard (A1...H8)
-        std::array<u64, 64> BPASSED;   // black passed pawn mask bitboard
-        std::array<u64, 64> ISOLATED;  // isolated pawn mask bitboard (A1...H8)
+        std::array<chess::BitBoard, 64> WPASSED;   // white passed pawn mask bitboard (A1...H8)
+        std::array<chess::BitBoard, 64> BPASSED;   // black passed pawn mask bitboard
+        std::array<chess::BitBoard, 64> ISOLATED;  // isolated pawn mask bitboard (A1...H8)
     };
     static const PMasks PMASK;
 

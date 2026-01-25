@@ -1,7 +1,5 @@
 #pragma once
-#include <Raphael/types.h>
-
-#include <chess.hpp>
+#include <chess/include.h>
 
 
 
@@ -49,13 +47,5 @@ bool stm(const chess::Board& board);
  * \param board current board
  * \return whether the move is quiet or not
  */
-bool is_quiet(const chess::Move& move, const chess::Board& board);
-
-/** Returns the Piece that was captured
- *
- * \param move either a normal capture or enpassant move (not castling)
- * \param board current board
- * \returns the piece that was captured
- */
-chess::Piece piece_captured(const chess::Move& move, const chess::Board& board);
+bool is_quiet(chess::Move move, const chess::Board& board);
 }  // namespace raphael::utils

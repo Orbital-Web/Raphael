@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <future>
+#include <iostream>
 
 using namespace cge;
 using std::async;
@@ -23,7 +24,7 @@ using std::string;
 using std::stringstream;
 using std::vector;
 
-#define whiteturn (board.sideToMove() == chess::Color::WHITE)
+#define whiteturn (board.stm() == chess::Color::WHITE)
 
 
 
@@ -40,8 +41,8 @@ void GameEngine::run_match(const GameOptions& options) {
 
     // initialize board
     board = chess::Board(options.start_fen);
-    chess::movegen::legalmoves(movelist, board);
-    chess::GameResult game_result = chess::GameResult::NONE;
+    chess::Movegen::generate_legals(movelist, board);
+    GameResult game_result = GameResult::NONE;
     turn = !whiteturn;
 
     // reset players
@@ -63,21 +64,21 @@ void GameEngine::run_match(const GameOptions& options) {
             << "[Black \"" << players[p1_is_white]->name << "\"]\n"
             << "[FEN \"" << fen << "\"]\n";
     }
-    int nmoves = 1;
+    i32 nmoves = 1;
 
     // set time
     bool timeout = false;
     t_remain = options.t_remain;
-    int t_inc = options.t_inc;
+    i32 t_inc = options.t_inc;
 
     interactive = options.interactive;
     if (interactive) sounds[2].play();
 
     // until game ends or time runs out
-    while (game_result == chess::GameResult::NONE && t_remain[0] > 0 && t_remain[1] > 0) {
+    while (game_result == GameResult::NONE && t_remain[0] > 0 && t_remain[1] > 0) {
         auto& cur_player = players[turn == p1_is_white];
         auto& oth_player = players[turn != p1_is_white];
-        int64_t& cur_t_remain = t_remain[turn];
+        i64& cur_t_remain = t_remain[turn];
 
         // ask player for move in seperate thread so that we can keep rendering
         bool halt = false;
@@ -114,7 +115,7 @@ void GameEngine::run_match(const GameOptions& options) {
                 halt = true;
                 timeout = true;
                 timeoutwins[(p1_is_white != turn)]++;
-                game_result = chess::GameResult::LOSE;
+                game_result = GameResult::LOSE;
                 goto game_end;
             }
         }
@@ -122,8 +123,7 @@ void GameEngine::run_match(const GameOptions& options) {
         // play move
         auto recv = movereceiver.get();
         auto toPlay = recv.move;
-        if (toPlay == chess::Move::NO_MOVE
-            || std::find(movelist.begin(), movelist.end(), toPlay) == movelist.end()) {
+        if (toPlay == chess::Move::NO_MOVE || !movelist.contains(toPlay)) {
             if (toPlay == chess::Move::NO_MOVE) {
                 lock_guard<mutex> lock(cout_mutex);
                 cout << "Warning, no move returned. Remaining time of player: " << fixed
@@ -131,14 +131,14 @@ void GameEngine::run_match(const GameOptions& options) {
                      << flush;
             } else {
                 lock_guard<mutex> lock(cout_mutex);
-                cout << "Warning, illegal move " << chess::uci::moveToUci(toPlay)
+                cout << "Warning, illegal move " << chess::uci::from_move(toPlay)
                      << " played. Remaining time of player: " << fixed << setprecision(2)
                      << cur_t_remain / 1000.0f << "\n"
                      << flush;
             }
             timeout = true;
             timeoutwins[(p1_is_white != turn)]++;
-            game_result = chess::GameResult::LOSE;
+            game_result = GameResult::LOSE;
             goto game_end;
         }
         halt = true;  // force stop pondering
@@ -154,20 +154,27 @@ void GameEngine::run_match(const GameOptions& options) {
                  << flush;
         }
 
-        // pgn saving
-        if (savepgn) pgn_moves << nmoves << ". " << chess::uci::moveToSan(board, toPlay) << " ";
+        // pgn saving FIXME: output san
+        if (savepgn) pgn_moves << nmoves << ". " << chess::uci::from_move(toPlay) << " ";
 
         // play move and update everything
         move(toPlay);
         turn = !turn;
-        game_result = board.isGameOver().second;
         if (nmoves != 1) cur_t_remain += t_inc;
         nmoves++;
+
+        // get game result (if any)
+        game_result = GameResult::NONE;
+        if (board.is_halfmovedraw()) game_result = GameResult::DRAW;
+        if (board.is_insufficientmaterial()) game_result = GameResult::DRAW;
+        if (board.is_repetition()) game_result = GameResult::DRAW;
+        if (movelist.empty())
+            game_result = (board.in_check()) ? GameResult::LOSE : GameResult::DRAW;
     }
 
 game_end:
     // score tracking
-    if (game_result == chess::GameResult::DRAW)
+    if (game_result == GameResult::DRAW)
         results[1]++;
     else {
         results[(p1_is_white == turn) ? 0 : 2]++;
@@ -183,12 +190,12 @@ game_end:
             update_window();
         }
     }
-    sq_from = chess::Square::NO_SQ;
-    sq_to = chess::Square::NO_SQ;
+    sq_from = chess::Square::NONE;
+    sq_to = chess::Square::NONE;
     movelist.clear();
     if (savepgn) {
         string pgn_result = "1/2-1/2";
-        if (game_result != chess::GameResult::DRAW) pgn_result = (!whiteturn) ? "1-0" : "0-1";
+        if (game_result != GameResult::DRAW) pgn_result = (!whiteturn) ? "1-0" : "0-1";
         pgn << "[Result \"" << pgn_result << "\"]\n\n" << pgn_moves.str() << "\n\n";
     };
     pgn.close();
@@ -197,7 +204,7 @@ game_end:
 
 void GameEngine::print_report() const {
     lock_guard<mutex> lock(cout_mutex);
-    int total_matches = results[0] + results[1] + results[2];
+    i32 total_matches = results[0] + results[1] + results[2];
     cout << "Out of " << total_matches << " total matches:\n";
     cout << "   " << players[0]->name << "\t\x1b[32m" << results[0] << " (white: " << whitewins[0]
          << ", black: " << results[0] - whitewins[0] - timeoutwins[0]
@@ -212,9 +219,9 @@ void GameEngine::print_report() const {
 
 void GameEngine::generate_assets() {
     // tiles
-    for (int i = 0; i < 64; i++) {
-        int y = i / 8;
-        int x = i % 8;
+    for (i32 i = 0; i < 64; i++) {
+        i32 y = i / 8;
+        i32 x = i % 8;
         tiles[i].setPosition({50.0f + 100 * x, 70.0f + 100 * y});
         tiles[i].setFillColor(((x + y) % 2) ? PALETTE::TILE_B : PALETTE::TILE_W);
     }
@@ -232,7 +239,7 @@ void GameEngine::generate_assets() {
     }
     timers.reserve(2);
     names.reserve(2);
-    for (int i = 0; i < 2; i++) {
+    for (i32 i = 0; i < 2; i++) {
         timers.emplace_back(i, font);
         names.emplace_back(font, "", 40);
         names[i].setFillColor(PALETTE::TEXT);
@@ -249,7 +256,7 @@ void GameEngine::generate_assets() {
         cout << "Warning, could not load 1 or more sound files\n" << flush;
     }
     sounds.reserve(3);
-    for (int i = 0; i < 3; i++) sounds.emplace_back(soundbuffers[i]);
+    for (i32 i = 0; i < 3; i++) sounds.emplace_back(soundbuffers[i]);
 }
 
 
@@ -257,16 +264,16 @@ void GameEngine::update_select() {
     // populate selected squares
     if (mouse.event == MouseEvent::LMBDOWN) {
         arrows.clear();
-        int x = mouse.x;
-        int y = mouse.y;
+        const i32 x = mouse.x;
+        const i32 y = mouse.y;
 
         // board clicked
         if (x > 50 && x < 850 && y > 70 && y < 870) {
-            auto sq = get_square(x, y);
-            int piece = (int)board.at(sq);
+            const auto sq = get_square(x, y);
+            const auto piece = board.at(sq);
 
             // own pieces clicked
-            if (piece != 12 && whiteturn == (piece < 6)) {
+            if (piece != chess::Piece::NONE && piece.color() == board.stm()) {
                 selectedtiles.clear();
                 selectedtiles.push_back(sq);
                 add_selectedtiles();
@@ -279,22 +286,22 @@ void GameEngine::update_select() {
 
 
 void GameEngine::add_selectedtiles() {
-    auto sq_from = selectedtiles[0];
+    const auto sq_from = selectedtiles[0];
 
-    for (auto& move : movelist) {
-        if (move.from() == sq_from) {
+    for (const auto& move : movelist) {
+        if (move.move.from() == sq_from) {
             // modify castling move to target empty tile
-            if (move.typeOf() == chess::Move::CASTLING) {
-                if (move.to() == chess::Square::SQ_H1)  // white king-side
-                    selectedtiles.push_back(chess::Square::SQ_G1);
-                else if (move.to() == chess::Square::SQ_A1)  // white queen-side
-                    selectedtiles.push_back(chess::Square::SQ_C1);
-                else if (move.to() == chess::Square::SQ_H8)  // black king-side
-                    selectedtiles.push_back(chess::Square::SQ_G8);
-                else if (move.to() == chess::Square::SQ_A8)  // black queen-side
-                    selectedtiles.push_back(chess::Square::SQ_C8);
+            if (move.move.type() == chess::Move::CASTLING) {
+                if (move.move.to() == chess::Square::H1)  // white king-side
+                    selectedtiles.push_back(chess::Square::G1);
+                else if (move.move.to() == chess::Square::A1)  // white queen-side
+                    selectedtiles.push_back(chess::Square::C1);
+                else if (move.move.to() == chess::Square::H8)  // black king-side
+                    selectedtiles.push_back(chess::Square::G8);
+                else if (move.move.to() == chess::Square::A8)  // black queen-side
+                    selectedtiles.push_back(chess::Square::C8);
             } else
-                selectedtiles.push_back(move.to());
+                selectedtiles.push_back(move.move.to());
         }
     }
 }
@@ -303,29 +310,29 @@ void GameEngine::add_selectedtiles() {
 void GameEngine::update_arrows() {
     // from arrow
     if (mouse.event == MouseEvent::RMBDOWN) {
-        int x = mouse.x;
-        int y = mouse.y;
+        const i32 x = mouse.x;
+        const i32 y = mouse.y;
         // board clicked
         if (x > 50 && x < 850 && y > 70 && y < 870) arrow_from = get_square(x, y);
     }
 
     // to arrow
     else if (mouse.event == MouseEvent::RMBUP) {
-        int x = mouse.x;
-        int y = mouse.y;
+        const i32 x = mouse.x;
+        const i32 y = mouse.y;
 
         // board clicked
         if (x > 50 && x < 850 && y > 70 && y < 870) {
             auto arrow_to = get_square(x, y);
-            if (arrow_to != arrow_from && arrow_from != chess::Square::NO_SQ) {
+            if (arrow_to != arrow_from && arrow_from != chess::Square::NONE) {
                 Arrow newarrow(arrow_from, arrow_to);
 
                 // check arrow does not exist
                 bool arrow_exists = false;
-                for (size_t i = 0; i < arrows.size(); i++) {
+                for (usize i = 0; i < arrows.size(); i++) {
                     if (newarrow == arrows[i]) {
                         arrows.erase(arrows.begin() + i);
-                        arrow_from = chess::Square::NO_SQ;
+                        arrow_from = chess::Square::NONE;
                         arrow_exists = true;
                         break;
                     }
@@ -334,7 +341,7 @@ void GameEngine::update_arrows() {
                 // add arrow
                 if (!arrow_exists) {
                     arrows.push_back(newarrow);
-                    arrow_from = chess::Square::NO_SQ;
+                    arrow_from = chess::Square::NONE;
                 }
             }
         }
@@ -369,43 +376,43 @@ void GameEngine::update_window() {
     window.clear(PALETTE::BG);
 
     // draw tiles
-    for (int i = 0; i < 64; i++) window.draw(tiles[i]);
+    for (i32 i = 0; i < 64; i++) window.draw(tiles[i]);
 
     // draw move to/from squares
-    if (sq_from != chess::Square::NO_SQ) {
-        int file = (int)sq_from.file();
-        int rank = (int)sq_from.rank();
+    if (sq_from != chess::Square::NONE) {
+        auto file = sq_from.file();
+        auto rank = sq_from.rank();
         tiles[64].setPosition({50.0f + 100 * file, 770.0f - 100 * rank});
         window.draw(tiles[64]);
 
-        file = (int)sq_to.file();
-        rank = (int)sq_to.rank();
+        file = sq_to.file();
+        rank = sq_to.rank();
         tiles[64].setPosition({50.0f + 100 * file, 770.0f - 100 * rank});
         window.draw(tiles[64]);
     }
 
     // draw selection squares
-    for (auto& sq : selectedtiles) {
-        int file = (int)sq.file();
-        int rank = (int)sq.rank();
+    for (const auto& sq : selectedtiles) {
+        const auto file = sq.file();
+        const auto rank = sq.rank();
         tiles[65].setPosition({50.0f + 100 * file, 770.0f - 100 * rank});
         window.draw(tiles[65]);
     }
 
     // draw pieces
     auto pieces = board.occ();
-    int check = 0;
-    if (board.inCheck()) check = (whiteturn) ? 1 : -1;
+    i32 check = 0;
+    if (board.in_check()) check = (whiteturn) ? 1 : -1;
     while (pieces) {
-        chess::Square sq = pieces.pop();
-        int file = (int)sq.file();
-        int rank = (int)sq.rank();
-        auto piece = board.at(sq);
+        const auto sq = static_cast<chess::Square>(pieces.poplsb());
+        const auto file = sq.file();
+        const auto rank = sq.rank();
+        const auto piece = board.at(sq);
         piecedrawer.draw(window, piece, 50 + 100 * file, 770 - 100 * rank, check);
     }
 
     // draw timers and names
-    for (int i = 0; i < 2; i++) {
+    for (i32 i = 0; i < 2; i++) {
         timers[i].update(t_remain[i] / 1000.0f, i == turn);
         window.draw(timers[i]);
         window.draw(names[i]);
@@ -419,19 +426,19 @@ void GameEngine::update_window() {
 }
 
 
-void GameEngine::move(const chess::Move& move_in) {
+void GameEngine::move(chess::Move move_in) {
     sq_from = move_in.from();
     sq_to = move_in.to();
     selectedtiles.clear();
 
     // play sound
     if (interactive) {
-        if (board.isCapture(move_in))
+        if (board.is_capture(move_in))
             sounds[1].play();  // capture
         else
             sounds[0].play();  // move
     }
 
-    board.makeMove(move_in);
-    chess::movegen::legalmoves(movelist, board);
+    board.make_move(move_in);
+    chess::Movegen::generate_legals(movelist, board);
 }

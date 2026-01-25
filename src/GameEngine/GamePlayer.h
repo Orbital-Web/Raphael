@@ -1,13 +1,13 @@
 #pragma once
-#include <chess.hpp>
+#include <chess/include.h>
 
 
 
 namespace cge {  // chess game engine
 enum MouseEvent { NONE, LMBDOWN, RMBDOWN, LMBUP, RMBUP };
 struct MouseInfo {
-    int x;
-    int y;
+    i32 x;
+    i32 y;
     MouseEvent event;
 };
 
@@ -19,9 +19,9 @@ public:
 
     struct MoveEval {
         chess::Move move;
-        int eval;
+        i32 eval;
         bool is_mate;
-        int64_t nodes = 0;
+        i64 nodes = 0;
     };
 
 
@@ -46,8 +46,8 @@ public:
      */
     virtual MoveEval get_move(
         chess::Board board,
-        const int t_remain,
-        const int t_inc,
+        const i32 t_remain,
+        const i32 t_inc,
         volatile MouseInfo& mouse,
         volatile bool& halt
     ) = 0;

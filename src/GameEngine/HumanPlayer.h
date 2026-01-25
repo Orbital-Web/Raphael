@@ -23,8 +23,8 @@ public:
      */
     MoveEval get_move(
         chess::Board board,
-        const int t_remain,
-        const int t_inc,
+        const i32 t_remain,
+        const i32 t_inc,
         volatile MouseInfo& mouse,
         volatile bool& halt
     );
@@ -40,7 +40,7 @@ private:
     static chess::Move move_if_valid(
         chess::Square sq_from,
         chess::Square sq_to,
-        const chess::Movelist& movelist,
+        const chess::ScoredMoveList& movelist,
         const chess::Board& board
     );
 };

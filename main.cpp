@@ -5,6 +5,7 @@
 #include <climits>
 #include <cstring>
 #include <fstream>
+#include <iostream>
 
 using std::cout;
 using std::ifstream;
@@ -89,7 +90,7 @@ int main(int argc, char** argv) {
     if (!p1 || !p2) return -1;
 
     // parse mode
-    int i = 5;
+    i32 i = 5;
     if (argc >= 6) {
         // comparison mode
         if (!strcmp(argv[i], "-c")) {
@@ -135,10 +136,10 @@ int main(int argc, char** argv) {
         // number of games
         else {
             // create n matches with alternating color
-            int n_matches = atoi(argv[i]);
+            i32 n_matches = atoi(argv[i]);
             if (n_matches) {
                 bool p1_is_white = true;
-                for (int n = 0; n < n_matches; n++) {
+                for (i32 n = 0; n < n_matches; n++) {
                     gameoptions.push_back({.p1_is_white = p1_is_white});
                     p1_is_white = !p1_is_white;
                 }
@@ -195,8 +196,8 @@ int main(int argc, char** argv) {
     cge::GameEngine ge(players);
 
     // Play Matches
-    int matchn = 1;
-    int n_matches = gameoptions.size();
+    i32 matchn = 1;
+    i32 n_matches = gameoptions.size();
 
     for (auto gopt : gameoptions) {
         printf("Starting match %i of %i\n", matchn, n_matches);

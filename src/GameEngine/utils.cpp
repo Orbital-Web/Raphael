@@ -2,6 +2,7 @@
 #include <GameEngine/utils.h>
 
 #include <cmath>
+#include <iostream>
 
 using namespace cge;
 using std::cout;
@@ -18,13 +19,13 @@ using std::to_string;
 
 
 Arrow::Arrow(chess::Square from_in, chess::Square to_in): from(from_in), to(to_in) {
-    sf::Vector2f from_coord = {100.0f + 100 * (int)from.file(), 820.0f - 100 * (int)from.rank()};
-    sf::Vector2f to_coord = {100.0f + 100 * (int)to.file(), 820.0f - 100 * (int)to.rank()};
+    sf::Vector2f from_coord = {100.0f + 100 * from.file(), 820.0f - 100 * from.rank()};
+    sf::Vector2f to_coord = {100.0f + 100 * to.file(), 820.0f - 100 * to.rank()};
 
-    float dx = to_coord.x - from_coord.x;
-    float dy = from_coord.y - to_coord.y;
-    float headlen = ARROWSIZE * 1.5f;
-    float arrowlen = sqrt(dx * dx + dy * dy);
+    f32 dx = to_coord.x - from_coord.x;
+    f32 dy = from_coord.y - to_coord.y;
+    f32 headlen = ARROWSIZE * 1.5f;
+    f32 arrowlen = sqrt(dx * dx + dy * dy);
     auto arrowang = sf::radians(atan2(dx, dy));
 
     arrowbody.setSize({THICKNESS, arrowlen - headlen});
@@ -68,7 +69,7 @@ PieceDrawer::PieceDrawer(): textures(13) {
         "bK",
     };
     bool loaded = true;
-    for (int i = 0; i < 12; i++) {
+    for (i32 i = 0; i < 12; i++) {
         loaded &= textures[i].loadFromFile("src/assets/themes/tartiana/" + TEXTURE[i] + ".png");
         textures[i].setSmooth(true);
     }
@@ -81,12 +82,12 @@ PieceDrawer::PieceDrawer(): textures(13) {
         cout << "Warning, could not load 1 or more texture files\n";
     }
     sprites.reserve(13);
-    for (int i = 0; i < 13; i++) sprites.emplace_back(textures[i]);
+    for (i32 i = 0; i < 13; i++) sprites.emplace_back(textures[i]);
 }
 
-void PieceDrawer::draw(sf::RenderWindow& window, chess::Piece piece, float x, float y, int check) {
-    int i = (int)piece;
-    assert((i != 12));
+void PieceDrawer::draw(sf::RenderWindow& window, chess::Piece piece, f32 x, f32 y, i32 check) {
+    assert(piece != chess::Piece::NONE);
+
     // draw check overlay
     if ((piece == chess::Piece::WHITEKING && check == 1)
         || (piece == chess::Piece::BLACKKING && check == -1)) {
@@ -94,8 +95,8 @@ void PieceDrawer::draw(sf::RenderWindow& window, chess::Piece piece, float x, fl
         window.draw(sprites[12]);
     }
     // draw piece
-    sprites[i].setPosition({x, y});
-    window.draw(sprites[i]);
+    sprites[piece].setPosition({x, y});
+    window.draw(sprites[piece]);
 }
 
 
@@ -106,14 +107,14 @@ Timer::Timer(bool at_top, const sf::Font& font)
     timertext.setFillColor(PALETTE::TEXT);
 }
 
-void Timer::update(float time, bool active) {
+void Timer::update(f32 time, bool active) {
     // accomodate different format
     stringstream formatter;
 
     if (time >= 60) {  // mm : ss
         timerbox.setFillColor((active) ? PALETTE::TIMER_A : PALETTE::TIMER);
-        int min = (int)time / 60;
-        int sec = (int)time % 60;
+        i32 min = (i32)time / 60;
+        i32 sec = (i32)time % 60;
         formatter << setw(2) << setfill('0') << to_string(sec);
         t_disp = to_string(min) + " : " + formatter.str();
     } else {  // ss.mm
@@ -135,8 +136,8 @@ void Timer::draw(sf::RenderTarget& target, sf::RenderStates) const {
 
 
 
-chess::Square cge::get_square(int x, int y) {
-    int rank = (870 - y) / 100;
-    int file = (x - 50) / 100;
+chess::Square cge::get_square(i32 x, i32 y) {
+    i32 rank = (870 - y) / 100;
+    i32 file = (x - 50) / 100;
     return chess::Square(chess::File(file), chess::Rank(rank));
 }

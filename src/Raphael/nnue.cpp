@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <fstream>
+#include <iostream>
 
 using namespace raphael;
 using std::copy;
@@ -43,7 +44,7 @@ void Nnue::load() {
 
     const unsigned char* nnue_data = _binary_net_nnue_start;
 
-    auto read_or_throw = [&](void* dest, size_t bytes) {
+    auto read_or_throw = [&](void* dest, usize bytes) {
         if (nnue_data + bytes > _binary_net_nnue_end) throw runtime_error("failed to read weights");
 
         memcpy(dest, nnue_data, bytes);
@@ -74,7 +75,7 @@ void Nnue::load(const char* nnue_path) {
     ifstream nnue_file(nnue_path, ios::binary);
     if (!nnue_file) throw runtime_error("could not open file");
 
-    auto read_or_throw = [&](void* dest, size_t bytes) {
+    auto read_or_throw = [&](void* dest, usize bytes) {
         if (!nnue_file.read(reinterpret_cast<char*>(dest), bytes))
             throw runtime_error("failed to read weights");
     };
@@ -259,25 +260,25 @@ void Nnue::set_board(const chess::Board& board) {
     b_features.reserve(32);
 
     auto pieces = board.occ();
-    while (!pieces.empty()) {
-        const auto sqi = pieces.pop();
+    while (pieces) {
+        const auto sq = static_cast<chess::Square>(pieces.poplsb());
 
-        const i32 wpiece = board.at(sqi);      // 0...5, 6...11
+        const i32 wpiece = board.at(sq);       // 0...5, 6...11
         const i32 bpiece = (wpiece + 6) % 12;  // 6...11, 0...5
 
-        w_features.push_back(64 * wpiece + sqi);
-        b_features.push_back(64 * bpiece + (sqi ^ 56));
+        w_features.push_back(64 * wpiece + sq);
+        b_features.push_back(64 * bpiece + (sq ^ 56));
     }
     refresh_accumulator(accumulators[0], w_features, true);
     refresh_accumulator(accumulators[0], b_features, false);
 }
 
-void Nnue::make_move(i32 ply, const chess::Move& move, const chess::Board& board) {
+void Nnue::make_move(i32 ply, chess::Move move, const chess::Board& board) {
     assert((ply != 0));
 
     const auto from_sq = move.from();
     const auto to_sq = move.to();
-    const auto move_type = move.typeOf();
+    const auto move_type = move.type();
 
     auto& state = accumulator_states[ply];
     state.dirty = true;
@@ -297,9 +298,9 @@ void Nnue::make_move(i32 ply, const chess::Move& move, const chess::Board& board
     // update black and white states incrementally
     for (const bool side : {false, true}) {
         // do incremental update
-        const bool moving = (board.sideToMove() == chess::Color::WHITE) == side;
-        const i32 from_sqi = (side) ? from_sq.index() : (from_sq.index() ^ 56);
-        const i32 to_sqi = (side) ? to_sq.index() : (to_sq.index() ^ 56);
+        const bool moving = (board.stm() == chess::Color::WHITE) == side;
+        const i32 from_sqi = (side) ? from_sq : (from_sq ^ 56);
+        const i32 to_sqi = (side) ? to_sq : (to_sq ^ 56);
         const auto from_piece = board.at(from_sq);
         const auto to_piece = board.at(to_sq);
         const i32 from_piecei = (side) ? from_piece : (from_piece + 6) % 12;
@@ -314,7 +315,7 @@ void Nnue::make_move(i32 ply, const chess::Move& move, const chess::Board& board
 
         // add moved piece to add_features (handle promotion and enemy castling)
         if (move_type == move.PROMOTION) {
-            const i32 promote_piecei = !moving * 6 + move.promotionType();
+            const i32 promote_piecei = !moving * 6 + move.promotion_type();
             state.add1[side] = 64 * promote_piecei + to_sqi;
         } else if (move_type == move.CASTLING) {
             const i32 new_ksqi = (to_sqi % 8 == 7) ? to_sqi - 1 : to_sqi + 2;

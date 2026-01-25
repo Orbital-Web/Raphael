@@ -4,13 +4,12 @@
 
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
-#include <chess.hpp>
 
 
 
 namespace cge {     // chess game engine
 class GameEngine {  // Class for managing games
-    static constexpr int FRAMERATE = 60;
+    static constexpr i32 FRAMERATE = 60;
 
 private:
     // visual & sound
@@ -26,34 +25,36 @@ private:
     bool interactive;  // play sound and keep window open after game end
 
     // for draw_select()
-    chess::Square sq_from = chess::Square::NO_SQ;
-    chess::Square sq_to = chess::Square::NO_SQ;
+    chess::Square sq_from = chess::Square::NONE;
+    chess::Square sq_to = chess::Square::NONE;
     std::vector<chess::Square> selectedtiles;
-    chess::Movelist movelist;
+    chess::ScoredMoveList movelist;
 
     // arrows
-    chess::Square arrow_from = chess::Square::NO_SQ;
+    chess::Square arrow_from = chess::Square::NONE;
     std::vector<Arrow> arrows;
 
     // chess game logic
     chess::Board board;
     bool turn;                         // current turn (0=white, 1=black)
     std::vector<GamePlayer*> players;  // players (p1, p2)
-    std::vector<int64_t> t_remain;     // time remaining ms (white, black)
+    std::vector<i64> t_remain;         // time remaining ms (white, black)
 
     // score tracking
-    std::vector<int> results = {0, 0, 0};   // (p1, draw, p2)
-    std::vector<int> timeoutwins = {0, 0};  // (p1, p2)
-    std::vector<int> whitewins = {0, 0};    // (p1, p2)
+    std::vector<i32> results = {0, 0, 0};   // (p1, draw, p2)
+    std::vector<i32> timeoutwins = {0, 0};  // (p1, p2)
+    std::vector<i32> whitewins = {0, 0};    // (p1, p2)
+
+    enum class GameResult { NONE, LOSE, WIN, DRAW };
 
 public:
     struct GameOptions {
         bool p1_is_white = true;  // whether p1 or p2 is white
         bool interactive = true;  // whether we play sound and keep window open after game end
-        int t_inc = 0;            // ms incremented per move
-        std::vector<int64_t> t_remain = {600000, 600000};    // ms remaining for p1 and p2
-        std::string start_fen = chess::constants::STARTPOS;  // the starting chess position in FEN
-        std::string pgn_file = "";                           // the pgn file to save the game to
+        i32 t_inc = 0;            // ms incremented per move
+        std::vector<i64> t_remain = {600000, 600000};    // ms remaining for p1 and p2
+        std::string start_fen = chess::Board::STARTPOS;  // the starting chess position in FEN
+        std::string pgn_file = "";                       // the pgn file to save the game to
     };
 
 
@@ -90,10 +91,10 @@ private:
     /** Handles window events and renderings */
     void update_window();
 
-    /** Updatest the board with a view
+    /** Updates the board with a move
      *
      * \param move_in the move to make
      */
-    void move(const chess::Move& move_in);
+    void move(chess::Move move_in);
 };
 }  // namespace cge

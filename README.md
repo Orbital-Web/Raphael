@@ -1,8 +1,8 @@
 # Raphael
 
-**Raphael** is a UCI Chess Engine built using C++ and [Disservin's Chess Library](https://github.com/Disservin/chess-library). It also comes with a GUI built using [SFML](https://www.sfml-dev.org/).
+**Raphael** is a UCI Chess Engine built using C++. It also comes with a GUI built using [SFML](https://www.sfml-dev.org/).
 
-**Raphael** is a hobby project that is still a work in progress, but it plays decent chess. You can [scroll to the bottom](#raphael-engine) to see a list of features currently implemented, and also download the prebuilt binaries to try Raphael out for yourself.
+You can [scroll to the bottom](#raphael-engine) to see a list of features currently implemented, and also download the prebuilt binaries to try Raphael out for yourself.
 
 **Raphael** is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python.
 
@@ -165,11 +165,11 @@ You can also play with different time controls, increments, and player combinati
 - [ ] Lazy SMP
 - [ ] SPSA tuning
 
-For a more in-depth documentation on the NNUE and how it was trained, refer to the [NNUE README](https://github.com/Orbital-Web/Raphael/tree/main/src/NNUE). No external engines were used to generate Raphael NNUE's training data.
+For a more in-depth documentation on the NNUE and how it was trained, refer to the [NNUE README](https://github.com/Orbital-Web/Raphael/tree/main/src/NNUE). All iterations of Raphael's NNUE were trained on self-generated training data.
 
 ## Special Thanks to
 
 - [Sebastian Lague](https://www.youtube.com/c/SebastianLague) for inspiring me to start the development of Raphael through the Coding Adventures series
-- [Disservin](https://github.com/Disservin) for creating the [C++ chess library](https://github.com/Disservin/chess-library), [fastchess](https://github.com/Disservin/fastchess), and [Python Chess Engine](https://github.com/Disservin/python-chess-engine), all of which I've used extensively while developing my engine
+- [Disservin](https://github.com/Disservin) for creating the [C++ chess library](https://github.com/Disservin/chess-library), [fastchess](https://github.com/Disservin/fastchess), and [Python Chess Engine](https://github.com/Disservin/python-chess-engine), all of which I've used extensively while developing my engine, especially for the move generator
 - Those on the Stockfish Discord for teaching me and helping me out with the NNUE dataset collection, training, and evaluation, as well as engine development in general. Without their help, my engine wouldn't be as good as it is now
 - [GediminasMasaitis's Texel Tuner](https://github.com/GediminasMasaitis/texel-tuner) which I've used to tune my parameters back when I was using a HCE

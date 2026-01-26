@@ -5,7 +5,6 @@
 #include <Raphael/nnue.h>
 #include <Raphael/tunable.h>
 
-#include <chess.hpp>
 #include <chrono>
 #include <string>
 
@@ -72,9 +71,9 @@ private:
     };
 
     struct MoveStack {
-        chess::Movelist movelist;
-        chess::Movelist quietlist;
-        chess::Movelist noisylist;
+        chess::ScoredMoveList movelist;
+        chess::ScoredMoveList quietlist;
+        chess::ScoredMoveList noisylist;
     };
     MoveStack movestack[MAX_DEPTH];
 
@@ -210,7 +209,7 @@ private:
      * \param ss search stack at current ply
      */
     void score_moves(
-        chess::Movelist& movelist,
+        chess::ScoredMoveList& movelist,
         const chess::Move& ttmove,
         const chess::Board& board,
         const SearchStack* ss
@@ -221,7 +220,7 @@ private:
      * \param movelist movelist to score
      * \param board current board
      */
-    void score_moves(chess::Movelist& movelist, const chess::Board& board) const;
+    void score_moves(chess::ScoredMoveList& movelist, const chess::Board& board) const;
 
     /** Picks the movei'th best move in the movelist
      *
@@ -229,6 +228,6 @@ private:
      * \param movelist movelist to pick from
      * \returns the chosen move in the movelist
      */
-    chess::Move pick_move(i32 movei, chess::Movelist& movelist) const;
+    chess::Move pick_move(i32 movei, chess::ScoredMoveList& movelist) const;
 };
 }  // namespace raphael

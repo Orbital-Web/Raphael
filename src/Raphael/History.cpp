@@ -45,22 +45,22 @@ i32 History::noisy_penalty(i32 depth) const {
 }
 
 
-void History::update_quiet(const chess::Move& move, bool side, i32 bonus) {
-    butterfly_entry(move, side).update(bonus);
+void History::update_quiet(chess::Move move, chess::Color color, i32 bonus) {
+    butterfly_entry(move, color).update(bonus);
 }
 
-void History::update_noisy(const chess::Move& move, chess::Piece captured, i32 bonus) {
+void History::update_noisy(chess::Move move, chess::Piece captured, i32 bonus) {
     capt_entry(move, captured).update(bonus);
 }
 
 
-i32 History::get_quietscore(const chess::Move& move, bool side) const {
+i32 History::get_quietscore(chess::Move move, chess::Color color) const {
     i32 score = 0;
-    score += butterfly_entry(move, side);
+    score += butterfly_entry(move, color);
     return score;
 }
 
-i32 History::get_noisyscore(const chess::Move& move, chess::Piece captured) const {
+i32 History::get_noisyscore(chess::Move move, chess::Piece captured) const {
     return capt_entry(move, captured);
 }
 
@@ -72,16 +72,16 @@ void History::clear() {
 
 
 
-const HistoryEntry& History::butterfly_entry(const chess::Move& move, bool side) const {
-    return butterfly_hist[side][move.from().index()][move.to().index()];
+const HistoryEntry& History::butterfly_entry(chess::Move move, chess::Color color) const {
+    return butterfly_hist[color][move.from()][move.to()];
 }
-HistoryEntry& History::butterfly_entry(const chess::Move& move, bool side) {
-    return butterfly_hist[side][move.from().index()][move.to().index()];
+HistoryEntry& History::butterfly_entry(chess::Move move, chess::Color color) {
+    return butterfly_hist[color][move.from()][move.to()];
 }
 
-const HistoryEntry& History::capt_entry(const chess::Move& move, chess::Piece captured) const {
-    return capt_hist[move.from().index()][move.to().index()][captured];
+const HistoryEntry& History::capt_entry(chess::Move move, chess::Piece captured) const {
+    return capt_hist[move.from()][move.to()][captured];
 }
-HistoryEntry& History::capt_entry(const chess::Move& move, chess::Piece captured) {
-    return capt_hist[move.from().index()][move.to().index()][captured];
+HistoryEntry& History::capt_entry(chess::Move move, chess::Piece captured) {
+    return capt_hist[move.from()][move.to()][captured];
 }

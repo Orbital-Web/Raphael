@@ -1,7 +1,5 @@
 #pragma once
-#include <Raphael/types.h>
-
-#include <chess.hpp>
+#include <chess/include.h>
 
 
 
@@ -21,7 +19,7 @@ i32 pieceval(chess::Square sq, const chess::Board& board);
  * \param board current board
  * \returns the square of the lva
  */
-chess::Square lva(chess::Bitboard attackers, const chess::Board& board);
+chess::Square lva(chess::BitBoard attackers, const chess::Board& board);
 }  // namespace internal
 
 
@@ -34,5 +32,5 @@ chess::Square lva(chess::Bitboard attackers, const chess::Board& board);
  * \param threshold minimum evaluation to count as good
  * \returns whether the move is "good" or not
  */
-bool see(const chess::Move& move, const chess::Board& board, i32 threshold);
+bool see(chess::Move move, const chess::Board& board, i32 threshold);
 }  // namespace raphael::SEE

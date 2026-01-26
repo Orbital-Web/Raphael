@@ -204,7 +204,6 @@ i32 RaphaelHCE::evaluate(const chess::Board& board) {
     i32 eval_mid = 0, eval_end = 0;
     i32 phase = 0;
     auto pieces = board.occ();
-    const auto stm = utils::stm(board);
 
     // draw evaluation
     i32 wbish_on_w = 0, wbish_on_b = 0;  // number of white bishop on light and dark tiles
@@ -218,37 +217,36 @@ i32 RaphaelHCE::evaluate(const chess::Board& board) {
     i32 wkf = 0, bkf = 0;          // king file
     i32 bishmob = 0, rookmob = 0;  // number of squares bishop and rooks see (white - black)
     // xray bitboards
-    auto wbishx = pieces & ~board.pieces(chess::PieceType::QUEEN, chess::Color::WHITE);
-    auto bbishx = pieces & ~board.pieces(chess::PieceType::QUEEN, chess::Color::BLACK);
-    auto wrookx = wbishx & ~board.pieces(chess::PieceType::ROOK, chess::Color::WHITE);
-    auto brookx = bbishx & ~board.pieces(chess::PieceType::ROOK, chess::Color::BLACK);
-    auto wpawns = board.pieces(chess::PieceType::PAWN, chess::Color::WHITE);
-    auto bpawns = board.pieces(chess::PieceType::PAWN, chess::Color::BLACK);
+    auto wbishx = pieces & ~board.occ(chess::PieceType::QUEEN, chess::Color::WHITE);
+    auto bbishx = pieces & ~board.occ(chess::PieceType::QUEEN, chess::Color::BLACK);
+    auto wrookx = wbishx & ~board.occ(chess::PieceType::ROOK, chess::Color::WHITE);
+    auto brookx = bbishx & ~board.occ(chess::PieceType::ROOK, chess::Color::BLACK);
+    auto wpawns = board.occ(chess::PieceType::PAWN, chess::Color::WHITE);
+    auto bpawns = board.occ(chess::PieceType::PAWN, chess::Color::BLACK);
 
     // loop through all pieces
     while (pieces) {
-        auto sqi = pieces.pop();
-        chess::Square sq = sqi;
+        auto sq = static_cast<chess::Square>(pieces.poplsb());
         i32 piece = board.at(sq);
 
         // add material value
         eval_mid += PVAL[piece][0];
         eval_end += PVAL[piece][1];
         // add positional value
-        eval_mid += PST[piece][sqi][0];
-        eval_end += PST[piece][sqi][1];
+        eval_mid += PST[piece][sq][0];
+        eval_end += PST[piece][sq][1];
 
         switch (piece) {
             // pawn structure
             case 0:
                 minor_only = false;
                 // passed (+ for white)
-                if ((PMASK.WPASSED[sqi] & bpawns) == 0) {
-                    eval_mid += PAWN_PASSED_WEIGHT[7 - (sqi / 8)][0];
-                    eval_end += PAWN_PASSED_WEIGHT[7 - (sqi / 8)][1];
+                if ((PMASK.WPASSED[sq] & bpawns) == 0) {
+                    eval_mid += PAWN_PASSED_WEIGHT[7 - (sq / 8)][0];
+                    eval_end += PAWN_PASSED_WEIGHT[7 - (sq / 8)][1];
                 }
                 // isolated (- for white)
-                if ((PMASK.ISOLATED[sqi] & wpawns) == 0) {
+                if ((PMASK.ISOLATED[sq] & wpawns) == 0) {
                     eval_mid -= PAWN_ISOLATION_WEIGHT[0];
                     eval_end -= PAWN_ISOLATION_WEIGHT[1];
                 }
@@ -256,12 +254,12 @@ i32 RaphaelHCE::evaluate(const chess::Board& board) {
             case 6:
                 minor_only = false;
                 // passed (- for white)
-                if ((PMASK.BPASSED[sqi] & wpawns) == 0) {
-                    eval_mid -= PAWN_PASSED_WEIGHT[sqi / 8][0];
-                    eval_end -= PAWN_PASSED_WEIGHT[sqi / 8][1];
+                if ((PMASK.BPASSED[sq] & wpawns) == 0) {
+                    eval_mid -= PAWN_PASSED_WEIGHT[sq / 8][0];
+                    eval_end -= PAWN_PASSED_WEIGHT[sq / 8][1];
                 }
                 // isolated (+ for white)
-                if ((PMASK.ISOLATED[sqi] & bpawns) == 0) {
+                if ((PMASK.ISOLATED[sq] & bpawns) == 0) {
                     eval_mid += PAWN_ISOLATION_WEIGHT[0];
                     eval_end += PAWN_ISOLATION_WEIGHT[1];
                 }
@@ -283,26 +281,26 @@ i32 RaphaelHCE::evaluate(const chess::Board& board) {
                 wbish++;
                 wbish_on_w += sq.is_light();
                 wbish_on_b += sq.is_dark();
-                bishmob += chess::attacks::bishop(sq, wbishx).count();
+                bishmob += chess::Attacks::bishop(sq, wbishx).count();
                 break;
             case 8:
                 phase++;
                 bbish++;
                 bbish_on_w += sq.is_light();
                 bbish_on_b += sq.is_dark();
-                bishmob -= chess::attacks::bishop(sq, bbishx).count();
+                bishmob -= chess::Attacks::bishop(sq, bbishx).count();
                 break;
 
             // rook mobility (xrays rooks and queens)
             case 3:
                 phase += 2;
                 minor_only = false;
-                rookmob += chess::attacks::rook(sq, wrookx).count();
+                rookmob += chess::Attacks::rook(sq, wrookx).count();
                 break;
             case 9:
                 phase += 2;
                 minor_only = false;
-                rookmob -= chess::attacks::rook(sq, brookx).count();
+                rookmob -= chess::Attacks::rook(sq, brookx).count();
                 break;
 
             // queen count
@@ -346,7 +344,7 @@ i32 RaphaelHCE::evaluate(const chess::Board& board) {
     }
 
     // convert perspective
-    if (!stm) {
+    if (board.stm() == chess::Color::BLACK) {
         eval_mid *= -1;
         eval_end *= -1;
     }
@@ -357,10 +355,10 @@ i32 RaphaelHCE::evaluate(const chess::Board& board) {
     if (eval_end >= 0) eval_end += KING_DIST_WEIGHT[1] * (14 - king_dist);
 
     // Bishop corner (if winning)
-    i32 ourbish_on_w = (stm) ? wbish_on_w : bbish_on_w;
-    i32 ourbish_on_b = (stm) ? wbish_on_b : bbish_on_b;
-    i32 ekr = (stm) ? bkr : wkr;
-    i32 ekf = (stm) ? bkf : wkf;
+    i32 ourbish_on_w = (board.stm() == chess::Color::WHITE) ? wbish_on_w : bbish_on_w;
+    i32 ourbish_on_b = (board.stm() == chess::Color::WHITE) ? wbish_on_b : bbish_on_b;
+    i32 ekr = (board.stm() == chess::Color::WHITE) ? bkr : wkr;
+    i32 ekf = (board.stm() == chess::Color::WHITE) ? bkf : wkf;
     i32 wtile_dist = min(ekf + (7 - ekr), (7 - ekf) + ekr);  // to A8 and H1
     i32 btile_dist = min(ekf + ekr, (7 - ekf) + (7 - ekr));  // to A1 and H8
     if (eval_mid >= 0) {

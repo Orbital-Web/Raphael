@@ -213,6 +213,7 @@ pyrightconfig.json
 # Raphael Executables
 main
 uci
+test
 Raphael1.*
 Raphael2.*
 

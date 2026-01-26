@@ -1,5 +1,5 @@
 #pragma once
-#include <Raphael/types.h>
+#include <chess/types.h>
 #include <immintrin.h>
 
 #if defined(__AVX__) || defined(__AVX2__)

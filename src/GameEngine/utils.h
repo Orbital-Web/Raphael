@@ -1,6 +1,7 @@
 #pragma once
+#include <chess/include.h>
+
 #include <SFML/Graphics.hpp>
-#include <chess.hpp>
 
 
 
@@ -21,8 +22,8 @@ const sf::Color TEXT(255, 255, 255);           // text
 
 
 class Arrow: public sf::Drawable {  // An arrow drawable that goes from squares `from` to `to`
-    static constexpr float THICKNESS = 40;
-    static constexpr float ARROWSIZE = 40;
+    static constexpr f32 THICKNESS = 40;
+    static constexpr f32 ARROWSIZE = 40;
 
 private:
     chess::Square from, to;
@@ -44,7 +45,7 @@ private:
 
 public:
     PieceDrawer();
-    void draw(sf::RenderWindow& window, chess::Piece piece, float x, float y, int check);
+    void draw(sf::RenderWindow& window, chess::Piece piece, f32 x, f32 y, i32 check);
 };
 
 
@@ -58,7 +59,7 @@ private:
 
 public:
     Timer(bool at_top, const sf::Font& font);
-    void update(float time, bool active);
+    void update(f32 time, bool active);
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 };
 
@@ -70,5 +71,5 @@ public:
  * \param y y coordinate on screen
  * \returns the square at that coordinate
  */
-chess::Square get_square(int x, int y);
+chess::Square get_square(i32 x, i32 y);
 }  // namespace cge

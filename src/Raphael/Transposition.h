@@ -1,7 +1,6 @@
 #pragma once
-#include <Raphael/types.h>
+#include <chess/include.h>
 
-#include <chess.hpp>
 #include <vector>
 
 
@@ -20,9 +19,9 @@ private:
     EntryStorage* _table;
 
 public:
-    static constexpr u64 MAX_TABLE_SIZE = 201326592;            // 3GB
-    static constexpr u64 DEF_TABLE_SIZE = 4194304;              // 64MB
-    static constexpr size_t ENTRY_SIZE = sizeof(EntryStorage);  // 16 bytes
+    static constexpr u64 MAX_TABLE_SIZE = 201326592;           // 3GB
+    static constexpr u64 DEF_TABLE_SIZE = 4194304;             // 64MB
+    static constexpr usize ENTRY_SIZE = sizeof(EntryStorage);  // 16 bytes
     static_assert(ENTRY_SIZE == 16);
 
     enum Flag { INVALID = 0, LOWER, EXACT, UPPER };

@@ -24,8 +24,16 @@ public:
     template <MoveGenType mt = MoveGenType::ALL>
     static void generate_legals(ScoredMoveList& movelist, const Board& board);
 
-    /** A slow function to check if an enpassant square is valid, taking into account of pins and
-     * other stuff
+    /** Checks if a move is legal
+     * Note that the move must be a valid chess move (e.g., no promoting to king in 3rd rank)
+     *
+     * \param board current board
+     * \param move move to check
+     * \returns whether the move is legal is the current position
+     */
+    [[nodiscard]] static bool is_legal(const Board& board, Move move);
+
+    /** Check if an enpassant square is valid, taking into account of pins and other stuff
      *
      * \tparam color the side to move
      * \param board current board
@@ -92,5 +100,8 @@ private:
 
     template <Color::underlying color, MoveGenType mt>
     static void generate_legals(ScoredMoveList& movelist, const Board& board);
+
+    template <Color::underlying color>
+    [[nodiscard]] static bool is_legal(const Board& board, Move move);
 };
 }  // namespace chess

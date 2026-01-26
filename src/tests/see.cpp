@@ -1,8 +1,13 @@
 #include <Raphael/SEE.h>
 #include <Raphael/tunable.h>
 
+#include <iostream>
+#include <sstream>
 #include <tests/doctest/doctest.hpp>
 
+using std::cout;
+using std::endl;
+using std::stringstream;
 using std::vector;
 
 
@@ -101,8 +106,19 @@ TEST_SUITE("Raphael SEE") {
             const chess::Board board(testdata.fen);
             const auto move = chess::uci::to_move(board, testdata.mv);
 
-            CHECK(raphael::SEE::see(move, board, testdata.exchange) == true);
-            CHECK(raphael::SEE::see(move, board, testdata.exchange + 1) == false);
+            const auto see1 = raphael::SEE::see(move, board, testdata.exchange);
+            const auto see2 = raphael::SEE::see(move, board, testdata.exchange + 1);
+
+            // don't want to spam with CHECKs
+            if (see1 != true || see2 != false) {
+                stringstream ss;
+                ss << "SEE failed for position " << testdata.fen << " move " << testdata.mv
+                   << ": got " << (see1 ? "true" : "false") << " and " << (see2 ? "true" : "false");
+                cout << ss.str() << endl;
+                CHECK(false);
+            }
         }
+
+        CHECK(true);
     }
 }

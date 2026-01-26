@@ -51,8 +51,8 @@ public:
             return !has(Color::WHITE) && !has(Color::BLACK);
         }
 
-        [[nodiscard]] static constexpr Side closest_side(File file, File pred) {
-            return file > pred ? Side::KING_SIDE : Side::QUEEN_SIDE;
+        [[nodiscard]] static constexpr Side closest_side(File to, File from) {
+            return to > from ? Side::KING_SIDE : Side::QUEEN_SIDE;
         }
 
     private:
@@ -211,9 +211,7 @@ public:
     }
 
 
-    // [[nodiscard]] bool is_legal(Move move) const {
-    //     // TODO:
-    // }
+    [[nodiscard]] bool is_legal(Move move) const { return Movegen::is_legal(*this, move); }
 
 
     void make_move(Move move) {
@@ -240,10 +238,10 @@ public:
             // remove castling rights if rook is captured
             if (captured.type() == PieceType::ROOK && move.to().rank().is_back_rank(~stm_)) {
                 const auto king_sq = king_square(~stm_);
-                const auto file = CastlingRights::closest_side(move.to().file(), king_sq.file());
+                const auto side = CastlingRights::closest_side(move.to().file(), king_sq.file());
 
-                if (castle_rights_.get_rook_file(~stm_, file) == move.to().file())
-                    hash_ ^= Zobrist::castle_index(castle_rights_.clear(~stm_, file));
+                if (castle_rights_.get_rook_file(~stm_, side) == move.to().file())
+                    hash_ ^= Zobrist::castle_index(castle_rights_.clear(~stm_, side));
             }
         }
 
@@ -256,10 +254,10 @@ public:
         } else if (pt == PieceType::ROOK && move.from().is_back_rank(stm_)) {
             // remove castling rights if rook moves from back rank
             const auto king_sq = king_square(stm_);
-            const auto file = CastlingRights::closest_side(move.from().file(), king_sq.file());
+            const auto side = CastlingRights::closest_side(move.from().file(), king_sq.file());
 
-            if (castle_rights_.get_rook_file(stm_, file) == move.from().file())
-                hash_ ^= Zobrist::castle_index(castle_rights_.clear(stm_, file));
+            if (castle_rights_.get_rook_file(stm_, side) == move.from().file())
+                hash_ ^= Zobrist::castle_index(castle_rights_.clear(stm_, side));
 
         } else if (pt == PieceType::PAWN) {
             halfmoves_ = 0;
@@ -454,10 +452,10 @@ public:
             if (EXACT && captured.type() == PieceType::ROOK
                 && move.to().rank().is_back_rank(~stm_)) {
                 const auto king_sq = king_square(~stm_);
-                const auto file = CastlingRights::closest_side(move.to().file(), king_sq.file());
+                const auto side = CastlingRights::closest_side(move.to().file(), king_sq.file());
 
-                if (castle_rights_.get_rook_file(~stm_, file) == move.to().file())
-                    newhash ^= Zobrist::castle_index(~stm_ * 2 + file);
+                if (castle_rights_.get_rook_file(~stm_, side) == move.to().file())
+                    newhash ^= Zobrist::castle_index(~stm_ * 2 + side);
             }
         }
 
@@ -473,10 +471,10 @@ public:
             } else if (pt == PieceType::ROOK && move.from().is_back_rank(stm_)) {
                 // remove castling rights if rook moves from back rank
                 const auto king_sq = king_square(stm_);
-                const auto file = CastlingRights::closest_side(move.from().file(), king_sq.file());
+                const auto side = CastlingRights::closest_side(move.from().file(), king_sq.file());
 
-                if (castle_rights_.get_rook_file(stm_, file) == move.from().file())
-                    newhash ^= Zobrist::castle_index(stm_ * 2 + file);
+                if (castle_rights_.get_rook_file(stm_, side) == move.from().file())
+                    newhash ^= Zobrist::castle_index(stm_ * 2 + side);
 
             } else if (pt == PieceType::PAWN) {
                 // double push

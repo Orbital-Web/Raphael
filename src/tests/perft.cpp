@@ -9,6 +9,10 @@
 
 using namespace chess;
 using namespace std::chrono;
+using std::cout;
+using std::endl;
+using std::string;
+using std::stringstream;
 
 
 
@@ -35,7 +39,7 @@ public:
         return nodes;
     }
 
-    void benchPerft(Board& board, i32 depth, u64 expected_node_count) {
+    void bench_perft(Board& board, i32 depth, u64 expected_node_count) {
         board_ = board;
 
         const auto t1 = high_resolution_clock::now();
@@ -43,7 +47,7 @@ public:
         const auto t2 = high_resolution_clock::now();
         const auto ms = duration_cast<milliseconds>(t2 - t1).count();
 
-        std::stringstream ss;
+        stringstream ss;
 
         // clang-format off
         ss << "depth " << std::left << std::setw(2) << depth
@@ -52,14 +56,14 @@ public:
            << " nps " << std::setw(9) << (nodes * 1000) / (ms + 1)
            << " fen " << std::setw(87) << board.get_fen();
         // clang-format on
-        std::cout << ss.str() << std::endl;
+        cout << ss.str() << endl;
 
         CHECK(nodes == expected_node_count);
     }
 };
 
 struct Test {
-    std::string fen;
+    string fen;
     u64 expected_node_count;
     i32 depth;
 };
@@ -79,7 +83,7 @@ TEST_SUITE("PERFT") {
         Perft perft;
         for (const auto& test : test_positions) {
             Board board(test.fen);
-            perft.benchPerft(board, test.depth, test.expected_node_count);
+            perft.bench_perft(board, test.depth, test.expected_node_count);
         }
     }
 }

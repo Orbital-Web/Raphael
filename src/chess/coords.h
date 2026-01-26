@@ -69,6 +69,11 @@ public:
 
     [[nodiscard]] constexpr operator i32() const { return file_; }
     [[nodiscard]] explicit operator std::string() const { return std::string(1, file_ + 'a'); }
+
+    constexpr File& operator++(i32) {
+        file_ = static_cast<underlying>(file_ + 1);
+        return *this;
+    }
 };
 
 class Rank {
@@ -88,6 +93,11 @@ public:
 
     [[nodiscard]] constexpr operator i32() const { return rank_; }
     [[nodiscard]] explicit operator std::string() const { return std::string(1, rank_ + '1'); }
+
+    constexpr Rank& operator++(i32) {
+        rank_ = static_cast<underlying>(rank_ + 1);
+        return *this;
+    }
 
     [[nodiscard]] constexpr bool is_back_rank(Color color) const {
         return rank_ == static_cast<underlying>(color * 7);

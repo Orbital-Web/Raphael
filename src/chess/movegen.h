@@ -17,6 +17,13 @@ inline void Movegen::generate_legals(ScoredMoveList& movelist, const Board& boar
         generate_legals<Color::BLACK, mt>(movelist, board);
 }
 
+[[nodiscard]] inline bool Movegen::is_legal(const Board& board, Move move) {
+    if (board.stm() == Color::WHITE)
+        return Movegen::is_legal<Color::WHITE>(board, move);
+    else
+        return Movegen::is_legal<Color::BLACK>(board, move);
+}
+
 template <Color::underlying color>
 [[nodiscard]] inline bool Movegen::is_ep_valid(const Board& board, Square ep) {
     assert(board.stm() == color);
@@ -305,14 +312,14 @@ template <Color::underlying color>
     std::array<Move, 2> moves = {Move::NO_MOVE, Move::NO_MOVE};
     i32 i = 0;
 
-    const auto eppawn_sq = ep.ep_square();  // the pawn that double pushed
+    const auto captured_sq = ep.ep_square();  // the pawn that double pushed
 
     // cannot enpassant if doing so doesn't resolve check
-    if (!checkmask.is_set(eppawn_sq) && !checkmask.is_set(ep)) return moves;
+    if (!checkmask.is_set(captured_sq) && !checkmask.is_set(ep)) return moves;
 
     const Square king_sq = board.king_square(static_cast<Color>(color));
     const BitBoard king_mask
-        = BitBoard::from_square(king_sq) & BitBoard::from_rank(eppawn_sq.rank());
+        = BitBoard::from_square(king_sq) & BitBoard::from_rank(captured_sq.rank());
     const BitBoard opp_qr = (board.occ(PieceType::ROOK) | board.occ(PieceType::QUEEN))
                             & board.occ(~static_cast<Color>(color));
 
@@ -325,7 +332,7 @@ template <Color::underlying color>
         if (pin_d.is_set(from) && !pin_d.is_set(ep)) continue;
 
         const auto connecting_pawns
-            = BitBoard::from_square(eppawn_sq) | BitBoard::from_square(from);
+            = BitBoard::from_square(captured_sq) | BitBoard::from_square(from);
         const auto is_possible_pin = king_mask && opp_qr;
 
         // see if removing the two pawns puts us in check, i.e., K <- P p <- r/q
@@ -396,8 +403,9 @@ template <Color::underlying color>
         if (Attacks::between(sq, king_to) & seen) continue;
 
         // skip if chess960 and rook is pinned on backrank
-        const auto rook_from
-            = BitBoard::from_square(Square(rights.get_rook_file(color, side), sq.rank()));
+        const auto rook_from = BitBoard::from_square(
+            Square(rights.get_rook_file(static_cast<Color>(color), side), sq.rank())
+        );
         if (board.chess960() && (pin_hv & board.occ(static_cast<Color>(color)) & rook_from))
             continue;
 
@@ -440,11 +448,10 @@ inline void Movegen::generate_legals(ScoredMoveList& movelist, const Board& boar
 
     const auto king_sq = board.king_square(static_cast<Color>(color));
 
-    auto occ_us = board.occ(static_cast<Color>(color));
-    auto occ_opp = board.occ(~static_cast<Color>(color));
-    auto occ_all = occ_us | occ_opp;
-
-    auto opp_empty = ~occ_us;
+    const auto occ_us = board.occ(static_cast<Color>(color));
+    const auto occ_opp = board.occ(~static_cast<Color>(color));
+    const auto occ_all = occ_us | occ_opp;
+    const auto opp_empty = ~occ_us;
 
     const auto [checkmask, checks] = check_mask<color>(board, king_sq);
     const auto pin_hv = pin_mask<color, PieceType::ROOK>(board, king_sq, occ_opp, occ_us);
@@ -460,7 +467,7 @@ inline void Movegen::generate_legals(ScoredMoveList& movelist, const Board& boar
         movable_square = ~occ_all;
 
     // generate king moves
-    auto seen = seen_squares<~color>(board, opp_empty);
+    const auto seen = seen_squares<~color>(board, opp_empty);
     push_moves(movelist, BitBoard::from_square(king_sq), occ_opp, [&](Square sq) {
         return generate_legal_kings(sq, seen, movable_square);
     });
@@ -507,5 +514,180 @@ inline void Movegen::generate_legals(ScoredMoveList& movelist, const Board& boar
     push_moves(movelist, queens_mask, occ_opp, [&](Square sq) {
         return generate_legal_queens(sq, pin_d, pin_hv, occ_all) & movable_square;
     });
+}
+
+template <Color::underlying color>
+[[nodiscard]] inline bool Movegen::is_legal(const Board& board, Move move) {
+    assert(board.stm() == color);
+
+    const auto from = move.from();
+    const auto to = move.to();
+    const auto from_pt = board.at(from);
+    const auto to_pt = board.at(to);
+
+    if (from_pt == Piece::NONE || from_pt.color() != static_cast<Color>(color)) return false;
+    if (to_pt != Piece::NONE                             // capturing (ignoring enpassant)
+        && ((to_pt.color() == static_cast<Color>(color)  // capturing own piece (except castling)
+             && (move.type() != Move::CASTLING
+                 || from_pt.type() != PieceType::KING
+                 || to_pt != Piece(PieceType::ROOK, static_cast<Color>(color))
+            ))
+            || to_pt.type() == PieceType::KING // capturing king
+        ))
+        return false;
+
+    const auto occ_us = board.occ(static_cast<Color>(color));
+    const auto occ_opp = board.occ(~static_cast<Color>(color));
+    const auto occ_all = occ_us | occ_opp;
+    const auto opp_empty = ~occ_us;
+
+    // non-castling king moves (check for normal as king could be in place of a previous promo/ep)
+    if (from_pt.type() == PieceType::KING && move.type() == Move::NORMAL) {
+        const auto seen = seen_squares<~color>(board, opp_empty);
+        if (seen.is_set(to)) return false;
+        if (!(Attacks::king(from).is_set(to))) return false;
+        return true;
+    }
+
+    const auto king_sq = board.king_square(static_cast<Color>(color));
+
+    const auto [checkmask, checks] = check_mask<color>(board, king_sq);
+    const auto pin_hv = pin_mask<color, PieceType::ROOK>(board, king_sq, occ_opp, occ_us);
+    const auto pin_d = pin_mask<color, PieceType::BISHOP>(board, king_sq, occ_opp, occ_us);
+    assert(checks <= 2);
+
+    // only king moves allowed in double check
+    if (checks == 2 && from_pt.type() != PieceType::KING) return false;
+
+    if (move.type() == Move::CASTLING) {
+        // can't castle when in check
+        if (checks != 0) return false;
+
+        const auto rights = board.castle_rights();
+        const auto side = rights.closest_side(to.file(), from.file());
+
+        // should have castling rights
+        if (!rights.has(static_cast<Color>(color), side)) return false;
+
+        assert(to.is_back_rank(static_cast<Color>(color)));
+
+        // should not have pieces on the castling path
+        const auto is_king_side = (side == Board::CastlingRights::Side::KING_SIDE);
+        if (occ_all & board.castle_path(static_cast<Color>(color), is_king_side)) return false;
+
+        // king path should not be attacked
+        const auto king_to = Square::castling_king_dest(is_king_side, static_cast<Color>(color));
+        const auto seen = seen_squares<~color>(board, opp_empty);
+        if (Attacks::between(from, king_to) & seen) return false;
+
+        // rook on backrank should not be pinned in chess960
+        const auto rook_from = BitBoard::from_square(
+            Square(rights.get_rook_file(static_cast<Color>(color), side), from.rank())
+        );
+        if (board.chess960() && (pin_hv & board.occ(static_cast<Color>(color)) & rook_from))
+            return false;
+
+        return true;
+
+    } else if (move.type() == Move::ENPASSANT) {
+        const auto ep = board.enpassant_square();
+        if (ep == Square::NONE || to != ep) return false;
+
+        assert(to_pt == Piece::NONE);
+
+        // should be a pawn
+        if (from_pt.type() != PieceType::PAWN) return false;
+
+        // should be attacking the ep square
+        if (!(Attacks::pawn(from, static_cast<Color>(color)).is_set(ep))) return false;
+
+        // should resolve check if in check
+        const auto captured_sq = ep.ep_square();  // the pawn that double pushed
+        if (!checkmask.is_set(captured_sq) && !checkmask.is_set(ep)) return false;
+
+        // should stay along diagonal pin (and not hv pinned)
+        if (pin_hv.is_set(from)) return false;
+        if (pin_d.is_set(from) && !pin_d.is_set(ep)) return false;
+
+        const auto connecting_pawns
+            = BitBoard::from_square(captured_sq) | BitBoard::from_square(from);
+        const BitBoard king_mask
+            = BitBoard::from_square(king_sq) & BitBoard::from_rank(captured_sq.rank());
+        const BitBoard opp_qr = (board.occ(PieceType::ROOK) | board.occ(PieceType::QUEEN))
+                                & board.occ(~static_cast<Color>(color));
+        const auto is_possible_pin = king_mask && opp_qr;
+
+        // moving and captured squares should not be pinned
+        if (is_possible_pin
+            && !(Attacks::rook(king_sq, occ_all ^ connecting_pawns) & opp_qr).is_empty())
+            return false;
+
+        return true;
+
+    } else if (move.type() == Move::PROMOTION) {
+        // should be pawn
+        if (from_pt.type() != PieceType::PAWN) return false;
+
+        // fall through to normal logic
+    }
+
+    // moves should be on the checkmask
+    if (!checkmask.is_set(to)) return false;
+
+    // piece-specific movement
+    switch (from_pt.type()) {
+        case PieceType::PAWN: {
+            // should push to promotion rank iff promoting
+            constexpr auto PROMO_RANK = Rank(Rank::R8).relative(static_cast<Color>(color));
+            if ((to.rank() == PROMO_RANK) != (move.type() == Move::PROMOTION)) return false;
+
+            // should stay along diagonal pin if capturing
+            if (to_pt != Piece::NONE) {
+                if (pin_hv.is_set(from)) return false;
+                if (pin_d.is_set(from) && !pin_d.is_set(to)) return false;
+                return Attacks::pawn(from, static_cast<Color>(color)).is_set(to);
+            }
+
+            // should stay along hv pin if pushing
+            if (pin_d.is_set(from)) return false;
+            if (pin_hv.is_set(from) && !pin_hv.is_set(to)) return false;
+
+            constexpr auto UP = relative_direction(Direction::NORTH, static_cast<Color>(color));
+            constexpr auto DOUBLE_PUSH_RANK = Rank(Rank::R2).relative(static_cast<Color>(color));
+
+            // single push
+            if (to == from + UP) return true;
+
+            // middle square should be empty if double push
+            if (from.rank() == DOUBLE_PUSH_RANK && to == from + UP + UP)
+                return board.at(from + UP) == Piece::NONE;
+
+            return false;
+        }
+
+        case PieceType::KNIGHT: {
+            if (pin_d.is_set(from) || pin_hv.is_set(from)) return false;
+            return Attacks::knight(from).is_set(to);
+        }
+
+        case PieceType::BISHOP: {
+            if (pin_hv.is_set(from)) return false;
+            if (pin_d.is_set(from) && !pin_d.is_set(to)) return false;
+            return Attacks::bishop(from, occ_all).is_set(to);
+        }
+
+        case PieceType::ROOK: {
+            if (pin_d.is_set(from)) return false;
+            if (pin_hv.is_set(from) && !pin_hv.is_set(to)) return false;
+            return Attacks::rook(from, occ_all).is_set(to);
+        }
+
+        case PieceType::QUEEN: {
+            if (pin_d.is_set(from) && !pin_d.is_set(to)) return false;
+            if (pin_hv.is_set(from) && !pin_hv.is_set(to)) return false;
+            return Attacks::queen(from, occ_all).is_set(to);
+        }
+    }
+    assert(false);
 }
 }  // namespace chess

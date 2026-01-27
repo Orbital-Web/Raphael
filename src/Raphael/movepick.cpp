@@ -32,7 +32,7 @@ chess::Move MoveGenerator::next() {
         case Stage::TT_MOVE: {
             stage_ = Stage::GEN_NOISY;
 
-            if (board_->is_legal(ttmove_)) return ttmove_;
+            if (ttmove_ != chess::Move::NO_MOVE && board_->is_legal(ttmove_)) return ttmove_;
 
             [[fallthrough]];
         }
@@ -45,18 +45,7 @@ chess::Move MoveGenerator::next() {
             );
             end_ = movelist_->size();
 
-            // score noisies
-            for (auto& smove : *movelist_) {
-                const auto victim = board_->get_captured(smove.move);
-
-                i32 score = 0;
-                score += history_->get_noisyscore(smove.move, victim) / CAPTHIST_DIVISOR;
-                score += SEE_TABLE[victim];
-                if (smove.move.type() == chess::Move::PROMOTION)
-                    score += SEE_TABLE[smove.move.promotion_type()]
-                             - SEE_TABLE[chess::PieceType::PAWN];
-                smove.score = score;
-            }
+            score_noisies();
 
             stage_ = Stage::GOOD_NOISY;
             [[fallthrough]];
@@ -99,11 +88,7 @@ chess::Move MoveGenerator::next() {
                 );
                 end_ = movelist_->size();
 
-                // score quiets
-                for (usize i = idx_; i < end_; i++) {
-                    auto& smove = (*movelist_)[i];
-                    smove.score = history_->get_quietscore(smove.move, board_->stm());
-                }
+                score_quiets();
             }
 
             stage_ = Stage::QUIET;
@@ -154,18 +139,7 @@ chess::Move MoveGenerator::next() {
             );
             end_ = movelist_->size();
 
-            // score noisies
-            for (auto& smove : *movelist_) {
-                const auto victim = board_->get_captured(smove.move);
-
-                i32 score = 0;
-                score += history_->get_noisyscore(smove.move, victim) / CAPTHIST_DIVISOR;
-                score += SEE_TABLE[victim];
-                if (smove.move.type() == chess::Move::PROMOTION)
-                    score += SEE_TABLE[smove.move.promotion_type()]
-                             - SEE_TABLE[chess::PieceType::PAWN];
-                smove.score = score;
-            }
+            score_noisies();
 
             stage_ = Stage::QS_NOISY;
             [[fallthrough]];
@@ -205,6 +179,28 @@ MoveGenerator::MoveGenerator(
       ttmove_(ttmove),
       killer_(killer) {
     movelist_->clear();
+}
+
+
+void MoveGenerator::score_noisies() {
+    for (usize i = idx_; i < end_; i++) {
+        auto& smove = (*movelist_)[i];
+        const auto victim = board_->get_captured(smove.move);
+
+        i32 score = 0;
+        score += history_->get_noisyscore(smove.move, victim) / CAPTHIST_DIVISOR;
+        score += SEE_TABLE[victim];
+        if (smove.move.type() == chess::Move::PROMOTION)
+            score += SEE_TABLE[smove.move.promotion_type()] - SEE_TABLE[chess::PieceType::PAWN];
+        smove.score = score;
+    }
+}
+
+void MoveGenerator::score_quiets() {
+    for (usize i = idx_; i < end_; i++) {
+        auto& smove = (*movelist_)[i];
+        smove.score = history_->get_quietscore(smove.move, board_->stm());
+    }
 }
 
 

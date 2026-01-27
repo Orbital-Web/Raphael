@@ -95,6 +95,13 @@ private:
     );
 
 
+    /** Scores noisy moves between idx_ and end_ */
+    void score_noisies();
+
+    /** Scores quiet moves between idex_ and end_ */
+    void score_quiets();
+
+
     /** Does a selection sort to return the index of the next highest scored move in the movelist
      * between idx_ and end_
      *

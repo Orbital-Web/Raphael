@@ -14,9 +14,9 @@ private:
         u64 val;  // 63-32: eval, 31-16: move, 15-14: flag, 13-0: depth
     };
 
-    u64 size;
-    u64 capacity;
-    EntryStorage* _table;
+    u64 size_;
+    u64 capacity_;
+    EntryStorage* table_;
 
 public:
     static constexpr u64 MAX_TABLE_SIZE = 201326592;           // 3GB
@@ -87,13 +87,13 @@ private:
      */
     u64 index(u64 key) const;
 
-    /** Allocates the table and sets capacity and _table (not size)
+    /** Allocates the table and sets capacity_ and table_ (not size)
      *
      * \param newsize new size in number of entries
      */
     void allocate(u64 newsize);
 
-    /** Deallocates the table (if allocated) and sets capacity and _table (not size) */
+    /** Deallocates the table (if allocated) and sets capacity_ and table_ (not size) */
     void deallocate();
 };
 }  // namespace raphael

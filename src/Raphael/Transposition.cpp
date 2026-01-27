@@ -13,7 +13,7 @@ using namespace raphael;
 
 
 
-TranspositionTable::TranspositionTable(u32 size_mb): capacity(0), _table(nullptr) {
+TranspositionTable::TranspositionTable(u32 size_mb): capacity_(0), table_(nullptr) {
     resize(size_mb);
 }
 
@@ -26,11 +26,11 @@ void TranspositionTable::resize(u32 size_mb) {
     assert((newsize > 0 && newsize <= MAX_TABLE_SIZE));
 
     // re-allocate if necessary
-    if (newsize > capacity || newsize <= capacity / 2) {
+    if (newsize > capacity_ || newsize <= capacity_ / 2) {
         deallocate();
         allocate(newsize);
     }
-    size = newsize;
+    size_ = newsize;
 
     clear();
 }
@@ -38,7 +38,7 @@ void TranspositionTable::resize(u32 size_mb) {
 
 TranspositionTable::Entry TranspositionTable::get(u64 key, i32 ply) const {
     // get
-    const EntryStorage& entryst = _table[index(key)];
+    const EntryStorage& entryst = table_[index(key)];
 
     // unpack value to get entry (63-32: eval, 31-16: move, 15-14: flag, 13-0: depth)
     Entry entry = {
@@ -58,7 +58,7 @@ TranspositionTable::Entry TranspositionTable::get(u64 key, i32 ply) const {
 }
 
 
-void TranspositionTable::prefetch(u64 key) const { __builtin_prefetch(&_table[index(key)]); }
+void TranspositionTable::prefetch(u64 key) const { __builtin_prefetch(&table_[index(key)]); }
 
 
 void TranspositionTable::set(const Entry& entry, i32 ply) {
@@ -77,24 +77,24 @@ void TranspositionTable::set(const Entry& entry, i32 ply) {
     val |= (u64(u32(eval)) << 32);  // eval may be negative
 
     // set
-    _table[index(entry.key)] = {.key = entry.key, .val = val};
+    table_[index(entry.key)] = {.key = entry.key, .val = val};
 }
 
 
 void TranspositionTable::clear() {
-    assert(_table != nullptr);
-    assert(size > 0);
+    assert(table_ != nullptr);
+    assert(size_ > 0);
 
-    memset(_table, 0, size * ENTRY_SIZE);
+    memset(table_, 0, size_ * ENTRY_SIZE);
 }
 
 
-u64 TranspositionTable::index(u64 key) const { return key % size; }
+u64 TranspositionTable::index(u64 key) const { return key % size_; }
 
 
 void TranspositionTable::allocate(u64 newsize) {
-    assert(_table == nullptr);
-    assert(capacity == 0);
+    assert(table_ == nullptr);
+    assert(capacity_ == 0);
 
 #ifdef _WIN32
     static constexpr usize page_size = 4096;
@@ -103,29 +103,29 @@ void TranspositionTable::allocate(u64 newsize) {
 #endif
 
     const usize newsize_s = ((newsize * ENTRY_SIZE + page_size - 1) / page_size) * page_size;
-    capacity = newsize_s / ENTRY_SIZE;
+    capacity_ = newsize_s / ENTRY_SIZE;
 
 #ifdef _WIN32
     // TODO: windows huge page support
-    _table = static_cast<EntryStorage*>(_aligned_malloc(newsize_s, page_size));
+    table_ = static_cast<EntryStorage*>(_aligned_malloc(newsize_s, page_size));
 #else
-    _table = static_cast<EntryStorage*>(aligned_alloc(page_size, newsize_s));
-    madvise(_table, newsize_s, MADV_HUGEPAGE);
+    table_ = static_cast<EntryStorage*>(aligned_alloc(page_size, newsize_s));
+    madvise(table_, newsize_s, MADV_HUGEPAGE);
 #endif
 }
 
 void TranspositionTable::deallocate() {
-    if (_table) {
-        assert(_table != nullptr);
-        assert(capacity > 0);
+    if (table_) {
+        assert(table_ != nullptr);
+        assert(capacity_ > 0);
 
 #ifdef _WIN32
-        _aligned_free(_table);
+        _aligned_free(table_);
 #else
-        free(_table);
+        free(table_);
 #endif
 
-        capacity = 0;
-        _table = nullptr;
+        capacity_ = 0;
+        table_ = nullptr;
     }
 }

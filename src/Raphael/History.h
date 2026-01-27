@@ -20,8 +20,8 @@ struct HistoryEntry {
 
 class History {  // based on https://www.chessprogramming.org/History_Heuristic
 private:
-    HistoryEntry butterfly_hist[2][64][64];  // [side][from][to]
-    HistoryEntry capt_hist[64][64][13];      // [from][to][piece, 12 for non-capture queening]
+    HistoryEntry butterfly_hist_[2][64][64];  // [side][from][to]
+    HistoryEntry capt_hist_[64][64][13];      // [from][to][piece, 12 for non-capture queening]
 
 public:
     /** Initializes all the history tables with zeros */

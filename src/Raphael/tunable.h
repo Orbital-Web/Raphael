@@ -211,13 +211,8 @@ TunableCallback(SEE_ROOK_VAL, 694, 300, 800, 30, update_see_table, true);
 TunableCallback(SEE_QUEEN_VAL, 1313, 600, 1800, 40, update_see_table, true);
 
 // move ordering
-static constexpr i32 TT_MOVE_FLOOR = INT16_MAX;  // tt move                 32767
-static constexpr i32 GOOD_NOISY_FLOOR = 25000;   // good captures/queening  20000 to 300000
-static constexpr i32 KILLER_FLOOR = 17000;       // killer moves            17000
-static constexpr i32 HISTORY_MAX = 16384;        // quiet moves            -16384 to 16384
-static constexpr i32 BAD_NOISY_FLOOR = -25000;   // bad captures/queening  -30000 to -20000
+static constexpr i32 HISTORY_MAX = 16384;
 static constexpr i32 CAPTHIST_DIVISOR = 8;
-static_assert(GOOD_NOISY_FLOOR + HISTORY_MAX / CAPTHIST_DIVISOR < TT_MOVE_FLOOR);
 
 Tunable(GOOD_NOISY_SEE_THRESH, -15, -200, 200, 30, true);  // SEE threshold for good tacticals
 

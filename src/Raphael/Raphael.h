@@ -45,11 +45,11 @@ private:
     // nnue
     Nnue net;
     // info
-    i64 nodes;     // number of nodes visited
-    i32 seldepth;  // maximum search depth reached
+    i64 nodes_;     // number of nodes visited
+    i32 seldepth_;  // maximum search depth reached
     // timing
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_t;  // search start time
-    i64 search_t;                                                         // search duration (ms)
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_t_;  // search start time
+    i64 search_t_;                                                         // search duration (ms)
 
     struct PVList {
         chess::Move moves[MAX_DEPTH] = {chess::Move::NO_MOVE};
@@ -132,8 +132,8 @@ public:
     void reset();
 
 private:
-    /** Estimates the time in ms Raphael should spent on searching a move, and sets search_t. Should
-     * be called at the start before using is_time_over.
+    /** Estimates the time in ms Raphael should spent on searching a move, and sets search_t_
+     * Should be called at the start before using is_time_over
      *
      * \param board current board
      * \param t_remain remaining time in ms
@@ -141,8 +141,8 @@ private:
      */
     void start_search_timer(const chess::Board& board, i32 t_remain, i32 t_inc);
 
-    /** Sets and returns halt = true if search_t ms has passed. Will return false indefinetely if
-     * search_t = 0.
+    /** Sets and returns halt = true if search_t_ ms has passed. Will return false indefinetely if
+     * search_t_ = 0.
      *
      * \param halt bool reference which will turn false to indicate search should stop
      * \returns the new value of halt

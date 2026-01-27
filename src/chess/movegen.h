@@ -651,5 +651,6 @@ template <Color::underlying color>
         }
     }
     assert(false);
+    return false;
 }
 }  // namespace chess

@@ -214,7 +214,8 @@ TunableCallback(SEE_QUEEN_VAL, 1313, 600, 1800, 40, update_see_table, true);
 static constexpr i32 HISTORY_MAX = 16384;
 static constexpr i32 CAPTHIST_DIVISOR = 8;
 
-Tunable(GOOD_NOISY_SEE_THRESH, -15, -200, 200, 30, true);  // SEE threshold for good tacticals
+Tunable(GOOD_NOISY_SEE_BASE, -15, -200, 200, 30, true);  // SEE threshold for good tacticals
+Tunable(GOOD_NOISY_SEE_SCALE, 16, 0, 128, 8, true);      // SEE score scale for good tacticals
 
 Tunable(HISTORY_BONUS_DEPTH_SCALE, 100, 128, 512, 32, true);
 Tunable(HISTORY_BONUS_OFFSET, 100, 128, 768, 64, true);

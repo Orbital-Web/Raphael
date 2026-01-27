@@ -59,7 +59,8 @@ chess::Move MoveGenerator::next() {
 
                 if (smove.move == ttmove_) continue;
 
-                if (SEE::see(smove.move, *board_, GOOD_NOISY_SEE_THRESH))
+                const auto thresh = GOOD_NOISY_SEE_BASE - (smove.score * GOOD_NOISY_SEE_SCALE / 64);
+                if (SEE::see(smove.move, *board_, thresh))
                     return smove.move;
                 else
                     (*movelist_)[bad_noisy_end_++] = smove;
@@ -159,6 +160,7 @@ chess::Move MoveGenerator::next() {
         }
     }
     assert(false);
+    return chess::Move::NO_MOVE;
 }
 
 void MoveGenerator::skip_quiets() { skip_quiets_ = true; }

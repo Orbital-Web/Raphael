@@ -83,10 +83,10 @@ public:
 
 
     void check(i32 depth) {
+        if (depth == 0) return;
+
         ScoredMoveList legalmoves;
         Movegen::generate_legals(legalmoves, board_);
-
-        if (depth == 0) return;
 
         for (const auto& move : allmoves_) {
             const bool is_legal = legalmoves.contains(move);
@@ -133,6 +133,7 @@ TEST_SUITE("is_legal") {
             "8/5bk1/8/2Pp4/8/1K6/8/8 w - - 0 1",
             "8/2p3p1/8/q2PKP1P/2N5/8/kp5R/2B5 b - - 0 1",
             "5k2/4N3/8/2Q5/8/q7/8/4K2R w K - 0 1",
+            "5rr1/4n2k/4q2P/P1P2n2/3B1p2/4pP2/2N1P3/1RR1K2Q w - - 1 49",
         };
 
         LegalChecker checker;

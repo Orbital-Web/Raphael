@@ -199,35 +199,5 @@ private:
      * \returns eval of current board
      */
     i32 quiescence(chess::Board& board, const i32 ply, i32 alpha, i32 beta, volatile bool& halt);
-
-
-    /** Assigns scores to a list of moves
-     *
-     * \param movelist movelist to score
-     * \param ttmove transposition table move
-     * \param board current board
-     * \param ss search stack at current ply
-     */
-    void score_moves(
-        chess::ScoredMoveList& movelist,
-        const chess::Move& ttmove,
-        const chess::Board& board,
-        const SearchStack* ss
-    ) const;
-
-    /** Assigns scores to a list of noisy moves
-     *
-     * \param movelist movelist to score
-     * \param board current board
-     */
-    void score_moves(chess::ScoredMoveList& movelist, const chess::Board& board) const;
-
-    /** Picks the movei'th best move in the movelist
-     *
-     * \param movei index to pick
-     * \param movelist movelist to pick from
-     * \returns the chosen move in the movelist
-     */
-    chess::Move pick_move(i32 movei, chess::ScoredMoveList& movelist) const;
 };
 }  // namespace raphael

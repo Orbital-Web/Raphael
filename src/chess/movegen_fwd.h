@@ -10,14 +10,14 @@ class Board;
 
 class Movegen {
 public:
-    enum class MoveGenType : u8 { ALL, CAPTURE, QUIET };  // FIXME: switch to ALL, NOISY, QUIET
+    enum class MoveGenType : u8 { ALL, NOISY, QUIET };
 
 
 public:
-    /** Clears and populates movelist with a list of legal moves
+    /** Appends to the movelist with a list of legal moves
      * Note that the ScoredMoves in movelist will only have their move field set
      *
-     * \tparam mt either ALL, CAPTURE only, or QUIET only FIXME: switch to ALL, NOISY, QUIET
+     * \tparam mt either ALL, NOISY only, or QUIET only
      * \param movelist movelist to populate
      * \param board current board
      */
@@ -96,7 +96,7 @@ private:
 
 
     template <typename T>
-    static void push_moves(ScoredMoveList& movelist, BitBoard occ, BitBoard occ_opp, T generator);
+    static void push_moves(ScoredMoveList& movelist, BitBoard occ, T generator);
 
     template <Color::underlying color, MoveGenType mt>
     static void generate_legals(ScoredMoveList& movelist, const Board& board);

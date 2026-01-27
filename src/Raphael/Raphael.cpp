@@ -2,6 +2,7 @@
 #include <Raphael/Raphael.h>
 #include <Raphael/SEE.h>
 #include <Raphael/consts.h>
+#include <Raphael/movepick.h>
 #include <Raphael/utils.h>
 
 #include <climits>
@@ -332,48 +333,39 @@ i32 Raphael::negamax(
         }
     }
 
-    // terminal analysis
+    // draw analysis
     if (board.is_insufficientmaterial()) return 0;
     auto& mvstack = movestack[ply];
     mvstack.quietlist.clear();
     mvstack.noisylist.clear();
-    chess::Movegen::generate_legals<chess::Movegen::MoveGenType::ALL>(mvstack.movelist, board);
-    if (mvstack.movelist.empty()) return (in_check) ? -MATE_EVAL + ply : 0;  // reward faster mate
 
-
-    // one reply extension
-    i32 extension = 0;
-    if (mvstack.movelist.size() > 1)
-        score_moves(mvstack.movelist, ttmove, board, ss);
-    else
-        extension++;
+    // initialize move generator
+    auto generator
+        = MoveGenerator::negamax(&mvstack.movelist, &board, &history, ttmove, ss->killer);
 
     // search
     const i32 alphaorig = alpha;
     i32 besteval = -INT32_MAX;
     chess::Move bestmove = chess::Move::NO_MOVE;
     (ss + 1)->killer = chess::Move::NO_MOVE;
-    bool skip_quiets = false;
 
     i32 move_searched = 0;
-    for (usize _movei = 0; _movei < mvstack.movelist.size(); _movei++) {
-        const auto move = pick_move(_movei, mvstack.movelist);
+    chess::Move move;
+    while ((move = generator.next()) != chess::Move::NO_MOVE) {
         const bool is_quiet = utils::is_quiet(move, board);
-
-        if (is_quiet && skip_quiets) continue;
 
         // moveloop pruning
         if (ply && !utils::is_loss(besteval) && (!params.datagen || !is_PV)) {
             // late move pruning
             if (move_searched >= LMP_TABLE[improving][depth]) {
-                skip_quiets = true;
+                generator.skip_quiets();
                 continue;
             }
 
             // futility pruning
             const i32 futility = ss->static_eval + FP_MARGIN_BASE + FP_DEPTH_SCALE * depth;
             if (!in_check && is_quiet && depth <= FP_DEPTH && futility <= alpha) {
-                skip_quiets = true;
+                generator.skip_quiets();
                 continue;
             }
 
@@ -390,11 +382,12 @@ i32 Raphael::negamax(
         move_searched++;
 
         if (is_quiet)
-            mvstack.quietlist.push({.move = move, .is_quiet = true});
+            mvstack.quietlist.push({.move = move});
         else
-            mvstack.noisylist.push({.move = move, .is_quiet = false});
+            mvstack.noisylist.push({.move = move});
 
         // check extension
+        i32 extension = 0;
         if (board.in_check()) extension++;
 
         // principle variation search
@@ -416,7 +409,6 @@ i32 Raphael::negamax(
         assert(eval != INT32_MIN);
 
         board.unmake_move(move);
-        extension = 0;
 
         if (halt) return 0;
 
@@ -465,6 +457,9 @@ i32 Raphael::negamax(
         }
     }
 
+    // terminal analysis
+    if (move_searched == 0) return (in_check) ? -MATE_EVAL + ply : 0;  // reward faster mate
+
     // update transposition table
     auto flag = tt.INVALID;
     if (besteval >= beta)
@@ -495,15 +490,15 @@ i32 Raphael::quiescence(
     auto& mvstack = movestack[ply];
     mvstack.quietlist.clear();
     mvstack.noisylist.clear();
-    chess::Movegen::generate_legals<chess::Movegen::MoveGenType::CAPTURE>(mvstack.movelist, board);
-    score_moves(mvstack.movelist, board);
+
+    // initialize move generator
+    auto generator = MoveGenerator::quiescence(&mvstack.movelist, &board, &history);
 
     const i32 futility = besteval + QS_FUTILITY_MARGIN;
     const bool in_check = board.in_check();
 
-    for (usize _movei = 0; _movei < mvstack.movelist.size(); _movei++) {
-        const auto move = pick_move(_movei, mvstack.movelist);
-
+    chess::Move move;
+    while ((move = generator.next()) != chess::Move::NO_MOVE) {
         // qs futility pruning
         if (!in_check && futility <= alpha && !SEE::see(move, board, 1)) {
             besteval = max(besteval, futility);
@@ -530,65 +525,4 @@ i32 Raphael::quiescence(
     }
 
     return besteval;
-}
-
-
-void Raphael::score_moves(
-    chess::ScoredMoveList& movelist,
-    const chess::Move& ttmove,
-    const chess::Board& board,
-    const SearchStack* ss
-) const {
-    for (auto& move : movelist) {
-        if (move.move == ttmove)
-            move.score = TT_MOVE_FLOOR;  // tt move
-
-        else if (!utils::is_quiet(move.move, board)) {
-            // noisy moves
-            const auto victim = board.get_captured(move.move);
-
-            i16 score = 0;
-            score += history.get_noisyscore(move.move, victim) / CAPTHIST_DIVISOR;
-            score += SEE_TABLE[victim];
-            if (move.move.type() == chess::Move::PROMOTION)
-                score += SEE_TABLE[move.move.promotion_type()] - SEE_TABLE[chess::PieceType::PAWN];
-
-            score += SEE::see(move.move, board, GOOD_NOISY_SEE_THRESH) ? GOOD_NOISY_FLOOR
-                                                                       : BAD_NOISY_FLOOR;
-            move.score = score;
-        } else if (move.move == ss->killer)
-            move.score = KILLER_FLOOR;  // killer moves
-        else
-            move.score = history.get_quietscore(move.move, board.stm());  // quiet moves
-    }
-}
-
-void Raphael::score_moves(chess::ScoredMoveList& movelist, const chess::Board& board) const {
-    for (auto& move : movelist) {
-        // assume noisy
-        const auto victim = board.get_captured(move.move);
-
-        i16 score = 0;
-        score += history.get_noisyscore(move.move, victim) / CAPTHIST_DIVISOR;
-        score += SEE_TABLE[victim];
-        if (move.move.type() == chess::Move::PROMOTION)
-            score += SEE_TABLE[move.move.promotion_type()] - SEE_TABLE[chess::PieceType::PAWN];
-        move.score = score;
-    }
-}
-
-chess::Move Raphael::pick_move(i32 movei, chess::ScoredMoveList& movelist) const {
-    i32 besti = movei;
-    auto bestscore = movelist[movei].score;
-
-    for (usize i = movei + 1; i < movelist.size(); i++) {
-        if (movelist[i].score > bestscore) {
-            bestscore = movelist[i].score;
-            besti = i;
-        }
-    }
-
-    if (besti != movei) swap(movelist[movei], movelist[besti]);
-
-    return movelist[movei].move;  // FIXME: return scored move
 }

@@ -440,5 +440,6 @@ void GameEngine::move(chess::Move move_in) {
     }
 
     board.make_move(move_in);
+    movelist.clear();
     chess::Movegen::generate_legals(movelist, board);
 }

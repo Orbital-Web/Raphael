@@ -28,7 +28,7 @@ private:
     chess::Square sq_from = chess::Square::NONE;
     chess::Square sq_to = chess::Square::NONE;
     std::vector<chess::Square> selectedtiles;
-    chess::ScoredMoveList movelist;
+    chess::MoveList<chess::ScoredMove> movelist;
 
     // arrows
     chess::Square arrow_from = chess::Square::NONE;

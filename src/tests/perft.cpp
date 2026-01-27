@@ -24,7 +24,7 @@ private:
 
 public:
     u64 perft(i32 depth) {
-        ScoredMoveList moves;
+        MoveList<ScoredMove> moves;
         Movegen::generate_legals(moves, board_);
 
         if (depth == 1) return moves.size();

@@ -382,9 +382,9 @@ i32 Raphael::negamax(
         move_searched++;
 
         if (is_quiet)
-            mvstack.quietlist.push({.move = move});
+            mvstack.quietlist.push(move);
         else
-            mvstack.noisylist.push({.move = move});
+            mvstack.noisylist.push(move);
 
         // check extension
         i32 extension = 0;
@@ -432,9 +432,9 @@ i32 Raphael::negamax(
 
                         for (const auto quietmove : mvstack.quietlist)
                             history.update_quiet(
-                                quietmove.move,
+                                quietmove,
                                 board.stm(),
-                                (quietmove.move == move) ? quiet_bonus : quiet_penalty
+                                (quietmove == move) ? quiet_bonus : quiet_penalty
                             );
                     }
 
@@ -443,11 +443,9 @@ i32 Raphael::negamax(
                     const auto noisy_penalty = history.noisy_penalty(depth);
 
                     for (const auto noisymove : mvstack.noisylist) {
-                        const auto captured = board.get_captured(noisymove.move);
+                        const auto captured = board.get_captured(noisymove);
                         history.update_noisy(
-                            noisymove.move,
-                            captured,
-                            (noisymove.move == move) ? noisy_bonus : noisy_penalty
+                            noisymove, captured, (noisymove == move) ? noisy_bonus : noisy_penalty
                         );
                     }
 

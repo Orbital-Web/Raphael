@@ -22,7 +22,7 @@ public:
      * \param board current board
      */
     template <MoveGenType mt = MoveGenType::ALL>
-    static void generate_legals(ScoredMoveList& movelist, const Board& board);
+    static void generate_legals(MoveList<ScoredMove>& movelist, const Board& board);
 
     /** Checks if a move is legal
      * Note that the move must be a valid chess move (e.g., no promoting to king in 3rd rank)
@@ -58,7 +58,7 @@ private:
 
     template <Color::underlying color, MoveGenType mt>
     static void generate_legal_pawns(
-        ScoredMoveList& moves,
+        MoveList<ScoredMove>& moves,
         const Board& board,
         BitBoard pin_d,
         BitBoard pin_hv,
@@ -96,10 +96,10 @@ private:
 
 
     template <typename T>
-    static void push_moves(ScoredMoveList& movelist, BitBoard occ, T generator);
+    static void push_moves(MoveList<ScoredMove>& movelist, BitBoard occ, T generator);
 
     template <Color::underlying color, MoveGenType mt>
-    static void generate_legals(ScoredMoveList& movelist, const Board& board);
+    static void generate_legals(MoveList<ScoredMove>& movelist, const Board& board);
 
     template <Color::underlying color>
     [[nodiscard]] static bool is_legal(const Board& board, Move move);

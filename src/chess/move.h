@@ -1,6 +1,8 @@
 #pragma once
 #include <chess/types.h>
 
+#include <type_traits>
+
 
 
 namespace chess {
@@ -62,25 +64,26 @@ struct ScoredMove {
 };
 
 
-class ScoredMoveList {
+template <typename T>
+class MoveList {
 private:
     static constexpr usize MAX_MOVES = 256;
 
-    std::array<ScoredMove, MAX_MOVES> list_ = {};
+    std::array<T, MAX_MOVES> list_ = {};
     usize size_ = 0;
 
 
 public:
-    void push(const ScoredMove& move) {
+    void push(const T& move) {
         assert(size_ < MAX_MOVES);
         list_[size_++] = move;
     }
-    void push(ScoredMove&& move) {
+    void push(T&& move) {
         assert(size_ < MAX_MOVES);
         list_[size_++] = std::move(move);
     }
 
-    ScoredMove pop() {
+    T pop() {
         assert(size_ > 0);
         return std::move(list_[--size_]);
     }
@@ -91,11 +94,11 @@ public:
 
     [[nodiscard]] usize empty() const { return size_ == 0; }
 
-    [[nodiscard]] ScoredMove& operator[](usize i) {
+    [[nodiscard]] T& operator[](usize i) {
         assert(i < size_);
         return list_[i];
     }
-    [[nodiscard]] const ScoredMove& operator[](usize i) const {
+    [[nodiscard]] const T& operator[](usize i) const {
         assert(i < size_);
         return list_[i];
     }
@@ -107,8 +110,13 @@ public:
     [[nodiscard]] auto end() const { return list_.begin() + size_; }
 
     [[nodiscard]] bool contains(Move move) const {
-        for (usize i = 0; i < size_; ++i)
-            if (list_[i].move == move) return true;
+        for (usize i = 0; i < size_; ++i) {
+            if constexpr (std::is_same_v<T, Move>) {
+                if (list_[i] == move) return true;
+            } else {
+                if (list_[i].move == move) return true;
+            }
+        }
         return false;
     }
 };

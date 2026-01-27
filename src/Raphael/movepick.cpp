@@ -8,7 +8,7 @@ using std::swap;
 
 
 MoveGenerator MoveGenerator::negamax(
-    chess::ScoredMoveList* movelist,
+    chess::MoveList<chess::ScoredMove>* movelist,
     const chess::Board* board,
     const History* history,
     chess::Move ttmove,
@@ -18,7 +18,7 @@ MoveGenerator MoveGenerator::negamax(
 }
 
 MoveGenerator MoveGenerator::quiescence(
-    chess::ScoredMoveList* movelist, const chess::Board* board, const History* history
+    chess::MoveList<chess::ScoredMove>* movelist, const chess::Board* board, const History* history
 ) {
     return MoveGenerator(
         Stage::QS_GEN_NOISY, movelist, board, history, chess::Move::NO_MOVE, chess::Move::NO_MOVE
@@ -166,7 +166,7 @@ void MoveGenerator::skip_quiets() { skip_quiets_ = true; }
 
 MoveGenerator::MoveGenerator(
     Stage start_stage,
-    chess::ScoredMoveList* movelist,
+    chess::MoveList<chess::ScoredMove>* movelist,
     const chess::Board* board,
     const History* history,
     chess::Move ttmove,

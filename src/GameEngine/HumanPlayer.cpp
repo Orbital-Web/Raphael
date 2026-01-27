@@ -16,7 +16,7 @@ HumanPlayer::MoveEval HumanPlayer::get_move(
     chess::Square sq_to = chess::Square::NONE;
 
     // generate moves
-    chess::ScoredMoveList movelist;
+    chess::MoveList<chess::ScoredMove> movelist;
     chess::Movegen::generate_legals(movelist, board);
 
     // ui controls for move selection
@@ -56,7 +56,7 @@ HumanPlayer::MoveEval HumanPlayer::get_move(
 chess::Move HumanPlayer::move_if_valid(
     chess::Square sq_from,
     chess::Square sq_to,
-    const chess::ScoredMoveList& movelist,
+    const chess::MoveList<chess::ScoredMove>& movelist,
     const chess::Board& board
 ) {
     const auto piece = board.at(sq_from);
@@ -83,7 +83,7 @@ chess::Move HumanPlayer::move_if_valid(
         }
     }
 
-    for (const auto& move : movelist)
-        if (move.move.from() == sq_from && move.move.to() == sq_to) return move.move;
+    for (const auto& smove : movelist)
+        if (smove.move.from() == sq_from && smove.move.to() == sq_to) return smove.move;
     return chess::Move::NO_MOVE;
 }

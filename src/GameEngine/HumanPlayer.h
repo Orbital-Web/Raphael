@@ -40,7 +40,7 @@ private:
     static chess::Move move_if_valid(
         chess::Square sq_from,
         chess::Square sq_to,
-        const chess::ScoredMoveList& movelist,
+        const chess::MoveList<chess::ScoredMove>& movelist,
         const chess::Board& board
     );
 };

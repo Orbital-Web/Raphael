@@ -85,7 +85,7 @@ public:
     void check(i32 depth) {
         if (depth == 0) return;
 
-        ScoredMoveList legalmoves;
+        MoveList<chess::ScoredMove> legalmoves;
         Movegen::generate_legals(legalmoves, board_);
 
         for (const auto& move : allmoves_) {

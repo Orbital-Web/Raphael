@@ -117,7 +117,7 @@ You can also play with different time controls, increments, and player combinati
   - [x] Extensions                          (`v1.4+`)
     - [x] Check extensions                  (`v1.4+`)
     - ~~Pawn push extensions~~              (`v1.4+`)
-    - [x] One reply extensions              (`v1.7+`)
+    - ~~One reply extensions~~              (`v1.7+`)
     - [ ] Singular extensions
   - [x] Reductions                          (`v1.5+`)
     - [x] Late move reductions              (`v1.5+`)
@@ -162,6 +162,7 @@ You can also play with different time controls, increments, and player combinati
   - [x] Compiler optimizations              (`v1.8+`)
   - [x] Incremental selection sort          (`v2.2+`)
   - [x] Linux huge pages                    (`v2.2+`)
+  - [x] Staged movegen                      (`v3.0+`)
 - [ ] Lazy SMP
 - [ ] SPSA tuning
 

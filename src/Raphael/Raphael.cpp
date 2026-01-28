@@ -356,17 +356,19 @@ i32 Raphael::negamax(
 
         // moveloop pruning
         if (ply && !utils::is_loss(besteval) && (!params.datagen || !is_PV)) {
-            // late move pruning
-            if (move_searched >= LMP_TABLE[improving][depth]) {
-                generator.skip_quiets();
-                continue;
-            }
+            if (is_quiet) {
+                // late move pruning
+                if (move_searched >= LMP_TABLE[improving][depth]) {
+                    generator.skip_quiets();
+                    continue;
+                }
 
-            // futility pruning
-            const i32 futility = ss->static_eval + FP_MARGIN_BASE + FP_DEPTH_SCALE * depth;
-            if (!in_check && is_quiet && depth <= FP_DEPTH && futility <= alpha) {
-                generator.skip_quiets();
-                continue;
+                // futility pruning
+                const i32 futility = ss->static_eval + FP_MARGIN_BASE + FP_DEPTH_SCALE * depth;
+                if (!in_check && depth <= FP_DEPTH && futility <= alpha) {
+                    generator.skip_quiets();
+                    continue;
+                }
             }
 
             // SEE pruning

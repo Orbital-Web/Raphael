@@ -353,9 +353,12 @@ i32 Raphael::negamax(
     chess::Move move;
     while ((move = generator.next()) != chess::Move::NO_MOVE) {
         const bool is_quiet = utils::is_quiet(move, board);
+        const auto base_lmr = LMR_TABLE[is_quiet][depth][move_searched + 1];
 
         // moveloop pruning
         if (ply && !utils::is_loss(besteval) && (!params.datagen || !is_PV)) {
+            const auto lmr_depth = max(depth - base_lmr / 128, 0);
+
             if (is_quiet) {
                 // late move pruning
                 if (move_searched >= LMP_TABLE[improving][depth]) {
@@ -365,14 +368,14 @@ i32 Raphael::negamax(
 
                 // futility pruning
                 const i32 futility = ss->static_eval + FP_MARGIN_BASE + FP_DEPTH_SCALE * depth;
-                if (!in_check && depth <= FP_DEPTH && futility <= alpha) {
+                if (!in_check && lmr_depth <= FP_DEPTH && futility <= alpha) {
                     generator.skip_quiets();
                     continue;
                 }
             }
 
             // SEE pruning
-            const i32 see_thresh = (is_quiet) ? SEE_QUIET_DEPTH_SCALE * depth * depth
+            const i32 see_thresh = (is_quiet) ? SEE_QUIET_DEPTH_SCALE * lmr_depth * lmr_depth
                                               : SEE_NOISY_DEPTH_SCALE * depth;
             if (!SEE::see(move, board, see_thresh)) continue;
         }

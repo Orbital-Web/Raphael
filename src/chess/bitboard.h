@@ -75,19 +75,21 @@ public:
 
     [[nodiscard]] constexpr bool is_empty() const { return bits_ == 0; }
 
-    [[nodiscard]] i32 count() const { return __builtin_popcountll(bits_); }
+    [[nodiscard]] constexpr i32 count() const { return std::popcount(bits_); }
 
-    [[nodiscard]] i32 msb() const {
+    [[nodiscard]] constexpr i32 msb() const {
         assert(bits_ != 0);
+        if (std::is_constant_evaluated()) return 63 ^ std::countl_zero(bits_);
         return 63 ^ __builtin_clzll(bits_);
     }
 
-    [[nodiscard]] i32 lsb() const {
+    [[nodiscard]] constexpr i32 lsb() const {
         assert(bits_ != 0);
+        if (std::is_constant_evaluated()) return std::countr_zero(bits_);
         return __builtin_ctzll(bits_);
     }
 
-    [[nodiscard]] i32 poplsb() {
+    [[nodiscard]] constexpr i32 poplsb() {
         i32 index = lsb();
         bits_ &= bits_ - 1;
         return index;

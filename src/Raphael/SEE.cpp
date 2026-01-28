@@ -30,13 +30,14 @@ bool see(chess::Move move, const chess::Board& board, i32 threshold) {
     // add material gain
     if (move.type() == chess::Move::ENPASSANT) {
         // pawn captured
-        gain += SEE_TABLE[0];
+        gain += SEE_TABLE[chess::PieceType::PAWN];
         const auto enpsq = to.ep_square();
         occ.unset(enpsq);
     } else if (move.type() == chess::Move::PROMOTION) {
         // promotion + any capture - pawn
         const auto promo = move.promotion_type();
-        gain += SEE_TABLE[promo] + internal::pieceval(to, board) - SEE_TABLE[0];
+        gain
+            += SEE_TABLE[promo] + internal::pieceval(to, board) - SEE_TABLE[chess::PieceType::PAWN];
     } else if (move.type() != chess::Move::CASTLING)
         gain += internal::pieceval(to, board);
 

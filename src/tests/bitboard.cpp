@@ -17,6 +17,10 @@ TEST_SUITE("Bitboard") {
 
         b = 0x0000000000000004ULL;
         CHECK(b.lsb() == 2);
+
+        constexpr BitBoard cb = 0x1000000000000008ULL;
+        constexpr auto lsb = cb.lsb();
+        CHECK(lsb == 3);
     }
 
     TEST_CASE("msb") {
@@ -31,6 +35,10 @@ TEST_SUITE("Bitboard") {
 
         b = 0x1000000002000000ULL;
         CHECK(b.msb() == 60);
+
+        constexpr BitBoard cb = 0x1000000002000000ULL;
+        constexpr auto msb = cb.msb();
+        CHECK(msb == 60);
     }
 
     TEST_CASE("count") {
@@ -42,6 +50,10 @@ TEST_SUITE("Bitboard") {
 
         b = 0x0000000000000007ULL;
         CHECK(b.count() == 3);
+
+        constexpr BitBoard cb = 0x1000000007000000ULL;
+        constexpr auto count = cb.count();
+        CHECK(count == 4);
     }
 
     TEST_CASE("poplsb") {

@@ -293,14 +293,14 @@ i32 Raphael::negamax(
 
     // tt cutoff
     if (!is_PV && tthit && ttentry.depth >= depth
-        && (ttentry.flag == tt.EXACT                                // exact
+        && (ttentry.flag == tt.EXACT                                 // exact
             || (ttentry.flag == tt.LOWER && ttentry.score >= beta)   // lower
             || (ttentry.flag == tt.UPPER && ttentry.score <= alpha)  // upper
     ))
         return ttentry.score;
 
     const bool in_check = board.in_check();
-    ss->static_eval = net.evaluate(ply, board.stm());
+    ss->static_eval = (in_check) ? -INF_SCORE : net.evaluate(ply, board.stm());
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
 
     // pre-moveloop pruning
@@ -482,13 +482,22 @@ i32 Raphael::quiescence(
     nodes_++;
     seldepth_ = max(seldepth_, ply);
 
-    // get standing pat and prune
-    i32 bestscore = net.evaluate(ply, board.stm());
-    if (bestscore >= beta) return bestscore;
-    alpha = max(alpha, bestscore);
+    const bool in_check = board.in_check();
+    if (ply >= MAX_DEPTH - 1) return (in_check) ? 0 : net.evaluate(ply, board.stm());
 
-    // terminal depth
-    if (ply >= MAX_DEPTH - 1) return bestscore;
+    // standing pat
+    i32 static_eval;
+    if (in_check)
+        static_eval = -MATE_SCORE + ply;
+    else {
+        static_eval = net.evaluate(ply, board.stm());
+
+        if (static_eval >= beta) return static_eval;
+
+        alpha = max(alpha, static_eval);
+    }
+
+    i32 bestscore = static_eval;
 
     // search
     auto& mvstack = movestack[ply];
@@ -499,7 +508,6 @@ i32 Raphael::quiescence(
     auto generator = MoveGenerator::quiescence(&mvstack.movelist, &board, &history);
 
     const i32 futility = bestscore + QS_FUTILITY_MARGIN;
-    const bool in_check = board.in_check();
 
     chess::Move move;
     while ((move = generator.next()) != chess::Move::NO_MOVE) {

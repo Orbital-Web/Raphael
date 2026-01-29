@@ -6,31 +6,31 @@
 namespace raphael::utils {
 /** Whether the current score implies delivering a mate
  *
- * \param eval eval to check
- * \returns whether the eval implies a win
+ * \param score score to check
+ * \returns whether the score implies a win
  */
-bool is_win(i32 eval);
+bool is_win(i32 score);
 
 /** Whether the current score implies getting mated
  *
- * \param eval eval to check
- * \returns whether the eval implies a loss
+ * \param score score to check
+ * \returns whether the score implies a loss
  */
-bool is_loss(i32 eval);
+bool is_loss(i32 score);
 
 /** Whether the current scores implies a mate on either side
  *
- * \param eval eval to check
- * \returns whether the eval implies a win/loss
+ * \param score score to check
+ * \returns whether the score implies a win/loss
  */
-bool is_mate(i32 eval);
+bool is_mate(i32 score);
 
-/** Computes the mate distance from a mate eval
+/** Computes the mate distance from a mate score
  *
- * \param eval eval with mate score
+ * \param score score with mate score
  * \returns mate distance
  */
-i32 mate_distance(i32 eval);
+i32 mate_distance(i32 score);
 
 
 

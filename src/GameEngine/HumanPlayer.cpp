@@ -9,7 +9,7 @@ using std::string;
 HumanPlayer::HumanPlayer(const string& name_in): GamePlayer(name_in) {}
 
 
-HumanPlayer::MoveEval HumanPlayer::get_move(
+HumanPlayer::MoveScore HumanPlayer::get_move(
     chess::Board board, const i32, const i32, volatile MouseInfo& mouse, volatile bool& halt
 ) {
     chess::Square sq_from = chess::Square::NONE;

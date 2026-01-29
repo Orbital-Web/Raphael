@@ -44,7 +44,6 @@ void print_usage() {
          << "  [int]  Number of matches (defaults to 1 if not specified)\n"
          << "  -c     Comparison mode (options will be ignored)\n"  // comparing 2 engines
          << "  -r     Results mode (options will be ignored)\n\n"   // records fen + wdl
-         //  << "  -e     Evaluation mode (options will be ignored)\n\n"  // records fen + eval
          << "Options:\n"
          << "  -t <int> <int>  Time (sec) for white and black (defaults to 10min each)\n"
          << "  -i <int>        Time increment (sec) (defaults to 0sec)\n"

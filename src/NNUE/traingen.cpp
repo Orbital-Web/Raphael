@@ -67,7 +67,7 @@ public:
             }
 
             // checkmate, no need to continue
-            if (tt.is_mate(eval)) return {MATE_EVAL, itermove};
+            if (tt.is_mate(eval)) return {MATE_SCORE, itermove};
         }
         return {eval, itermove};
     }
@@ -225,7 +225,7 @@ bool generate_one(
 
     // eval and skip mate
     auto [eval, bestmove] = engine.get_eval(board);
-    if (eval == raphael::MATE_EVAL) return false;
+    if (eval == raphael::MATE_SCORE) return false;
 
     // record
     assert(bestmove != chess::Move::NO_MOVE);

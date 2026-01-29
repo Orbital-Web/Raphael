@@ -11,7 +11,7 @@ private:
     // table entry storage type (16 bytes)
     struct EntryStorage {
         u64 key;
-        u64 val;  // 63-32: eval, 31-16: move, 15-14: flag, 13-0: depth
+        u64 val;  // 63-32: score, 31-16: move, 15-14: flag, 13-0: depth
     };
 
     u64 size_;
@@ -32,7 +32,7 @@ public:
         i32 depth;         // max 2^14 (16384)
         Flag flag;         // invalid, lower, exact, or upper
         chess::Move move;  // score is ignored
-        i32 eval;          // evaluation of the move
+        i32 score;         // score of the move
     };
 
 

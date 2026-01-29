@@ -40,20 +40,20 @@ TranspositionTable::Entry TranspositionTable::get(u64 key, i32 ply) const {
     // get
     const EntryStorage& entryst = table_[index(key)];
 
-    // unpack value to get entry (63-32: eval, 31-16: move, 15-14: flag, 13-0: depth)
+    // unpack value to get entry (63-32: score, 31-16: move, 15-14: flag, 13-0: depth)
     Entry entry = {
         .key = entryst.key,
         .depth = i32(entryst.val & 0x3FFF),
         .flag = Flag((entryst.val >> 14) & 0b11),
         .move = chess::Move(u16((entryst.val >> 16) & 0xFFFF)),
-        .eval = i32(u32(entryst.val >> 32)),
+        .score = i32(u32(entryst.val >> 32)),
     };
 
-    // correct mate eval when retrieving (https://youtu.be/XfeuxubYlT0)
-    if (utils::is_loss(entry.eval))
-        entry.eval += ply;
-    else if (utils::is_win(entry.eval))
-        entry.eval -= ply;
+    // correct mate score when retrieving (https://youtu.be/XfeuxubYlT0)
+    if (utils::is_loss(entry.score))
+        entry.score += ply;
+    else if (utils::is_win(entry.score))
+        entry.score -= ply;
     return entry;
 }
 
@@ -62,19 +62,19 @@ void TranspositionTable::prefetch(u64 key) const { __builtin_prefetch(&table_[in
 
 
 void TranspositionTable::set(const Entry& entry, i32 ply) {
-    // correct mate eval when storing (https://youtu.be/XfeuxubYlT0)
-    i32 eval = entry.eval;
-    if (utils::is_loss(eval))
-        eval -= ply;
-    else if (utils::is_win(eval))
-        eval += ply;
+    // correct mate score when storing (https://youtu.be/XfeuxubYlT0)
+    i32 score = entry.score;
+    if (utils::is_loss(score))
+        score -= ply;
+    else if (utils::is_win(score))
+        score += ply;
 
-    // pack value to get entry storage (63-32: eval, 31-16: move, 15-14: flag, 13-0: depth)
+    // pack value to get entry storage (63-32: score, 31-16: move, 15-14: flag, 13-0: depth)
     u64 val = 0;
     val |= (entry.depth & 0x3FFF);
     val |= (u64(entry.flag) << 14);
     val |= (u64(u16(entry.move)) << 16);
-    val |= (u64(u32(eval)) << 32);  // eval may be negative
+    val |= (u64(u32(score)) << 32);  // score may be negative
 
     // set
     table_[index(entry.key)] = {.key = entry.key, .val = val};

@@ -17,9 +17,9 @@ public:
     inline static const std::string version = "0.0.0.0";
     std::string name;
 
-    struct MoveEval {
+    struct MoveScore {
         chess::Move move;
-        i32 eval;
+        i32 score;
         bool is_mate;
         i64 nodes = 0;
     };
@@ -35,16 +35,16 @@ public:
     /** Destructor of GamePlayer */
     virtual ~GamePlayer();
 
-    /** Returns a move and its evaluation. Should return immediately if halt becomes true.
+    /** Returns a move and its score. Should return immediately if halt becomes true.
      *
      * \param board current board
      * \param t_remain time remaining in ms
      * \param t_inc increment after move in ms
      * \param mouse contains mouse movement info for human players
      * \param halt bool reference which will turn false to indicate search should stop
-     * \returns the found MoveEval
+     * \returns the found MoveScore
      */
-    virtual MoveEval get_move(
+    virtual MoveScore get_move(
         chess::Board board,
         const i32 t_remain,
         const i32 t_inc,

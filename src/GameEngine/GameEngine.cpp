@@ -146,11 +146,11 @@ void GameEngine::run_match(const GameOptions& options) {
         // print info
         if (recv.is_mate) {
             lock_guard<mutex> lock(cout_mutex);
-            cout << "Eval: #" << ((whiteturn) ? 1 : -1) * recv.eval << "\n" << flush;
+            cout << "Score: #" << ((whiteturn) ? 1 : -1) * recv.score << "\n" << flush;
         } else {
             lock_guard<mutex> lock(cout_mutex);
-            cout << "Eval: " << fixed << setprecision(2)
-                 << ((whiteturn) ? 1 : -1) * recv.eval / 100.0f << "\n"
+            cout << "Score: " << fixed << setprecision(2)
+                 << ((whiteturn) ? 1 : -1) * recv.score / 100.0f << "\n"
                  << flush;
         }
 

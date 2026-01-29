@@ -40,7 +40,7 @@ private:
     EngineOptions params;
     SearchOptions searchopt;  // limit depth, nodes, or movetime
     // storage
-    TranspositionTable tt;  // table with position, eval, and bestmove
+    TranspositionTable tt;  // table with position, score, and bestmove
     History history;        // history score for each move
     // nnue
     Nnue net;
@@ -110,9 +110,9 @@ public:
      * \param t_inc increment after move in ms
      * \param mouse unused
      * \param halt bool reference which will turn false to indicate search should stop
-     * \returns the best move and its evaluation
+     * \returns the best move and its score
      */
-    MoveEval get_move(
+    MoveScore get_move(
         chess::Board board,
         const i32 t_remain,
         const i32 t_inc,
@@ -153,10 +153,10 @@ private:
     /** Prints out the uci info
      *
      * \param depth current depth
-     * \param eval evaluation to print
+     * \param score score to print
      * \param search stack at current ply
      */
-    void print_uci_info(i32 depth, i32 eval, const SearchStack* ss) const;
+    void print_uci_info(i32 depth, i32 score, const SearchStack* ss) const;
 
     /** Returns the stringified PV line
      *
@@ -166,17 +166,17 @@ private:
     std::string get_pv_line(const PVList& pv) const;
 
 
-    /** Recursively searches for the best move and eval of the current position assuming optimal
+    /** Recursively searches for the best move and score of the current position assuming optimal
      * play by both us and the opponent
      *
      * \param board current board
      * \param depth depth to search for
      * \param ply current distance from root
-     * \param alpha lower bound eval of current position
-     * \param beta upper bound eval of current position
+     * \param alpha lower bound score of current position
+     * \param beta upper bound score of current position
      * \param ss search stack at current ply
      * \param halt bool reference which will turn false to indicate search should stop
-     * \returns eval of current board
+     * \returns score of current position
      */
     template <bool is_PV>
     i32 negamax(
@@ -193,10 +193,10 @@ private:
      *
      * \param board current board
      * \param ply current distance from root
-     * \param alpha lower bound eval of current position
-     * \param beta upper bound eval of current position
+     * \param alpha lower bound score of current position
+     * \param beta upper bound score of current position
      * \param halt bool reference which will turn false to indicate search should stop
-     * \returns eval of current board
+     * \returns score of current board
      */
     i32 quiescence(chess::Board& board, const i32 ply, i32 alpha, i32 beta, volatile bool& halt);
 };

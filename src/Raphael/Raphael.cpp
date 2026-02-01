@@ -282,7 +282,7 @@ i32 Raphael::negamax(
         if (alpha >= beta) return alpha;
     }
 
-    // terminal depth
+    // terminal depth or max ply
     if (depth <= 0 || ply >= MAX_DEPTH - 1) return quiescence(board, ply, alpha, beta, halt);
 
     // probe transposition table
@@ -300,7 +300,7 @@ i32 Raphael::negamax(
         return ttentry.score;
 
     const bool in_check = board.in_check();
-    ss->static_eval = (in_check) ? -INF_SCORE : net.evaluate(ply, board.stm());
+    ss->static_eval = (in_check) ? NONE_SCORE : net.evaluate(ply, board.stm());
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
 
     // pre-moveloop pruning
@@ -401,7 +401,7 @@ i32 Raphael::negamax(
         if (depth >= LMR_DEPTH && move_searched > LMR_FROMMOVE && is_quiet) {
             // late move reduction
             const i32 red_factor = LMR_TABLE[is_quiet][depth][move_searched] + !is_PV * LMR_NONPV;
-            const i32 red_depth = max(new_depth - red_factor / 128, 0);
+            const i32 red_depth = min(max(new_depth - red_factor / 128, 1), new_depth);
             score = -negamax<false>(board, red_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
             if (score > alpha && red_depth < new_depth)
                 score
@@ -482,6 +482,7 @@ i32 Raphael::quiescence(
     nodes_++;
     seldepth_ = max(seldepth_, ply);
 
+    // max ply
     const bool in_check = board.in_check();
     if (ply >= MAX_DEPTH - 1) return (in_check) ? 0 : net.evaluate(ply, board.stm());
 

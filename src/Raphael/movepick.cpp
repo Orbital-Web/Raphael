@@ -3,6 +3,7 @@
 #include <Raphael/tunable.h>
 
 using namespace raphael;
+using std::max;
 using std::swap;
 
 
@@ -207,16 +208,21 @@ void MoveGenerator::score_quiets() {
 
 
 usize MoveGenerator::select_next() {
-    usize besti = idx_;
-    auto bestscore = (*movelist_)[idx_].score;
+    // from https://github.com/Ciekce/Stormphrax/blob/main/src/movepick.h
+    // does selection sort while taking advantage of SIMD when vectorized
+    const auto to_u64 = [](i32 score) {
+        i64 widened = score;
+        widened -= INT32_MIN;
+        return static_cast<u64>(widened) << 32;
+    };
 
+    auto best = to_u64((*movelist_)[idx_].score) | (256 - idx_);
     for (usize i = idx_ + 1; i < end_; i++) {
-        if ((*movelist_)[i].score > bestscore) {
-            bestscore = (*movelist_)[i].score;
-            besti = i;
-        }
+        const auto curr = to_u64((*movelist_)[i].score) | (256 - i);
+        best = max(best, curr);
     }
 
+    const usize besti = 256 - (best & 0xFFFFFFFF);
     if (besti != idx_) swap((*movelist_)[idx_], (*movelist_)[besti]);
     return idx_++;
 }

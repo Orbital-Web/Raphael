@@ -55,6 +55,10 @@ void TranspositionTable::set(u64 key, i32 score, chess::Move move, i32 depth, Fl
     assert(depth >= 0);
     assert(depth < 256);
 
+    Entry entry = table_[index(key)];
+
+    if (move != chess::Move::NO_MOVE || entry.key != key) entry.move = move;
+
     // correct mate score when storing (https://youtu.be/XfeuxubYlT0)
     if (utils::is_loss(score))
         score -= ply;
@@ -62,8 +66,12 @@ void TranspositionTable::set(u64 key, i32 score, chess::Move move, i32 depth, Fl
         score += ply;
 
     // set
-    table_[index(key)]
-        = {.key = key, .score = score, .move = move, .depth = static_cast<u8>(depth), .flag = flag};
+    entry.key = key;
+    entry.score = score;
+    entry.depth = static_cast<u8>(depth);
+    entry.flag = flag;
+
+    table_[index(key)] = entry;
 }
 
 

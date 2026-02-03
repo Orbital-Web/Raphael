@@ -486,6 +486,20 @@ i32 Raphael::quiescence(
     const bool in_check = board.in_check();
     if (ply >= MAX_DEPTH - 1) return (in_check) ? 0 : net.evaluate(ply, board.stm());
 
+    // probe transposition table
+    const auto ttkey = board.hash();
+    const auto ttentry = tt.get(ttkey, ply);
+    const bool tthit = ttentry.key == ttkey;
+    // TODO: const auto ttmove = (tthit) ? ttentry.move : chess::Move::NO_MOVE;
+
+    // tt cutoff
+    if (!is_PV && tthit
+        && (ttentry.flag == tt.EXACT                                 // exact
+            || (ttentry.flag == tt.LOWER && ttentry.score >= beta)   // lower
+            || (ttentry.flag == tt.UPPER && ttentry.score <= alpha)  // upper
+    ))
+        return ttentry.score;
+
     // standing pat
     i32 static_eval;
     if (in_check)

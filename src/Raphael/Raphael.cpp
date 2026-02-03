@@ -542,8 +542,6 @@ i32 Raphael::quiescence(
         const i32 score = -quiescence<is_PV>(board, ply + 1, -beta, -alpha, halt);
         board.unmake_move(move);
 
-        if (halt) return 0;
-
         if (score > bestscore) {
             bestscore = score;
 
@@ -561,7 +559,7 @@ i32 Raphael::quiescence(
     }
 
     // update transposition table
-    tt.set({ttkey, 0, ttflag, bestmove, bestscore}, ply);
+    if (!halt) tt.set(ttkey, bestscore, bestmove, 0, ttflag, ply);
 
     return bestscore;
 }

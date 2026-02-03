@@ -420,10 +420,10 @@ i32 Raphael::negamax(
 
         if (score > bestscore) {
             bestscore = score;
-            bestmove = move;
 
             if (score > alpha) {
                 alpha = score;
+                bestmove = move;
                 ttflag = tt.EXACT;
 
                 // update pv

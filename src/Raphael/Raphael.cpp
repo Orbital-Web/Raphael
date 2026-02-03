@@ -520,8 +520,6 @@ i32 Raphael::quiescence(
 
     // search
     i32 bestscore = static_eval;
-    chess::Move bestmove = chess::Move::NO_MOVE;
-    auto ttflag = tt.UPPER;
 
     const i32 futility = bestscore + QS_FUTILITY_MARGIN;
 
@@ -547,19 +545,10 @@ i32 Raphael::quiescence(
 
             if (score > alpha) {
                 alpha = score;
-                bestmove = move;
-                ttflag = tt.EXACT;
-
-                if (score >= beta) {
-                    ttflag = tt.LOWER;
-                    break;  // prune
-                }
+                if (score >= beta) break;  // prune
             }
         }
     }
-
-    // update transposition table
-    if (!halt) tt.set(ttkey, bestscore, bestmove, 0, ttflag, ply);
 
     return bestscore;
 }

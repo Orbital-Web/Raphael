@@ -283,7 +283,7 @@ i32 Raphael::negamax(
     }
 
     // terminal depth or max ply
-    if (depth <= 0 || ply >= MAX_DEPTH - 1) return quiescence(board, ply, alpha, beta, halt);
+    if (depth <= 0 || ply >= MAX_DEPTH - 1) return quiescence<is_PV>(board, ply, alpha, beta, halt);
 
     // probe transposition table
     const auto ttkey = board.hash();
@@ -312,7 +312,7 @@ i32 Raphael::negamax(
         // razoring
         const i32 razor_margin = RAZORING_MARGIN_BASE + RAZORING_DEPTH_SCALE * depth * depth;
         if (depth <= RAZORING_DEPTH && alpha <= 2048 && ss->static_eval + razor_margin <= alpha) {
-            const i32 score = quiescence(board, ply, alpha, alpha + 1, halt);
+            const i32 score = quiescence<false>(board, ply, alpha, alpha + 1, halt);
             if (score <= alpha) return score;
         }
 
@@ -335,19 +335,19 @@ i32 Raphael::negamax(
 
     // draw analysis
     if (board.is_insufficientmaterial()) return 0;
+
+    // initialize move generator
     auto& mvstack = movestack[ply];
     mvstack.quietlist.clear();
     mvstack.noisylist.clear();
-
-    // initialize move generator
     auto generator
         = MoveGenerator::negamax(&mvstack.movelist, &board, &history, ttmove, ss->killer);
 
     // search
-    const i32 alphaorig = alpha;
     i32 bestscore = -INF_SCORE;
     chess::Move bestmove = chess::Move::NO_MOVE;
     (ss + 1)->killer = chess::Move::NO_MOVE;
+    auto ttflag = tt.UPPER;
 
     i32 move_searched = 0;
     chess::Move move;
@@ -424,11 +424,14 @@ i32 Raphael::negamax(
 
             if (score > alpha) {
                 alpha = score;
+                ttflag = tt.EXACT;
 
                 // update pv
                 if constexpr (is_PV) ss->pv.update(move, (ss + 1)->pv);
 
                 if (score >= beta) {
+                    ttflag = tt.LOWER;
+
                     // store killer moves and update history
                     if (is_quiet) {
                         ss->killer = move;
@@ -465,15 +468,12 @@ i32 Raphael::negamax(
     if (move_searched == 0) return (in_check) ? -MATE_SCORE + ply : 0;  // reward faster mate
 
     // update transposition table
-    auto flag = tt.INVALID;
-    if (bestscore >= beta)
-        flag = tt.LOWER;
-    else
-        flag = (alpha != alphaorig) ? tt.EXACT : tt.UPPER;
-    tt.set({ttkey, depth, flag, bestmove, bestscore}, ply);
+    tt.set({ttkey, depth, ttflag, bestmove, bestscore}, ply);
+
     return bestscore;
 }
 
+template <bool is_PV>
 i32 Raphael::quiescence(
     chess::Board& board, const i32 ply, i32 alpha, i32 beta, volatile bool& halt
 ) {
@@ -498,15 +498,14 @@ i32 Raphael::quiescence(
         alpha = max(alpha, static_eval);
     }
 
-    i32 bestscore = static_eval;
-
-    // search
+    // initialize move generator
     auto& mvstack = movestack[ply];
     mvstack.quietlist.clear();
     mvstack.noisylist.clear();
-
-    // initialize move generator
     auto generator = MoveGenerator::quiescence(&mvstack.movelist, &board, &history);
+
+    // search
+    i32 bestscore = static_eval;
 
     const i32 futility = bestscore + QS_FUTILITY_MARGIN;
 
@@ -524,7 +523,7 @@ i32 Raphael::quiescence(
         net.make_move(ply + 1, move, board);
         board.make_move(move);
 
-        const i32 score = -quiescence(board, ply + 1, -beta, -alpha, halt);
+        const i32 score = -quiescence<is_PV>(board, ply + 1, -beta, -alpha, halt);
         board.unmake_move(move);
 
         if (score > bestscore) {

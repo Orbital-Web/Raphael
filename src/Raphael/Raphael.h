@@ -169,6 +169,7 @@ private:
     /** Recursively searches for the best move and score of the current position assuming optimal
      * play by both us and the opponent
      *
+     * \tparam is_PV whether the current position is a PV node
      * \param board current board
      * \param depth depth to search for
      * \param ply current distance from root
@@ -191,6 +192,7 @@ private:
 
     /** Evaluates the board after all noisy moves are played out
      *
+     * \tparam is_PV whether the current position is a PV node
      * \param board current board
      * \param ply current distance from root
      * \param alpha lower bound score of current position
@@ -198,6 +200,7 @@ private:
      * \param halt bool reference which will turn false to indicate search should stop
      * \returns score of current board
      */
+    template <bool is_PV>
     i32 quiescence(chess::Board& board, const i32 ply, i32 alpha, i32 beta, volatile bool& halt);
 };
 }  // namespace raphael

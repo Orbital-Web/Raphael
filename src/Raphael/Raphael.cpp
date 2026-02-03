@@ -486,6 +486,20 @@ i32 Raphael::quiescence(
     const bool in_check = board.in_check();
     if (ply >= MAX_DEPTH - 1) return (in_check) ? 0 : net.evaluate(ply, board.stm());
 
+    // probe transposition table
+    const auto ttkey = board.hash();
+    const auto ttentry = tt.get(ttkey, ply);
+    const bool tthit = ttentry.key == ttkey;
+    // TODO: const auto ttmove = (tthit) ? ttentry.move : chess::Move::NO_MOVE;
+
+    // tt cutoff
+    if (!is_PV && tthit
+        && (ttentry.flag == tt.EXACT                                 // exact
+            || (ttentry.flag == tt.LOWER && ttentry.score >= beta)   // lower
+            || (ttentry.flag == tt.UPPER && ttentry.score <= alpha)  // upper
+    ))
+        return ttentry.score;
+
     // standing pat
     i32 static_eval;
     if (in_check)
@@ -506,6 +520,8 @@ i32 Raphael::quiescence(
 
     // search
     i32 bestscore = static_eval;
+    chess::Move bestmove = chess::Move::NO_MOVE;
+    auto ttflag = tt.UPPER;
 
     const i32 futility = bestscore + QS_FUTILITY_MARGIN;
 
@@ -526,15 +542,26 @@ i32 Raphael::quiescence(
         const i32 score = -quiescence<is_PV>(board, ply + 1, -beta, -alpha, halt);
         board.unmake_move(move);
 
+        if (halt) return 0;
+
         if (score > bestscore) {
             bestscore = score;
 
             if (score > alpha) {
                 alpha = score;
-                if (score >= beta) break;  // prune
+                bestmove = move;
+                ttflag = tt.EXACT;
+
+                if (score >= beta) {
+                    ttflag = tt.LOWER;
+                    break;  // prune
+                }
             }
         }
     }
+
+    // update transposition table
+    tt.set({ttkey, 0, ttflag, bestmove, bestscore}, ply);
 
     return bestscore;
 }

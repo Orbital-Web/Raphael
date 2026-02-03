@@ -7,33 +7,27 @@
 
 namespace raphael {
 class TranspositionTable {
-private:
-    // table entry storage type (16 bytes)
-    struct EntryStorage {
-        u64 key;
-        u64 val;  // 63-32: score, 31-16: move, 15-14: flag, 13-0: depth
-    };
-
-    u64 size_;
-    u64 capacity_;
-    EntryStorage* table_;
-
 public:
-    static constexpr u64 MAX_TABLE_SIZE = 201326592;           // 3GB
-    static constexpr u64 DEF_TABLE_SIZE = 4194304;             // 64MB
-    static constexpr usize ENTRY_SIZE = sizeof(EntryStorage);  // 16 bytes
-    static_assert(ENTRY_SIZE == 16);
+    static constexpr usize MAX_TABLE_SIZE = 201326592;  // 3GB
+    static constexpr usize DEF_TABLE_SIZE = 4194304;    // 64MB
 
-    enum Flag { INVALID = 0, LOWER, EXACT, UPPER };
+    enum Flag : u8 { INVALID = 0, LOWER, EXACT, UPPER };
 
     // table entry interface
     struct Entry {
-        u64 key;           // zobrist hash of move
-        i32 depth;         // max 2^14 (16384)
+        u64 key;           // zobrist hash of position
+        i32 score;         // score of the position
+        chess::Move move;  // bestmove
+        u8 depth;          // max 255
         Flag flag;         // invalid, lower, exact, or upper
-        chess::Move move;  // score is ignored
-        i32 score;         // score of the move
     };
+    static constexpr usize ENTRY_SIZE = sizeof(Entry);  // 16 bytes
+    static_assert(ENTRY_SIZE == 16);
+
+private:
+    usize size_;
+    usize capacity_;
+    Entry* table_;
 
 
 public:
@@ -71,10 +65,14 @@ public:
 
     /** Sets an entry for a given key
      *
-     * \param entry the entry to store
+     * \param key zobrist hash of position
+     * \param score score of the position
+     * \param move bestmove
+     * \param depth max 255
+     * \param flag invalid, lower, exact, or upper
      * \param ply current distance from root
      */
-    void set(const Entry& entry, i32 ply);
+    void set(u64 key, i32 score, chess::Move move, i32 depth, Flag flag, i32 ply);
 
     /** Clears the table */
     void clear();
@@ -91,7 +89,7 @@ private:
      *
      * \param newsize new size in number of entries
      */
-    void allocate(u64 newsize);
+    void allocate(usize newsize);
 
     /** Deallocates the table (if allocated) and sets capacity_ and table_ (not size) */
     void deallocate();

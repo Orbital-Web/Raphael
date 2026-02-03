@@ -468,7 +468,7 @@ i32 Raphael::negamax(
     if (move_searched == 0) return (in_check) ? -MATE_SCORE + ply : 0;  // reward faster mate
 
     // update transposition table
-    tt.set({ttkey, depth, ttflag, bestmove, bestscore}, ply);
+    tt.set(ttkey, bestscore, bestmove, depth, ttflag, ply);
 
     return bestscore;
 }
@@ -480,7 +480,7 @@ i32 Raphael::quiescence(
     // timeout
     if (is_time_over(halt)) return 0;
     nodes_++;
-    seldepth_ = max(seldepth_, ply);
+    if (is_PV) seldepth_ = max(seldepth_, ply);
 
     // max ply
     const bool in_check = board.in_check();

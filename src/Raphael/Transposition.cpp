@@ -1,8 +1,6 @@
 #include <Raphael/Transposition.h>
 #include <Raphael/utils.h>
 
-#include <cstring>
-
 #ifdef _WIN32
     #include <windows.h>
 #else
@@ -10,6 +8,7 @@
 #endif
 
 using namespace raphael;
+using std::fill;
 
 
 
@@ -22,7 +21,7 @@ TranspositionTable::~TranspositionTable() { deallocate(); }
 
 
 void TranspositionTable::resize(u32 size_mb) {
-    const u64 newsize = (u64)size_mb * 1024 * 1024 / ENTRY_SIZE;
+    const usize newsize = (usize)size_mb * 1024 * 1024 / ENTRY_SIZE;
     assert((newsize > 0 && newsize <= MAX_TABLE_SIZE));
 
     // re-allocate if necessary
@@ -38,16 +37,7 @@ void TranspositionTable::resize(u32 size_mb) {
 
 TranspositionTable::Entry TranspositionTable::get(u64 key, i32 ply) const {
     // get
-    const EntryStorage& entryst = table_[index(key)];
-
-    // unpack value to get entry (63-32: score, 31-16: move, 15-14: flag, 13-0: depth)
-    Entry entry = {
-        .key = entryst.key,
-        .depth = i32(entryst.val & 0x3FFF),
-        .flag = Flag((entryst.val >> 14) & 0b11),
-        .move = chess::Move(u16((entryst.val >> 16) & 0xFFFF)),
-        .score = i32(u32(entryst.val >> 32)),
-    };
+    Entry entry = table_[index(key)];
 
     // correct mate score when retrieving (https://youtu.be/XfeuxubYlT0)
     if (utils::is_loss(entry.score))
@@ -61,23 +51,19 @@ TranspositionTable::Entry TranspositionTable::get(u64 key, i32 ply) const {
 void TranspositionTable::prefetch(u64 key) const { __builtin_prefetch(&table_[index(key)]); }
 
 
-void TranspositionTable::set(const Entry& entry, i32 ply) {
+void TranspositionTable::set(u64 key, i32 score, chess::Move move, i32 depth, Flag flag, i32 ply) {
+    assert(depth >= 0);
+    assert(depth < 256);
+
     // correct mate score when storing (https://youtu.be/XfeuxubYlT0)
-    i32 score = entry.score;
     if (utils::is_loss(score))
         score -= ply;
     else if (utils::is_win(score))
         score += ply;
 
-    // pack value to get entry storage (63-32: score, 31-16: move, 15-14: flag, 13-0: depth)
-    u64 val = 0;
-    val |= (entry.depth & 0x3FFF);
-    val |= (u64(entry.flag) << 14);
-    val |= (u64(u16(entry.move)) << 16);
-    val |= (u64(u32(score)) << 32);  // score may be negative
-
     // set
-    table_[index(entry.key)] = {.key = entry.key, .val = val};
+    table_[index(key)]
+        = {.key = key, .score = score, .move = move, .depth = static_cast<u8>(depth), .flag = flag};
 }
 
 
@@ -85,14 +71,14 @@ void TranspositionTable::clear() {
     assert(table_ != nullptr);
     assert(size_ > 0);
 
-    memset(table_, 0, size_ * ENTRY_SIZE);
+    fill(table_, table_ + size_, Entry{});
 }
 
 
 u64 TranspositionTable::index(u64 key) const { return key % size_; }
 
 
-void TranspositionTable::allocate(u64 newsize) {
+void TranspositionTable::allocate(usize newsize) {
     assert(table_ == nullptr);
     assert(capacity_ == 0);
 
@@ -107,9 +93,9 @@ void TranspositionTable::allocate(u64 newsize) {
 
 #ifdef _WIN32
     // TODO: windows huge page support
-    table_ = static_cast<EntryStorage*>(_aligned_malloc(newsize_s, page_size));
+    table_ = static_cast<Entry*>(_aligned_malloc(newsize_s, page_size));
 #else
-    table_ = static_cast<EntryStorage*>(aligned_alloc(page_size, newsize_s));
+    table_ = static_cast<Entry*>(aligned_alloc(page_size, newsize_s));
     madvise(table_, newsize_s, MADV_HUGEPAGE);
 #endif
 }

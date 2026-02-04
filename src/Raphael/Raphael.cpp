@@ -537,7 +537,7 @@ i32 Raphael::quiescence(
     const auto ttkey = board.hash();
     auto ttentry = TranspositionTable::ProbedEntry();
     const bool tthit = tt.get(ttentry, ttkey, ply);
-    // const auto ttmove = ttentry.move;
+    const auto ttmove = ttentry.move;
 
     // tt cutoff
     if (!is_PV && tthit
@@ -564,7 +564,7 @@ i32 Raphael::quiescence(
     auto& mvstack = movestack[mvidx];
     mvstack.quietlist.clear();
     mvstack.noisylist.clear();
-    auto generator = MoveGenerator::quiescence(&mvstack.movelist, &board, &history);
+    auto generator = MoveGenerator::quiescence(&mvstack.movelist, &board, &history, ttmove);
 
     // search
     i32 bestscore = static_eval;

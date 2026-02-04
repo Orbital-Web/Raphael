@@ -19,11 +19,12 @@ MoveGenerator MoveGenerator::negamax(
 }
 
 MoveGenerator MoveGenerator::quiescence(
-    chess::MoveList<chess::ScoredMove>* movelist, const chess::Board* board, const History* history
+    chess::MoveList<chess::ScoredMove>* movelist,
+    const chess::Board* board,
+    const History* history,
+    chess::Move ttmove
 ) {
-    return MoveGenerator(
-        Stage::QS_GEN_NOISY, movelist, board, history, chess::Move::NO_MOVE, chess::Move::NO_MOVE
-    );
+    return MoveGenerator(Stage::QS_TT_MOVE, movelist, board, history, ttmove, chess::Move::NO_MOVE);
 }
 
 
@@ -132,6 +133,14 @@ chess::Move MoveGenerator::next() {
 
 
         // quiescence stages
+        case Stage::QS_TT_MOVE: {
+            stage_ = Stage::QS_GEN_NOISY;
+
+            if (ttmove_ != chess::Move::NO_MOVE && board_->is_legal(ttmove_)) return ttmove_;
+
+            [[fallthrough]];
+        }
+
         case Stage::QS_GEN_NOISY: {
             // generate noisy moves
             assert(movelist_->empty());
@@ -151,6 +160,8 @@ chess::Move MoveGenerator::next() {
             while (idx_ < end_) {
                 const auto idx = select_next();
                 const auto& smove = (*movelist_)[idx];
+
+                if (smove.move == ttmove_) continue;
 
                 return smove.move;
             }

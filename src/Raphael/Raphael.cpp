@@ -431,11 +431,6 @@ i32 Raphael::negamax(
         ss->move = move;
         move_searched++;
 
-        if (is_quiet)
-            mvstack.quietlist.push(move);
-        else
-            mvstack.noisylist.push(move);
-
         // principle variation search
         i32 score = INT32_MIN;
         const i32 new_depth = depth - 1 + extension;
@@ -484,30 +479,33 @@ i32 Raphael::negamax(
                         ss->killer = move;
 
                         const auto quiet_bonus = history.quiet_bonus(depth);
+                        history.update_quiet(move, board.stm(), quiet_bonus);
+
                         const auto quiet_penalty = history.quiet_penalty(depth);
-
                         for (const auto quietmove : mvstack.quietlist)
-                            history.update_quiet(
-                                quietmove,
-                                board.stm(),
-                                (quietmove == move) ? quiet_bonus : quiet_penalty
-                            );
+                            history.update_quiet(quietmove, board.stm(), quiet_penalty);
+                    } else {
+                        const auto noisy_bonus = history.noisy_bonus(depth);
+                        history.update_noisy(move, board.get_captured(move), noisy_bonus);
                     }
 
-                    // always update capthist
-                    const auto noisy_bonus = history.noisy_bonus(depth);
+                    // always apply capthist malus
                     const auto noisy_penalty = history.noisy_penalty(depth);
-
-                    for (const auto noisymove : mvstack.noisylist) {
-                        const auto captured = board.get_captured(noisymove);
+                    for (const auto noisymove : mvstack.noisylist)
                         history.update_noisy(
-                            noisymove, captured, (noisymove == move) ? noisy_bonus : noisy_penalty
+                            noisymove, board.get_captured(noisymove), noisy_penalty
                         );
-                    }
 
                     break;  // prune
                 }
             }
+        }
+
+        if (move != bestmove) {
+            if (is_quiet)
+                mvstack.quietlist.push(move);
+            else
+                mvstack.noisylist.push(move);
         }
     }
 

@@ -491,7 +491,7 @@ i32 Raphael::quiescence(
     const auto ttkey = board.hash();
     const auto ttentry = tt.get(ttkey, ply);
     const bool tthit = ttentry.key == ttkey;
-    // TODO: const auto ttmove = (tthit) ? ttentry.move : chess::Move::NO_MOVE;
+    const auto ttmove = (tthit) ? ttentry.move : chess::Move::NO_MOVE;
 
     // tt cutoff
     if (!is_PV && tthit
@@ -517,7 +517,7 @@ i32 Raphael::quiescence(
     auto& mvstack = movestack[ply];
     mvstack.quietlist.clear();
     mvstack.noisylist.clear();
-    auto generator = MoveGenerator::quiescence(&mvstack.movelist, &board, &history);
+    auto generator = MoveGenerator::quiescence(&mvstack.movelist, &board, &history, ttmove);
 
     // search
     i32 bestscore = static_eval;

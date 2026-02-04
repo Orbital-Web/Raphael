@@ -319,6 +319,7 @@ i32 Raphael::negamax(
         // null move pruning
         if (depth >= NMP_DEPTH && ss->static_eval >= beta
             && (ss - 1)->move != chess::Move::NULL_MOVE && !board.is_kingpawn(board.stm())) {
+            tt.prefetch(board.hash_after<true>(chess::Move::NULL_MOVE));
             net.make_move(ply + 1, chess::Move::NULL_MOVE, board);
             board.make_nullmove();
             ss->move = chess::Move::NULL_MOVE;
@@ -534,6 +535,7 @@ i32 Raphael::quiescence(
         // qs see pruning
         if (!SEE::see(move, board, QS_SEE_THRESH)) continue;
 
+        tt.prefetch(board.hash_after<false>(move));
         net.make_move(ply + 1, move, board);
         board.make_move(move);
 

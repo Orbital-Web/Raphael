@@ -196,6 +196,13 @@ public:
         return Piece::NONE;
     }
 
+    [[nodiscard]] bool is_quiet(Move move) const {
+        return !(
+            (move.type() == Move::PROMOTION && move.promotion_type() == PieceType::QUEEN)
+            || is_capture(move)
+        );
+    }
+
     [[nodiscard]] bool is_attacked(Square sq, Color color) const {
         // cheap checks first
         if (Attacks::pawn(sq, ~color) & occ(PieceType::PAWN, color)) return true;

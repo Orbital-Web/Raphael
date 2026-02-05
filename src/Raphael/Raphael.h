@@ -173,6 +173,7 @@ private:
      * \param board current board
      * \param depth depth to search for
      * \param ply current distance from root
+     * \param mvidx movestack index
      * \param alpha lower bound score of current position
      * \param beta upper bound score of current position
      * \param cutnode whether the current position is a cutnode
@@ -185,6 +186,7 @@ private:
         chess::Board& board,
         i32 depth,
         const i32 ply,
+        const i32 mvidx,
         i32 alpha,
         i32 beta,
         bool cutnode,
@@ -197,12 +199,20 @@ private:
      * \tparam is_PV whether the current position is a PV node
      * \param board current board
      * \param ply current distance from root
+     * \param mvidx movestack index
      * \param alpha lower bound score of current position
      * \param beta upper bound score of current position
      * \param halt bool reference which will turn false to indicate search should stop
      * \returns score of current board
      */
     template <bool is_PV>
-    i32 quiescence(chess::Board& board, const i32 ply, i32 alpha, i32 beta, volatile bool& halt);
+    i32 quiescence(
+        chess::Board& board,
+        const i32 ply,
+        const i32 mvidx,
+        i32 alpha,
+        i32 beta,
+        volatile bool& halt
+    );
 };
 }  // namespace raphael

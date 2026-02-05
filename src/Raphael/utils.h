@@ -31,14 +31,4 @@ bool is_mate(i32 score);
  * \returns mate distance
  */
 i32 mate_distance(i32 score);
-
-
-
-/** Determines if a move is quiet
- *
- * \param move move to classify
- * \param board current board
- * \return whether the move is quiet or not
- */
-bool is_quiet(chess::Move move, const chess::Board& board);
 }  // namespace raphael::utils

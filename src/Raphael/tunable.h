@@ -165,11 +165,13 @@ void init_tunables();
 
 
 // search
-Tunable(ASPIRATION_DEPTH, 3, 2, 5, 1, true);
-Tunable(ASPIRATION_INIT_SIZE, 50, 5, 100, 5, true);
-Tunable(ASPIRATION_WIDENING_FACTOR, 12, 2, 24, 1, true);
+Tunable(ASPIRATION_DEPTH, 3, 2, 5, 1, true);              // min depth to apply aspiration windows
+Tunable(ASPIRATION_INIT_SIZE, 50, 5, 100, 5, true);       // initial window size
+Tunable(ASPIRATION_WIDENING_FACTOR, 12, 2, 24, 1, true);  // window scale factor (1 + k/16)
 
 // negamax
+Tunable(IIR_DEPTH, 3, 3, 6, 1, true);  // min depth to apply iir from
+
 Tunable(RFP_DEPTH, 6, 1, 10, 1, true);           // max depth to apply rfp from
 Tunable(RFP_DEPTH_SCALE, 77, 25, 150, 8, true);  // margin depth scale for rfp
 Tunable(RFP_IMPROV_SCALE, 0, 0, 100, 8, true);   // margin improving scale for rfp

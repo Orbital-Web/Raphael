@@ -175,6 +175,7 @@ private:
      * \param ply current distance from root
      * \param alpha lower bound score of current position
      * \param beta upper bound score of current position
+     * \param cutnode whether the current position is a cutnode
      * \param ss search stack at current ply
      * \param halt bool reference which will turn false to indicate search should stop
      * \returns score of current position
@@ -182,10 +183,11 @@ private:
     template <bool is_PV>
     i32 negamax(
         chess::Board& board,
-        const i32 depth,
+        i32 depth,
         const i32 ply,
         i32 alpha,
         i32 beta,
+        bool cutnode,
         SearchStack* ss,
         volatile bool& halt
     );

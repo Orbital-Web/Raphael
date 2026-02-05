@@ -125,7 +125,7 @@ You can also play with different time controls, increments, and player combinati
     - [ ] Singular extensions
   - [x] Reductions                          (`v1.5+`)
     - [x] Late move reductions              (`v1.5+`)
-    - [ ] Internal iterative reduction
+    - [x] Internal iterative reduction      (`v3.0+`)
   - [x] Move ordering                       (`v1.0+`)
     - [x] MVV-LVA                           (`v1.0+`)
     - [x] Promotions                        (`v1.0+`)

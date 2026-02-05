@@ -26,7 +26,7 @@ extern const bool UCI;
 
 
 
-const string Raphael::version = "2.3.0.0";
+const string Raphael::version = "3.0.0-dev";
 
 const Raphael::EngineOptions& Raphael::default_params() {
     static EngineOptions opts{
@@ -148,7 +148,7 @@ Raphael::MoveScore Raphael::get_move(
         // search until score lies between alpha and beta
         i32 iterscore;
         while (!halt) {
-            iterscore = negamax<true>(board, depth, 0, alpha, beta, ss, halt);
+            iterscore = negamax<true>(board, depth, 0, alpha, beta, false, ss, halt);
 
             if (iterscore <= alpha) {
                 beta = (alpha + beta) / 2;
@@ -271,10 +271,11 @@ string Raphael::get_pv_line(const PVList& pv) const {
 template <bool is_PV>
 i32 Raphael::negamax(
     chess::Board& board,
-    const i32 depth,
+    i32 depth,
     const i32 ply,
     i32 alpha,
     i32 beta,
+    bool cutnode,
     SearchStack* ss,
     volatile bool& halt
 ) {
@@ -297,6 +298,8 @@ i32 Raphael::negamax(
     // terminal depth or max ply
     if (depth <= 0 || ply >= MAX_DEPTH - 1) return quiescence<is_PV>(board, ply, alpha, beta, halt);
 
+    assert(!is_PV || !cutnode);
+
     // probe transposition table
     const auto ttkey = board.hash();
     const auto ttentry = tt.get(ttkey, ply);
@@ -310,6 +313,9 @@ i32 Raphael::negamax(
             || (ttentry.flag == tt.UPPER && ttentry.score <= alpha)  // upper
     ))
         return ttentry.score;
+
+    // internal iterative reduction
+    if (depth >= IIR_DEPTH && (is_PV || cutnode) && ttentry.move == chess::Move::NO_MOVE) depth--;
 
     const bool in_check = board.in_check();
     ss->static_eval = (in_check) ? NONE_SCORE : net.evaluate(ply, board.stm());
@@ -337,8 +343,9 @@ i32 Raphael::negamax(
             ss->move = chess::Move::NULL_MOVE;
 
             const i32 red_depth = depth - NMP_REDUCTION;
-            const i32 score
-                = -negamax<false>(board, red_depth, ply + 1, -beta, -beta + 1, ss + 1, halt);
+            const i32 score = -negamax<false>(
+                board, red_depth, ply + 1, -beta, -beta + 1, !cutnode, ss + 1, halt
+            );
 
             board.unmake_nullmove();
 
@@ -415,16 +422,22 @@ i32 Raphael::negamax(
             // late move reduction
             const i32 red_factor = LMR_TABLE[is_quiet][depth][move_searched] + !is_PV * LMR_NONPV;
             const i32 red_depth = min(max(new_depth - red_factor / 128, 1), new_depth);
-            score = -negamax<false>(board, red_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
+            score = -negamax<false>(
+                board, red_depth, ply + 1, -alpha - 1, -alpha, true, ss + 1, halt
+            );
+
             if (score > alpha && red_depth < new_depth)
-                score
-                    = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
+                score = -negamax<false>(
+                    board, new_depth, ply + 1, -alpha - 1, -alpha, !cutnode, ss + 1, halt
+                );
         } else if (!is_PV || move_searched > 1)
-            score = -negamax<false>(board, new_depth, ply + 1, -alpha - 1, -alpha, ss + 1, halt);
+            score = -negamax<false>(
+                board, new_depth, ply + 1, -alpha - 1, -alpha, !cutnode, ss + 1, halt
+            );
 
         assert(!(is_PV && move_searched != 1 && score == INT32_MIN));
         if (is_PV && (move_searched == 1 || score > alpha))
-            score = -negamax<true>(board, new_depth, ply + 1, -beta, -alpha, ss + 1, halt);
+            score = -negamax<true>(board, new_depth, ply + 1, -beta, -alpha, false, ss + 1, halt);
         assert(score != INT32_MIN);
 
         board.unmake_move(move);

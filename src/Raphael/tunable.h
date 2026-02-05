@@ -165,7 +165,9 @@ void init_tunables();
 
 
 // search
-Tunable(ASPIRATION_WINDOW, 50, 5, 100, 5, true);
+Tunable(ASPIRATION_DEPTH, 3, 2, 5, 1, true);
+Tunable(ASPIRATION_INIT_SIZE, 50, 5, 100, 5, true);
+Tunable(ASPIRATION_WIDENING_FACTOR, 12, 2, 24, 1, true);
 
 // negamax
 Tunable(RFP_DEPTH, 6, 1, 10, 1, true);           // max depth to apply rfp from

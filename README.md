@@ -95,6 +95,7 @@ You can also play with different time controls, increments, and player combinati
 - [x] Search                                (`v1.0+`)
   - [x] Iterative deepening                 (`v1.1+`)
   - [x] Aspiration window                   (`v1.3+`)
+  - [x] Aspiration widening                 (`v3.0+`)
   - [ ] Endgame table base
 - [x] Alpha-beta search                     (`v1.0+`)
   - [x] Pruning                             (`v1.0+`)
@@ -113,6 +114,9 @@ You can also play with different time controls, increments, and player combinati
     - [ ] Improving heuristics
   - [x] Transposition table                 (`v1.1+`)
     - [x] Prefetching                       (`v2.2+`)
+    - [ ] Aging
+    - [ ] Clusters
+    - [ ] Storing static evaluations
   - [x] Principle variation search          (`v2.1+`)
   - [x] Extensions                          (`v1.4+`)
     - [x] Check extensions                  (`v1.4+`)
@@ -129,6 +133,7 @@ You can also play with different time controls, increments, and player combinati
     - [x] Killer heuristics                 (`v1.3+`)
     - [x] Butterfly history                 (`v1.5+`)
     - [x] Capture history                   (`v2.3+`)
+    - [ ] Piece-to history
     - [ ] Continuation history
     - [ ] Correction history
     - [ ] Threats in history
@@ -137,7 +142,7 @@ You can also play with different time controls, increments, and player combinati
   - ~~Delta pruning~~                       (`v2.1+`)
   - [x] Futility pruning                    (`v2.3+`)
   - [x] SEE pruning                         (`v2.3+`)
-  - [ ] Transposition table probing
+  - [x] Transposition table cutoff          (`v3.0+`)
 - [x] Evaluation                            (`v1.0+`)
   - [x] Hand-crafted evaluation             (`v1.0+`)
     - [x] Materials                         (`v1.0+`)
@@ -154,8 +159,14 @@ You can also play with different time controls, increments, and player combinati
     - [x] Draw evaluation                   (`v1.8+`)
     - [x] Evaluation texel tuning           (`v1.8+`)
   - [x] NNUE                                (`v2.0+`)
-    - [x] NNUE lazy updates                 (`v2.1+`)
-    - [ ] NNUE output buckets
+    - [x] Lizard SCReLU                     (`v2.0+`)
+    - [x] Lazy updates                      (`v2.1+`)
+    - [ ] Horizontal mirroring
+    - [ ] Output buckets
+    - [ ] King buckets
+    - [ ] Finny tables
+    - [ ] Pairwise multiplication
+    - [ ] Dual activations
 - [x] Time management                       (`v1.0+`)
 - [x] Pondering                             (`v1.2+`)
 - [x] Performance                           (`v1.8+`)

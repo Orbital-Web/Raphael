@@ -119,8 +119,6 @@ Raphael::MoveScore Raphael::get_move(
 
     i32 depth = 1;
     i32 score = -INF_SCORE;
-    i32 alpha = -INF_SCORE;
-    i32 beta = INF_SCORE;
     chess::Move bestmove = chess::Move::NO_MOVE;
 
     SearchStack stack[MAX_DEPTH + 3];
@@ -137,22 +135,36 @@ Raphael::MoveScore Raphael::get_move(
         // soft nodes override
         if (params.softnodes && searchopt.maxnodes != -1 && nodes_ >= searchopt.maxnodes) break;
 
-        const i32 iterscore = negamax<true>(board, depth, 0, alpha, beta, ss, halt);
-        if (halt) break;  // don't use results if timeout
+        // initialize aspiration window (we love greek symbols)
+        i32 delta = ASPIRATION_INIT_SIZE;
+        i32 alpha = -INF_SCORE;
+        i32 beta = INF_SCORE;
 
-        // re-search required
-        if ((iterscore <= alpha) || (iterscore >= beta)) {
-            alpha = -INF_SCORE;
-            beta = INF_SCORE;
-            continue;
+        if (depth >= ASPIRATION_DEPTH) {
+            alpha = max(score - delta, -INF_SCORE);
+            beta = min(score + delta, INF_SCORE);
         }
+
+        // search until score lies between alpha and beta
+        i32 iterscore;
+        while (!halt) {
+            iterscore = negamax<true>(board, depth, 0, alpha, beta, ss, halt);
+
+            if (iterscore <= alpha) {
+                beta = (alpha + beta) / 2;
+                alpha = max(score - delta, -INF_SCORE);
+            } else if (iterscore >= beta)
+                beta = min(score + delta, INF_SCORE);
+            else
+                break;
+
+            delta += delta * ASPIRATION_WIDENING_FACTOR / 16;
+        }
+
+        if (halt) break;  // don't use results if timeout
 
         score = iterscore;
         bestmove = ss->pv.moves[0];
-
-        // narrow window
-        alpha = score - ASPIRATION_WINDOW;
-        beta = score + ASPIRATION_WINDOW;
         depth++;
 
         // print info

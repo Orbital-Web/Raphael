@@ -122,7 +122,7 @@ You can also play with different time controls, increments, and player combinati
     - [x] Check extensions                  (`v1.4+`)
     - ~~Pawn push extensions~~              (`v1.4+`)
     - ~~One reply extensions~~              (`v1.7+`)
-    - [ ] Singular extensions
+    - [x] Singular extensions               (`v3.0+`)
   - [x] Reductions                          (`v1.5+`)
     - [x] Late move reductions              (`v1.5+`)
     - [x] Internal iterative reduction      (`v3.0+`)

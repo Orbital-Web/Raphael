@@ -283,6 +283,7 @@ i32 Raphael::negamax(
     const bool is_root = (ply == 0);
     assert(!is_root || is_PV);
     assert(!is_PV || !cutnode);
+    assert(!is_root || !ss->excluded);
 
     // timeout
     if (is_time_over(halt)) return 0;
@@ -307,26 +308,29 @@ i32 Raphael::negamax(
     // probe transposition table
     const auto ttkey = board.hash();
     auto ttentry = TranspositionTable::Entry();
-    const bool tthit = tt.get(ttentry, ttkey, ply);
+
+    if (!ss->excluded) {
+        const bool tthit = tt.get(ttentry, ttkey, ply);
+
+        // tt cutoff
+        if (!is_PV && tthit && ttentry.depth >= depth
+            && (ttentry.flag == tt.EXACT                                 // exact
+                || (ttentry.flag == tt.LOWER && ttentry.score >= beta)   // lower
+                || (ttentry.flag == tt.UPPER && ttentry.score <= alpha)  // upper
+        ))
+            return ttentry.score;
+    }
     const auto ttmove = ttentry.move;
 
-    // tt cutoff
-    if (!is_PV && tthit && ttentry.depth >= depth
-        && (ttentry.flag == tt.EXACT                                 // exact
-            || (ttentry.flag == tt.LOWER && ttentry.score >= beta)   // lower
-            || (ttentry.flag == tt.UPPER && ttentry.score <= alpha)  // upper
-    ))
-        return ttentry.score;
-
     // internal iterative reduction
-    if (depth >= IIR_DEPTH && (is_PV || cutnode) && !ttmove) depth--;
+    if (depth >= IIR_DEPTH && !ss->excluded && (is_PV || cutnode) && !ttmove) depth--;
 
     const bool in_check = board.in_check();
-    ss->static_eval = (in_check) ? NONE_SCORE : net.evaluate(ply, board.stm());
+    if (!ss->excluded) ss->static_eval = (in_check) ? NONE_SCORE : net.evaluate(ply, board.stm());
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
 
     // pre-moveloop pruning
-    if (!is_PV && !in_check) {
+    if (!is_PV && !in_check && !ss->excluded) {
         // reverse futility pruning
         const i32 rfp_margin = RFP_DEPTH_SCALE * depth - RFP_IMPROV_SCALE * improving;
         if (depth <= RFP_DEPTH && ss->static_eval - rfp_margin >= beta) return ss->static_eval;
@@ -375,6 +379,8 @@ i32 Raphael::negamax(
 
     i32 move_searched = 0;
     while (const auto move = generator.next()) {
+        if (move == ss->excluded) continue;
+
         const bool is_quiet = board.is_quiet(move);
         const auto base_lmr = LMR_TABLE[is_quiet][depth][move_searched + 1];
 
@@ -403,6 +409,22 @@ i32 Raphael::negamax(
             if (!SEE::see(move, board, see_thresh)) continue;
         }
 
+        // singular extensions
+        i32 extension = 0;
+        if (!is_root && depth >= SE_DEPTH && move == ttmove && !ss->excluded
+            && ttentry.depth >= depth - SE_TT_DEPTH && ttentry.flag != tt.UPPER) {
+            const i32 s_beta = max(-INF_SCORE + 1, ttentry.score - 2 * depth);
+            const i32 s_depth = (depth - 1) / 2;
+
+            ss->excluded = move;
+            const i32 score = negamax<false>(
+                board, s_depth, ply, mvidx + 1, s_beta - 1, s_beta, cutnode, ss, halt
+            );
+            ss->excluded = chess::Move::NO_MOVE;
+
+            if (score <= s_beta) extension = 1;
+        }
+
         tt.prefetch(board.hash_after<false>(move));
         net.make_move(ply + 1, move, board);
         board.make_move(move);
@@ -415,7 +437,6 @@ i32 Raphael::negamax(
             mvstack.noisylist.push(move);
 
         // check extension
-        i32 extension = 0;
         if (board.in_check()) extension++;
 
         // principle variation search
@@ -499,7 +520,7 @@ i32 Raphael::negamax(
     if (move_searched == 0) return (in_check) ? -MATE_SCORE + ply : 0;  // reward faster mate
 
     // update transposition table
-    tt.set(ttkey, bestscore, bestmove, depth, ttflag, ply);
+    if (!ss->excluded) tt.set(ttkey, bestscore, bestmove, depth, ttflag, ply);
 
     return bestscore;
 }

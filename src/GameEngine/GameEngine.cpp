@@ -123,8 +123,8 @@ void GameEngine::run_match(const GameOptions& options) {
         // play move
         auto recv = movereceiver.get();
         auto toPlay = recv.move;
-        if (toPlay == chess::Move::NO_MOVE || !movelist.contains(toPlay)) {
-            if (toPlay == chess::Move::NO_MOVE) {
+        if (!toPlay || !movelist.contains(toPlay)) {
+            if (!toPlay) {
                 lock_guard<mutex> lock(cout_mutex);
                 cout << "Warning, no move returned. Remaining time of player: " << fixed
                      << setprecision(2) << cur_t_remain / 1000.0f << "\n"

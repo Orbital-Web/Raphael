@@ -40,7 +40,7 @@ HumanPlayer::MoveScore HumanPlayer::get_move(
                 // destination clicked
                 if (sq_from != chess::Square::NONE && sq_from != sq) {
                     chess::Move move = move_if_valid(sq_from, sq, movelist, board);
-                    if (move != chess::Move::NO_MOVE)
+                    if (move)
                         return {move, 0, false};
                     else
                         sq_from = chess::Square::NONE;

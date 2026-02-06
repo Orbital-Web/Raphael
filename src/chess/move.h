@@ -24,6 +24,7 @@ public:
     }
 
     [[nodiscard]] explicit constexpr operator u16() const { return move_; }
+    [[nodiscard]] explicit constexpr operator bool() const { return move_ != NO_MOVE; }
 
     [[nodiscard]] constexpr bool operator==(const Move& rhs) const { return move_ == rhs.move_; }
     [[nodiscard]] constexpr bool operator!=(const Move& rhs) const { return move_ != rhs.move_; }

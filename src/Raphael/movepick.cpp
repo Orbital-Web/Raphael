@@ -33,7 +33,7 @@ chess::Move MoveGenerator::next() {
         case Stage::TT_MOVE: {
             stage_ = Stage::GEN_NOISY;
 
-            if (ttmove_ != chess::Move::NO_MOVE && board_->is_legal(ttmove_)) return ttmove_;
+            if (ttmove_ && board_->is_legal(ttmove_)) return ttmove_;
 
             [[fallthrough]];
         }
@@ -75,8 +75,7 @@ chess::Move MoveGenerator::next() {
         case Stage::KILLER: {
             stage_ = Stage::GEN_QUIET;
 
-            if (!skip_quiets_ && killer_ != chess::Move::NO_MOVE && killer_ != ttmove_
-                && board_->is_legal(killer_))
+            if (!skip_quiets_ && killer_ && killer_ != ttmove_ && board_->is_legal(killer_))
                 return killer_;
 
             [[fallthrough]];

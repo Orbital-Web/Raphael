@@ -43,6 +43,11 @@ TEST_SUITE("Move") {
             == PieceType::QUEEN
         );
     }
+
+    TEST_CASE("operator bool") {
+        CHECK(bool(Move(Move::NO_MOVE)) == false);
+        CHECK(bool(Move::make(Square::E2, Square::E4)) == true);
+    }
 }
 
 TEST_SUITE("MoveList") {

@@ -172,7 +172,7 @@ Raphael::MoveScore Raphael::get_move(
     }
 
     // last attempt to get bestmove
-    if (bestmove == chess::Move::NO_MOVE) bestmove = ss->pv.moves[0];
+    if (!bestmove) bestmove = ss->pv.moves[0];
 
     // print bestmove
     if (UCI) {
@@ -319,7 +319,7 @@ i32 Raphael::negamax(
         return ttentry.score;
 
     // internal iterative reduction
-    if (depth >= IIR_DEPTH && (is_PV || cutnode) && ttmove == chess::Move::NO_MOVE) depth--;
+    if (depth >= IIR_DEPTH && (is_PV || cutnode) && !ttmove) depth--;
 
     const bool in_check = board.in_check();
     ss->static_eval = (in_check) ? NONE_SCORE : net.evaluate(ply, board.stm());
@@ -374,8 +374,7 @@ i32 Raphael::negamax(
     auto ttflag = tt.UPPER;
 
     i32 move_searched = 0;
-    chess::Move move;
-    while ((move = generator.next()) != chess::Move::NO_MOVE) {
+    while (const auto move = generator.next()) {
         const bool is_quiet = board.is_quiet(move);
         const auto base_lmr = LMR_TABLE[is_quiet][depth][move_searched + 1];
 
@@ -555,8 +554,7 @@ i32 Raphael::quiescence(
 
     const i32 futility = bestscore + QS_FUTILITY_MARGIN;
 
-    chess::Move move;
-    while ((move = generator.next()) != chess::Move::NO_MOVE) {
+    while (const auto move = generator.next()) {
         // qs futility pruning
         if (!in_check && futility <= alpha && !SEE::see(move, board, 1)) {
             bestscore = max(bestscore, futility);

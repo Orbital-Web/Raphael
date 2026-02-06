@@ -119,7 +119,7 @@ You can also play with different time controls, increments, and player combinati
     - [ ] Storing static evaluations
   - [x] Principle variation search          (`v2.1+`)
   - [x] Extensions                          (`v1.4+`)
-    - [x] Check extensions                  (`v1.4+`)
+    - ~~Check extensions~~                  (`v1.4+`)
     - ~~Pawn push extensions~~              (`v1.4+`)
     - ~~One reply extensions~~              (`v1.7+`)
     - [x] Singular extensions               (`v3.0+`)

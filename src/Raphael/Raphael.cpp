@@ -436,9 +436,6 @@ i32 Raphael::negamax(
         else
             mvstack.noisylist.push(move);
 
-        // check extension
-        if (board.in_check()) extension++;
-
         // principle variation search
         i32 score = INT32_MIN;
         const i32 new_depth = depth - 1 + extension;

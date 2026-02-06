@@ -49,13 +49,14 @@ public:
      */
     void resize(u32 size_mb);
 
-    /** Retrieves the table value for a given key (assumes valid is true)
+    /** Retrieves the table entry for a given key
      *
+     * \param ttentry entry to put probed result into
      * \param key key to look up
      * \param ply current distance from root
-     * \returns the Entry in the table
+     * \returns whether there was a tt hit or not
      */
-    Entry get(u64 key, i32 ply) const;
+    bool get(Entry& ttentry, u64 key, i32 ply) const;
 
     /** Prefetches a table entry
      *

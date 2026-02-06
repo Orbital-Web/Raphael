@@ -65,9 +65,9 @@ private:
 
     struct SearchStack {
         PVList pv;
+        i32 static_eval = 0;
         chess::Move move = chess::Move::NO_MOVE;
         chess::Move killer = chess::Move::NO_MOVE;
-        i32 static_eval = 0;
     };
 
     struct MoveStack {

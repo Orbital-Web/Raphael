@@ -280,12 +280,16 @@ i32 Raphael::negamax(
     SearchStack* ss,
     volatile bool& halt
 ) {
+    const bool is_root = (ply == 0);
+    assert(!is_root || is_PV);
+    assert(!is_PV || !cutnode);
+
     // timeout
     if (is_time_over(halt)) return 0;
     nodes_++;
     if constexpr (is_PV) ss->pv.length = 0;
 
-    if (ply) {
+    if (!is_root) {
         // prevent draw in winning positions
         // technically this ignores checkmate on the 50th move
         if (board.is_repetition(1) || board.is_halfmovedraw()) return 0;
@@ -300,13 +304,11 @@ i32 Raphael::negamax(
     if (depth <= 0 || ply >= MAX_DEPTH - 1)
         return quiescence<is_PV>(board, ply, mvidx, alpha, beta, halt);
 
-    assert(!is_PV || !cutnode);
-
     // probe transposition table
     const auto ttkey = board.hash();
-    const auto ttentry = tt.get(ttkey, ply);
-    const bool tthit = ttentry.key == ttkey;
-    const auto ttmove = (tthit) ? ttentry.move : chess::Move::NO_MOVE;
+    auto ttentry = TranspositionTable::Entry();
+    const bool tthit = tt.get(ttentry, ttkey, ply);
+    const auto ttmove = ttentry.move;
 
     // tt cutoff
     if (!is_PV && tthit && ttentry.depth >= depth
@@ -317,14 +319,14 @@ i32 Raphael::negamax(
         return ttentry.score;
 
     // internal iterative reduction
-    if (depth >= IIR_DEPTH && (is_PV || cutnode) && ttentry.move == chess::Move::NO_MOVE) depth--;
+    if (depth >= IIR_DEPTH && (is_PV || cutnode) && ttmove == chess::Move::NO_MOVE) depth--;
 
     const bool in_check = board.in_check();
     ss->static_eval = (in_check) ? NONE_SCORE : net.evaluate(ply, board.stm());
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
 
     // pre-moveloop pruning
-    if (!is_PV && ply && !in_check) {
+    if (!is_PV && !in_check) {
         // reverse futility pruning
         const i32 rfp_margin = RFP_DEPTH_SCALE * depth - RFP_IMPROV_SCALE * improving;
         if (depth <= RFP_DEPTH && ss->static_eval - rfp_margin >= beta) return ss->static_eval;
@@ -378,7 +380,7 @@ i32 Raphael::negamax(
         const auto base_lmr = LMR_TABLE[is_quiet][depth][move_searched + 1];
 
         // moveloop pruning
-        if (ply && !utils::is_loss(bestscore) && (!params.datagen || !is_PV)) {
+        if (!is_root && !utils::is_loss(bestscore) && (!params.datagen || !is_PV)) {
             const auto lmr_depth = max(depth - base_lmr / 128, 0);
 
             if (is_quiet) {
@@ -518,9 +520,9 @@ i32 Raphael::quiescence(
 
     // probe transposition table
     const auto ttkey = board.hash();
-    const auto ttentry = tt.get(ttkey, ply);
-    const bool tthit = ttentry.key == ttkey;
-    // TODO: const auto ttmove = (tthit) ? ttentry.move : chess::Move::NO_MOVE;
+    auto ttentry = TranspositionTable::Entry();
+    const bool tthit = tt.get(ttentry, ttkey, ply);
+    // const auto ttmove = ttentry.move;
 
     // tt cutoff
     if (!is_PV && tthit

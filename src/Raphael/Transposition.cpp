@@ -35,16 +35,26 @@ void TranspositionTable::resize(u32 size_mb) {
 }
 
 
-TranspositionTable::Entry TranspositionTable::get(u64 key, i32 ply) const {
+bool TranspositionTable::get(Entry& ttentry, u64 key, i32 ply) const {
     // get
-    Entry entry = table_[index(key)];
+    const auto& entry = table_[index(key)];
 
-    // correct mate score when retrieving (https://youtu.be/XfeuxubYlT0)
-    if (utils::is_loss(entry.score))
-        entry.score += ply;
-    else if (utils::is_win(entry.score))
-        entry.score -= ply;
-    return entry;
+    if (key == entry.key) {
+        // correct mate score when retrieving (https://youtu.be/XfeuxubYlT0)
+        if (utils::is_loss(entry.score))
+            ttentry.score = entry.score + ply;
+        else if (utils::is_win(entry.score))
+            ttentry.score = entry.score - ply;
+        else
+            ttentry.score = entry.score;
+        ttentry.move = entry.move;
+        ttentry.depth = entry.depth;
+        ttentry.flag = entry.flag;
+
+        return true;
+    }
+
+    return false;
 }
 
 

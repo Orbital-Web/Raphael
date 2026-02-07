@@ -8,21 +8,27 @@
 namespace raphael {
 class TranspositionTable {
 public:
-    static constexpr usize MAX_TABLE_SIZE = 201326592;  // 3GB
-    static constexpr usize DEF_TABLE_SIZE = 4194304;    // 64MB
+    static constexpr i32 MAX_TABLE_SIZE_MB = 65536;  // 64GB
+    static constexpr i32 DEF_TABLE_SIZE_MB = 64;
 
     enum Flag : u8 { INVALID = 0, LOWER, EXACT, UPPER };
 
-    // table entry interface
     struct Entry {
-        u64 key;           // zobrist hash of position
-        i32 score;         // score of the position
-        chess::Move move;  // bestmove
-        u8 depth;          // max 255
-        Flag flag;         // invalid, lower, exact, or upper
+        u16 key;    // zobrist hash of position
+        i16 score;  // score of the position
+        u16 move;   // bestmove
+        u8 depth;   // max 255
+        Flag flag;  // invalid, lower, exact, or upper
     };
-    static constexpr usize ENTRY_SIZE = sizeof(Entry);  // 16 bytes
-    static_assert(ENTRY_SIZE == 16);
+    static constexpr usize ENTRY_SIZE = sizeof(Entry);
+    static_assert(ENTRY_SIZE == 8);
+
+    struct ProbedEntry {
+        i32 score;
+        i32 depth;
+        chess::Move move;
+        Flag flag;
+    };
 
 private:
     usize size_;
@@ -35,7 +41,7 @@ public:
      *
      * \param size_mb the size of the table (in MB)
      */
-    explicit TranspositionTable(u32 size_mb);
+    explicit TranspositionTable(i32 size_mb);
 
     /** Destructs and deallocates the table */
     ~TranspositionTable();
@@ -47,7 +53,7 @@ public:
      *
      * \param size_mb the size of the table (in MB)
      */
-    void resize(u32 size_mb);
+    void resize(i32 size_mb);
 
     /** Retrieves the table entry for a given key
      *
@@ -56,7 +62,7 @@ public:
      * \param ply current distance from root
      * \returns whether there was a tt hit or not
      */
-    bool get(Entry& ttentry, u64 key, i32 ply) const;
+    bool get(ProbedEntry& ttentry, u64 key, i32 ply) const;
 
     /** Prefetches a table entry
      *

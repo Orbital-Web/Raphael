@@ -30,12 +30,8 @@ const string Raphael::version = "3.0.0-dev";
 
 const Raphael::EngineOptions& Raphael::default_params() {
     static EngineOptions opts{
-        .hash = {
-            "Hash",
-            TranspositionTable::DEF_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
-            1,
-            TranspositionTable::MAX_TABLE_SIZE * TranspositionTable::ENTRY_SIZE >> 20,
-        },
+        .hash
+        = {"Hash", TranspositionTable::DEF_TABLE_SIZE_MB, 1, TranspositionTable::MAX_TABLE_SIZE_MB},
         .threads = {"Threads", 1, 1, 1},
         .datagen = {"Datagen", false},
         .softnodes = {"Softnodes", false},
@@ -307,7 +303,7 @@ i32 Raphael::negamax(
 
     // probe transposition table
     const auto ttkey = board.hash();
-    auto ttentry = TranspositionTable::Entry();
+    auto ttentry = TranspositionTable::ProbedEntry();
 
     if (!ss->excluded) {
         const bool tthit = tt.get(ttentry, ttkey, ply);
@@ -538,7 +534,7 @@ i32 Raphael::quiescence(
 
     // probe transposition table
     const auto ttkey = board.hash();
-    auto ttentry = TranspositionTable::Entry();
+    auto ttentry = TranspositionTable::ProbedEntry();
     const bool tthit = tt.get(ttentry, ttkey, ply);
     // const auto ttmove = ttentry.move;
 

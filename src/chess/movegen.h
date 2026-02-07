@@ -531,7 +531,8 @@ template <Color::underlying color>
         // should have castling rights
         if (!rights.has(static_cast<Color>(color), side)) return false;
 
-        assert(to.is_back_rank(static_cast<Color>(color)));
+        // should be back rank for this side (on the rare case of a hash collision in tt)
+        if (!to.is_back_rank(static_cast<Color>(color))) return false;
 
         // should not have pieces on the castling path
         const auto is_king_side = (side == Board::CastlingRights::Side::KING_SIDE);

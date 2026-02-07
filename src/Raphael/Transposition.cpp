@@ -1,6 +1,8 @@
 #include <Raphael/Transposition.h>
 #include <Raphael/utils.h>
 
+#include <cstring>
+
 #ifdef _WIN32
     #include <windows.h>
 #else
@@ -8,11 +10,11 @@
 #endif
 
 using namespace raphael;
-using std::fill;
+using std::memset;
 
 
 
-TranspositionTable::TranspositionTable(u32 size_mb): capacity_(0), table_(nullptr) {
+TranspositionTable::TranspositionTable(i32 size_mb): capacity_(0), table_(nullptr) {
     resize(size_mb);
 }
 
@@ -20,7 +22,7 @@ TranspositionTable::TranspositionTable(u32 size_mb): capacity_(0), table_(nullpt
 TranspositionTable::~TranspositionTable() { deallocate(); }
 
 
-void TranspositionTable::resize(u32 size_mb) {
+void TranspositionTable::resize(i32 size_mb) {
     const usize newsize = (usize)size_mb * 1024 * 1024 / ENTRY_SIZE;
     assert((newsize > 0 && newsize <= MAX_TABLE_SIZE));
 
@@ -35,20 +37,21 @@ void TranspositionTable::resize(u32 size_mb) {
 }
 
 
-bool TranspositionTable::get(Entry& ttentry, u64 key, i32 ply) const {
+bool TranspositionTable::get(ProbedEntry& ttentry, u64 key, i32 ply) const {
     // get
     const auto& entry = table_[index(key)];
+    const auto packed_key = static_cast<u16>(key);
 
-    if (key == entry.key) {
+    if (packed_key == entry.key) {
         // correct mate score when retrieving (https://youtu.be/XfeuxubYlT0)
-        if (utils::is_loss(entry.score))
-            ttentry.score = entry.score + ply;
-        else if (utils::is_win(entry.score))
-            ttentry.score = entry.score - ply;
-        else
-            ttentry.score = entry.score;
-        ttentry.move = entry.move;
-        ttentry.depth = entry.depth;
+        i32 score = static_cast<i32>(entry.score);
+        if (utils::is_loss(score))
+            score += ply;
+        else if (utils::is_win(score))
+            score -= ply;
+        ttentry.score = score;
+        ttentry.move = static_cast<chess::Move>(entry.move);
+        ttentry.depth = static_cast<i32>(entry.depth);
         ttentry.flag = entry.flag;
 
         return true;
@@ -66,8 +69,9 @@ void TranspositionTable::set(u64 key, i32 score, chess::Move move, i32 depth, Fl
     assert(depth < 256);
 
     Entry entry = table_[index(key)];
+    const auto packed_key = static_cast<u16>(key);
 
-    if (move || entry.key != key) entry.move = move;
+    if (move || entry.key != packed_key) entry.move = static_cast<u16>(move);
 
     // correct mate score when storing (https://youtu.be/XfeuxubYlT0)
     if (utils::is_loss(score))
@@ -75,9 +79,14 @@ void TranspositionTable::set(u64 key, i32 score, chess::Move move, i32 depth, Fl
     else if (utils::is_win(score))
         score += ply;
 
+    assert(score >= INT16_MIN);
+    assert(score <= INT16_MAX);
+    assert(depth > 0);
+    assert(depth < 256);
+
     // set
-    entry.key = key;
-    entry.score = score;
+    entry.key = packed_key;
+    entry.score = static_cast<i16>(score);
     entry.depth = static_cast<u8>(depth);
     entry.flag = flag;
 
@@ -89,11 +98,14 @@ void TranspositionTable::clear() {
     assert(table_ != nullptr);
     assert(size_ > 0);
 
-    fill(table_, table_ + size_, Entry{});
+    memset(table_, 0, size_ * ENTRY_SIZE);
 }
 
 
-u64 TranspositionTable::index(u64 key) const { return key % size_; }
+u64 TranspositionTable::index(u64 key) const {
+    // key >> 64 = 0~1, index at this fraction of the way through size_
+    return static_cast<u64>((static_cast<u128>(key) * static_cast<u128>(size_)) >> 64);
+}
 
 
 void TranspositionTable::allocate(usize newsize) {

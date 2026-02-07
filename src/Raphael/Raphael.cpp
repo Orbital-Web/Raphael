@@ -365,6 +365,7 @@ i32 Raphael::negamax(
     if (board.is_insufficientmaterial()) return 0;
 
     // initialize move generator
+    assert(mvidx < 2 * MAX_DEPTH);
     auto& mvstack = movestack[mvidx];
     mvstack.quietlist.clear();
     mvstack.noisylist.clear();
@@ -409,11 +410,11 @@ i32 Raphael::negamax(
             if (!SEE::see(move, board, see_thresh)) continue;
         }
 
-        // singular extensions
+        // extensions
         i32 extension = 0;
         if (!is_root && depth >= SE_DEPTH && move == ttmove && !ss->excluded
             && ttentry.depth >= depth - SE_TT_DEPTH && ttentry.flag != tt.UPPER) {
-            const i32 s_beta = max(-INF_SCORE + 1, ttentry.score - 2 * depth);
+            const i32 s_beta = max(-MATE_SCORE + 1, ttentry.score - depth * SE_DEPTH_MARGIN / 16);
             const i32 s_depth = (depth - 1) / 2;
 
             ss->excluded = move;
@@ -422,7 +423,7 @@ i32 Raphael::negamax(
             );
             ss->excluded = chess::Move::NO_MOVE;
 
-            if (score <= s_beta) extension = 1;
+            if (score < s_beta) extension = 1;  // singular extensions
         }
 
         tt.prefetch(board.hash_after<false>(move));
@@ -562,6 +563,7 @@ i32 Raphael::quiescence(
     }
 
     // initialize move generator
+    assert(mvidx < 2 * MAX_DEPTH);
     auto& mvstack = movestack[mvidx];
     mvstack.quietlist.clear();
     mvstack.noisylist.clear();

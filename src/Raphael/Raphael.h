@@ -76,7 +76,7 @@ private:
         chess::MoveList<chess::Move> quietlist;
         chess::MoveList<chess::Move> noisylist;
     };
-    MoveStack movestack[MAX_DEPTH];
+    MoveStack movestack[2 * MAX_DEPTH];
 
 
 

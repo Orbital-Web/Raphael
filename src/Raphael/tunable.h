@@ -193,8 +193,9 @@ Tunable(FP_MARGIN_BASE, 100, 0, 400, 20, true);  // base margin for fp
 Tunable(SEE_QUIET_DEPTH_SCALE, -30, -128, -1, 12, true);   // depth scale for quiet SEE pruning
 Tunable(SEE_NOISY_DEPTH_SCALE, -90, -128, -30, 20, true);  // depth scale for noisy SEE pruning
 
-Tunable(SE_DEPTH, 8, 6, 12, 1, true);    // min depth to apply se from
-Tunable(SE_TT_DEPTH, 3, 3, 6, 1, true);  // min difference of tt depth from current depth to do se
+Tunable(SE_DEPTH, 8, 6, 12, 1, true);           // min depth to apply singular extensions from
+Tunable(SE_TT_DEPTH, 3, 3, 6, 1, true);         // min tt depth margin for singular extensions
+Tunable(SE_DEPTH_MARGIN, 32, 4, 64, 12, true);  // depth margin for singular extension beta
 
 Tunable(LMR_DEPTH, 3, 1, 5, 1, true);           // depth to apply lmr from
 Tunable(LMR_FROMMOVE, 5, 2, 8, 1, true);        // movei to apply lmr from

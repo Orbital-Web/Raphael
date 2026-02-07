@@ -123,6 +123,11 @@ You can also play with different time controls, increments, and player combinati
     - ~~Pawn push extensions~~              (`v1.4+`)
     - ~~One reply extensions~~              (`v1.7+`)
     - [x] Singular extensions               (`v3.0+`)
+    - [ ] Double extensions
+    - [ ] Triple extensions
+    - [ ] Negative extensions
+    - [ ] Cutnode negative extensions
+    - [ ] Low depth singular extensions
   - [x] Reductions                          (`v1.5+`)
     - [x] Late move reductions              (`v1.5+`)
     - [x] Internal iterative reduction      (`v3.0+`)

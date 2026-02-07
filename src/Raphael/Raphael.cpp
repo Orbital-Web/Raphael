@@ -571,14 +571,16 @@ i32 Raphael::quiescence(
     const i32 futility = bestscore + QS_FUTILITY_MARGIN;
 
     while (const auto move = generator.next()) {
-        // qs futility pruning
-        if (!in_check && futility <= alpha && !SEE::see(move, board, 1)) {
-            bestscore = max(bestscore, futility);
-            continue;
-        }
+        if (!utils::is_loss(bestscore)) {
+            // qs futility pruning
+            if (!in_check && futility <= alpha && !SEE::see(move, board, 1)) {
+                bestscore = max(bestscore, futility);
+                continue;
+            }
 
-        // qs see pruning
-        if (!SEE::see(move, board, QS_SEE_THRESH)) continue;
+            // qs see pruning
+            if (!SEE::see(move, board, QS_SEE_THRESH)) continue;
+        }
 
         tt.prefetch(board.hash_after<false>(move));
         net.make_move(ply + 1, move, board);

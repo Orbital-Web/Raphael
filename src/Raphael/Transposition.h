@@ -14,11 +14,16 @@ public:
     enum Flag : u8 { INVALID = 0, LOWER, EXACT, UPPER };
 
     struct Entry {
-        u16 key;    // zobrist hash of position
-        i16 score;  // score of the position
-        u16 move;   // bestmove
-        u8 depth;   // max 255
-        Flag flag;  // invalid, lower, exact, or upper
+        u16 key;      // zobrist hash of position
+        i16 score;    // score of the position
+        u16 move;     // bestmove
+        u8 depth;     // max 255
+        u8 age_flag;  // 6 bits age, 2 bits flag
+
+        u32 age() const;
+        Flag flag() const;
+
+        void set_age_flag(u32 age, Flag flag);
     };
     static constexpr usize ENTRY_SIZE = sizeof(Entry);
     static_assert(ENTRY_SIZE == 8);
@@ -34,6 +39,9 @@ private:
     usize size_;
     usize capacity_;
     Entry* table_;
+
+    u32 age_ = 0;
+    static constexpr u32 AGE_BITS = 6;
 
 
 public:
@@ -83,6 +91,12 @@ public:
 
     /** Clears the table */
     void clear();
+
+    /** Increments the tt age */
+    void do_age();
+
+    /** Returns how full the table is */
+    i32 hashfull() const;
 
 private:
     /** Computes the index on the table

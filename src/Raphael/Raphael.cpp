@@ -176,6 +176,9 @@ Raphael::MoveScore Raphael::get_move(
         cout << "bestmove " << chess::uci::from_move(bestmove) << "\n" << flush;
     }
 
+    // age tt
+    tt.do_age();
+
     // return result
     if (utils::is_mate(score)) return {bestmove, utils::mate_distance(score), true, nodes_};
     return {bestmove, score, false, nodes_};
@@ -247,14 +250,14 @@ void Raphael::print_uci_info(i32 depth, i32 score, const SearchStack* ss) const 
 
     lock_guard<mutex> lock(cout_mutex);
     cout << "info depth " << depth - 1 << " seldepth " << seldepth_ << " time " << dtime
-         << " nodes " << nodes_;
+         << " nodes " << nodes_ << " nps " << nps;
 
     if (utils::is_mate(score))
         cout << " score mate " << utils::mate_distance(score);
     else
         cout << " score cp " << score;
 
-    cout << " nps " << nps << " pv " << get_pv_line(ss->pv) << "\n" << flush;
+    cout << " hashfull " << tt.hashfull() << " pv " << get_pv_line(ss->pv) << "\n" << flush;
 }
 
 string Raphael::get_pv_line(const PVList& pv) const {
@@ -462,8 +465,6 @@ i32 Raphael::negamax(
 
         board.unmake_move(move);
 
-        if (halt) return 0;
-
         if (score > bestscore) {
             bestscore = score;
 
@@ -514,7 +515,7 @@ i32 Raphael::negamax(
     if (move_searched == 0) return (in_check) ? -MATE_SCORE + ply : 0;  // reward faster mate
 
     // update transposition table
-    if (!ss->excluded) tt.set(ttkey, bestscore, bestmove, depth, ttflag, ply);
+    if (!halt && !ss->excluded) tt.set(ttkey, bestscore, bestmove, depth, ttflag, ply);
 
     return bestscore;
 }

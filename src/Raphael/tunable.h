@@ -169,6 +169,8 @@ Tunable(ASPIRATION_DEPTH, 3, 2, 5, 1, true);              // min depth to apply 
 Tunable(ASPIRATION_INIT_SIZE, 50, 5, 100, 5, true);       // initial window size
 Tunable(ASPIRATION_WIDENING_FACTOR, 12, 2, 24, 1, true);  // window scale factor (1 + k/16)
 
+Tunable(TT_REPLACEMENT_DEPTH_OFFSET, 4, 0, 8, 1, true);  // offset to replace tt from
+
 // negamax
 Tunable(IIR_DEPTH, 3, 3, 6, 1, true);  // min depth to apply iir from
 

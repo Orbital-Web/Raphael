@@ -123,9 +123,9 @@ You can also play with different time controls, increments, and player combinati
     - ~~Pawn push extensions~~              (`v1.4+`)
     - ~~One reply extensions~~              (`v1.7+`)
     - [x] Singular extensions               (`v3.0+`)
-    - [ ] Double extensions
+    - [x] Double extensions                 (`v3.0+`)
     - [ ] Triple extensions
-    - [ ] Negative extensions
+    - [x] Negative extensions               (`v3.0+`)
     - [ ] Cutnode negative extensions
     - [ ] Low depth singular extensions
   - [x] Reductions                          (`v1.5+`)

@@ -422,7 +422,12 @@ i32 Raphael::negamax(
             );
             ss->excluded = chess::Move::NO_MOVE;
 
-            if (score < s_beta) extension = 1;  // singular extensions
+            if (score < s_beta) {
+                if (!is_PV && score + DE_MARGIN < s_beta)
+                    extension = 2;  // double extensions
+                else
+                    extension = 1;  // singular extensions
+            }
         }
 
         tt.prefetch(board.hash_after<false>(move));

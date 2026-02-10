@@ -33,6 +33,7 @@ const Raphael::EngineOptions& Raphael::default_params() {
         .hash
         = {"Hash", TranspositionTable::DEF_TABLE_SIZE_MB, 1, TranspositionTable::MAX_TABLE_SIZE_MB},
         .threads = {"Threads", 1, 1, 1},
+        .moveoverhead = {"MoveOverhead", 10, 0, 5000},
         .datagen = {"Datagen", false},
         .softnodes = {"Softnodes", false},
         .softhardmult = {"SoftNodeHardLimitMultiplier", 1678, 1, 5000}
@@ -57,7 +58,12 @@ Raphael::Raphael(const string& name_in)
 
 
 void Raphael::set_option(const std::string& name, i32 value) {
-    for (const auto p : {&params.hash, &params.threads, &params.softhardmult}) {
+    for (const auto p : {
+             &params.hash,
+             &params.threads,
+             &params.moveoverhead,
+             &params.softhardmult,
+         }) {
         if (p->name != name) continue;
 
         // error checking
@@ -121,7 +127,7 @@ Raphael::MoveScore Raphael::get_move(
     SearchStack* ss = &stack[2];
 
     // stop search after an appropriate duration
-    start_search_timer(board, t_remain, t_inc);
+    start_search_timer(t_remain, t_inc);
 
     // begin iterative deepening
     while (!halt && depth <= MAX_DEPTH) {
@@ -131,7 +137,10 @@ Raphael::MoveScore Raphael::get_move(
         // soft nodes override
         if (params.softnodes && searchopt.maxnodes != -1 && nodes_ >= searchopt.maxnodes) break;
 
-        // initialize aspiration window (we love greek symbols)
+        // soft time limit
+        if (is_soft_time_over(halt)) break;
+
+        // initialize aspiration window
         i32 delta = ASPIRATION_INIT_SIZE;
         i32 alpha = -INF_SCORE;
         i32 beta = INF_SCORE;
@@ -200,29 +209,35 @@ void Raphael::reset() {
 }
 
 
-void Raphael::start_search_timer(const chess::Board& board, i32 t_remain, i32 t_inc) {
+void Raphael::start_search_timer(i32 t_remain, i32 t_inc) {
     // if movetime is specified, use that instead
     if (searchopt.movetime != -1) {
-        search_t_ = searchopt.movetime;
+        hard_t_ = searchopt.movetime;
+        soft_t_ = 0;
         start_t_ = ch::high_resolution_clock::now();
         return;
     }
 
     // set to infinite if other searchoptions are specified
     if (searchopt.maxdepth != -1 || searchopt.maxnodes != -1 || searchopt.infinite) {
-        search_t_ = 0;
+        hard_t_ = 0;
+        soft_t_ = 0;
         start_t_ = ch::high_resolution_clock::now();
         return;
     }
 
-    const float n = board.occ().count();
-    // 0~1, higher the more time it uses (max at 20 pieces left)
-    const float ratio = 0.0044f * (n - 32) * (-n / 32) * pow(2.5f + n / 32, 3);
-    // use 1~5% of the remaining time based on the ratio + buffered increment
-    i32 duration = t_remain * (0.01f + 0.04f * ratio) + max(t_inc - 30, 1);
-    // try to use all of our time if timer resets after movestogo (unless it's 1, then be fast)
-    if (searchopt.movestogo > 1) duration += (t_remain - duration) / searchopt.movestogo;
-    search_t_ = min(duration, t_remain);
+    // some guis send negative time, scary...
+    if (t_remain < 0) t_remain = 1;
+    if (t_inc < 0) t_inc = 0;
+
+    f64 t_base = t_remain * (TIME_FACTOR / 100.0) + t_inc * (INC_FACTOR / 100.0);
+    hard_t_ = max<i64>(
+        min<i64>(i64(t_base * HARD_TIME_FACTOR / 100.0), t_remain) - params.moveoverhead, 1
+    );
+    soft_t_ = i64(t_base * SOFT_TIME_FACTOR / 100.0);
+
+    // TODO: do something with searchopt.movestogo
+
     start_t_ = ch::high_resolution_clock::now();
 }
 
@@ -233,12 +248,24 @@ bool Raphael::is_time_over(volatile bool& halt) const {
         halt = true;
         return true;
     }
+
     // otherwise, check timeover every 2048 nodes
-    if (search_t_ && !(nodes_ & 2047)) {
+    if (hard_t_ != 0 && !(nodes_ & 2047)) {
         const auto now = ch::high_resolution_clock::now();
         const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t_).count();
-        if (dtime >= search_t_) halt = true;
+        if (dtime >= hard_t_) halt = true;
     }
+    return halt;
+}
+
+bool Raphael::is_soft_time_over(volatile bool& halt) const {
+    // ignore if infinite
+    if (soft_t_ == 0) return halt;
+
+    const auto now = ch::high_resolution_clock::now();
+    const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t_).count();
+    if (dtime >= soft_t_) halt = true;
+
     return halt;
 }
 

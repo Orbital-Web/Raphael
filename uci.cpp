@@ -157,6 +157,9 @@ void search(const vector<string>& tokens) {
 
     lock_guard<mutex> search_lock(search_mutex);
     pending_request.options = {};
+    pending_request.t_remain = 0;
+    pending_request.t_inc = 0;
+
     bool is_white = pending_request.board.stm() == chess::Color::WHITE;
     i32 i = 1;
     while (i < ntokens) {
@@ -180,6 +183,7 @@ void search(const vector<string>& tokens) {
         i += 2;
     }
     if (pending_request.t_remain < 0) pending_request.t_remain = 1;
+    if (ntokens == 1) pending_request.options.infinite = true;
     pending_request.go = true;
     search_cv.notify_one();
 }

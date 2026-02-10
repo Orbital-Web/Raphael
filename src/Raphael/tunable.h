@@ -164,6 +164,13 @@ void init_tunables();
 
 
 
+// time management
+Tunable(TIME_FACTOR, 6, 2, 10, 1, true);    // percentage of remaining time to use as base time
+Tunable(INC_FACTOR, 80, 50, 100, 5, true);  // percentage of increment to use use as base time
+
+Tunable(HARD_TIME_FACTOR, 200, 150, 250, 10, true);  // percentage of base time to use as hard time
+Tunable(SOFT_TIME_FACTOR, 70, 50, 100, 10, true);    // percentage of base time to use as soft time
+
 // search
 Tunable(ASPIRATION_DEPTH, 3, 2, 5, 1, true);              // min depth to apply aspiration windows
 Tunable(ASPIRATION_INIT_SIZE, 50, 5, 100, 5, true);       // initial window size

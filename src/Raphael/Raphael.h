@@ -19,6 +19,7 @@ public:
         // uci options
         SpinOption<false> hash;
         SpinOption<false> threads;
+        SpinOption<false> moveoverhead;
 
         // other options
         CheckOption datagen;
@@ -49,7 +50,8 @@ private:
     i32 seldepth_;  // maximum search depth reached
     // timing
     std::chrono::time_point<std::chrono::high_resolution_clock> start_t_;  // search start time
-    i64 search_t_;                                                         // search duration (ms)
+    i64 hard_t_;  // hard time limit, checked every few nodes
+    i64 soft_t_;  // soft time limit, checked after each iterative deepening
 
     struct PVList {
         chess::Move moves[MAX_DEPTH] = {chess::Move::NO_MOVE};
@@ -133,22 +135,29 @@ public:
     void reset();
 
 private:
-    /** Estimates the time in ms Raphael should spent on searching a move, and sets search_t_
+    /** Estimates the time in ms Raphael should spent on searching a move and sets the limits
      * Should be called at the start before using is_time_over
      *
-     * \param board current board
      * \param t_remain remaining time in ms
      * \param t_inc increment after move in ms
      */
-    void start_search_timer(const chess::Board& board, i32 t_remain, i32 t_inc);
+    void start_search_timer(i32 t_remain, i32 t_inc);
 
-    /** Sets and returns halt = true if search_t_ ms has passed. Will return false indefinetely if
-     * search_t_ = 0.
+    /** Sets and returns halt = true if the hard time limit is reached. Will return false
+     * indefinitely if hard_t_ = 0
      *
      * \param halt bool reference which will turn false to indicate search should stop
      * \returns the new value of halt
      */
     bool is_time_over(volatile bool& halt) const;
+
+    /** Sets and returns halt = true if the soft time limit is reached. Will return false
+     * indefinitely if soft_t_ = 0
+     *
+     * \param halt bool reference which will turn false to indicate search should stop
+     * \returns the new value of halt
+     */
+    bool is_soft_time_over(volatile bool& halt) const;
 
 
     /** Prints out the uci info

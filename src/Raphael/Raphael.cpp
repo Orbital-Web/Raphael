@@ -332,7 +332,10 @@ i32 Raphael::negamax(
     if (!is_PV && !in_check && !ss->excluded) {
         // reverse futility pruning
         const i32 rfp_margin = RFP_DEPTH_SCALE * depth - RFP_IMPROV_SCALE * improving;
-        if (depth <= RFP_DEPTH && ss->static_eval - rfp_margin >= beta) return ss->static_eval;
+        if (depth <= RFP_DEPTH && ss->static_eval - rfp_margin >= beta)
+            return (!utils::is_win(ss->static_eval) && !utils::is_win(beta))
+                       ? (ss->static_eval + beta) / 2
+                       : ss->static_eval;
 
         // razoring
         const i32 razor_margin = RAZORING_MARGIN_BASE + RAZORING_DEPTH_SCALE * depth * depth;

@@ -173,6 +173,11 @@ You can also play with different time controls, increments, and player combinati
     - [ ] Pairwise multiplication
     - [ ] Dual activations
 - [x] Time management                       (`v1.0+`)
+  - [x] Hard/soft limit                     (`v3.0+`)
+  - [ ] Node-based scaling
+  - [ ] Bestmove stability
+  - [ ] Score stability
+  - [ ] Complexity
 - [x] Pondering                             (`v1.2+`)
 - [x] Performance                           (`v1.8+`)
   - [x] Compiler optimizations              (`v1.8+`)

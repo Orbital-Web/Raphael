@@ -47,8 +47,9 @@ private:
     chess::Board board_;
     Nnue net;
     // info
-    i64 nodes_;     // number of nodes visited
-    i32 seldepth_;  // maximum search depth reached
+    i64 nodes_;               // number of nodes visited
+    i32 seldepth_;            // maximum search depth reached
+    i64 move_nodes_[64][64];  // number of nodes visited for move[from][to]
     // timing
     std::chrono::time_point<std::chrono::steady_clock> start_t_;  // search start time
     i64 hard_t_;  // hard time limit, checked every few nodes
@@ -152,13 +153,22 @@ private:
      */
     bool is_time_over(volatile bool& halt) const;
 
-    /** Sets and returns halt = true if the soft time limit is reached. Will return false
-     * indefinitely if soft_t_ = 0
+    /** Sets and returns halt = true if the adjusted soft time limit is reached. Will return false
+     * indefinitely if the original soft time limit = 0
      *
+     * \param soft_t_adj the adjusted soft time limit
      * \param halt bool reference which will turn false to indicate search should stop
      * \returns the new value of halt
      */
-    bool is_soft_time_over(volatile bool& halt) const;
+    bool is_soft_time_over(i64 soft_t_adj, volatile bool& halt) const;
+
+    /** Adjusts the soft time limit using various heuristics
+     *
+     * \param depth the current depth
+     * \param bestmove the current bestmove
+     * \returns the adjusted soft time limit
+     */
+    i64 adjust_soft_time(i32 depth, chess::Move bestmove) const;
 
 
     /** Prints out the uci info

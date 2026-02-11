@@ -7,6 +7,7 @@
 
 #include <climits>
 #include <cmath>
+#include <cstring>
 #include <future>
 #include <iostream>
 
@@ -16,6 +17,7 @@ using std::cout;
 using std::flush;
 using std::lock_guard;
 using std::max;
+using std::memset;
 using std::min;
 using std::mutex;
 using std::string;
@@ -118,6 +120,7 @@ Raphael::MoveScore Raphael::get_move(
 ) {
     nodes_ = 0;
     seldepth_ = 0;
+    memset(move_nodes_, 0, sizeof(move_nodes_));
 
     i32 depth = 1;
     i32 score = -INF_SCORE;
@@ -138,7 +141,8 @@ Raphael::MoveScore Raphael::get_move(
         if (params.softnodes && searchopt.maxnodes != -1 && nodes_ >= searchopt.maxnodes) break;
 
         // soft time limit
-        if (is_soft_time_over(halt)) break;
+        const auto soft_t_adj = adjust_soft_time(depth, bestmove);
+        if (is_soft_time_over(soft_t_adj, halt)) break;
 
         // initialize aspiration window
         i32 delta = ASPIRATION_INIT_SIZE;
@@ -206,6 +210,7 @@ void Raphael::ponder(volatile bool& halt) {
 void Raphael::reset() {
     nodes_ = 0;
     seldepth_ = 0;
+    memset(move_nodes_, 0, sizeof(move_nodes_));
     tt.clear();
     history.clear();
     searchopt = SearchOptions();
@@ -261,15 +266,31 @@ bool Raphael::is_time_over(volatile bool& halt) const {
     return halt;
 }
 
-bool Raphael::is_soft_time_over(volatile bool& halt) const {
-    // ignore if infinite
+bool Raphael::is_soft_time_over(i64 soft_t_adj, volatile bool& halt) const {
+    // ignore if original soft_t_ is infinite
     if (soft_t_ == 0) return halt;
 
     const auto now = ch::steady_clock::now();
     const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t_).count();
-    if (dtime >= soft_t_) halt = true;
+    if (dtime >= soft_t_adj) halt = true;
 
     return halt;
+}
+
+i64 Raphael::adjust_soft_time(i32 depth, chess::Move bestmove) const {
+    if (soft_t_ == 0) return 0;
+
+    f64 scale = 1.0;
+
+    // node tm: the less we spent on searching the bestmove, the longer we should search
+    if (depth >= NODE_TM_DEPTH) {
+        f64 bestmove_frac = f64(move_nodes_[bestmove.from()][bestmove.to()]) / nodes_;
+        scale *= (NODE_TM_BASE / 100.0 - bestmove_frac * NODE_TM_FRAC_SCALE / 100.0);
+    }
+
+    // clamp and scale soft tm
+    scale = max(min(scale, SOFT_TM_MAX_SCALE / 100.0), SOFT_TM_MIN_SCALE / 100.0);
+    return min(i64(soft_t_ * scale), hard_t_);
 }
 
 
@@ -315,6 +336,7 @@ i32 Raphael::negamax(
 
     // timeout
     if (is_time_over(halt)) return 0;
+
     if constexpr (is_PV) ss->pv.length = 0;
 
     if (!is_root) {
@@ -462,6 +484,8 @@ i32 Raphael::negamax(
         board_.make_move(move);
         ss->move = move;
         move_searched++;
+
+        const auto prevnodes = nodes_;
         nodes_++;
 
         if (is_quiet)
@@ -496,6 +520,9 @@ i32 Raphael::negamax(
         assert(score != INT32_MIN);
 
         board_.unmake_move(move);
+
+        // update nodes for this move
+        if (is_root) move_nodes_[move.from()][move.to()] += nodes_ - prevnodes;
 
         if (score > bestscore) {
             bestscore = score;

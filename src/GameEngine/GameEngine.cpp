@@ -80,17 +80,19 @@ void GameEngine::run_match(const GameOptions& options) {
         auto& oth_player = players[turn != p1_is_white];
         i64& cur_t_remain = t_remain[turn];
 
+        cur_player->set_board(board);
+        oth_player->set_board(board);
+
         // ask player for move in seperate thread so that we can keep rendering
         bool halt = false;
-        auto movereceiver = async(
-            &GamePlayer::get_move, cur_player, board, cur_t_remain, t_inc, ref(mouse), ref(halt)
-        );
+        auto movereceiver
+            = async(&GamePlayer::get_move, cur_player, cur_t_remain, t_inc, ref(mouse), ref(halt));
         auto status = future_status::timeout;
 
         // allow other player to ponder if current player is human
         std::future<void> _;
         if (dynamic_cast<HumanPlayer*>(cur_player) != nullptr)
-            _ = async(&GamePlayer::ponder, oth_player, board, ref(halt));
+            _ = async(&GamePlayer::ponder, oth_player, ref(halt));
 
         // timings
         std::chrono::_V2::system_clock::time_point start, stop;

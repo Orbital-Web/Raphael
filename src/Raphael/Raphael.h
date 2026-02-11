@@ -43,7 +43,8 @@ private:
     // storage
     TranspositionTable tt;  // table with position, score, and bestmove
     History history;        // history score for each move
-    // nnue
+    // position
+    chess::Board board_;
     Nnue net;
     // info
     i64 nodes_;     // number of nodes visited
@@ -105,10 +106,15 @@ public:
     void set_searchoptions(SearchOptions options);
 
 
-    /** Returns the best move found by Raphael. Returns immediately if halt becomes true. Will print
-     * out bestmove and search statistics if UCI is true.
+    /** Sets the position to search on
      *
      * \param board current board
+     */
+    void set_board(const chess::Board& board);
+
+    /** Returns the best move found by Raphael from the set position. Returns immediately if halt
+     * becomes true. Will print out bestmove and search statistics if UCI is true.
+     *
      * \param t_remain time remaining in ms
      * \param t_inc increment after move in ms
      * \param mouse unused
@@ -116,19 +122,14 @@ public:
      * \returns the best move and its score
      */
     MoveScore get_move(
-        chess::Board board,
-        const i32 t_remain,
-        const i32 t_inc,
-        volatile cge::MouseInfo& mouse,
-        volatile bool& halt
+        const i32 t_remain, const i32 t_inc, volatile cge::MouseInfo& mouse, volatile bool& halt
     );
 
-    /** Ponders for best move during opponent's turn. Returns immediately if halt becomes true.
+    /** Ponders for best move during opponent's turn. Returns immediately if halt becomes true
      *
-     * \param board current board (for opponent)
      * \param halt bool reference which will turn false to indicate search should stop
      */
-    void ponder(chess::Board board, volatile bool& halt);
+    void ponder(volatile bool& halt);
 
 
     /** Resets Raphael */
@@ -180,7 +181,6 @@ private:
      * play by both us and the opponent
      *
      * \tparam is_PV whether the current position is a PV node
-     * \param board current board
      * \param depth depth to search for
      * \param ply current distance from root
      * \param mvidx movestack index
@@ -193,7 +193,6 @@ private:
      */
     template <bool is_PV>
     i32 negamax(
-        chess::Board& board,
         i32 depth,
         const i32 ply,
         const i32 mvidx,
@@ -207,7 +206,6 @@ private:
     /** Evaluates the board after all noisy moves are played out
      *
      * \tparam is_PV whether the current position is a PV node
-     * \param board current board
      * \param ply current distance from root
      * \param mvidx movestack index
      * \param alpha lower bound score of current position
@@ -216,13 +214,6 @@ private:
      * \returns score of current board
      */
     template <bool is_PV>
-    i32 quiescence(
-        chess::Board& board,
-        const i32 ply,
-        const i32 mvidx,
-        i32 alpha,
-        i32 beta,
-        volatile bool& halt
-    );
+    i32 quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, volatile bool& halt);
 };
 }  // namespace raphael

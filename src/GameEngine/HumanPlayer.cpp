@@ -9,15 +9,18 @@ using std::string;
 HumanPlayer::HumanPlayer(const string& name_in): GamePlayer(name_in) {}
 
 
+void HumanPlayer::set_board(const chess::Board& board) { board_ = board; }
+
+
 HumanPlayer::MoveScore HumanPlayer::get_move(
-    chess::Board board, const i32, const i32, volatile MouseInfo& mouse, volatile bool& halt
+    const i32, const i32, volatile MouseInfo& mouse, volatile bool& halt
 ) {
     chess::Square sq_from = chess::Square::NONE;
     chess::Square sq_to = chess::Square::NONE;
 
     // generate moves
     chess::MoveList<chess::ScoredMove> movelist;
-    chess::Movegen::generate_legals(movelist, board);
+    chess::Movegen::generate_legals(movelist, board_);
 
     // ui controls for move selection
     while (!halt && (sq_to == chess::Square::NONE || sq_from == chess::Square::NONE)) {
@@ -29,17 +32,17 @@ HumanPlayer::MoveScore HumanPlayer::get_move(
             // board clicked
             if (x > 50 && x < 850 && y > 70 && y < 870) {
                 auto sq = get_square(x, y);
-                auto piece = board.at(sq);
+                auto piece = board_.at(sq);
 
                 // own pieces clicked
-                if (piece != chess::Piece::NONE && piece.color() == board.stm()) {
+                if (piece != chess::Piece::NONE && piece.color() == board_.stm()) {
                     sq_from = sq;
                     sq_to = chess::Square::NONE;
                 }
 
                 // destination clicked
                 if (sq_from != chess::Square::NONE && sq_from != sq) {
-                    chess::Move move = move_if_valid(sq_from, sq, movelist, board);
+                    chess::Move move = move_if_valid(sq_from, sq, movelist);
                     if (move)
                         return {move, 0, false};
                     else
@@ -54,12 +57,9 @@ HumanPlayer::MoveScore HumanPlayer::get_move(
 
 
 chess::Move HumanPlayer::move_if_valid(
-    chess::Square sq_from,
-    chess::Square sq_to,
-    const chess::MoveList<chess::ScoredMove>& movelist,
-    const chess::Board& board
+    chess::Square sq_from, chess::Square sq_to, const chess::MoveList<chess::ScoredMove>& movelist
 ) {
-    const auto piece = board.at(sq_from);
+    const auto piece = board_.at(sq_from);
 
     // castling
     if (piece == chess::Piece::WHITEKING || piece == chess::Piece::BLACKKING) {
@@ -67,18 +67,22 @@ chess::Move HumanPlayer::move_if_valid(
 
         if (col == chess::Color::WHITE) {
             if (sq_to == chess::Square::G1  // white king-side
-                && board.castle_rights().has(col, chess::Board::CastlingRights::Side::KING_SIDE))
+                && board_.castle_rights().has(col, chess::Board::CastlingRights::Side::KING_SIDE))
                 sq_to = chess::Square::H1;
             else if (sq_to == chess::Square::C1 &&  // white queen-side
-                     board.castle_rights().has(col, chess::Board::CastlingRights::Side::QUEEN_SIDE))
+                     board_.castle_rights().has(
+                         col, chess::Board::CastlingRights::Side::QUEEN_SIDE
+                     ))
                 sq_to = chess::Square::A1;
 
         } else {
             if (sq_to == chess::Square::G8 &&  // black king-side
-                board.castle_rights().has(col, chess::Board::CastlingRights::Side::KING_SIDE))
+                board_.castle_rights().has(col, chess::Board::CastlingRights::Side::KING_SIDE))
                 sq_to = chess::Square::H8;
             else if (sq_to == chess::Square::C8 &&  // black queen-side
-                     board.castle_rights().has(col, chess::Board::CastlingRights::Side::QUEEN_SIDE))
+                     board_.castle_rights().has(
+                         col, chess::Board::CastlingRights::Side::QUEEN_SIDE
+                     ))
                 sq_to = chess::Square::A8;
         }
     }

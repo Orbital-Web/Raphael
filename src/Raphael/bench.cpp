@@ -83,9 +83,10 @@ void run(Raphael& engine) {
     for (auto fen : bench_data) {
         halt = false;
         const chess::Board board(fen);
+        engine.set_board(board);
 
         const auto start_t = ch::high_resolution_clock::now();
-        const auto res = engine.get_move(board, 0, 0, mouse, halt);
+        const auto res = engine.get_move(0, 0, mouse, halt);
         const auto now = ch::high_resolution_clock::now();
         runtime += ch::duration_cast<ch::milliseconds>(now - start_t).count();
         nodes += res.nodes;

@@ -71,7 +71,7 @@ void handle_search() {
             cge::MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
             halt = false;
             engine.set_searchoptions(request.options);
-            engine.get_move(request.board, request.t_remain, request.t_inc, mouse, halt);
+            engine.get_move(request.t_remain, request.t_inc, mouse, halt);
         }
     }
 }
@@ -143,6 +143,10 @@ void setposition(const vector<string>& tokens) {
     // play moves
     while (++i < ntokens)
         pending_request.board.make_move(chess::uci::to_move(pending_request.board, tokens[i]));
+
+    // set board
+    lock_guard<mutex> engine_lock(engine_mutex);
+    engine.set_board(pending_request.board);
 }
 
 
@@ -216,8 +220,8 @@ int main(int argc, char** argv) {
             lock_guard<mutex> lock(cout_mutex);
             cout << "id name " << engine.name << " " << engine.version << "\n"
                  << "id author Rei Meguro\n"
-                 << params.hash.uci() << params.threads.uci() << params.datagen.uci()
-                 << params.softnodes.uci() << params.softhardmult.uci();
+                 << params.hash.uci() << params.threads.uci() << params.moveoverhead.uci()
+                 << params.datagen.uci() << params.softnodes.uci() << params.softhardmult.uci();
 #ifdef TUNE
             for (const auto tunable : raphael::tunables) cout << tunable->uci();
 #endif

@@ -108,16 +108,16 @@ void Raphael::set_option(const std::string& name, bool value) {
 void Raphael::set_searchoptions(SearchOptions options) { searchopt = options; }
 
 
+void Raphael::set_board(const chess::Board& board) {
+    board_ = board;
+    net.set_board(board);
+}
+
 Raphael::MoveScore Raphael::get_move(
-    chess::Board board,
-    const i32 t_remain,
-    const i32 t_inc,
-    volatile cge::MouseInfo&,
-    volatile bool& halt
+    const i32 t_remain, const i32 t_inc, volatile cge::MouseInfo&, volatile bool& halt
 ) {
     nodes_ = 0;
     seldepth_ = 0;
-    net.set_board(board);
 
     i32 depth = 1;
     i32 score = -INF_SCORE;
@@ -153,7 +153,7 @@ Raphael::MoveScore Raphael::get_move(
         // search until score lies between alpha and beta
         i32 iterscore;
         while (!halt) {
-            iterscore = negamax<true>(board, depth, 0, 0, alpha, beta, false, ss, halt);
+            iterscore = negamax<true>(depth, 0, 0, alpha, beta, false, ss, halt);
 
             if (iterscore <= alpha) {
                 beta = (alpha + beta) / 2;
@@ -193,10 +193,13 @@ Raphael::MoveScore Raphael::get_move(
     return {bestmove, score, false, nodes_};
 }
 
-void Raphael::ponder(chess::Board board, volatile bool& halt) {
+void Raphael::ponder(volatile bool& halt) {
     // just get move with infinite time to fill up the transposition table
+    auto inf_before = searchopt.infinite;
+    searchopt.infinite = true;
     cge::MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
-    get_move(board, 0, 0, mouse, halt);
+    get_move(0, 0, mouse, halt);
+    searchopt.infinite = inf_before;
 }
 
 
@@ -296,7 +299,6 @@ string Raphael::get_pv_line(const PVList& pv) const {
 
 template <bool is_PV>
 i32 Raphael::negamax(
-    chess::Board& board,
     i32 depth,
     const i32 ply,
     const i32 mvidx,
@@ -319,7 +321,7 @@ i32 Raphael::negamax(
     if (!is_root) {
         // prevent draw in winning positions
         // technically this ignores checkmate on the 50th move
-        if (board.is_repetition(1) || board.is_halfmovedraw()) return 0;
+        if (board_.is_repetition(1) || board_.is_halfmovedraw()) return 0;
 
         // mate distance pruning
         alpha = max(alpha, -MATE_SCORE + ply);
@@ -328,11 +330,10 @@ i32 Raphael::negamax(
     }
 
     // terminal depth or max ply
-    if (depth <= 0 || ply >= MAX_DEPTH - 1)
-        return quiescence<is_PV>(board, ply, mvidx, alpha, beta, halt);
+    if (depth <= 0 || ply >= MAX_DEPTH - 1) return quiescence<is_PV>(ply, mvidx, alpha, beta, halt);
 
     // probe transposition table
-    const auto ttkey = board.hash();
+    const auto ttkey = board_.hash();
     auto ttentry = TranspositionTable::ProbedEntry();
 
     if (!ss->excluded) {
@@ -351,8 +352,8 @@ i32 Raphael::negamax(
     // internal iterative reduction
     if (depth >= IIR_DEPTH && !ss->excluded && (is_PV || cutnode) && !ttmove) depth--;
 
-    const bool in_check = board.in_check();
-    if (!ss->excluded) ss->static_eval = (in_check) ? NONE_SCORE : net.evaluate(ply, board.stm());
+    const bool in_check = board_.in_check();
+    if (!ss->excluded) ss->static_eval = (in_check) ? NONE_SCORE : net.evaluate(ply, board_.stm());
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
 
     // pre-moveloop pruning
@@ -364,31 +365,31 @@ i32 Raphael::negamax(
         // razoring
         const i32 razor_margin = RAZORING_MARGIN_BASE + RAZORING_DEPTH_SCALE * depth * depth;
         if (depth <= RAZORING_DEPTH && alpha <= 2048 && ss->static_eval + razor_margin <= alpha) {
-            const i32 score = quiescence<false>(board, ply, mvidx, alpha, alpha + 1, halt);
+            const i32 score = quiescence<false>(ply, mvidx, alpha, alpha + 1, halt);
             if (score <= alpha) return score;
         }
 
         // null move pruning
         if (depth >= NMP_DEPTH && ss->static_eval >= beta
-            && (ss - 1)->move != chess::Move::NULL_MOVE && !board.is_kingpawn(board.stm())) {
-            tt.prefetch(board.hash_after<true>(chess::Move::NULL_MOVE));
-            net.make_move(ply + 1, chess::Move::NULL_MOVE, board);
-            board.make_nullmove();
+            && (ss - 1)->move != chess::Move::NULL_MOVE && !board_.is_kingpawn(board_.stm())) {
+            tt.prefetch(board_.hash_after<true>(chess::Move::NULL_MOVE));
+            net.make_move(ply + 1, chess::Move::NULL_MOVE, board_);
+            board_.make_nullmove();
             ss->move = chess::Move::NULL_MOVE;
 
             const i32 red_depth = depth - NMP_REDUCTION;
             const i32 score = -negamax<false>(
-                board, red_depth, ply + 1, mvidx, -beta, -beta + 1, !cutnode, ss + 1, halt
+                red_depth, ply + 1, mvidx, -beta, -beta + 1, !cutnode, ss + 1, halt
             );
 
-            board.unmake_nullmove();
+            board_.unmake_nullmove();
 
             if (score >= beta) return (utils::is_win(score)) ? beta : score;
         }
     }
 
     // draw analysis
-    if (board.is_insufficientmaterial()) return 0;
+    if (board_.is_insufficientmaterial()) return 0;
 
     // initialize move generator
     assert(mvidx < 2 * MAX_DEPTH);
@@ -396,7 +397,7 @@ i32 Raphael::negamax(
     mvstack.quietlist.clear();
     mvstack.noisylist.clear();
     auto generator
-        = MoveGenerator::negamax(&mvstack.movelist, &board, &history, ttmove, ss->killer);
+        = MoveGenerator::negamax(&mvstack.movelist, &board_, &history, ttmove, ss->killer);
 
     // search
     i32 bestscore = -INF_SCORE;
@@ -408,7 +409,7 @@ i32 Raphael::negamax(
     while (const auto move = generator.next()) {
         if (move == ss->excluded) continue;
 
-        const bool is_quiet = board.is_quiet(move);
+        const bool is_quiet = board_.is_quiet(move);
         const auto base_lmr = LMR_TABLE[is_quiet][depth][move_searched + 1];
 
         // moveloop pruning
@@ -433,7 +434,7 @@ i32 Raphael::negamax(
             // SEE pruning
             const i32 see_thresh = (is_quiet) ? SEE_QUIET_DEPTH_SCALE * lmr_depth * lmr_depth
                                               : SEE_NOISY_DEPTH_SCALE * depth;
-            if (!SEE::see(move, board, see_thresh)) continue;
+            if (!SEE::see(move, board_, see_thresh)) continue;
         }
 
         // extensions
@@ -444,9 +445,8 @@ i32 Raphael::negamax(
             const i32 s_depth = (depth - 1) / 2;
 
             ss->excluded = move;
-            const i32 score = negamax<false>(
-                board, s_depth, ply, mvidx + 1, s_beta - 1, s_beta, cutnode, ss, halt
-            );
+            const i32 score
+                = negamax<false>(s_depth, ply, mvidx + 1, s_beta - 1, s_beta, cutnode, ss, halt);
             ss->excluded = chess::Move::NO_MOVE;
 
             if (score < s_beta) {
@@ -458,9 +458,9 @@ i32 Raphael::negamax(
                 extension = -1;  // negative extensions
         }
 
-        tt.prefetch(board.hash_after<false>(move));
-        net.make_move(ply + 1, move, board);
-        board.make_move(move);
+        tt.prefetch(board_.hash_after<false>(move));
+        net.make_move(ply + 1, move, board_);
+        board_.make_move(move);
         ss->move = move;
         move_searched++;
 
@@ -477,26 +477,25 @@ i32 Raphael::negamax(
             const i32 red_factor = LMR_TABLE[is_quiet][depth][move_searched] + !is_PV * LMR_NONPV;
             const i32 red_depth = min(max(new_depth - red_factor / 128, 1), new_depth);
             score = -negamax<false>(
-                board, red_depth, ply + 1, mvidx + 1, -alpha - 1, -alpha, true, ss + 1, halt
+                red_depth, ply + 1, mvidx + 1, -alpha - 1, -alpha, true, ss + 1, halt
             );
 
             if (score > alpha && red_depth < new_depth)
                 score = -negamax<false>(
-                    board, new_depth, ply + 1, mvidx + 1, -alpha - 1, -alpha, !cutnode, ss + 1, halt
+                    new_depth, ply + 1, mvidx + 1, -alpha - 1, -alpha, !cutnode, ss + 1, halt
                 );
         } else if (!is_PV || move_searched > 1)
             score = -negamax<false>(
-                board, new_depth, ply + 1, mvidx + 1, -alpha - 1, -alpha, !cutnode, ss + 1, halt
+                new_depth, ply + 1, mvidx + 1, -alpha - 1, -alpha, !cutnode, ss + 1, halt
             );
 
         assert(!(is_PV && move_searched != 1 && score == INT32_MIN));
         if (is_PV && (move_searched == 1 || score > alpha))
-            score = -negamax<true>(
-                board, new_depth, ply + 1, mvidx + 1, -beta, -alpha, false, ss + 1, halt
-            );
+            score
+                = -negamax<true>(new_depth, ply + 1, mvidx + 1, -beta, -alpha, false, ss + 1, halt);
         assert(score != INT32_MIN);
 
-        board.unmake_move(move);
+        board_.unmake_move(move);
 
         if (score > bestscore) {
             bestscore = score;
@@ -522,7 +521,7 @@ i32 Raphael::negamax(
                         for (const auto quietmove : mvstack.quietlist)
                             history.update_quiet(
                                 quietmove,
-                                board.stm(),
+                                board_.stm(),
                                 (quietmove == move) ? quiet_bonus : quiet_penalty
                             );
                     }
@@ -532,7 +531,7 @@ i32 Raphael::negamax(
                     const auto noisy_penalty = history.noisy_penalty(depth);
 
                     for (const auto noisymove : mvstack.noisylist) {
-                        const auto captured = board.get_captured(noisymove);
+                        const auto captured = board_.get_captured(noisymove);
                         history.update_noisy(
                             noisymove, captured, (noisymove == move) ? noisy_bonus : noisy_penalty
                         );
@@ -554,20 +553,18 @@ i32 Raphael::negamax(
 }
 
 template <bool is_PV>
-i32 Raphael::quiescence(
-    chess::Board& board, const i32 ply, const i32 mvidx, i32 alpha, i32 beta, volatile bool& halt
-) {
+i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, volatile bool& halt) {
     // timeout
     if (is_time_over(halt)) return 0;
     nodes_++;
     if (is_PV) seldepth_ = max(seldepth_, ply);
 
     // max ply
-    const bool in_check = board.in_check();
-    if (ply >= MAX_DEPTH - 1) return (in_check) ? 0 : net.evaluate(ply, board.stm());
+    const bool in_check = board_.in_check();
+    if (ply >= MAX_DEPTH - 1) return (in_check) ? 0 : net.evaluate(ply, board_.stm());
 
     // probe transposition table
-    const auto ttkey = board.hash();
+    const auto ttkey = board_.hash();
     auto ttentry = TranspositionTable::ProbedEntry();
     const bool tthit = tt.get(ttentry, ttkey, ply);
     // const auto ttmove = ttentry.move;
@@ -585,7 +582,7 @@ i32 Raphael::quiescence(
     if (in_check)
         static_eval = -MATE_SCORE + ply;
     else {
-        static_eval = net.evaluate(ply, board.stm());
+        static_eval = net.evaluate(ply, board_.stm());
 
         if (static_eval >= beta) return static_eval;
 
@@ -597,7 +594,7 @@ i32 Raphael::quiescence(
     auto& mvstack = movestack[mvidx];
     mvstack.quietlist.clear();
     mvstack.noisylist.clear();
-    auto generator = MoveGenerator::quiescence(&mvstack.movelist, &board, &history);
+    auto generator = MoveGenerator::quiescence(&mvstack.movelist, &board_, &history);
 
     // search
     i32 bestscore = static_eval;
@@ -607,21 +604,21 @@ i32 Raphael::quiescence(
     while (const auto move = generator.next()) {
         if (!utils::is_loss(bestscore)) {
             // qs futility pruning
-            if (!in_check && futility <= alpha && !SEE::see(move, board, 1)) {
+            if (!in_check && futility <= alpha && !SEE::see(move, board_, 1)) {
                 bestscore = max(bestscore, futility);
                 continue;
             }
 
             // qs see pruning
-            if (!SEE::see(move, board, QS_SEE_THRESH)) continue;
+            if (!SEE::see(move, board_, QS_SEE_THRESH)) continue;
         }
 
-        tt.prefetch(board.hash_after<false>(move));
-        net.make_move(ply + 1, move, board);
-        board.make_move(move);
+        tt.prefetch(board_.hash_after<false>(move));
+        net.make_move(ply + 1, move, board_);
+        board_.make_move(move);
 
-        const i32 score = -quiescence<is_PV>(board, ply + 1, mvidx + 1, -beta, -alpha, halt);
-        board.unmake_move(move);
+        const i32 score = -quiescence<is_PV>(ply + 1, mvidx + 1, -beta, -alpha, halt);
+        board_.unmake_move(move);
 
         if (score > bestscore) {
             bestscore = score;

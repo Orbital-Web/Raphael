@@ -95,11 +95,11 @@ void GameEngine::run_match(const GameOptions& options) {
             _ = async(&GamePlayer::ponder, oth_player, ref(halt));
 
         // timings
-        std::chrono::_V2::system_clock::time_point start, stop;
+        std::chrono::time_point<std::chrono::steady_clock> start, stop;
 
         // update visuals until a move is returned
         while (status != future_status::ready) {
-            start = std::chrono::high_resolution_clock::now();
+            start = std::chrono::steady_clock::now();
             status = movereceiver.wait_for(std::chrono::milliseconds(5));
 
             // game loop
@@ -107,7 +107,7 @@ void GameEngine::run_match(const GameOptions& options) {
 
             // count down timer (only after first white moves)
             if (nmoves != 1) {
-                stop = std::chrono::high_resolution_clock::now();
+                stop = std::chrono::steady_clock::now();
                 cur_t_remain
                     -= std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
             }

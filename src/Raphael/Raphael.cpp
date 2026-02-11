@@ -217,7 +217,7 @@ void Raphael::start_search_timer(i32 t_remain, i32 t_inc) {
     if (searchopt.movetime != -1) {
         hard_t_ = searchopt.movetime;
         soft_t_ = 0;
-        start_t_ = ch::high_resolution_clock::now();
+        start_t_ = ch::steady_clock::now();
         return;
     }
 
@@ -225,7 +225,7 @@ void Raphael::start_search_timer(i32 t_remain, i32 t_inc) {
     if (searchopt.maxdepth != -1 || searchopt.maxnodes != -1 || searchopt.infinite) {
         hard_t_ = 0;
         soft_t_ = 0;
-        start_t_ = ch::high_resolution_clock::now();
+        start_t_ = ch::steady_clock::now();
         return;
     }
 
@@ -241,7 +241,7 @@ void Raphael::start_search_timer(i32 t_remain, i32 t_inc) {
 
     // TODO: do something with searchopt.movestogo
 
-    start_t_ = ch::high_resolution_clock::now();
+    start_t_ = ch::steady_clock::now();
 }
 
 bool Raphael::is_time_over(volatile bool& halt) const {
@@ -254,7 +254,7 @@ bool Raphael::is_time_over(volatile bool& halt) const {
 
     // otherwise, check timeover every 2048 nodes
     if (hard_t_ != 0 && !(nodes_ & 2047)) {
-        const auto now = ch::high_resolution_clock::now();
+        const auto now = ch::steady_clock::now();
         const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t_).count();
         if (dtime >= hard_t_) halt = true;
     }
@@ -265,7 +265,7 @@ bool Raphael::is_soft_time_over(volatile bool& halt) const {
     // ignore if infinite
     if (soft_t_ == 0) return halt;
 
-    const auto now = ch::high_resolution_clock::now();
+    const auto now = ch::steady_clock::now();
     const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t_).count();
     if (dtime >= soft_t_) halt = true;
 
@@ -274,7 +274,7 @@ bool Raphael::is_soft_time_over(volatile bool& halt) const {
 
 
 void Raphael::print_uci_info(i32 depth, i32 score, const SearchStack* ss) const {
-    const auto now = ch::high_resolution_clock::now();
+    const auto now = ch::steady_clock::now();
     const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t_).count();
     const auto nps = (dtime) ? nodes_ * 1000 / dtime : 0;
 

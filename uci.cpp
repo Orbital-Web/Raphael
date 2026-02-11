@@ -229,6 +229,7 @@ int main(int argc, char** argv) {
 
         } else if (uci_command == "isready") {
             lock_guard<mutex> lock(cout_mutex);
+            lock_guard<mutex> engine_lock(engine_mutex);
             cout << "readyok\n" << flush;
 
         } else if (uci_command == "stop")

@@ -42,9 +42,9 @@ public:
     void bench_perft(Board& board, i32 depth, u64 expected_node_count) {
         board_ = board;
 
-        const auto t1 = high_resolution_clock::now();
+        const auto t1 = steady_clock::now();
         const auto nodes = perft(depth);
-        const auto t2 = high_resolution_clock::now();
+        const auto t2 = steady_clock::now();
         const auto ms = duration_cast<milliseconds>(t2 - t1).count();
 
         stringstream ss;

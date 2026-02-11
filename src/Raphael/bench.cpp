@@ -85,9 +85,9 @@ void run(Raphael& engine) {
         const chess::Board board(fen);
         engine.set_board(board);
 
-        const auto start_t = ch::high_resolution_clock::now();
+        const auto start_t = ch::steady_clock::now();
         const auto res = engine.get_move(0, 0, mouse, halt);
-        const auto now = ch::high_resolution_clock::now();
+        const auto now = ch::steady_clock::now();
         runtime += ch::duration_cast<ch::milliseconds>(now - start_t).count();
         nodes += res.nodes;
     }

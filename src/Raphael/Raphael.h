@@ -50,7 +50,7 @@ private:
     i64 nodes_;     // number of nodes visited
     i32 seldepth_;  // maximum search depth reached
     // timing
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_t_;  // search start time
+    std::chrono::time_point<std::chrono::steady_clock> start_t_;  // search start time
     i64 hard_t_;  // hard time limit, checked every few nodes
     i64 soft_t_;  // soft time limit, checked after each iterative deepening
 

@@ -168,8 +168,14 @@ void init_tunables();
 Tunable(TIME_FACTOR, 6, 2, 10, 1, true);    // percentage of remaining time to use as base time
 Tunable(INC_FACTOR, 80, 50, 100, 5, true);  // percentage of increment to use use as base time
 
-Tunable(HARD_TIME_FACTOR, 200, 150, 250, 10, true);  // percentage of base time to use as hard time
-Tunable(SOFT_TIME_FACTOR, 70, 50, 100, 10, true);    // percentage of base time to use as soft time
+Tunable(HARD_TIME_FACTOR, 200, 150, 250, 10, true);   // percentage of base time to use as hard time
+Tunable(SOFT_TIME_FACTOR, 70, 50, 100, 10, true);     // percentage of base time to use as soft time
+Tunable(SOFT_TM_MIN_SCALE, 15, 10, 30, 3, true);      // min scale for soft tm adjustment
+Tunable(SOFT_TM_MAX_SCALE, 250, 150, 300, 25, true);  // max scale for soft tm adjustment
+
+Tunable(NODE_TM_DEPTH, 5, 2, 10, 1, true);             // min depth to do node tm from
+Tunable(NODE_TM_BASE, 250, 100, 300, 10, true);        // soft tm scale for bestmove_frac = 0
+Tunable(NODE_TM_FRAC_SCALE, 150, 100, 200, 10, true);  // bestmove_frac scale for soft tm scale
 
 // search
 Tunable(ASPIRATION_DEPTH, 3, 2, 5, 1, true);              // min depth to apply aspiration windows

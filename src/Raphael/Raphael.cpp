@@ -315,7 +315,6 @@ i32 Raphael::negamax(
 
     // timeout
     if (is_time_over(halt)) return 0;
-    nodes_++;
     if constexpr (is_PV) ss->pv.length = 0;
 
     if (!is_root) {
@@ -463,6 +462,7 @@ i32 Raphael::negamax(
         board_.make_move(move);
         ss->move = move;
         move_searched++;
+        nodes_++;
 
         if (is_quiet)
             mvstack.quietlist.push(move);
@@ -556,7 +556,6 @@ template <bool is_PV>
 i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, volatile bool& halt) {
     // timeout
     if (is_time_over(halt)) return 0;
-    nodes_++;
     if (is_PV) seldepth_ = max(seldepth_, ply);
 
     // max ply
@@ -616,6 +615,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, vol
         tt.prefetch(board_.hash_after<false>(move));
         net.make_move(ply + 1, move, board_);
         board_.make_move(move);
+        nodes_++;
 
         const i32 score = -quiescence<is_PV>(ply + 1, mvidx + 1, -beta, -alpha, halt);
         board_.unmake_move(move);

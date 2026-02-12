@@ -2,6 +2,7 @@
 #include <Raphael/tunable.h>
 #include <Raphael/utils.h>
 
+#include <algorithm>
 #include <cstring>
 
 using namespace raphael;

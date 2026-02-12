@@ -22,7 +22,8 @@ Note that Elos with an asterics next to them are estimates and not official, and
         <th><a href="https://www.computerchess.org.uk/ccrl/404/">CCRL Blitz</a></th>
         <th><a href="https://www.computerchess.org.uk/ccrl/4040/">CCRL 40/15</a></th>
     </tr>
-    <tr align="center"><td>2.3.0</td> <td>3146*</td> <td>3056</td></tr>
+    <tr align="center"><td>3.0.0</td> <td>3321*</td> <td>3236*</td></tr>
+    <tr align="center"><td>2.3.0</td> <td>3146*</td> <td>3059</td></tr>
     <tr align="center"><td>2.2.0</td> <td>3035*</td> <td>2954</td></tr>
     <tr align="center"><td>2.1.0</td> <td>2739*</td> <td>2692</td></tr>
     <tr align="center"><td>2.0.0</td> <td>2646*</td> <td></td></tr>
@@ -173,6 +174,11 @@ You can also play with different time controls, increments, and player combinati
     - [ ] Pairwise multiplication
     - [ ] Dual activations
 - [x] Time management                       (`v1.0+`)
+  - [x] Hard/soft limit                     (`v3.0+`)
+  - [ ] Node-based scaling
+  - [ ] Bestmove stability
+  - [ ] Score stability
+  - [ ] Complexity
 - [x] Pondering                             (`v1.2+`)
 - [x] Performance                           (`v1.8+`)
   - [x] Compiler optimizations              (`v1.8+`)

@@ -31,17 +31,17 @@ public:
 
 private:
     // search
-    EngineOptions params;
-    TimeManager::SearchOptions searchopt;
+    EngineOptions params_;
+    TimeManager::SearchOptions searchopt_;
     // storage
-    TranspositionTable tt;  // table with position, score, and bestmove
-    History history;        // history score for each move
+    TranspositionTable tt_;  // table with position, score, and bestmove
+    History history_;        // history score for each move
     // position
     chess::Board board_;
-    Nnue net;
+    Nnue net_;
     // info
     i32 seldepth_;  // maximum search depth reached
-    TimeManager tm;
+    TimeManager tm_;
 
     struct PVList {
         chess::Move moves[MAX_DEPTH] = {chess::Move::NO_MOVE};
@@ -68,7 +68,7 @@ private:
         chess::MoveList<chess::Move> quietlist;
         chess::MoveList<chess::Move> noisylist;
     };
-    MoveStack movestack[2 * MAX_DEPTH];
+    MoveStack movestack_[2 * MAX_DEPTH];
 
 
 

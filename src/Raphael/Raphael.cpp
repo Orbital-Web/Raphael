@@ -25,7 +25,7 @@ extern const bool UCI;
 
 
 
-const string Raphael::version = "3.0.0-dev";
+const string Raphael::version = "3.0.0";
 
 const Raphael::EngineOptions& Raphael::default_params() {
     static EngineOptions opts{
@@ -50,18 +50,18 @@ void Raphael::PVList::update(const chess::Move move, const PVList& child) {
 
 
 Raphael::Raphael(const string& name_in)
-    : GamePlayer(name_in), params(default_params()), tt(params.hash) {
-    params.hash.set_callback([this]() { tt.resize(params.hash); });
+    : GamePlayer(name_in), params_(default_params()), tt_(params_.hash) {
+    params_.hash.set_callback([this]() { tt_.resize(params_.hash); });
     init_tunables();
 }
 
 
 void Raphael::set_option(const std::string& name, i32 value) {
     for (const auto p : {
-             &params.hash,
-             &params.threads,
-             &params.moveoverhead,
-             &params.softhardmult,
+             &params_.hash,
+             &params_.threads,
+             &params_.moveoverhead,
+             &params_.softhardmult,
          }) {
         if (p->name != name) continue;
 
@@ -86,7 +86,7 @@ void Raphael::set_option(const std::string& name, i32 value) {
     cout << "info string error: unknown spin option '" << name << "'\n" << flush;
 }
 void Raphael::set_option(const std::string& name, bool value) {
-    for (CheckOption* p : {&params.datagen, &params.softnodes}) {
+    for (CheckOption* p : {&params_.datagen, &params_.softnodes}) {
         if (p->name != name) continue;
 
         // set value
@@ -104,12 +104,12 @@ void Raphael::set_option(const std::string& name, bool value) {
     cout << "info string error: unknown check option '" << name << "'\n" << flush;
 }
 
-void Raphael::set_searchoptions(TimeManager::SearchOptions options) { searchopt = options; }
+void Raphael::set_searchoptions(TimeManager::SearchOptions options) { searchopt_ = options; }
 
 
 void Raphael::set_board(const chess::Board& board) {
     board_ = board;
-    net.set_board(board);
+    net_.set_board(board);
 }
 
 Raphael::MoveScore Raphael::get_move(
@@ -124,12 +124,12 @@ Raphael::MoveScore Raphael::get_move(
     SearchStack* ss = &stack[2];
 
     // stop search after an appropriate duration
-    tm.start_timer(
-        searchopt,
+    tm_.start_timer(
+        searchopt_,
         t_remain,
         t_inc,
-        params.moveoverhead,
-        (params.softnodes) ? params.softhardmult : 0
+        params_.moveoverhead,
+        (params_.softnodes) ? params_.softhardmult : 0
     );
 
     // begin iterative deepening
@@ -172,7 +172,7 @@ Raphael::MoveScore Raphael::get_move(
         if (UCI) print_uci_info(depth, score, ss);
 
         // soft limit
-        if (tm.is_soft_limit_reached(halt, depth)) break;
+        if (tm_.is_soft_limit_reached(halt, depth)) break;
     }
 
     // last attempt to get bestmove
@@ -185,47 +185,48 @@ Raphael::MoveScore Raphael::get_move(
     }
 
     // age tt
-    tt.do_age();
+    tt_.do_age();
 
     // return result
-    if (utils::is_mate(score)) return {bestmove, utils::mate_distance(score), true, tm.get_nodes()};
-    return {bestmove, score, false, tm.get_nodes()};
+    if (utils::is_mate(score))
+        return {bestmove, utils::mate_distance(score), true, tm_.get_nodes()};
+    return {bestmove, score, false, tm_.get_nodes()};
 }
 
 void Raphael::ponder(volatile bool& halt) {
     // just get move with infinite time to fill up the transposition table
-    const auto prev_searchopt = searchopt;
-    searchopt = {.infinite = true};
+    const auto prev_searchopt = searchopt_;
+    searchopt_ = {.infinite = true};
 
     cge::MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
     get_move(0, 0, mouse, halt);
 
-    searchopt = prev_searchopt;
+    searchopt_ = prev_searchopt;
 }
 
 
 void Raphael::reset() {
     seldepth_ = 0;
-    tt.clear();
-    history.clear();
-    searchopt = {};
+    tt_.clear();
+    history_.clear();
+    searchopt_ = {};
 }
 
 
 void Raphael::print_uci_info(i32 depth, i32 score, const SearchStack* ss) const {
-    const auto dtime = tm.get_time();
-    const auto nps = (dtime) ? tm.get_nodes() * 1000 / dtime : 0;
+    const auto dtime = tm_.get_time();
+    const auto nps = (dtime) ? tm_.get_nodes() * 1000 / dtime : 0;
 
     lock_guard<mutex> lock(cout_mutex);
     cout << "info depth " << depth << " seldepth " << seldepth_ << " time " << dtime << " nodes "
-         << tm.get_nodes() << " nps " << nps;
+         << tm_.get_nodes() << " nps " << nps;
 
     if (utils::is_mate(score))
         cout << " score mate " << utils::mate_distance(score);
     else
         cout << " score cp " << score;
 
-    cout << " hashfull " << tt.hashfull() << " pv " << get_pv_line(ss->pv) << "\n" << flush;
+    cout << " hashfull " << tt_.hashfull() << " pv " << get_pv_line(ss->pv) << "\n" << flush;
 }
 
 string Raphael::get_pv_line(const PVList& pv) const {
@@ -252,7 +253,7 @@ i32 Raphael::negamax(
     assert(!is_root || !ss->excluded);
 
     // timeout
-    if (tm.is_hard_limit_reached(halt)) return 0;
+    if (tm_.is_hard_limit_reached(halt)) return 0;
 
     if constexpr (is_PV) ss->pv.length = 0;
 
@@ -275,13 +276,13 @@ i32 Raphael::negamax(
     auto ttentry = TranspositionTable::ProbedEntry();
 
     if (!ss->excluded) {
-        const bool tthit = tt.get(ttentry, ttkey, ply);
+        const bool tthit = tt_.get(ttentry, ttkey, ply);
 
         // tt cutoff
         if (!is_PV && tthit && ttentry.depth >= depth
-            && (ttentry.flag == tt.EXACT                                 // exact
-                || (ttentry.flag == tt.LOWER && ttentry.score >= beta)   // lower
-                || (ttentry.flag == tt.UPPER && ttentry.score <= alpha)  // upper
+            && (ttentry.flag == tt_.EXACT                                 // exact
+                || (ttentry.flag == tt_.LOWER && ttentry.score >= beta)   // lower
+                || (ttentry.flag == tt_.UPPER && ttentry.score <= alpha)  // upper
         ))
             return ttentry.score;
     }
@@ -291,7 +292,7 @@ i32 Raphael::negamax(
     if (depth >= IIR_DEPTH && !ss->excluded && (is_PV || cutnode) && !ttmove) depth--;
 
     const bool in_check = board_.in_check();
-    if (!ss->excluded) ss->static_eval = (in_check) ? NONE_SCORE : net.evaluate(ply, board_.stm());
+    if (!ss->excluded) ss->static_eval = (in_check) ? NONE_SCORE : net_.evaluate(ply, board_.stm());
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
 
     // pre-moveloop pruning
@@ -310,8 +311,8 @@ i32 Raphael::negamax(
         // null move pruning
         if (depth >= NMP_DEPTH && ss->static_eval >= beta
             && (ss - 1)->move != chess::Move::NULL_MOVE && !board_.is_kingpawn(board_.stm())) {
-            tt.prefetch(board_.hash_after<true>(chess::Move::NULL_MOVE));
-            net.make_move(ply + 1, chess::Move::NULL_MOVE, board_);
+            tt_.prefetch(board_.hash_after<true>(chess::Move::NULL_MOVE));
+            net_.make_move(ply + 1, chess::Move::NULL_MOVE, board_);
             board_.make_nullmove();
             ss->move = chess::Move::NULL_MOVE;
 
@@ -331,17 +332,17 @@ i32 Raphael::negamax(
 
     // initialize move generator
     assert(mvidx < 2 * MAX_DEPTH);
-    auto& mvstack = movestack[mvidx];
+    auto& mvstack = movestack_[mvidx];
     mvstack.quietlist.clear();
     mvstack.noisylist.clear();
     auto generator
-        = MoveGenerator::negamax(&mvstack.movelist, &board_, &history, ttmove, ss->killer);
+        = MoveGenerator::negamax(&mvstack.movelist, &board_, &history_, ttmove, ss->killer);
 
     // search
     i32 bestscore = -INF_SCORE;
     chess::Move bestmove = chess::Move::NO_MOVE;
     (ss + 1)->killer = chess::Move::NO_MOVE;
-    auto ttflag = tt.UPPER;
+    auto ttflag = tt_.UPPER;
 
     i32 move_searched = 0;
     while (const auto move = generator.next()) {
@@ -351,7 +352,7 @@ i32 Raphael::negamax(
         const auto base_lmr = LMR_TABLE[is_quiet][depth][move_searched + 1];
 
         // moveloop pruning
-        if (!is_root && !utils::is_loss(bestscore) && (!params.datagen || !is_PV)) {
+        if (!is_root && !utils::is_loss(bestscore) && (!params_.datagen || !is_PV)) {
             const auto lmr_depth = max(depth - base_lmr / 128, 0);
 
             if (is_quiet) {
@@ -378,7 +379,7 @@ i32 Raphael::negamax(
         // extensions
         i32 extension = 0;
         if (!is_root && depth >= SE_DEPTH && move == ttmove && !ss->excluded
-            && ttentry.depth >= depth - SE_TT_DEPTH && ttentry.flag != tt.UPPER) {
+            && ttentry.depth >= depth - SE_TT_DEPTH && ttentry.flag != tt_.UPPER) {
             const i32 s_beta = max(-MATE_SCORE + 1, ttentry.score - depth * SE_DEPTH_MARGIN / 16);
             const i32 s_depth = (depth - 1) / 2;
 
@@ -396,12 +397,12 @@ i32 Raphael::negamax(
                 extension = -1;  // negative extensions
         }
 
-        tt.prefetch(board_.hash_after<false>(move));
-        net.make_move(ply + 1, move, board_);
+        tt_.prefetch(board_.hash_after<false>(move));
+        net_.make_move(ply + 1, move, board_);
         board_.make_move(move);
         ss->move = move;
         move_searched++;
-        tm.inc_nodes();
+        tm_.inc_nodes();
 
         if (is_quiet)
             mvstack.quietlist.push(move);
@@ -442,23 +443,23 @@ i32 Raphael::negamax(
             if (score > alpha) {
                 alpha = score;
                 bestmove = move;
-                ttflag = tt.EXACT;
+                ttflag = tt_.EXACT;
 
                 // update pv
                 if constexpr (is_PV) ss->pv.update(move, (ss + 1)->pv);
 
                 if (score >= beta) {
-                    ttflag = tt.LOWER;
+                    ttflag = tt_.LOWER;
 
                     // store killer moves and update history
                     if (is_quiet) {
                         ss->killer = move;
 
-                        const auto quiet_bonus = history.quiet_bonus(depth);
-                        const auto quiet_penalty = history.quiet_penalty(depth);
+                        const auto quiet_bonus = history_.quiet_bonus(depth);
+                        const auto quiet_penalty = history_.quiet_penalty(depth);
 
                         for (const auto quietmove : mvstack.quietlist)
-                            history.update_quiet(
+                            history_.update_quiet(
                                 quietmove,
                                 board_.stm(),
                                 (quietmove == move) ? quiet_bonus : quiet_penalty
@@ -466,12 +467,12 @@ i32 Raphael::negamax(
                     }
 
                     // always update capthist
-                    const auto noisy_bonus = history.noisy_bonus(depth);
-                    const auto noisy_penalty = history.noisy_penalty(depth);
+                    const auto noisy_bonus = history_.noisy_bonus(depth);
+                    const auto noisy_penalty = history_.noisy_penalty(depth);
 
                     for (const auto noisymove : mvstack.noisylist) {
                         const auto captured = board_.get_captured(noisymove);
-                        history.update_noisy(
+                        history_.update_noisy(
                             noisymove, captured, (noisymove == move) ? noisy_bonus : noisy_penalty
                         );
                     }
@@ -486,7 +487,7 @@ i32 Raphael::negamax(
     if (move_searched == 0) return (in_check) ? -MATE_SCORE + ply : 0;  // reward faster mate
 
     // update transposition table
-    if (!halt && !ss->excluded) tt.set(ttkey, bestscore, bestmove, depth, ttflag, ply);
+    if (!halt && !ss->excluded) tt_.set(ttkey, bestscore, bestmove, depth, ttflag, ply);
 
     return bestscore;
 }
@@ -494,25 +495,25 @@ i32 Raphael::negamax(
 template <bool is_PV>
 i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, volatile bool& halt) {
     // timeout
-    if (tm.is_hard_limit_reached(halt)) return 0;
+    if (tm_.is_hard_limit_reached(halt)) return 0;
 
     if (is_PV) seldepth_ = max(seldepth_, ply);
 
     // max ply
     const bool in_check = board_.in_check();
-    if (ply >= MAX_DEPTH - 1) return (in_check) ? 0 : net.evaluate(ply, board_.stm());
+    if (ply >= MAX_DEPTH - 1) return (in_check) ? 0 : net_.evaluate(ply, board_.stm());
 
     // probe transposition table
     const auto ttkey = board_.hash();
     auto ttentry = TranspositionTable::ProbedEntry();
-    const bool tthit = tt.get(ttentry, ttkey, ply);
+    const bool tthit = tt_.get(ttentry, ttkey, ply);
     // const auto ttmove = ttentry.move;
 
     // tt cutoff
     if (!is_PV && tthit
-        && (ttentry.flag == tt.EXACT                                 // exact
-            || (ttentry.flag == tt.LOWER && ttentry.score >= beta)   // lower
-            || (ttentry.flag == tt.UPPER && ttentry.score <= alpha)  // upper
+        && (ttentry.flag == tt_.EXACT                                 // exact
+            || (ttentry.flag == tt_.LOWER && ttentry.score >= beta)   // lower
+            || (ttentry.flag == tt_.UPPER && ttentry.score <= alpha)  // upper
     ))
         return ttentry.score;
 
@@ -521,7 +522,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, vol
     if (in_check)
         static_eval = -MATE_SCORE + ply;
     else {
-        static_eval = net.evaluate(ply, board_.stm());
+        static_eval = net_.evaluate(ply, board_.stm());
 
         if (static_eval >= beta) return static_eval;
 
@@ -530,10 +531,10 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, vol
 
     // initialize move generator
     assert(mvidx < 2 * MAX_DEPTH);
-    auto& mvstack = movestack[mvidx];
+    auto& mvstack = movestack_[mvidx];
     mvstack.quietlist.clear();
     mvstack.noisylist.clear();
-    auto generator = MoveGenerator::quiescence(&mvstack.movelist, &board_, &history);
+    auto generator = MoveGenerator::quiescence(&mvstack.movelist, &board_, &history_);
 
     // search
     i32 bestscore = static_eval;
@@ -552,10 +553,10 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, vol
             if (!SEE::see(move, board_, QS_SEE_THRESH)) continue;
         }
 
-        tt.prefetch(board_.hash_after<false>(move));
-        net.make_move(ply + 1, move, board_);
+        tt_.prefetch(board_.hash_after<false>(move));
+        net_.make_move(ply + 1, move, board_);
         board_.make_move(move);
-        tm.inc_nodes();
+        tm_.inc_nodes();
 
         const i32 score = -quiescence<is_PV>(ply + 1, mvidx + 1, -beta, -alpha, halt);
         board_.unmake_move(move);

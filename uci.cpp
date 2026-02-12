@@ -39,7 +39,7 @@ mutex search_mutex;
 condition_variable search_cv;
 struct SearchRequest {
     chess::Board board;
-    raphael::Raphael::SearchOptions options;
+    raphael::TimeManager::SearchOptions options;
     i32 t_remain;
     i32 t_inc;
     bool go = false;
@@ -167,17 +167,15 @@ void search(const vector<string>& tokens) {
     bool is_white = pending_request.board.stm() == chess::Color::WHITE;
     i32 i = 1;
     while (i < ntokens) {
-        if (tokens[i] == "depth") {
+        if (tokens[i] == "depth")
             pending_request.options.maxdepth = stoi(tokens[i + 1]);
-            break;
-        } else if (tokens[i] == "nodes") {
+        else if (tokens[i] == "nodes")
             pending_request.options.maxnodes = stoll(tokens[i + 1]);
-            break;
-        } else if (tokens[i] == "movetime") {
+        else if (tokens[i] == "movetime")
             pending_request.options.movetime = stoi(tokens[i + 1]);
-            break;
-        } else if (tokens[i] == "infinite") {
+        else if (tokens[i] == "infinite") {
             pending_request.options.infinite = true;
+            i -= 1;
         } else if ((is_white && tokens[i] == "wtime") || (!is_white && tokens[i] == "btime"))
             pending_request.t_remain = stoi(tokens[i + 1]);
         else if ((is_white && tokens[i] == "winc") || (!is_white && tokens[i] == "binc"))

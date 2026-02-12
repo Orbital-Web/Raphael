@@ -3,9 +3,9 @@
 #include <Raphael/History.h>
 #include <Raphael/Transposition.h>
 #include <Raphael/nnue.h>
+#include <Raphael/tm.h>
 #include <Raphael/tunable.h>
 
-#include <chrono>
 #include <string>
 
 
@@ -28,18 +28,11 @@ public:
     };
     static const EngineOptions& default_params();
 
-    struct SearchOptions {
-        i64 maxnodes = -1;
-        i32 maxdepth = -1;
-        i32 movetime = -1;
-        i32 movestogo = 0;
-        bool infinite = false;
-    };
 
 private:
     // search
     EngineOptions params;
-    SearchOptions searchopt;  // limit depth, nodes, or movetime
+    TimeManager::SearchOptions searchopt;
     // storage
     TranspositionTable tt;  // table with position, score, and bestmove
     History history;        // history score for each move
@@ -47,12 +40,8 @@ private:
     chess::Board board_;
     Nnue net;
     // info
-    i64 nodes_;     // number of nodes visited
     i32 seldepth_;  // maximum search depth reached
-    // timing
-    std::chrono::time_point<std::chrono::steady_clock> start_t_;  // search start time
-    i64 hard_t_;  // hard time limit, checked every few nodes
-    i64 soft_t_;  // soft time limit, checked after each iterative deepening
+    TimeManager tm;
 
     struct PVList {
         chess::Move moves[MAX_DEPTH] = {chess::Move::NO_MOVE};
@@ -103,7 +92,7 @@ public:
      *
      * \param options options to set to
      */
-    void set_searchoptions(SearchOptions options);
+    void set_searchoptions(TimeManager::SearchOptions options);
 
 
     /** Sets the position to search on
@@ -136,31 +125,6 @@ public:
     void reset();
 
 private:
-    /** Estimates the time in ms Raphael should spent on searching a move and sets the limits
-     * Should be called at the start before using is_time_over
-     *
-     * \param t_remain remaining time in ms
-     * \param t_inc increment after move in ms
-     */
-    void start_search_timer(i32 t_remain, i32 t_inc);
-
-    /** Sets and returns halt = true if the hard time limit is reached. Will return false
-     * indefinitely if hard_t_ = 0
-     *
-     * \param halt bool reference which will turn false to indicate search should stop
-     * \returns the new value of halt
-     */
-    bool is_time_over(volatile bool& halt) const;
-
-    /** Sets and returns halt = true if the soft time limit is reached. Will return false
-     * indefinitely if soft_t_ = 0
-     *
-     * \param halt bool reference which will turn false to indicate search should stop
-     * \returns the new value of halt
-     */
-    bool is_soft_time_over(volatile bool& halt) const;
-
-
     /** Prints out the uci info
      *
      * \param depth current depth

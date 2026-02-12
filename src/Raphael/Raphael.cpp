@@ -20,7 +20,6 @@ using std::min;
 using std::mutex;
 using std::string;
 using std::swap;
-namespace ch = std::chrono;
 
 extern const bool UCI;
 
@@ -105,7 +104,7 @@ void Raphael::set_option(const std::string& name, bool value) {
     cout << "info string error: unknown check option '" << name << "'\n" << flush;
 }
 
-void Raphael::set_searchoptions(SearchOptions options) { searchopt = options; }
+void Raphael::set_searchoptions(TimeManager::SearchOptions options) { searchopt = options; }
 
 
 void Raphael::set_board(const chess::Board& board) {
@@ -116,10 +115,8 @@ void Raphael::set_board(const chess::Board& board) {
 Raphael::MoveScore Raphael::get_move(
     const i32 t_remain, const i32 t_inc, volatile cge::MouseInfo&, volatile bool& halt
 ) {
-    nodes_ = 0;
     seldepth_ = 0;
 
-    i32 depth = 1;
     i32 score = -INF_SCORE;
     chess::Move bestmove = chess::Move::NO_MOVE;
 
@@ -127,18 +124,18 @@ Raphael::MoveScore Raphael::get_move(
     SearchStack* ss = &stack[2];
 
     // stop search after an appropriate duration
-    start_search_timer(t_remain, t_inc);
+    tm.start_timer(
+        searchopt,
+        t_remain,
+        t_inc,
+        params.moveoverhead,
+        (params.softnodes) ? params.softhardmult : 0
+    );
 
     // begin iterative deepening
-    while (!halt && depth <= MAX_DEPTH) {
-        // max depth override
-        if (searchopt.maxdepth != -1 && depth > searchopt.maxdepth) break;
-
-        // soft nodes override
-        if (params.softnodes && searchopt.maxnodes != -1 && nodes_ >= searchopt.maxnodes) break;
-
-        // soft time limit
-        if (is_soft_time_over(halt)) break;
+    for (i32 depth = 1; depth <= MAX_DEPTH; depth++) {
+        // stop if search stopped
+        if (halt) break;
 
         // initialize aspiration window
         i32 delta = ASPIRATION_INIT_SIZE;
@@ -170,10 +167,12 @@ Raphael::MoveScore Raphael::get_move(
 
         score = iterscore;
         bestmove = ss->pv.moves[0];
-        depth++;
 
         // print info
         if (UCI) print_uci_info(depth, score, ss);
+
+        // soft limit
+        if (tm.is_soft_limit_reached(halt, depth)) break;
     }
 
     // last attempt to get bestmove
@@ -189,98 +188,37 @@ Raphael::MoveScore Raphael::get_move(
     tt.do_age();
 
     // return result
-    if (utils::is_mate(score)) return {bestmove, utils::mate_distance(score), true, nodes_};
-    return {bestmove, score, false, nodes_};
+    if (utils::is_mate(score)) return {bestmove, utils::mate_distance(score), true, tm.get_nodes()};
+    return {bestmove, score, false, tm.get_nodes()};
 }
 
 void Raphael::ponder(volatile bool& halt) {
     // just get move with infinite time to fill up the transposition table
-    auto inf_before = searchopt.infinite;
-    searchopt.infinite = true;
+    const auto prev_searchopt = searchopt;
+    searchopt = {.infinite = true};
+
     cge::MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
     get_move(0, 0, mouse, halt);
-    searchopt.infinite = inf_before;
+
+    searchopt = prev_searchopt;
 }
 
 
 void Raphael::reset() {
-    nodes_ = 0;
     seldepth_ = 0;
     tt.clear();
     history.clear();
-    searchopt = SearchOptions();
-}
-
-
-void Raphael::start_search_timer(i32 t_remain, i32 t_inc) {
-    // if movetime is specified, use that instead
-    if (searchopt.movetime != -1) {
-        hard_t_ = searchopt.movetime;
-        soft_t_ = 0;
-        start_t_ = ch::steady_clock::now();
-        return;
-    }
-
-    // set to infinite if other searchoptions are specified
-    if (searchopt.maxdepth != -1 || searchopt.maxnodes != -1 || searchopt.infinite) {
-        hard_t_ = 0;
-        soft_t_ = 0;
-        start_t_ = ch::steady_clock::now();
-        return;
-    }
-
-    // some guis send negative time, scary...
-    if (t_remain < 0) t_remain = 1;
-    if (t_inc < 0) t_inc = 0;
-
-    f64 t_base = t_remain * (TIME_FACTOR / 100.0) + t_inc * (INC_FACTOR / 100.0);
-    hard_t_ = max<i64>(
-        min<i64>(i64(t_base * HARD_TIME_FACTOR / 100.0), t_remain) - params.moveoverhead, 1
-    );
-    soft_t_ = i64(t_base * SOFT_TIME_FACTOR / 100.0);
-
-    // TODO: do something with searchopt.movestogo
-
-    start_t_ = ch::steady_clock::now();
-}
-
-bool Raphael::is_time_over(volatile bool& halt) const {
-    // if max nodes is specified, check that instead
-    if (searchopt.maxnodes != -1
-        && nodes_ >= searchopt.maxnodes * ((params.softnodes) ? params.softhardmult : 1)) {
-        halt = true;
-        return true;
-    }
-
-    // otherwise, check timeover every 2048 nodes
-    if (hard_t_ != 0 && !(nodes_ & 2047)) {
-        const auto now = ch::steady_clock::now();
-        const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t_).count();
-        if (dtime >= hard_t_) halt = true;
-    }
-    return halt;
-}
-
-bool Raphael::is_soft_time_over(volatile bool& halt) const {
-    // ignore if infinite
-    if (soft_t_ == 0) return halt;
-
-    const auto now = ch::steady_clock::now();
-    const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t_).count();
-    if (dtime >= soft_t_) halt = true;
-
-    return halt;
+    searchopt = {};
 }
 
 
 void Raphael::print_uci_info(i32 depth, i32 score, const SearchStack* ss) const {
-    const auto now = ch::steady_clock::now();
-    const auto dtime = ch::duration_cast<ch::milliseconds>(now - start_t_).count();
-    const auto nps = (dtime) ? nodes_ * 1000 / dtime : 0;
+    const auto dtime = tm.get_time();
+    const auto nps = (dtime) ? tm.get_nodes() * 1000 / dtime : 0;
 
     lock_guard<mutex> lock(cout_mutex);
-    cout << "info depth " << depth - 1 << " seldepth " << seldepth_ << " time " << dtime
-         << " nodes " << nodes_ << " nps " << nps;
+    cout << "info depth " << depth << " seldepth " << seldepth_ << " time " << dtime << " nodes "
+         << tm.get_nodes() << " nps " << nps;
 
     if (utils::is_mate(score))
         cout << " score mate " << utils::mate_distance(score);
@@ -314,7 +252,8 @@ i32 Raphael::negamax(
     assert(!is_root || !ss->excluded);
 
     // timeout
-    if (is_time_over(halt)) return 0;
+    if (tm.is_hard_limit_reached(halt)) return 0;
+
     if constexpr (is_PV) ss->pv.length = 0;
 
     if (!is_root) {
@@ -462,7 +401,7 @@ i32 Raphael::negamax(
         board_.make_move(move);
         ss->move = move;
         move_searched++;
-        nodes_++;
+        tm.inc_nodes();
 
         if (is_quiet)
             mvstack.quietlist.push(move);
@@ -555,7 +494,8 @@ i32 Raphael::negamax(
 template <bool is_PV>
 i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, volatile bool& halt) {
     // timeout
-    if (is_time_over(halt)) return 0;
+    if (tm.is_hard_limit_reached(halt)) return 0;
+
     if (is_PV) seldepth_ = max(seldepth_, ply);
 
     // max ply
@@ -615,7 +555,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, vol
         tt.prefetch(board_.hash_after<false>(move));
         net.make_move(ply + 1, move, board_);
         board_.make_move(move);
-        nodes_++;
+        tm.inc_nodes();
 
         const i32 score = -quiescence<is_PV>(ply + 1, mvidx + 1, -beta, -alpha, halt);
         board_.unmake_move(move);

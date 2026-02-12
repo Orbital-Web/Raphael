@@ -21,7 +21,7 @@ public:
         chess::Move move;
         i32 score;
         bool is_mate;
-        i64 nodes = 0;
+        u64 nodes = 0;
     };
 
 

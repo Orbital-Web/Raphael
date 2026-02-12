@@ -68,7 +68,7 @@ void run(Raphael& engine) {
         "2r2b2/5p2/5k2/p1r1pP2/P2pB3/1P3P2/K1P3R1/7R w - - 23 93",
     };
 
-    Raphael::SearchOptions options{.maxdepth = BENCH_DEPTH};
+    raphael::TimeManager::SearchOptions options{.maxdepth = BENCH_DEPTH};
     engine.set_searchoptions(options);
     bool halt = false;
     cge::MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
@@ -79,7 +79,7 @@ void run(Raphael& engine) {
     }
 
     i64 runtime = 0;
-    i64 nodes = 0;
+    u64 nodes = 0;
     for (auto fen : bench_data) {
         halt = false;
         const chess::Board board(fen);

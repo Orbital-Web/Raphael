@@ -214,8 +214,9 @@ pyrightconfig.json
 main
 uci
 test
-Raphael1.*
-Raphael2.*
+
+# Network Files
+*.nnue
 
 # SFML
 SFML-*/

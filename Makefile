@@ -10,7 +10,7 @@ EXE  := uci
 TEST_EXE := test
 
 # NNUE file
-NNUE_FILE := net.nnue
+EVALFILE := default
 
 # Architecture configuration
 ARCH ?= native
@@ -21,6 +21,8 @@ DEBUG ?= off
 #---------------------------------------------------------------------------------------------------
 # Source Files
 #---------------------------------------------------------------------------------------------------
+
+NET_SOURCE := net.nnue
 
 MAIN_SOURCES := \
     $(wildcard src/GameEngine/*.cpp) \
@@ -146,6 +148,34 @@ endif
 
 override CXXFLAGS += $(DEBUG_FLAGS)
 
+#---------------------------------------------------------------------------------------------------
+# Networks
+#---------------------------------------------------------------------------------------------------
+
+ifeq ($(EVALFILE),default)
+    ifeq ($(DETECTED_OS),Windows)
+        DEFAULT_NET := $(shell type network.txt)
+    else
+        DEFAULT_NET := $(shell cat network.txt)
+    endif
+    EVALFILE = $(DEFAULT_NET).nnue
+
+$(NET_SOURCE):
+	curl -sL https://github.com/Orbital-Web/Raphael-Net/releases/download/$(DEFAULT_NET)/$(DEFAULT_NET).nnue -o $(NET_SOURCE)
+
+else
+    ifeq ($(DETECTED_OS),Windows)
+        COPY := copy
+    else
+        COPY := cp
+    endif
+
+$(NET_SOURCE):
+	$(COPY) $(EVALFILE) $(NET_SOURCE)
+
+endif
+
+$(info Using network $(EVALFILE))
 $(info )
 
 #---------------------------------------------------------------------------------------------------
@@ -155,7 +185,7 @@ $(info )
 all: uci packages main test
 
 # NNUE embeddings
-$(NNUE_OBJ): $(NNUE_FILE)
+$(NNUE_OBJ): $(NET_SOURCE)
 	ld -r -b binary $< -o $@
 
 # main executable
@@ -180,7 +210,7 @@ test: $(TEST_OBJS)
 
 .PHONY: packages
 packages:
-ifeq ($(OS),Windows_NT)
+ifeq ($(DETECTED_OS),Windows)
 	@if not exist SFML-3.0.2 ( \
 		echo SFML-3.0.2 not found. Downloading... && \
 		powershell -Command "Invoke-WebRequest https://www.sfml-dev.org/files/SFML-3.0.2-windows-gcc-14.2.0-mingw-64-bit.zip -OutFile sfml.zip" && \

@@ -25,7 +25,7 @@ extern const bool UCI;
 
 
 
-const string Raphael::version = "3.0.0";
+const string Raphael::version = "3.1.0-dev";
 
 const Raphael::EngineOptions& Raphael::default_params() {
     static EngineOptions opts{

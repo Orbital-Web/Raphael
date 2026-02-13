@@ -12,9 +12,9 @@ You can [scroll to the bottom](#raphael-engine) to see a list of features curren
 
 ## Elo
 
-The following are the historic Elo for Raphael.
+The following are the historic elo for Raphael.
 
-Note that Elos with an asterics next to them are estimates and not official, and were estimated by running tournaments against [Stash](https://gitlab.com/mhouppin/stash-bot/-/releases) (and sometimes a few other engines) using [fastchess](https://github.com/Disservin/fastchess).
+Note that elos with an asterics next to them are estimates and not official, and were estimated by running tournaments against [Stash](https://gitlab.com/mhouppin/stash-bot/-/releases) (and sometimes a few other engines) using [fastchess](https://github.com/Disservin/fastchess).
 
 <table>
     <tr align="center">
@@ -23,7 +23,7 @@ Note that Elos with an asterics next to them are estimates and not official, and
         <th><a href="https://www.computerchess.org.uk/ccrl/4040/">CCRL 40/15</a></th>
     </tr>
     <tr align="center"><td>3.0.0</td> <td>3321*</td> <td>3236*</td></tr>
-    <tr align="center"><td>2.3.0</td> <td>3146*</td> <td>3059</td></tr>
+    <tr align="center"><td>2.3.0</td> <td>3146*</td> <td>3060</td></tr>
     <tr align="center"><td>2.2.0</td> <td>3035*</td> <td>2954</td></tr>
     <tr align="center"><td>2.1.0</td> <td>2739*</td> <td>2692</td></tr>
     <tr align="center"><td>2.0.0</td> <td>2646*</td> <td></td></tr>
@@ -36,7 +36,7 @@ Note that Elos with an asterics next to them are estimates and not official, and
 
 ## Getting Started
 
-Builds of the UCI engine for Windows and Linux/WSL are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page. In general, you should use the `avx2-bmi2` build (on pre-Zen 3 AMD CPUs, the `avx2` build can be significantly faster than `avx2-bmi2` build).
+Builds of the UCI engine for Windows and Linux/WSL are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page. In general, you should use the `avx2-bmi2` build (on pre-Zen 3 AMD CPUs, the `avx2` build can be significantly faster than the `avx2-bmi2` build).
 
 Please refer to the [following section](#compiling-from-source) to compile the GUI and/or the engine yourself on Windows and Linux.
 
@@ -47,7 +47,7 @@ main.exe human "Human" Raphael "Raphael" -s "game.pgn"  # Windows
 ./main human "Human" Raphael "Raphael" -s "game.pgn"    # Linux/WSL
 ```
 
-You can see other command-line arguments by running `main.exe -h`. The UCI engine has no command-line arguments.
+You can see other command-line arguments by running `main.exe -h`.
 
 ### Compiling From Source
 
@@ -56,20 +56,20 @@ Follow these steps to build Raphael yourself. Note that it is **highly recommend
 1. Clone the repository with
 
     ```shell
-    git clone https://github.com/Orbital-Web/Raphael.git --recurse-submodules
+    git clone https://github.com/Orbital-Web/Raphael.git
     ```
 
 2. Ensure you have Make and g++ installed. If you are on Linux/WSL, you can do so by running:
 
-   ```shell
-   sudo apt-get install build-essential g++  # Linux/WSL
-   ```
+    ```shell
+    sudo apt-get install build-essential g++  # Linux/WSL
+    ```
 
-   Otherwise,  if you are on Windows, follow [this guide](https://code.visualstudio.com/docs/cpp/config-mingw) to install MSYS2 and run the following command inside the MSYS2 UCRT64 terminal:
+    Otherwise,  if you are on Windows, follow [this guide](https://code.visualstudio.com/docs/cpp/config-mingw) to install MSYS2 and run the following command inside the MSYS2 UCRT64 terminal:
 
-   ```shell
-   pacman -S --needed mingw-w64-ucrt-x86_64-toolchain make  # Windows
-   ```
+    ```shell
+    pacman -S --needed mingw-w64-ucrt-x86_64-toolchain make  # Windows
+    ```
 
 3. Compile as follows:
 

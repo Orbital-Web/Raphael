@@ -3,8 +3,6 @@
 
 #include <tests/doctest/doctest.hpp>
 
-extern const bool UCI = false;
-
 
 
 int main(int argc, char** argv) {

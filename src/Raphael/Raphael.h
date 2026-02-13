@@ -28,19 +28,26 @@ public:
     };
     static const EngineOptions& default_params();
 
+    enum class UciInfoLevel : u8 {
+        NONE = 0,
+        MINIMAL = 1,
+        ALL = 2,
+    };
+
 
 private:
     // search
     EngineOptions params_;
     TimeManager::SearchOptions searchopt_;
     // storage
-    TranspositionTable tt_;  // table with position, score, and bestmove
-    History history_;        // history score for each move
+    TranspositionTable tt_;
+    History history_;
     // position
     chess::Board board_;
     Nnue net_;
     // info
-    i32 seldepth_;  // maximum search depth reached
+    UciInfoLevel ucilevel_ = UciInfoLevel::NONE;
+    i32 seldepth_;  // maximum search depth reached in PV nodes
     TimeManager tm_;
 
     struct PVList {
@@ -93,6 +100,12 @@ public:
      * \param options options to set to
      */
     void set_searchoptions(TimeManager::SearchOptions options);
+
+    /** Sets Raphael's UCI info level
+     *
+     * \param level level to set to
+     */
+    void set_uciinfolevel(UciInfoLevel level);
 
 
     /** Sets the position to search on

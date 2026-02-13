@@ -12,8 +12,6 @@ using std::ifstream;
 using std::string;
 using std::vector;
 
-extern const bool UCI = false;
-
 
 
 /** Creates a specified GamePlayer

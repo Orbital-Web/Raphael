@@ -1,6 +1,6 @@
 #include <GameEngine/consts.h>
 #include <Raphael/Raphael.h>
-#include <Raphael/bench.h>
+#include <Raphael/commands.h>
 #include <Raphael/tunable.h>
 
 #include <condition_variable>
@@ -25,8 +25,6 @@ using std::stringstream;
 using std::thread;
 using std::unique_lock;
 using std::vector;
-
-extern const bool UCI = true;
 
 
 
@@ -237,8 +235,9 @@ void handle_command(const string& uci_command) {
     } else if (uci_command == "bench") {
         halt = true;
         lock_guard<mutex> engine_lock(engine_mutex);
+        engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::MINIMAL);
         engine.reset();
-        raphael::bench::run(engine);
+        raphael::commands::bench(engine);
         quit = true;
         search_cv.notify_one();
 
@@ -314,6 +313,7 @@ int main(int argc, char** argv) {
     std::ios::sync_with_stdio(false);
 
     // set to startpos
+    engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::ALL);
     engine.set_board(pending_request.board);
 
     // start search handler

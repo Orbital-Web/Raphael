@@ -1,5 +1,5 @@
 #include <GameEngine/consts.h>
-#include <Raphael/bench.h>
+#include <Raphael/commands.h>
 
 #include <iostream>
 
@@ -12,8 +12,8 @@ namespace ch = std::chrono;
 
 
 
-namespace raphael::bench {
-void run(Raphael& engine) {
+namespace raphael::commands {
+void bench(Raphael& engine) {
     // from https://github.com/Ciekce/Stormphrax/blob/main/src/bench.cpp
     static const vector<const char*> bench_data = {
         "r3k2r/2pb1ppp/2pp1q2/p7/1nP1B3/1P2P3/P2N1PPP/R2QK2R w KQkq - 0 14",
@@ -85,6 +85,11 @@ void run(Raphael& engine) {
         const chess::Board board(fen);
         engine.set_board(board);
 
+        {
+            lock_guard<mutex> lock(cout_mutex);
+            cout << "\ninfo string fen: " << fen << "\n" << flush;
+        }
+
         const auto start_t = ch::steady_clock::now();
         const auto res = engine.get_move(0, 0, mouse, halt);
         const auto now = ch::steady_clock::now();
@@ -94,8 +99,8 @@ void run(Raphael& engine) {
 
     const i64 nps = 1000.0f * nodes / runtime;
     lock_guard<mutex> lock(cout_mutex);
-    cout << "bench: completed in " << runtime << "ms:\n"
+    cout << "\nbench: completed in " << runtime << "ms:\n"
          << nodes << " nodes " << nps << " nps\n"
          << flush;
 }
-}  // namespace raphael::bench
+}  // namespace raphael::commands

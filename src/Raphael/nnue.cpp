@@ -18,7 +18,6 @@ using std::runtime_error;
 using std::string;
 using std::vector;
 
-extern const bool UCI;
 extern const unsigned char _binary_net_nnue_start[];
 extern const unsigned char _binary_net_nnue_end[];
 
@@ -32,15 +31,6 @@ Nnue::Nnue(const string& nnue_path) { load(nnue_path.c_str()); }
 
 void Nnue::load() {
     if (loaded) return;
-
-    if (!UCI) {
-#ifdef USE_SIMD
-        cout << "Raphael: SIMD AVX-" << USE_SIMD << " available for NNUE" << endl;
-#else
-        cout << "Raphael: SIMD unavailable for NNUE" << endl;
-#endif
-        cout << "Raphael: Loading NNUE" << endl;
-    }
 
     const unsigned char* nnue_data = _binary_net_nnue_start;
 
@@ -62,15 +52,6 @@ void Nnue::load() {
 }
 void Nnue::load(const char* nnue_path) {
     if (loaded) return;
-
-    if (!UCI) {
-#ifdef USE_SIMD
-        cout << "Raphael: SIMD AVX-" << USE_SIMD << " available for NNUE" << endl;
-#else
-        cout << "Raphael: SIMD unavailable for NNUE" << endl;
-#endif
-        cout << "Raphael: Loading " << nnue_path << endl;
-    }
 
     ifstream nnue_file(nnue_path, ios::binary);
     if (!nnue_file) throw runtime_error("could not open file");

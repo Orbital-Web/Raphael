@@ -2,10 +2,10 @@
 
 
 
-namespace raphael::bench {
+namespace raphael::commands {
 /** Runs the benchmark
  *
  * \param engine engine to benchmark
  */
-void run(Raphael& engine);
-}  // namespace raphael::bench
+void bench(Raphael& engine);
+}  // namespace raphael::commands

@@ -21,8 +21,6 @@ using std::mutex;
 using std::string;
 using std::swap;
 
-extern const bool UCI;
-
 
 
 const string Raphael::version = "3.1.0-dev";
@@ -106,6 +104,8 @@ void Raphael::set_option(const std::string& name, bool value) {
 
 void Raphael::set_searchoptions(TimeManager::SearchOptions options) { searchopt_ = options; }
 
+void Raphael::set_uciinfolevel(UciInfoLevel level) { ucilevel_ = level; }
+
 
 void Raphael::set_board(const chess::Board& board) {
     board_ = board;
@@ -133,7 +133,8 @@ Raphael::MoveScore Raphael::get_move(
     );
 
     // begin iterative deepening
-    for (i32 depth = 1; depth <= MAX_DEPTH; depth++) {
+    i32 depth = 1;
+    for (; depth <= MAX_DEPTH; depth++) {
         // stop if search stopped
         if (halt) break;
 
@@ -169,7 +170,7 @@ Raphael::MoveScore Raphael::get_move(
         bestmove = ss->pv.moves[0];
 
         // print info
-        if (UCI) print_uci_info(depth, score, ss);
+        if (ucilevel_ == UciInfoLevel::ALL) print_uci_info(depth, score, ss);
 
         // soft limit
         if (tm_.is_soft_limit_reached(halt, depth)) break;
@@ -178,8 +179,11 @@ Raphael::MoveScore Raphael::get_move(
     // last attempt to get bestmove
     if (!bestmove) bestmove = ss->pv.moves[0];
 
+    // print last info
+    if (ucilevel_ == UciInfoLevel::MINIMAL) print_uci_info(depth, score, ss);
+
     // print bestmove
-    if (UCI) {
+    if (ucilevel_ >= UciInfoLevel::MINIMAL) {
         lock_guard<mutex> lock(cout_mutex);
         cout << "bestmove " << chess::uci::from_move(bestmove) << "\n" << flush;
     }

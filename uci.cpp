@@ -77,7 +77,6 @@ void handle_search() {
 }
 
 
-
 /** Sets options such as tt size
  * E.g., setoption name Hash value [size(MB)]
  *
@@ -191,101 +190,147 @@ void search(const vector<string>& tokens) {
 }
 
 
+/** Handles a single uci command
+ *
+ * \param uci_command the command string
+ */
+void handle_command(const string& uci_command) {
+    if (uci_command == "uci") {
+        const auto params = engine.default_params();
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "id name " << engine.name << " " << engine.version << "\n"
+             << "id author Rei Meguro\n"
+             << params.hash.uci() << params.threads.uci() << params.moveoverhead.uci()
+             << params.datagen.uci() << params.softnodes.uci() << params.softhardmult.uci();
+#ifdef TUNE
+        for (const auto tunable : raphael::tunables) cout << tunable->uci();
+#endif
+        cout << "uciok\n" << flush;
+
+    } else if (uci_command == "isready") {
+        lock_guard<mutex> lock(cout_mutex);
+        lock_guard<mutex> engine_lock(engine_mutex);
+        cout << "readyok\n" << flush;
+
+    } else if (uci_command == "stop")
+        halt = true;
+
+    else if (uci_command == "quit") {
+        halt = true;
+        quit = true;
+        search_cv.notify_one();
+
+    } else if (uci_command == "ucinewgame") {
+        halt = true;
+        lock_guard<mutex> engine_lock(engine_mutex);
+        engine.reset();
+
+    } else if (uci_command == "obspsa") {
+#ifdef TUNE
+        lock_guard<mutex> lock(cout_mutex);
+        for (const auto tunable : raphael::tunables) cout << tunable->ob();
+        cout << flush;
+#else
+        cout << "info string this is not a tunable build\n" << flush;
+#endif
+
+    } else if (uci_command == "bench") {
+        halt = true;
+        lock_guard<mutex> engine_lock(engine_mutex);
+        engine.reset();
+        raphael::bench::run(engine);
+        quit = true;
+        search_cv.notify_one();
+
+    } else {
+        // tokenize command
+        vector<string> tokens;
+        stringstream ss(uci_command);
+        string token;
+        while (getline(ss, token, ' ')) tokens.push_back(token);
+        if (tokens.empty()) return;
+
+        string& keyword = tokens[0];
+        if (keyword == "setoption") {
+            halt = true;
+            setoption(tokens);
+
+        } else if (keyword == "position") {
+            halt = true;
+            setposition(tokens);
+
+        } else if (keyword == "go") {
+            halt = true;
+            search(tokens);
+
+        } else {
+            lock_guard<mutex> lock(cout_mutex);
+            cout << "info string unknown command: '" << keyword << "'\n" << flush;
+        }
+    }
+}
+
+
+/** Splits command line arguments into a list of commands, separated by ""
+ *
+ * \param argc number of command line arguments
+ * \param argv contents of the command line arguments
+ * \returns the list of split arguments
+ */
+vector<string> split_args(i32 argc, char** argv) {
+    assert(argc > 1);
+
+    vector<string> args;
+    string arg = "";
+    bool hold = false;
+    bool has_quotes = false;
+
+    for (i32 i = 1; i < argc; i++) {
+        arg += argv[i];
+
+        // handle commands in quotations
+        if (arg.front() == '"') {
+            hold = true;
+            has_quotes = true;
+        }
+        if (arg.back() == '"') hold = false;
+
+        if (!hold) {
+            if (has_quotes)
+                args.push_back(arg.substr(1, arg.length() - 2));
+            else
+                args.push_back(arg);
+
+            arg = "";
+            has_quotes = false;
+        }
+    }
+
+    return args;
+}
+
+
 int main(int argc, char** argv) {
     std::ios::sync_with_stdio(false);
 
     // set to startpos
     engine.set_board(pending_request.board);
 
-    // handle command line arguments
-    if (argc > 1) {
-        if (!strcmp(argv[1], "bench")) {
-            lock_guard<mutex> engine_lock(engine_mutex);
-            raphael::bench::run(engine);
-            return 0;
-        }
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "info string ignoring unknown command line arguments\n" << flush;
-    }
-
     // start search handler
     thread search_handler(handle_search);
 
-    // listen for commands
+    // handle command line arguments
+    if (argc > 1) {
+        vector<string> args = split_args(argc, argv);
+        for (const auto& arg : args)
+            if (!quit) handle_command(arg);
+    }
+
+    // listen for commands from cin
     string uci_command;
     while (!quit) {
         getline(cin, uci_command);
-
-        if (uci_command == "uci") {
-            const auto params = engine.default_params();
-            lock_guard<mutex> lock(cout_mutex);
-            cout << "id name " << engine.name << " " << engine.version << "\n"
-                 << "id author Rei Meguro\n"
-                 << params.hash.uci() << params.threads.uci() << params.moveoverhead.uci()
-                 << params.datagen.uci() << params.softnodes.uci() << params.softhardmult.uci();
-#ifdef TUNE
-            for (const auto tunable : raphael::tunables) cout << tunable->uci();
-#endif
-            cout << "uciok\n" << flush;
-
-        } else if (uci_command == "isready") {
-            lock_guard<mutex> lock(cout_mutex);
-            lock_guard<mutex> engine_lock(engine_mutex);
-            cout << "readyok\n" << flush;
-
-        } else if (uci_command == "stop")
-            halt = true;
-
-        else if (uci_command == "quit") {
-            halt = true;
-            quit = true;
-            search_cv.notify_one();
-
-        } else if (uci_command == "ucinewgame") {
-            halt = true;
-            lock_guard<mutex> engine_lock(engine_mutex);
-            engine.reset();
-
-        } else if (uci_command == "obspsa") {
-#ifdef TUNE
-            lock_guard<mutex> lock(cout_mutex);
-            for (const auto tunable : raphael::tunables) cout << tunable->ob();
-            cout << flush;
-#else
-            cout << "info string this is not a tunable build\n" << flush;
-#endif
-
-        } else if (uci_command == "bench") {
-            lock_guard<mutex> engine_lock(engine_mutex);
-            engine.reset();
-            raphael::bench::run(engine);
-
-        } else {
-            // tokenize command
-            vector<string> tokens;
-            stringstream ss(uci_command);
-            string token;
-            while (getline(ss, token, ' ')) tokens.push_back(token);
-            if (tokens.empty()) continue;
-
-            string& keyword = tokens[0];
-            if (keyword == "setoption") {
-                halt = true;
-                setoption(tokens);
-
-            } else if (keyword == "position") {
-                halt = true;
-                setposition(tokens);
-
-            } else if (keyword == "go") {
-                halt = true;
-                search(tokens);
-
-            } else {
-                lock_guard<mutex> lock(cout_mutex);
-                cout << "info string unknown command: '" << keyword << "'\n" << flush;
-            }
-        }
+        handle_command(uci_command);
     }
 
     search_handler.join();

@@ -8,4 +8,16 @@ namespace raphael::commands {
  * \param engine engine to benchmark
  */
 void bench(Raphael& engine);
+
+
+/** Generates randomized fens
+ *
+ * \param engine engine for evaluating generated fens
+ * \param count number of fens to generate
+ * \param seed random seed
+ * \param book book to use
+ * \param randpos number of random positions to use alongside book
+ * \param randmoves number of random moves to play
+ */
+void genfens(Raphael& engine, i32 count, u64 seed, std::string book, i32 randpos, i32 randmoves);
 }  // namespace raphael::commands

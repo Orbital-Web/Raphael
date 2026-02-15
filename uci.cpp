@@ -188,6 +188,61 @@ void search(const vector<string>& tokens) {
 }
 
 
+/** Handles the genfens command
+ *
+ * \param tokens list of tokens for the command
+ */
+void genfens(const vector<string>& tokens) {
+    i32 count = 0;
+    u64 seed = 0;
+    std::string book = "None";
+    i32 randpos = 0;
+    i32 randmoves = 0;
+
+    usize i = 1;
+    while (i < tokens.size()) {
+        if (tokens[i] == "N")
+            count = stoi(tokens[i + 1]);
+        else if (tokens[i] == "seed")
+            seed = stoull(tokens[i + 1]);
+        else if (tokens[i] == "book")
+            book = tokens[i + 1];
+        else if (tokens[i] == "randpos")
+            randpos = stoi(tokens[i + 1]);
+        else if (tokens[i] == "randmoves")
+            randmoves = stoi(tokens[i + 1]);
+        i += 2;
+    }
+
+    if (count <= 0) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string missing required positive parameter 'N'\n" << flush;
+        return;
+    }
+
+    if (randmoves < 0) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string randmoves must be non-negative\n" << flush;
+        return;
+    }
+
+    if (randpos < 0) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string randpos must be non-negative\n" << flush;
+        return;
+    }
+
+    if (randmoves <= 0 && randpos > 0) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string randmoves must be positive if randpos is set\n" << flush;
+        return;
+    }
+
+    lock_guard<mutex> engine_lock(engine_mutex);
+    raphael::commands::genfens(engine, count, seed, book, randpos, randmoves);
+}
+
+
 /** Handles a single uci command
  *
  * \param uci_command the command string
@@ -261,6 +316,12 @@ void handle_command(const string& uci_command) {
         } else if (keyword == "go") {
             halt = true;
             search(tokens);
+
+        } else if (keyword == "genfens") {
+            halt = true;
+            genfens(tokens);
+            quit = true;
+            search_cv.notify_one();
 
         } else {
             lock_guard<mutex> lock(cout_mutex);

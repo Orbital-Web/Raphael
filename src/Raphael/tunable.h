@@ -251,6 +251,8 @@ Tunable(CAPTHIST_PENALTY_MAX, 2000, 1024, 4096, 256, true);
 
 // misc
 static constexpr i32 BENCH_DEPTH = 14;
+static constexpr i32 GENFENS_MAX_NODES = 1000;
+static constexpr i32 GENFENS_MAX_SCORE = 1000;
 
 
 #undef Tunable

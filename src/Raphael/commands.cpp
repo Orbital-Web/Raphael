@@ -1,12 +1,18 @@
 #include <GameEngine/consts.h>
 #include <Raphael/commands.h>
 
+#include <fstream>
 #include <iostream>
+#include <random>
 
 using std::cout;
 using std::flush;
+using std::ifstream;
 using std::lock_guard;
+using std::mt19937_64;
 using std::mutex;
+using std::string;
+using std::uniform_int_distribution;
 using std::vector;
 namespace ch = std::chrono;
 
@@ -102,5 +108,100 @@ void bench(Raphael& engine) {
     cout << "\nbench: completed in " << runtime << "ms:\n"
          << nodes << " nodes " << nps << " nps\n"
          << flush;
+}
+
+
+void genfens(Raphael& engine, i32 count, u64 seed, std::string book, i32 randpos, i32 randmoves) {
+    // based on https://github.com/official-clockwork/Clockwork/blob/main/src/uci.cpp
+    engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::NONE);
+    engine.set_searchoptions({.maxnodes = GENFENS_MAX_NODES});
+    engine.set_option("Softnodes", true);
+    cge::MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
+
+    mt19937_64 generator(seed);
+    chess::Board board;
+    chess::MoveList<chess::ScoredMove> movelist;
+
+    // load seed_fens from book
+    vector<string> seed_fens;
+    if (book == "None")
+        seed_fens.push_back(chess::Board::STARTPOS);
+    else {
+        ifstream file(book);
+        if (!file) {
+            lock_guard<mutex> lock(cout_mutex);
+            cout << "info string could not open book: " << book << "\n" << flush;
+            return;
+        }
+
+        string seed_fen;
+        while (getline(file, seed_fen))
+            if (!seed_fen.empty()) seed_fens.push_back(seed_fen);
+
+        if (seed_fens.empty()) {
+            lock_guard<mutex> lock(cout_mutex);
+            cout << "info string book file is empty\n" << flush;
+            return;
+        }
+        file.close();
+    }
+
+    // add random positions to seed_fens
+    const usize seed_size = seed_fens.size() + randpos;
+    if (randpos > 0) {
+        seed_fens.reserve(seed_size);
+
+        while (seed_fens.size() < seed_size) {
+            board.set_fen(chess::Board::STARTPOS);
+
+            // play random moves
+            for (i32 m = 0; m < randmoves; m++) {
+                movelist.clear();
+                chess::Movegen::generate_legals(movelist, board);
+                if (movelist.size() == 0) break;
+
+                uniform_int_distribution<u64> distribution(0, movelist.size() - 1);
+                const auto& move = movelist[distribution(generator)].move;
+                board.make_move(move);
+            }
+
+            // filter unbalanced positions
+            bool halt = false;
+            engine.set_board(board);
+            const auto res = engine.get_move(0, 0, mouse, halt);
+            if (res.is_mate || abs(res.score) > GENFENS_MAX_SCORE) continue;
+
+            seed_fens.push_back(board.get_fen());
+        }
+    }
+
+    // generate lines
+    i32 generated = 0;
+    while (generated < count) {
+        // choose random seed_fen
+        uniform_int_distribution<u64> distribution(0, seed_fens.size() - 1);
+        board.set_fen(seed_fens[distribution(generator)]);
+
+        // play random moves
+        for (i32 m = 0; m < randmoves; m++) {
+            movelist.clear();
+            chess::Movegen::generate_legals(movelist, board);
+            if (movelist.size() == 0) break;
+
+            uniform_int_distribution<u64> distribution(0, movelist.size() - 1);
+            const auto& move = movelist[distribution(generator)].move;
+            board.make_move(move);
+        }
+
+        // filter unbalanced positions
+        bool halt = false;
+        engine.set_board(board);
+        const auto res = engine.get_move(0, 0, mouse, halt);
+        if (res.is_mate || abs(res.score) > GENFENS_MAX_SCORE) continue;
+
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string genfens " << board.get_fen() << "\n" << flush;
+        generated++;
+    }
 }
 }  // namespace raphael::commands

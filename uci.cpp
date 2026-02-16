@@ -193,16 +193,19 @@ void search(const vector<string>& tokens) {
  * \param tokens list of tokens for the command
  */
 void genfens(const vector<string>& tokens) {
-    i32 count = 0;
+    if (tokens.size() < 2) {
+        cout << "info string missing required positional parameter 'count'\n" << flush;
+        return;
+    }
+
+    i32 count = stoi(tokens[1]);
     u64 seed = 0;
     std::string book = "None";
     i32 randmoves = 0;
 
-    usize i = 1;
+    usize i = 2;
     while (i < tokens.size()) {
-        if (tokens[i] == "N")
-            count = stoi(tokens[i + 1]);
-        else if (tokens[i] == "seed")
+        if (tokens[i] == "seed")
             seed = stoull(tokens[i + 1]);
         else if (tokens[i] == "book")
             book = tokens[i + 1];
@@ -213,7 +216,7 @@ void genfens(const vector<string>& tokens) {
 
     if (count <= 0) {
         lock_guard<mutex> lock(cout_mutex);
-        cout << "info string missing required positive parameter 'N'\n" << flush;
+        cout << "info string count must be positive\n" << flush;
         return;
     }
 

@@ -111,7 +111,7 @@ void bench(Raphael& engine) {
 }
 
 
-void genfens(Raphael& engine, i32 count, u64 seed, std::string book, i32 randpos, i32 randmoves) {
+void genfens(Raphael& engine, i32 count, u64 seed, std::string book, i32 randmoves) {
     // based on https://github.com/official-clockwork/Clockwork/blob/main/src/uci.cpp
     engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::NONE);
     engine.set_searchoptions({.maxnodes = GENFENS_MAX_NODES});
@@ -144,35 +144,6 @@ void genfens(Raphael& engine, i32 count, u64 seed, std::string book, i32 randpos
             return;
         }
         file.close();
-    }
-
-    // add random positions to seed_fens
-    const usize seed_size = seed_fens.size() + randpos;
-    if (randpos > 0) {
-        seed_fens.reserve(seed_size);
-
-        while (seed_fens.size() < seed_size) {
-            board.set_fen(chess::Board::STARTPOS);
-
-            // play random moves
-            for (i32 m = 0; m < randmoves; m++) {
-                movelist.clear();
-                chess::Movegen::generate_legals(movelist, board);
-                if (movelist.size() == 0) break;
-
-                uniform_int_distribution<u64> distribution(0, movelist.size() - 1);
-                const auto& move = movelist[distribution(generator)].move;
-                board.make_move(move);
-            }
-
-            // filter unbalanced positions
-            bool halt = false;
-            engine.set_board(board);
-            const auto res = engine.get_move(0, 0, mouse, halt);
-            if (res.is_mate || abs(res.score) > GENFENS_MAX_SCORE) continue;
-
-            seed_fens.push_back(board.get_fen());
-        }
     }
 
     // generate lines

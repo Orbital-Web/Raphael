@@ -196,7 +196,6 @@ void genfens(const vector<string>& tokens) {
     i32 count = 0;
     u64 seed = 0;
     std::string book = "None";
-    i32 randpos = 0;
     i32 randmoves = 0;
 
     usize i = 1;
@@ -207,8 +206,6 @@ void genfens(const vector<string>& tokens) {
             seed = stoull(tokens[i + 1]);
         else if (tokens[i] == "book")
             book = tokens[i + 1];
-        else if (tokens[i] == "randpos")
-            randpos = stoi(tokens[i + 1]);
         else if (tokens[i] == "randmoves")
             randmoves = stoi(tokens[i + 1]);
         i += 2;
@@ -226,20 +223,8 @@ void genfens(const vector<string>& tokens) {
         return;
     }
 
-    if (randpos < 0) {
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "info string randpos must be non-negative\n" << flush;
-        return;
-    }
-
-    if (randmoves <= 0 && randpos > 0) {
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "info string randmoves must be positive if randpos is set\n" << flush;
-        return;
-    }
-
     lock_guard<mutex> engine_lock(engine_mutex);
-    raphael::commands::genfens(engine, count, seed, book, randpos, randmoves);
+    raphael::commands::genfens(engine, count, seed, book, randmoves);
 }
 
 

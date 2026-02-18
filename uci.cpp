@@ -361,8 +361,6 @@ vector<string> split_args(i32 argc, char** argv) {
 
 
 int main(int argc, char** argv) {
-    std::ios::sync_with_stdio(false);
-
     // set to startpos
     engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::ALL);
     engine.set_board(pending_request.board);

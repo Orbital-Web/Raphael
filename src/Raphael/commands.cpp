@@ -165,11 +165,12 @@ void genfens(Raphael& engine, i32 count, u64 seed, std::string book, i32 randmov
             board.make_move(move);
         }
 
-        // filter unbalanced positions
+        // filter unbalanced/illegal positions
         atomic<bool> halt{false};
         engine.set_board(board);
         const auto res = engine.get_move(0, 0, halt);
-        if (res.is_mate || abs(res.score) > GENFENS_MAX_SCORE) continue;
+        if (res.move == chess::Move::NO_MOVE || res.is_mate || abs(res.score) > GENFENS_MAX_SCORE)
+            continue;
 
         lock_guard<mutex> lock(cout_mutex);
         cout << "info string genfens " << board.get_fen() << "\n" << flush;

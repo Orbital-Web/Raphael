@@ -31,13 +31,11 @@ MAIN_SOURCES := \
 
 UCI_SOURCES := \
     src/GameEngine/consts.cpp \
-    src/GameEngine/GamePlayer.cpp \
     $(wildcard src/Raphael/*.cpp) \
     uci.cpp
 
 TEST_SOURCES := \
 	src/GameEngine/consts.cpp \
-    src/GameEngine/GamePlayer.cpp \
     $(wildcard src/Raphael/*.cpp) \
 	$(wildcard src/tests/*.cpp)
 

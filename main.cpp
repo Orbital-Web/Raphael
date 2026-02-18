@@ -6,11 +6,15 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <optional>
 
 using std::cout;
 using std::ifstream;
+using std::nullopt;
+using std::optional;
 using std::string;
 using std::vector;
+using std::visit;
 
 
 
@@ -20,18 +24,25 @@ using std::vector;
  * \param name name of player as a null-terminated cstring
  * \returns a dynamically allocated player
  */
-cge::GamePlayer* player_factory(char* playertype, char* name) {
-    if (!strcmp(playertype, "human") || !strcmp(playertype, "Human"))
-        return new cge::HumanPlayer(name);
-    else if (!strcmp(playertype, "Raphael"))
-        return new raphael::Raphael(name);
+optional<cge::GameEngine::Player> player_factory(char* playertype, char* name) {
+    if (!strcmp(playertype, "human") || !strcmp(playertype, "Human")) {
+        auto player = new cge::HumanPlayer(name);
+        return cge::GameEngine::Player{
+            .player = player, .type = cge::GameEngine::PlayerType::HUMAN
+        };
+    } else if (!strcmp(playertype, "Raphael")) {
+        auto player = new raphael::Raphael(name);
+        return cge::GameEngine::Player{
+            .player = player, .type = cge::GameEngine::PlayerType::ENGINE
+        };
+    }
 
     // invalid
     printf("Invalid player type: %s\n", playertype);
     printf("Valid player types are:\n");
     printf("   human:         Human-controlled player\n");
     printf("   Raphael:       Raphael %s\n", raphael::Raphael::version.c_str());
-    return nullptr;
+    return nullopt;
 }
 
 
@@ -71,10 +82,6 @@ main.exe Raphael "new" Raphaelv1.0 "old" -c
     400 comparison matches between the newest version of Raphael and Raphaelv1.0
 */
 int main(int argc, char** argv) {
-    cge::GamePlayer* p1;
-    cge::GamePlayer* p2;
-    vector<cge::GameEngine::GameOptions> gameoptions;
-
     // invalid
     if (argc < 5) {
         print_usage();
@@ -82,11 +89,13 @@ int main(int argc, char** argv) {
     }
 
     // create players
-    p1 = player_factory(argv[1], argv[2]);
-    p2 = player_factory(argv[3], argv[4]);
-    if (!p1 || !p2) return -1;
+    auto p1 = player_factory(argv[1], argv[2]);
+    auto p2 = player_factory(argv[3], argv[4]);
+    if (!p1.has_value() || !p2.has_value()) return -1;
+    vector<cge::GameEngine::Player> players = {*p1, *p2};
 
     // parse mode
+    vector<cge::GameEngine::GameOptions> gameoptions;
     i32 i = 5;
     if (argc >= 6) {
         // comparison mode
@@ -189,7 +198,6 @@ int main(int argc, char** argv) {
 
 
     // Initialize GameEngine
-    vector<cge::GamePlayer*> players = {p1, p2};
     cge::GameEngine ge(players);
 
     // Play Matches
@@ -203,7 +211,7 @@ int main(int argc, char** argv) {
     }
 
     ge.print_report();
-    delete p1;
-    delete p2;
+    visit([](auto player) { delete player; }, players[0].player);
+    visit([](auto player) { delete player; }, players[1].player);
     return 0;
 }

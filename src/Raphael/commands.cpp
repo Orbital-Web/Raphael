@@ -5,10 +5,12 @@
 #include <iostream>
 #include <random>
 
+using std::atomic;
 using std::cout;
 using std::flush;
 using std::ifstream;
 using std::lock_guard;
+using std::memory_order_relaxed;
 using std::mt19937_64;
 using std::mutex;
 using std::string;
@@ -76,8 +78,7 @@ void bench(Raphael& engine) {
 
     raphael::TimeManager::SearchOptions options{.maxdepth = BENCH_DEPTH};
     engine.set_searchoptions(options);
-    bool halt = false;
-    cge::MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
+    atomic<bool> halt{false};
 
     {
         lock_guard<mutex> lock(cout_mutex);
@@ -87,7 +88,7 @@ void bench(Raphael& engine) {
     i64 runtime = 0;
     u64 nodes = 0;
     for (auto fen : bench_data) {
-        halt = false;
+        halt.store(false, memory_order_relaxed);
         const chess::Board board(fen);
         engine.set_board(board);
 
@@ -97,8 +98,9 @@ void bench(Raphael& engine) {
         }
 
         const auto start_t = ch::steady_clock::now();
-        const auto res = engine.get_move(0, 0, mouse, halt);
+        const auto res = engine.get_move(0, 0, halt);
         const auto now = ch::steady_clock::now();
+
         runtime += ch::duration_cast<ch::milliseconds>(now - start_t).count();
         nodes += res.nodes;
     }
@@ -116,7 +118,6 @@ void genfens(Raphael& engine, i32 count, u64 seed, std::string book, i32 randmov
     engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::NONE);
     engine.set_searchoptions({.maxnodes = GENFENS_MAX_NODES});
     engine.set_option("Softnodes", true);
-    cge::MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
 
     mt19937_64 generator(seed);
     chess::Board board;
@@ -165,9 +166,9 @@ void genfens(Raphael& engine, i32 count, u64 seed, std::string book, i32 randmov
         }
 
         // filter unbalanced positions
-        bool halt = false;
+        atomic<bool> halt{false};
         engine.set_board(board);
-        const auto res = engine.get_move(0, 0, mouse, halt);
+        const auto res = engine.get_move(0, 0, halt);
         if (res.is_mate || abs(res.score) > GENFENS_MAX_SCORE) continue;
 
         lock_guard<mutex> lock(cout_mutex);

@@ -1,12 +1,28 @@
 #pragma once
-#include <GameEngine/GamePlayer.h>
+#include <chess/include.h>
 
 
 
 namespace cge {  // chess game engine
-class HumanPlayer: public GamePlayer {
+enum MouseEvent { NONE, LMBDOWN, RMBDOWN, LMBUP, RMBUP };
+struct MouseInfo {
+    i32 x;
+    i32 y;
+    MouseEvent event;
+};
+
+
+class HumanPlayer {
+public:
+    std::string name;
+
 private:
     chess::Board board_;
+    chess::MoveList<chess::ScoredMove> movelist_;
+
+    chess::Move move_ = chess::Move::NO_MOVE;
+    chess::Square sq_from_;
+    chess::Square sq_to_;
 
 
 public:
@@ -23,29 +39,18 @@ public:
      */
     void set_board(const chess::Board& board);
 
-    /** Asks the human to make a valid move. Should return immediately if halt becomes true.
+    /** Attempts to get a move from the human, returns immediately
      *
-     * \param t_remain time remaining in ms
-     * \param t_inc increment after move in ms
-     * \param mouse contains mouse movement info
-     * \param halt bool reference which will turn false to indicate search should stop
-     * \returns the move made by the human
+     * \param mouse mouse movement info
+     * \returns the move made by the human or NO_MOVE
      */
-    MoveScore get_move(
-        const i32 t_remain, const i32 t_inc, volatile MouseInfo& mouse, volatile bool& halt
-    );
+    chess::Move try_get_move(const MouseInfo& mouse);
 
 private:
-    /** Returns a move if the move from sq_from to sq_to is valid
+    /** Returns a move if the move from sq_from_ to sq_to_ is valid
      *
-     * \param sq_from square to move from
-     * \param sq_to square to move to
-     * \param movelist a list of legal moves
+     * \returns either a valid move or NO_MOVE
      */
-    chess::Move move_if_valid(
-        chess::Square sq_from,
-        chess::Square sq_to,
-        const chess::MoveList<chess::ScoredMove>& movelist
-    );
+    chess::Move move_if_valid();
 };
 }  // namespace cge

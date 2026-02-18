@@ -11,11 +11,13 @@
 #include <iostream>
 
 using namespace raphael;
+using std::atomic;
 using std::copy;
 using std::cout;
 using std::flush;
 using std::lock_guard;
 using std::max;
+using std::memory_order_relaxed;
 using std::min;
 using std::mutex;
 using std::string;
@@ -48,7 +50,7 @@ void Raphael::PVList::update(const chess::Move move, const PVList& child) {
 
 
 Raphael::Raphael(const string& name_in)
-    : GamePlayer(name_in), params_(default_params()), tt_(params_.hash) {
+    : name(name_in), params_(default_params()), tt_(params_.hash) {
     params_.hash.set_callback([this]() { tt_.resize(params_.hash); });
     init_tunables();
 }
@@ -112,9 +114,7 @@ void Raphael::set_board(const chess::Board& board) {
     net_.set_board(board);
 }
 
-Raphael::MoveScore Raphael::get_move(
-    const i32 t_remain, const i32 t_inc, volatile cge::MouseInfo&, volatile bool& halt
-) {
+Raphael::MoveScore Raphael::get_move(const i32 t_remain, const i32 t_inc, atomic<bool>& halt) {
     seldepth_ = 0;
 
     i32 score = -INF_SCORE;
@@ -136,7 +136,7 @@ Raphael::MoveScore Raphael::get_move(
     i32 depth = 1;
     for (; depth <= MAX_DEPTH; depth++) {
         // stop if search stopped
-        if (halt) break;
+        if (halt.load(memory_order_relaxed)) break;
 
         // initialize aspiration window
         i32 delta = ASPIRATION_INIT_SIZE;
@@ -150,7 +150,7 @@ Raphael::MoveScore Raphael::get_move(
 
         // search until score lies between alpha and beta
         i32 iterscore;
-        while (!halt) {
+        while (!halt.load(memory_order_relaxed)) {
             iterscore = negamax<true>(depth, 0, 0, alpha, beta, false, ss, halt);
 
             if (iterscore <= alpha) {
@@ -164,7 +164,7 @@ Raphael::MoveScore Raphael::get_move(
             delta += delta * ASPIRATION_WIDENING_FACTOR / 16;
         }
 
-        if (halt) break;  // don't use results if timeout
+        if (halt.load(memory_order_relaxed)) break;  // don't use results if timeout
 
         score = iterscore;
         bestmove = ss->pv.moves[0];
@@ -197,14 +197,11 @@ Raphael::MoveScore Raphael::get_move(
     return {bestmove, score, false, tm_.get_nodes()};
 }
 
-void Raphael::ponder(volatile bool& halt) {
+void Raphael::ponder(atomic<bool>& halt) {
     // just get move with infinite time to fill up the transposition table
     const auto prev_searchopt = searchopt_;
     searchopt_ = {.infinite = true};
-
-    cge::MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
-    get_move(0, 0, mouse, halt);
-
+    get_move(0, 0, halt);
     searchopt_ = prev_searchopt;
 }
 
@@ -249,7 +246,7 @@ i32 Raphael::negamax(
     i32 beta,
     bool cutnode,
     SearchStack* ss,
-    volatile bool& halt
+    atomic<bool>& halt
 ) {
     const bool is_root = (ply == 0);
     assert(!is_root || is_PV);
@@ -491,13 +488,14 @@ i32 Raphael::negamax(
     if (move_searched == 0) return (in_check) ? -MATE_SCORE + ply : 0;  // reward faster mate
 
     // update transposition table
-    if (!halt && !ss->excluded) tt_.set(ttkey, bestscore, bestmove, depth, ttflag, ply);
+    if (!halt.load(memory_order_relaxed) && !ss->excluded)
+        tt_.set(ttkey, bestscore, bestmove, depth, ttflag, ply);
 
     return bestscore;
 }
 
 template <bool is_PV>
-i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, volatile bool& halt) {
+i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, atomic<bool>& halt) {
     // timeout
     if (tm_.is_hard_limit_reached(halt)) return 0;
 

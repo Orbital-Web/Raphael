@@ -11,15 +11,18 @@
 #include <thread>
 #include <vector>
 
+using std::atomic;
 using std::cin;
 using std::condition_variable;
 using std::cout;
 using std::exception;
 using std::flush;
 using std::lock_guard;
+using std::memory_order_relaxed;
 using std::mutex;
 using std::stoi;
 using std::stoll;
+using std::stoull;
 using std::string;
 using std::stringstream;
 using std::thread;
@@ -45,8 +48,8 @@ struct SearchRequest {
 SearchRequest pending_request;
 
 // other globals
-bool halt = false;
-bool quit = false;
+atomic<bool> halt{false};
+atomic<bool> quit{false};
 
 
 
@@ -64,13 +67,10 @@ void handle_search() {
         search_lock.unlock();
 
         // do search (ignore return value)
-        {
-            lock_guard<mutex> engine_lock(engine_mutex);
-            cge::MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
-            halt = false;
-            engine.set_searchoptions(request.options);
-            engine.get_move(request.t_remain, request.t_inc, mouse, halt);
-        }
+        lock_guard<mutex> engine_lock(engine_mutex);
+        halt.store(false, memory_order_relaxed);
+        engine.set_searchoptions(request.options);
+        engine.get_move(request.t_remain, request.t_inc, halt);
     }
 }
 
@@ -254,15 +254,15 @@ void handle_command(const string& uci_command) {
         cout << "readyok\n" << flush;
 
     } else if (uci_command == "stop")
-        halt = true;
+        halt.store(true, memory_order_relaxed);
 
     else if (uci_command == "quit") {
-        halt = true;
-        quit = true;
+        halt.store(true, memory_order_relaxed);
+        quit.store(true, memory_order_relaxed);
         search_cv.notify_one();
 
     } else if (uci_command == "ucinewgame") {
-        halt = true;
+        halt.store(true, memory_order_relaxed);
         lock_guard<mutex> engine_lock(engine_mutex);
         engine.reset();
 
@@ -276,12 +276,13 @@ void handle_command(const string& uci_command) {
 #endif
 
     } else if (uci_command == "bench") {
-        halt = true;
+        halt.store(true, memory_order_relaxed);
         lock_guard<mutex> engine_lock(engine_mutex);
         engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::MINIMAL);
         engine.reset();
         raphael::commands::bench(engine);
-        quit = true;
+
+        quit.store(true, memory_order_relaxed);
         search_cv.notify_one();
 
     } else {
@@ -294,21 +295,22 @@ void handle_command(const string& uci_command) {
 
         string& keyword = tokens[0];
         if (keyword == "setoption") {
-            halt = true;
+            halt.store(true, memory_order_relaxed);
             setoption(tokens);
 
         } else if (keyword == "position") {
-            halt = true;
+            halt.store(true, memory_order_relaxed);
             setposition(tokens);
 
         } else if (keyword == "go") {
-            halt = true;
+            halt.store(true, memory_order_relaxed);
             search(tokens);
 
         } else if (keyword == "genfens") {
-            halt = true;
+            halt.store(true, memory_order_relaxed);
             genfens(tokens);
-            quit = true;
+
+            quit.store(true, memory_order_relaxed);
             search_cv.notify_one();
 
         } else {

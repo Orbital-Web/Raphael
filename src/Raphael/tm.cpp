@@ -2,7 +2,9 @@
 #include <Raphael/tunable.h>
 
 using namespace raphael;
+using std::atomic;
 using std::max;
+using std::memory_order_relaxed;
 using std::min;
 namespace ch = std::chrono;
 
@@ -69,30 +71,45 @@ void TimeManager::inc_nodes() { nodes_++; }
 u64 TimeManager::get_nodes() const { return nodes_; }
 
 
-bool TimeManager::is_hard_limit_reached(volatile bool& halt) const {
+bool TimeManager::is_hard_limit_reached(atomic<bool>& halt) const {
     // if hard nodes is specified, check node count
-    if (hard_nodes_.has_value() && nodes_ >= *hard_nodes_) halt = true;
+    if (hard_nodes_.has_value() && nodes_ >= *hard_nodes_) {
+        halt.store(true, memory_order_relaxed);
+        return true;
+    }
 
     // if hard time is specified, check timeover every 2048 nodes
-    if (hard_t_.has_value() && !(nodes_ & 2047) && get_time() >= hard_t_) halt = true;
+    if (hard_t_.has_value() && !(nodes_ & 2047) && get_time() >= hard_t_) {
+        halt.store(true, memory_order_relaxed);
+        return true;
+    }
 
-    return halt;
+    return halt.load(memory_order_relaxed);
 }
 
-bool TimeManager::is_soft_limit_reached(volatile bool& halt, i32 depth) const {
+bool TimeManager::is_soft_limit_reached(atomic<bool>& halt, i32 depth) const {
     // if soft nodes is specified, check node count
-    if (soft_nodes_.has_value() && nodes_ >= *soft_nodes_) halt = true;
+    if (soft_nodes_.has_value() && nodes_ >= *soft_nodes_) {
+        halt.store(true, memory_order_relaxed);
+        return true;
+    }
 
     // if max depth is specified, check depth (we already finished searching at `depth`)
-    if (max_depth_.has_value() && depth >= *max_depth_) halt = true;
+    if (max_depth_.has_value() && depth >= *max_depth_) {
+        halt.store(true, memory_order_relaxed);
+        return true;
+    }
 
     // if soft time is specified, check against the adjusted time
     if (soft_t_.has_value()) {
         const auto soft_t_adj = adjust_soft_time();
-        if (get_time() >= soft_t_adj) halt = true;
+        if (get_time() >= soft_t_adj) {
+            halt.store(true, memory_order_relaxed);
+            return true;
+        }
     }
 
-    return halt;
+    return halt.load(memory_order_relaxed);
 }
 
 

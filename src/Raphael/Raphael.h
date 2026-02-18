@@ -1,19 +1,20 @@
 #pragma once
-#include <GameEngine/GamePlayer.h>
 #include <Raphael/History.h>
 #include <Raphael/Transposition.h>
 #include <Raphael/nnue.h>
 #include <Raphael/tm.h>
 #include <Raphael/tunable.h>
 
+#include <atomic>
 #include <string>
 
 
 
 namespace raphael {
-class Raphael: public cge::GamePlayer {
+class Raphael {
 public:
     static const std::string version;
+    std::string name;
 
     struct EngineOptions {
         // uci options
@@ -32,6 +33,13 @@ public:
         NONE = 0,
         MINIMAL = 1,
         ALL = 2,
+    };
+
+    struct MoveScore {
+        chess::Move move;
+        i32 score;
+        bool is_mate;
+        u64 nodes = 0;
     };
 
 
@@ -123,15 +131,13 @@ public:
      * \param halt bool reference which will turn false to indicate search should stop
      * \returns the best move and its score
      */
-    MoveScore get_move(
-        const i32 t_remain, const i32 t_inc, volatile cge::MouseInfo& mouse, volatile bool& halt
-    );
+    MoveScore get_move(const i32 t_remain, const i32 t_inc, std::atomic<bool>& halt);
 
     /** Ponders for best move during opponent's turn. Returns immediately if halt becomes true
      *
      * \param halt bool reference which will turn false to indicate search should stop
      */
-    void ponder(volatile bool& halt);
+    void ponder(std::atomic<bool>& halt);
 
 
     /** Resets Raphael */
@@ -177,7 +183,7 @@ private:
         i32 beta,
         bool cutnode,
         SearchStack* ss,
-        volatile bool& halt
+        std::atomic<bool>& halt
     );
 
     /** Evaluates the board after all noisy moves are played out
@@ -191,6 +197,6 @@ private:
      * \returns score of current board
      */
     template <bool is_PV>
-    i32 quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, volatile bool& halt);
+    i32 quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, std::atomic<bool>& halt);
 };
 }  // namespace raphael

@@ -1,6 +1,7 @@
 #pragma once
 #include <chess/include.h>
 
+#include <atomic>
 #include <chrono>
 #include <optional>
 
@@ -61,7 +62,7 @@ public:
      * \param halt bool reference which will turn false to indicate search should stop
      * \returns the new value of halt
      */
-    bool is_hard_limit_reached(volatile bool& halt) const;
+    bool is_hard_limit_reached(std::atomic<bool>& halt) const;
 
     /** Sets halt and returns its value if the soft limit is reached
      * Checked at the end of a search at `depth`
@@ -70,7 +71,7 @@ public:
      * \param depth the current search depth
      * \returns the new value of halt
      */
-    bool is_soft_limit_reached(volatile bool& halt, i32 depth) const;
+    bool is_soft_limit_reached(std::atomic<bool>& halt, i32 depth) const;
 
 private:
     /** Resets the time manager */

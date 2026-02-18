@@ -1,18 +1,30 @@
 #pragma once
-#include <GameEngine/GamePlayer.h>
+#include <GameEngine/HumanPlayer.h>
 #include <GameEngine/utils.h>
+#include <Raphael/Raphael.h>
 
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
+#include <future>
+#include <variant>
+#include <vector>
+
+using player_pt = std::variant<cge::HumanPlayer*, raphael::Raphael*>;
 
 
 
 namespace cge {     // chess game engine
 class GameEngine {  // Class for managing games
-    static constexpr i32 FRAMERATE = 60;
+public:
+    enum class PlayerType { HUMAN, ENGINE };
+    struct Player {
+        player_pt player;
+        PlayerType type;
+    };
 
 private:
     // visual & sound
+    static constexpr i32 FRAMERATE = 60;
     sf::RenderWindow window;
     sf::Font font;
     std::vector<sf::RectangleShape> tiles;
@@ -21,7 +33,7 @@ private:
     PieceDrawer piecedrawer;
     std::vector<sf::SoundBuffer> soundbuffers;
     std::vector<sf::Sound> sounds;
-    MouseInfo mouse = {.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
+    MouseInfo mouse{.x = 0, .y = 0, .event = cge::MouseEvent::NONE};
     bool interactive;  // play sound and keep window open after game end
 
     // for draw_select()
@@ -36,9 +48,9 @@ private:
 
     // chess game logic
     chess::Board board;
-    bool turn;                         // current turn (0=white, 1=black)
-    std::vector<GamePlayer*> players;  // players (p1, p2)
-    std::vector<i64> t_remain;         // time remaining ms (white, black)
+    bool turn;                    // current turn (0=white, 1=black)
+    std::vector<Player> players;  // (p1, p2)
+    std::vector<i64> t_remain;    // time remaining ms (white, black)
 
     // score tracking
     std::vector<i32> results = {0, 0, 0};   // (p1, draw, p2)
@@ -62,9 +74,9 @@ public:
 public:
     /** Initialize the GameEngine with the respective players
      *
-     * \param players_in a vectors of player 1 and player 2
+     * \param players_in a vector of player 1 and player 2
      */
-    GameEngine(const std::vector<GamePlayer*>& players_in);
+    GameEngine(const std::vector<Player>& players_in);
 
     /** Runs a match from start to end
      *
@@ -76,6 +88,25 @@ public:
     void print_report() const;
 
 private:
+    /** Retrieves a move from the engine
+     *
+     * \param engine the engine pointer
+     * \param t_remain time remaining for current player
+     * \param t_inc time increment for current player
+     * \param halt a bool to signify search stopped
+     * \returns a future which contains the move to play
+     */
+    std::future<chess::Move> get_move_async(
+        raphael::Raphael* engine, i32 t_remain, i32 t_inc, std::atomic<bool>& halt
+    );
+
+    /** Allows the player to ponder asynchronously
+     * \param engine the engine pointer
+     * \param halt a bool to signify search stopped
+     * \returns a void future
+     */
+    std::future<void> ponder_async(raphael::Raphael* engine, std::atomic<bool>& halt);
+
     /** Initializes sprites, texts, and sounds */
     void generate_assets();
 

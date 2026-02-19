@@ -228,6 +228,7 @@ SFML-*/
 fastchess
 texel-tuner
 weather-factory
+bullet
 
 # Chess Games
 src/Games/stockfish/

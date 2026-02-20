@@ -285,6 +285,12 @@ void handle_command(const string& uci_command) {
         quit.store(true, memory_order_relaxed);
         search_cv.notify_one();
 
+    } else if (uci_command == "eval") {
+        halt.store(true, memory_order_relaxed);
+        lock_guard<mutex> engine_lock(engine_mutex);
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string eval: " << engine.static_eval() << "\n" << flush;
+
     } else {
         // tokenize command
         vector<string> tokens;

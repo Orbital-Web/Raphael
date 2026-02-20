@@ -3,10 +3,10 @@ use bullet_lib::{
     nn::optimiser::AdamW,
     trainer::{
         save::SavedFormat,
-        schedule::{TrainingSchedule, TrainingSteps, lr, wdl},
+        schedule::{lr, wdl, TrainingSchedule, TrainingSteps},
         settings::LocalSettings,
     },
-    value::{ValueTrainerBuilder, loader::ViriBinpackLoader},
+    value::{loader::ViriBinpackLoader, ValueTrainerBuilder},
 };
 
 use viriformat::dataformat::Filter;
@@ -19,11 +19,11 @@ fn main() {
     const QB: i16 = 64;
 
     // hyperparams
-    let dataset_path = "data/full.vf";  // TODO: try full.vf_relabeled
+    let dataset_path = "data/full.vf"; // TODO: try full.vf_relabeled
     let initial_lr = 0.001;
     let final_lr = 0.001 * 0.3f32.powi(5);
-    let superbatches = 800;
-    let wdl_proportion = 0.4;  // TODO: try wdl schedule
+    let superbatches = 60;
+    let wdl_proportion = 0.4; // TODO: try wdl schedule
 
     let mut trainer = ValueTrainerBuilder::default()
         .dual_perspective()
@@ -57,12 +57,23 @@ fn main() {
             start_superbatch: 1,
             end_superbatch: superbatches,
         },
-        wdl_scheduler: wdl::ConstantWDL { value: wdl_proportion },
-        lr_scheduler: lr::CosineDecayLR { initial_lr, final_lr, final_superbatch: superbatches },
+        wdl_scheduler: wdl::ConstantWDL {
+            value: wdl_proportion,
+        },
+        lr_scheduler: lr::CosineDecayLR {
+            initial_lr,
+            final_lr,
+            final_superbatch: superbatches,
+        },
         save_rate: 10,
     };
 
-    let settings = LocalSettings { threads: 2, test_set: None, output_directory: "checkpoints", batch_queue_size: 32 };
+    let settings = LocalSettings {
+        threads: 2,
+        test_set: None,
+        output_directory: "checkpoints",
+        batch_queue_size: 32,
+    };
 
     let filter = Filter {
         min_pieces: 2,

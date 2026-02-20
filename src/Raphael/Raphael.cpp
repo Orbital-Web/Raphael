@@ -206,6 +206,9 @@ void Raphael::ponder(atomic<bool>& halt) {
 }
 
 
+i32 Raphael::static_eval() { return net_.evaluate(0, board_.stm()); }
+
+
 void Raphael::reset() {
     seldepth_ = 0;
     tt_.clear();

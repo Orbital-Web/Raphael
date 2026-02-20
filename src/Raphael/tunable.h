@@ -249,10 +249,13 @@ Tunable(CAPTHIST_PENALTY_DEPTH_SCALE, 100, 128, 512, 32, true);
 Tunable(CAPTHIST_PENALTY_OFFSET, 100, 128, 768, 64, true);
 Tunable(CAPTHIST_PENALTY_MAX, 2000, 1024, 4096, 256, true);
 
-// misc
+// commands
 static constexpr i32 BENCH_DEPTH = 14;
+
 static constexpr i32 GENFENS_MAX_NODES = 1000;
 static constexpr i32 GENFENS_MAX_SCORE = 1000;
+
+static constexpr f64 DEF_TARGET_ABS_MEAN = 491.0081;  // average for lichess-big3-resolved
 
 
 #undef Tunable

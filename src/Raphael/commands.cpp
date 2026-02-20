@@ -7,12 +7,14 @@
 
 using std::atomic;
 using std::cout;
+using std::fixed;
 using std::flush;
 using std::ifstream;
 using std::lock_guard;
 using std::memory_order_relaxed;
 using std::mt19937_64;
 using std::mutex;
+using std::setprecision;
 using std::string;
 using std::uniform_int_distribution;
 using std::vector;
@@ -113,7 +115,7 @@ void bench(Raphael& engine) {
 }
 
 
-void genfens(Raphael& engine, i32 count, u64 seed, std::string book, i32 randmoves) {
+void genfens(Raphael& engine, i32 count, u64 seed, const std::string& book, i32 randmoves) {
     // based on https://github.com/official-clockwork/Clockwork/blob/main/src/uci.cpp
     engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::NONE);
     engine.set_searchoptions({.maxnodes = GENFENS_MAX_NODES});
@@ -176,5 +178,63 @@ void genfens(Raphael& engine, i32 count, u64 seed, std::string book, i32 randmov
         cout << "info string genfens " << board.get_fen() << "\n" << flush;
         generated++;
     }
+}
+
+
+void evalstats(Raphael& engine, const std::string& book) {
+    // based on https://github.com/cosmobobak/viridithas/blob/master/src/evaluation.rs
+    ifstream file(book);
+    if (!file) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string could not open book: " << book << "\n" << flush;
+        return;
+    }
+
+    i128 count = 0;
+    i128 total = 0;
+    i128 abs_total = 0;
+    i128 sq_total = 0;
+    i32 min_eval = INT32_MAX;
+    i32 max_eval = INT32_MIN;
+
+    chess::Board board;
+    string fen;
+
+    while (getline(file, fen)) {
+        if (fen.empty()) continue;
+
+        board.set_fen(fen);
+        if (board.in_check()) continue;
+
+        engine.set_board(board);
+        i64 eval = engine.static_eval();
+
+        count++;
+        total += eval;
+        abs_total += abs(eval);
+        sq_total += eval * eval;
+        if (eval < min_eval) min_eval = eval;
+        if (eval > max_eval) max_eval = eval;
+    }
+
+    if (count > 0) {
+        const auto mean = f64(total) / f64(count);
+        const auto abs_mean = f64(abs_total) / f64(count);
+        const auto variance = (f64(sq_total) / f64(count)) - mean * mean;
+        const auto stddev = sqrt(variance);
+
+        const i32 newscale = 400.0 * DEF_TARGET_ABS_MEAN / abs_mean;
+
+        lock_guard<mutex> lock(cout_mutex);
+        cout << fixed << setprecision(4) << "mean:     " << mean << "\n"
+             << "abs mean: " << abs_mean << "\n"
+             << "stddev:   " << stddev << "\n"
+             << "min:      " << min_eval << "\n"
+             << "max:      " << max_eval << "\n"
+             << "newscale: " << newscale << "\n"
+             << flush;
+    }
+
+    file.close();
 }
 }  // namespace raphael::commands

@@ -45,9 +45,6 @@ void Nnue::load() {
     read_or_throw(params.b0, sizeof(params.b0));
     read_or_throw(params.W1, sizeof(params.W1));
     read_or_throw(&params.b1, sizeof(params.b1));
-
-    if (nnue_data != _binary_net_nnue_end)
-        throw runtime_error("nnue binary size does not match nnue size");
     loaded = true;
 }
 void Nnue::load(const char* nnue_path) {
@@ -65,9 +62,6 @@ void Nnue::load(const char* nnue_path) {
     read_or_throw(params.b0, sizeof(params.b0));
     read_or_throw(params.W1, sizeof(params.W1));
     read_or_throw(&params.b1, sizeof(params.b1));
-
-    if (!nnue_file.eof() && nnue_file.peek() != EOF)
-        throw runtime_error("file size does not match nnue size");
     loaded = true;
 }
 

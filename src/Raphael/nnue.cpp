@@ -1,73 +1,39 @@
 #include <Raphael/nnue.h>
 
-#include <cstring>
-#include <fstream>
-#include <iostream>
+#define INCBIN_PREFIX g_
+#define INCBIN_STYLE INCBIN_STYLE_SNAKE
+#include <thirdparty/incbin.h>
+
+#include <stdexcept>
 
 using namespace raphael;
 using std::copy;
-using std::cout;
-using std::endl;
-using std::ifstream;
-using std::invalid_argument;
-using std::ios;
 using std::max;
-using std::memcpy;
 using std::min;
 using std::runtime_error;
-using std::string;
 using std::vector;
 
-extern const unsigned char _binary_net_nnue_start[];
-extern const unsigned char _binary_net_nnue_end[];
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
+INCBIN(unsigned char, netfile, TOSTRING(NETWORK_FILE));
 
 
 
-Nnue::NnueWeights Nnue::params;
-bool Nnue::loaded = false;
+Nnue::Nnue(): params(load_network()) {}
 
-Nnue::Nnue() { load(); }
-Nnue::Nnue(const string& nnue_path) { load(nnue_path.c_str()); }
+const Nnue::NnueWeights* Nnue::load_network() {
+    constexpr usize padded_size = 64 * ((sizeof(NnueWeights) + 63) / 64);
+    if (g_netfile_size != padded_size)
+        throw runtime_error("network file and architecture doesn't match");
 
-void Nnue::load() {
-    if (loaded) return;
+    if (reinterpret_cast<uintptr_t>(g_netfile_data) % alignof(NnueWeights) != 0)
+        throw runtime_error("network file isn't aligned properly");
 
-    const unsigned char* nnue_data = _binary_net_nnue_start;
-
-    auto read_or_throw = [&](void* dest, usize bytes) {
-        if (nnue_data + bytes > _binary_net_nnue_end) throw runtime_error("failed to read weights");
-
-        memcpy(dest, nnue_data, bytes);
-        nnue_data += bytes;
-    };
-
-    read_or_throw(params.W0, sizeof(params.W0));
-    read_or_throw(params.b0, sizeof(params.b0));
-    read_or_throw(params.W1, sizeof(params.W1));
-    read_or_throw(&params.b1, sizeof(params.b1));
-    loaded = true;
-}
-void Nnue::load(const char* nnue_path) {
-    if (loaded) return;
-
-    ifstream nnue_file(nnue_path, ios::binary);
-    if (!nnue_file) throw runtime_error("could not open file");
-
-    auto read_or_throw = [&](void* dest, usize bytes) {
-        if (!nnue_file.read(reinterpret_cast<char*>(dest), bytes))
-            throw runtime_error("failed to read weights");
-    };
-
-    read_or_throw(params.W0, sizeof(params.W0));
-    read_or_throw(params.b0, sizeof(params.b0));
-    read_or_throw(params.W1, sizeof(params.W1));
-    read_or_throw(&params.b1, sizeof(params.b1));
-    loaded = true;
+    return reinterpret_cast<const NnueWeights*>(g_netfile_data);
 }
 
 
-
-/* ------------------------------- Evaluate ------------------------------- */
 
 i32 Nnue::evaluate(i32 ply, chess::Color color) {
     // lazy update accumulators
@@ -99,8 +65,8 @@ i32 Nnue::evaluate(i32 ply, chess::Color color) {
     // get address to accumulators and weights
     const auto us_base = accumulators[ply][color];
     const auto them_base = accumulators[ply][~color];
-    const auto us_w_base = params.W1;
-    const auto them_w_base = params.W1 + N_HIDDEN;
+    const auto us_w_base = params->W1;
+    const auto them_w_base = params->W1 + N_HIDDEN;
 
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
@@ -123,10 +89,10 @@ i32 Nnue::evaluate(i32 ply, chess::Color color) {
         sum = add_i32(sum, add_i32(us_screlu, them_screlu));
     }
 
-    const i32 eval = QA * params.b1 + hadd_i32(sum);
+    const i32 eval = QA * params->b1 + hadd_i32(sum);
     return (eval / QA) * OUTPUT_SCALE / (QA * QB);
 #else
-    i32 eval = QA * params.b1;
+    i32 eval = QA * params->b1;
 
     // compute W1 dot SCReLU(acc)
     for (i32 i = 0; i < N_HIDDEN; i++) {
@@ -154,22 +120,22 @@ void Nnue::refresh_accumulator(
     VecI16 regs[n_chunks];
 
     // load bias into registers
-    for (i32 i = 0; i < n_chunks; i++) regs[i] = load_i16(&params.b0[i * regw]);
+    for (i32 i = 0; i < n_chunks; i++) regs[i] = load_i16(&params->b0[i * regw]);
 
     // add active features
     for (i32 f : features)
         for (i32 i = 0; i < n_chunks; i++)
-            regs[i] = adds_i16(regs[i], load_i16(&params.W0[f * N_HIDDEN + i * regw]));
+            regs[i] = adds_i16(regs[i], load_i16(&params->W0[f * N_HIDDEN + i * regw]));
 
     // store result in accumulator
     for (i32 i = 0; i < n_chunks; i++) store_i16(&new_acc[color][i * regw], regs[i]);
 #else
     // copy bias
-    copy(params.b0, params.b0 + N_HIDDEN, new_acc.v[color]);
+    copy(params->b0, params->b0 + N_HIDDEN, new_acc.v[color]);
 
     // accumulate columns of active features
     for (i32 f : features)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params.W0[f * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params->W0[f * N_HIDDEN + i];
 #endif
 }
 
@@ -194,18 +160,18 @@ void Nnue::update_accumulator(
     // subtract rem_features
     if (rem1 >= 0)
         for (i32 i = 0; i < n_chunks; i++)
-            regs[i] = subs_i16(regs[i], load_i16(&params.W0[rem1 * N_HIDDEN + i * regw]));
+            regs[i] = subs_i16(regs[i], load_i16(&params->W0[rem1 * N_HIDDEN + i * regw]));
     if (rem2 >= 0)
         for (i32 i = 0; i < n_chunks; i++)
-            regs[i] = subs_i16(regs[i], load_i16(&params.W0[rem2 * N_HIDDEN + i * regw]));
+            regs[i] = subs_i16(regs[i], load_i16(&params->W0[rem2 * N_HIDDEN + i * regw]));
 
     // add add_features
     if (add1 >= 0)
         for (i32 i = 0; i < n_chunks; i++)
-            regs[i] = adds_i16(regs[i], load_i16(&params.W0[add1 * N_HIDDEN + i * regw]));
+            regs[i] = adds_i16(regs[i], load_i16(&params->W0[add1 * N_HIDDEN + i * regw]));
     if (add2 >= 0)
         for (i32 i = 0; i < n_chunks; i++)
-            regs[i] = adds_i16(regs[i], load_i16(&params.W0[add2 * N_HIDDEN + i * regw]));
+            regs[i] = adds_i16(regs[i], load_i16(&params->W0[add2 * N_HIDDEN + i * regw]));
 
     // store results in new accumulator
     for (i32 i = 0; i < n_chunks; i++) store_i16(&new_acc[color][i * regw], regs[i]);
@@ -215,21 +181,19 @@ void Nnue::update_accumulator(
 
     // subtract rem_features
     if (rem1 >= 0)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] -= params.W0[rem1 * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] -= params->W0[rem1 * N_HIDDEN + i];
     if (rem2 >= 0)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] -= params.W0[rem2 * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] -= params->W0[rem2 * N_HIDDEN + i];
 
     // add add_features
     if (add1 >= 0)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params.W0[add1 * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params->W0[add1 * N_HIDDEN + i];
     if (add2 >= 0)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params.W0[add2 * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params->W0[add2 * N_HIDDEN + i];
 #endif
 }
 
 
-
-/* ------------------------------- Update ------------------------------- */
 
 void Nnue::set_board(const chess::Board& board) {
     vector<i32> w_features, b_features;

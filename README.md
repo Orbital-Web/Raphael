@@ -199,8 +199,9 @@ Raphael uses or has used the following tools throughout its development:
 - [C++ chess library](https://github.com/Disservin/chess-library) for movegen up until v2.3, and a strong source of inspiration for the custom movegen logic from v3.0 onwards
 - [GediminasMasaitis's Texel Tuner](https://github.com/GediminasMasaitis/texel-tuner) for tuning the HCE parameters for v1.8
 - [OpenBench](https://github.com/AndyGrant/OpenBench) for data generations and distributed SPRTs from v3.1 onwards
-- [Bullet](https://github.com/jw1912/bullet) for NNUE training from v3.1 onwards
+- [bullet](https://github.com/jw1912/bullet) for NNUE training from v3.1 onwards
 - [Pawnocchio](https://github.com/JonathanHallstrom/pawnocchio) for data processing and relabeling from v3.1 onwards
+- [incbin](https://github.com/graphitemaster/incbin) for embedding network files from v3.1 onwards
 
 ## Special Thanks To
 
@@ -210,5 +211,4 @@ Furthermore, the following individuals have inspired me or have helped me tremen
 - [Ciecke](https://github.com/Ciekce), author of [Stormphrax](https://github.com/Ciekce/Stormphrax)
 - [Jonathan Hallström](https://github.com/JonathanHallstrom), author of [Pawnocchio](https://github.com/JonathanHallstrom/pawnocchio)
 - [Sp00ph](https://github.com/Sp00ph), author of [Icarus](https://github.com/Sp00ph/icarus)
- [Pawnocchio](https://github.com/JonathanHallstrom/pawnocchio)
 - and many others on the Stockfish and AlphaBeta Discord servers

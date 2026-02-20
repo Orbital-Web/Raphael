@@ -19,10 +19,27 @@ ARCH ?= native
 DEBUG ?= off
 
 #---------------------------------------------------------------------------------------------------
-# Source Files
+# Networks
 #---------------------------------------------------------------------------------------------------
 
-NET_SOURCE := net.nnue
+ifeq ($(EVALFILE),default)
+    ifeq ($(DETECTED_OS),Windows)
+        DEFAULT_NET := $(shell type network.txt)
+    else
+        DEFAULT_NET := $(shell cat network.txt)
+    endif
+    EVALFILE = $(DEFAULT_NET).nnue
+
+$(EVALFILE):
+	curl -sL https://github.com/Orbital-Web/Raphael-Net/releases/download/$(DEFAULT_NET)/$(DEFAULT_NET).nnue -o $(EVALFILE)
+
+endif
+
+$(info Using network $(EVALFILE))
+
+#---------------------------------------------------------------------------------------------------
+# Source Files
+#---------------------------------------------------------------------------------------------------
 
 MAIN_SOURCES := \
     $(wildcard src/GameEngine/*.cpp) \
@@ -39,7 +56,7 @@ TEST_SOURCES := \
     $(wildcard src/Raphael/*.cpp) \
 	$(wildcard src/tests/*.cpp)
 
-NNUE_OBJ  := net.o
+NNUE_OBJ  := $(basename $(subst /,_,$(EVALFILE)))_nnue.o
 MAIN_OBJS := $(MAIN_SOURCES:.cpp=.o) $(NNUE_OBJ)
 UCI_OBJS  := $(UCI_SOURCES:.cpp=.o)  $(NNUE_OBJ)
 TEST_OBJS := $(TEST_SOURCES:.cpp=.o) $(NNUE_OBJ)
@@ -146,34 +163,6 @@ endif
 
 override CXXFLAGS += $(DEBUG_FLAGS)
 
-#---------------------------------------------------------------------------------------------------
-# Networks
-#---------------------------------------------------------------------------------------------------
-
-ifeq ($(EVALFILE),default)
-    ifeq ($(DETECTED_OS),Windows)
-        DEFAULT_NET := $(shell type network.txt)
-    else
-        DEFAULT_NET := $(shell cat network.txt)
-    endif
-    EVALFILE = $(DEFAULT_NET).nnue
-
-$(NET_SOURCE):
-	curl -sL https://github.com/Orbital-Web/Raphael-Net/releases/download/$(DEFAULT_NET)/$(DEFAULT_NET).nnue -o $(NET_SOURCE)
-
-else
-    ifeq ($(DETECTED_OS),Windows)
-        COPY := copy
-    else
-        COPY := cp
-    endif
-
-$(NET_SOURCE):
-	$(COPY) $(EVALFILE) $(NET_SOURCE)
-
-endif
-
-$(info Using network $(EVALFILE))
 $(info )
 
 #---------------------------------------------------------------------------------------------------
@@ -183,8 +172,12 @@ $(info )
 all: uci packages main test
 
 # NNUE embeddings
-$(NNUE_OBJ): $(NET_SOURCE)
+$(NNUE_OBJ): $(EVALFILE)
 	ld -r -b binary $< -o $@
+	objcopy \
+	  --redefine-sym _binary_$(subst .,_,$(subst /,_,$(subst ./,,$<)))_start=_binary_net_nnue_start \
+	  --redefine-sym _binary_$(subst .,_,$(subst /,_,$(subst ./,,$<)))_end=_binary_net_nnue_end \
+	  $@
 
 # main executable
 main: $(MAIN_OBJS)
@@ -238,9 +231,9 @@ endif
 .PHONY: clean clean_all
 clean:
 ifeq ($(DETECTED_OS),Windows)
-	del /Q $(subst /,\,$(MAIN_OBJS) $(UCI_OBJS) $(TEST_OBJS) $(NET_SOURCE)) 2>nul
+	del /Q $(subst /,\,$(MAIN_OBJS) $(UCI_OBJS) $(TEST_OBJS)) 2>nul
 else
-	rm -f $(MAIN_OBJS) $(UCI_OBJS) $(TEST_OBJS) $(NET_SOURCE)
+	rm -f $(MAIN_OBJS) $(UCI_OBJS) $(TEST_OBJS)
 endif
 
 clean_all: clean

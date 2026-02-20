@@ -33,6 +33,17 @@ lr:  cosine-decay from 0.001 to 0.001 * 0.3^5
 wdl: 0.4
 ```
 
+**Results:**
+
+```text
+Results of dev vs main (8+0.08, 1t, 16MB, UHO_Lichess_4852_v1.epd):
+Elo: 155.84 +/- 23.70, nElo: 240.08 +/- 31.96
+LOS: 100.00 %, DrawRatio: 29.07 %, PairsRatio: 13.64
+Games: 454, Wins: 250, Losses: 59, Draws: 145, Points: 322.5 (71.04 %)
+Ptnml(0-2): [2, 9, 66, 96, 54], WL/DD Ratio: 2.30
+LLR: 2.89 (100.1%) (-2.25, 2.89) [0.00, 5.00]
+```
+
 **Notes:**
 > Same arch as v1, but data comes from self-played games at 5000 softnodes. Postions were filtered using the default viriformat filter in bullet, but with `min_pieces=2`.
 >

@@ -19,25 +19,6 @@ ARCH ?= native
 DEBUG ?= off
 
 #---------------------------------------------------------------------------------------------------
-# Networks
-#---------------------------------------------------------------------------------------------------
-
-ifeq ($(EVALFILE),default)
-    ifeq ($(DETECTED_OS),Windows)
-        DEFAULT_NET := $(shell type network.txt)
-    else
-        DEFAULT_NET := $(shell cat network.txt)
-    endif
-    EVALFILE = $(DEFAULT_NET).nnue
-
-$(EVALFILE):
-	curl -sL https://github.com/Orbital-Web/Raphael-Net/releases/download/$(DEFAULT_NET)/$(DEFAULT_NET).nnue -o $(EVALFILE)
-
-endif
-
-$(info Using network $(EVALFILE))
-
-#---------------------------------------------------------------------------------------------------
 # Source Files
 #---------------------------------------------------------------------------------------------------
 
@@ -56,10 +37,9 @@ TEST_SOURCES := \
     $(wildcard src/Raphael/*.cpp) \
 	$(wildcard src/tests/*.cpp)
 
-NNUE_OBJ  := $(basename $(subst /,_,$(EVALFILE)))_nnue.o
-MAIN_OBJS := $(MAIN_SOURCES:.cpp=.o) $(NNUE_OBJ)
-UCI_OBJS  := $(UCI_SOURCES:.cpp=.o)  $(NNUE_OBJ)
-TEST_OBJS := $(TEST_SOURCES:.cpp=.o) $(NNUE_OBJ)
+MAIN_OBJS := $(MAIN_SOURCES:.cpp=.o)
+UCI_OBJS  := $(UCI_SOURCES:.cpp=.o)
+TEST_OBJS := $(TEST_SOURCES:.cpp=.o)
 
 #---------------------------------------------------------------------------------------------------
 # Platform and Compiler Detection
@@ -163,6 +143,26 @@ endif
 
 override CXXFLAGS += $(DEBUG_FLAGS)
 
+#---------------------------------------------------------------------------------------------------
+# Networks
+#---------------------------------------------------------------------------------------------------
+
+ifeq ($(EVALFILE),default)
+    ifeq ($(DETECTED_OS),Windows)
+        DEFAULT_NET := $(shell type network.txt)
+    else
+        DEFAULT_NET := $(shell cat network.txt)
+    endif
+    EVALFILE = $(DEFAULT_NET).nnue
+
+$(EVALFILE):
+	curl -sL https://github.com/Orbital-Web/Raphael-Net/releases/download/$(DEFAULT_NET)/$(DEFAULT_NET).nnue -o $(EVALFILE)
+
+endif
+
+override CXXFLAGS += -DNETWORK_FILE=$(EVALFILE)
+
+$(info Using network: $(EVALFILE))
 $(info )
 
 #---------------------------------------------------------------------------------------------------
@@ -171,25 +171,19 @@ $(info )
 
 all: uci packages main test
 
-# NNUE embeddings
-$(NNUE_OBJ): $(EVALFILE)
-	ld -r -b binary $< -o $@
-	objcopy \
-	  --redefine-sym _binary_$(subst .,_,$(subst /,_,$(subst ./,,$<)))_start=_binary_net_nnue_start \
-	  --redefine-sym _binary_$(subst .,_,$(subst /,_,$(subst ./,,$<)))_end=_binary_net_nnue_end \
-	  $@
-
 # main executable
-main: $(MAIN_OBJS)
-	$(CXX) -o $(MAIN_EXE) $^ $(LDFLAGS) $(SFML_LIBS)
+.PHONY: main
+main: $(MAIN_OBJS) $(EVALFILE)
+	$(CXX) -o $(MAIN_EXE) $(MAIN_OBJS) $(LDFLAGS) $(SFML_LIBS)
 
 # uci executable
-uci: $(UCI_OBJS)
-	$(CXX) -o $(EXE) $^ $(LDFLAGS) $(LDFLAGS_UCI)
+.PHONY: uci
+uci: $(UCI_OBJS) $(EVALFILE)
+	$(CXX) -o $(EXE) $(UCI_OBJS) $(LDFLAGS) $(LDFLAGS_UCI)
 
 .PHONY: test
-test: $(TEST_OBJS)
-	$(CXX) -o $(TEST_EXE) $^ $(LDFLAGS)
+test: $(TEST_OBJS) $(EVALFILE)
+	$(CXX) -o $(TEST_EXE) $(TEST_OBJS) $(LDFLAGS)
 
 # compile .cpp -> .o
 %.o: %.cpp

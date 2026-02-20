@@ -112,5 +112,5 @@ inline i32 hadd_i32(VecI32 reg) {
     return _mm_extract_epi32(sum, 0);     // extract first value with sum
 }
 #else
-    #define ALIGNMENT 0
+    #define ALIGNMENT 32
 #endif

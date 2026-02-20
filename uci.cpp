@@ -111,7 +111,6 @@ void setoption(const vector<string>& tokens) {
     engine.set_option(tokens[2], value);
 }
 
-
 /** Sets up internal board using fen string and list of ucimoves
  * E.g., position [startpos|fen {fen}] (moves {move1} {move2} ...)
  *
@@ -145,7 +144,6 @@ void setposition(const vector<string>& tokens) {
     lock_guard<mutex> engine_lock(engine_mutex);
     engine.set_board(pending_request.board);
 }
-
 
 /** Handles the go command
  * E.g., go wtime {wtime} btime {btime}
@@ -186,7 +184,6 @@ void search(const vector<string>& tokens) {
     pending_request.go = true;
     search_cv.notify_one();
 }
-
 
 /** Handles the genfens command
  *
@@ -230,7 +227,6 @@ void genfens(const vector<string>& tokens) {
     raphael::commands::genfens(engine, count, seed, book, randmoves);
 }
 
-
 /** Handles the evalstats command
  *
  * \param tokens list of tokens for the command
@@ -243,6 +239,39 @@ void evalstats(const vector<string>& tokens) {
 
     lock_guard<mutex> engine_lock(engine_mutex);
     raphael::commands::evalstats(engine, tokens[1]);
+}
+
+/** Shows the help message */
+void show_help() {
+    lock_guard<mutex> lock(cout_mutex);
+    cout << engine.name << " " << engine.version << "\n\n"
+         << "TOOLS:\n"
+         << "  bench\n"
+         << "      run benchmark\n\n"
+         << "  genfens <COUNT> [seed SEED] [book BOOK] [randmoves RANDMOVES]\n"
+         << "      generate FENs\n"
+         << "      COUNT: number of FENs to generate\n"
+         << "      SEED: random seed, u64. default 0\n"
+         << "      BOOK: book to start with. default is None, AKA startpos\n"
+         << "      RANDMOVES: number of random moves to play from book position. default 0\n\n"
+         << "  evalstats <BOOK>\n"
+         << "      print statistics of NNUE evaluation\n"
+         << "      BOOK: book to benchmark with\n\n"
+         << "  obspsa\n"
+         << "      print the OpenBench SPSA configs\n\n"
+         << "  help\n"
+         << "      show this help message and exit\n\n"
+         << "UCI COMMANDS:\n"
+         << "  uci                      - handshake\n"
+         << "  isready                  - synchronization\n"
+         << "  setoption                - set Hash, Threads, etc.\n"
+         << "  ucinewgame               - clear Hash and reset\n"
+         << "  position                 - set board (fen <FEN> | startpos) [moves ...]\n"
+         << "  go                       - start search. params: depth, nodes, movetime, movestogo\n"
+         << "                             wtime, btime, winc, binc, infinite\n"
+         << "  stop                     - stop current search\n"
+         << "  eval                     - show static eval\n"
+         << "  quit                     - exit\n";
 }
 
 
@@ -280,6 +309,13 @@ void handle_command(const string& uci_command) {
         halt.store(true, memory_order_relaxed);
         lock_guard<mutex> engine_lock(engine_mutex);
         engine.reset();
+
+    } else if (uci_command == "help") {
+        halt.store(true, memory_order_relaxed);
+        show_help();
+
+        quit.store(true, memory_order_relaxed);
+        search_cv.notify_one();
 
     } else if (uci_command == "obspsa") {
 #ifdef TUNE

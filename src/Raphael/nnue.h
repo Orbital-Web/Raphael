@@ -30,17 +30,13 @@ private:
         alignas(ALIGNMENT) i16 W1[2 * N_HIDDEN];  // column major 1 x (2 * N_HIDDEN)
         alignas(ALIGNMENT) i16 b1;
     };
-    static NnueWeights params;  // network weights and biases
-    static bool loaded;
+    const NnueWeights* params;  // network weights and biases
 
-    /** Loads the network from the linked binary */
-    static void load();
-
-    /** Loads the network from nnue_path
+    /** Loads the embedded network
      *
-     * \param nnue_path the path to load the model from
+     * \returns the pointer to the loaded network
      */
-    static void load(const char* nnue_path);
+    static const NnueWeights* load_network();
 
 
     // nnue_state variables

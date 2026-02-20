@@ -13,13 +13,14 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
+    const NET_ID: &str = "basilisk_v3";
     const HIDDEN_SIZE: usize = 64;
     const SCALE: f32 = 400.0;
     const QA: i16 = 255;
     const QB: i16 = 64;
 
     // hyperparams
-    let dataset_path = "data/full.vf"; // TODO: try full.vf_relabeled
+    let dataset_path = "data/full.vf_relabeled";
     let initial_lr = 0.001;
     let final_lr = 0.001 * 0.3f32.powi(5);
     let superbatches = 60;
@@ -49,7 +50,7 @@ fn main() {
         });
 
     let schedule = TrainingSchedule {
-        net_id: "net".to_string(),
+        net_id: NET_ID.to_string(),
         eval_scale: SCALE,
         steps: TrainingSteps {
             batch_size: 16_384,

@@ -1,6 +1,6 @@
 # Raphael
 
-**Raphael** is a UCI Chess Engine built using C++. It also comes with a GUI built using [SFML](https://www.sfml-dev.org/).
+**Raphael** is a superhuman UCI Chess Engine built using C++. It also comes with a GUI built using [SFML](https://www.sfml-dev.org/).
 
 You can [scroll to the bottom](#raphael-engine) to see a list of features currently implemented, and also download the prebuilt binaries to try Raphael out for yourself.
 
@@ -51,7 +51,7 @@ You can see other command-line arguments by running `main.exe -h`.
 
 ### Compiling From Source
 
-Follow these steps to build Raphael yourself. Note that it is **highly recommended** you build on [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) if you are on Windows.
+Follow these steps to build Raphael yourself. Note that it is highly recommended you build on [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) if you are on Windows.
 
 1. Clone the repository with
 
@@ -190,9 +190,24 @@ You can also play with different time controls, increments, and player combinati
 
 For a more in-depth documentation on the NNUE and how it was trained, refer to the [NNUE README](https://github.com/Orbital-Web/Raphael/tree/main/src/NNUE). All iterations of Raphael's NNUE were trained on self-generated training data. The net files can be found on the [Raphael-Net](https://github.com/Orbital-Web/Raphael-Net) repository.
 
-## Special Thanks to
+## Acknowledgements
+
+Raphael uses or has used the following tools throughout its development:
+
+- [fastchess](https://github.com/Disservin/fastchess) for running SPRTs locally
+- [C++ chess library](https://github.com/Disservin/chess-library) for movegen up until v2.3, and a strong source of inspiration for the custom movegen logic from v3.0 onwards
+- [GediminasMasaitis's Texel Tuner](https://github.com/GediminasMasaitis/texel-tuner) for tuning the HCE parameters for v1.8
+- [OpenBench](https://github.com/AndyGrant/OpenBench) for data generations and distributed SPRTs from v3.1 onwards
+- [Bullet](https://github.com/jw1912/bullet) for NNUE training from v3.1 onwards
+- [Pawnocchio](https://github.com/JonathanHallstrom/pawnocchio) for data processing and relabeling from v3.1 onwards
+
+## Special Thanks To
+
+Furthermore, the following individuals have inspired me or have helped me tremendously throughout the development process of Raphael (in no particular order):
 
 - [Sebastian Lague](https://www.youtube.com/c/SebastianLague) for inspiring me to start the development of Raphael through the Coding Adventures series
-- [Disservin](https://github.com/Disservin) for creating the [C++ chess library](https://github.com/Disservin/chess-library), [fastchess](https://github.com/Disservin/fastchess), and [Python Chess Engine](https://github.com/Disservin/python-chess-engine), all of which I've used extensively while developing my engine, especially for the move generator
-- Those on the Stockfish Discord for teaching me and helping me out with the NNUE dataset collection, training, and evaluation, as well as engine development in general. Without their help, my engine wouldn't be as good as it is now
-- [GediminasMasaitis's Texel Tuner](https://github.com/GediminasMasaitis/texel-tuner) which I've used to tune my parameters back when I was using a HCE
+- [Ciecke](https://github.com/Ciekce), author of [Stormphrax](https://github.com/Ciekce/Stormphrax)
+- [Jonathan Hallström](https://github.com/JonathanHallstrom), author of [Pawnocchio](https://github.com/JonathanHallstrom/pawnocchio)
+- [Sp00ph](https://github.com/Sp00ph), author of [Icarus](https://github.com/Sp00ph/icarus)
+ [Pawnocchio](https://github.com/JonathanHallstrom/pawnocchio)
+- and many others on the Stockfish and AlphaBeta Discord servers

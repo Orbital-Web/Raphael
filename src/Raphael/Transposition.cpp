@@ -137,21 +137,23 @@ void TranspositionTable::allocate(usize newsize) {
     assert(table_ == nullptr);
     assert(capacity_ == 0);
 
-#ifdef _WIN32
-    static constexpr usize page_size = 4096;
-#else
+#if defined(__linux__)
     static constexpr usize page_size = 2 * 1024 * 1024;
+#else
+    static constexpr usize page_size = 4096;
 #endif
 
     const usize newsize_s = ((newsize * ENTRY_SIZE + page_size - 1) / page_size) * page_size;
     capacity_ = newsize_s / ENTRY_SIZE;
 
-#ifdef _WIN32
+#if defined(__linux__)
+    table_ = static_cast<Entry*>(aligned_alloc(page_size, newsize_s));
+    madvise(table_, newsize_s, MADV_HUGEPAGE);
+#elif defined(_WIN32)
     // TODO: windows huge page support
     table_ = static_cast<Entry*>(_aligned_malloc(newsize_s, page_size));
 #else
     table_ = static_cast<Entry*>(aligned_alloc(page_size, newsize_s));
-    madvise(table_, newsize_s, MADV_HUGEPAGE);
 #endif
 }
 

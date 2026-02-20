@@ -1,8 +1,8 @@
 #pragma once
 #include <chess/types.h>
-#include <immintrin.h>
 
 #if defined(__AVX__) || defined(__AVX2__)
+    #include <immintrin.h>
     #define USE_SIMD 256
     #define ALIGNMENT 32
 typedef __m256i VecI16;  // a list of 16x i16

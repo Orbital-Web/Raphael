@@ -15,7 +15,7 @@ private:
     static constexpr i32 N_HIDDEN = 64;       // accumulator size
     static constexpr i32 QA = 255;
     static constexpr i32 QB = 64;
-    static constexpr i32 OUTPUT_SCALE = 400;
+    static constexpr i32 OUTPUT_SCALE = 283;
 
 #ifdef USE_SIMD
     const VecI16 zeros = zero_i16();

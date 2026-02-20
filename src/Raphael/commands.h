@@ -18,5 +18,13 @@ void bench(Raphael& engine);
  * \param book book to use
  * \param randmoves number of random moves to play
  */
-void genfens(Raphael& engine, i32 count, u64 seed, std::string book, i32 randmoves);
+void genfens(Raphael& engine, i32 count, u64 seed, const std::string& book, i32 randmoves);
+
+
+/** Measures statistics of the static evals and computes the optimal output scale
+ *
+ * \param engine engine for evaluating positions
+ * \param book book to use
+ */
+void evalstats(Raphael& engine, const std::string& book);
 }  // namespace raphael::commands

@@ -231,6 +231,21 @@ void genfens(const vector<string>& tokens) {
 }
 
 
+/** Handles the evalstats command
+ *
+ * \param tokens list of tokens for the command
+ */
+void evalstats(const vector<string>& tokens) {
+    if (tokens.size() < 2) {
+        cout << "info string missing required positional parameter 'book'\n" << flush;
+        return;
+    }
+
+    lock_guard<mutex> engine_lock(engine_mutex);
+    raphael::commands::evalstats(engine, tokens[1]);
+}
+
+
 /** Handles a single uci command
  *
  * \param uci_command the command string
@@ -315,6 +330,13 @@ void handle_command(const string& uci_command) {
         } else if (keyword == "genfens") {
             halt.store(true, memory_order_relaxed);
             genfens(tokens);
+
+            quit.store(true, memory_order_relaxed);
+            search_cv.notify_one();
+
+        } else if (keyword == "evalstats") {
+            halt.store(true, memory_order_relaxed);
+            evalstats(tokens);
 
             quit.store(true, memory_order_relaxed);
             search_cv.notify_one();

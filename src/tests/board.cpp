@@ -43,6 +43,17 @@ TEST_SUITE("Board") {
         );
     }
 
+    TEST_CASE("Board Fen Set EPD") {
+        Board board = Board("5r2/p4pk1/2pb4/8/1p2rN2/4p3/PPPB4/3K4 w - - 0 3 [0.0]");
+        CHECK(board.get_fen() == "5r2/p4pk1/2pb4/8/1p2rN2/4p3/PPPB4/3K4 w - - 0 3");
+
+        board.set_fen("4k1nr/ppp2ppp/8/6N1/4pP2/P5P1/P3R2P/n1Br1BK1 b - f3 0 1 [0.0]");
+        CHECK(board.get_fen() == "4k1nr/ppp2ppp/8/6N1/4pP2/P5P1/P3R2P/n1Br1BK1 b - - 0 1");
+
+        board.set_fen("rnr3k1/ppb2ppp/2ppbQ2/4p3/1PP1P3/P1NP3P/5PP1/R3KBNR w KQ - 0 1 [1.0]");
+        CHECK(board.get_fen() == "rnr3k1/ppb2ppp/2ppbQ2/4p3/1PP1P3/P1NP3P/5PP1/R3KBNR w KQ - 0 1");
+    }
+
     TEST_CASE("Board make_move") {
         SUBCASE("makeMove") {
             Board board = Board();

@@ -24,10 +24,10 @@ private:
 
     struct NnueWeights {
         // accumulator: N_INPUTS -> N_HIDDEN
-        alignas(ALIGNMENT) i16 W0[N_INPUTS * N_HIDDEN];  // [IN][OUT]
+        alignas(ALIGNMENT) i16 W0[N_INPUTS * N_HIDDEN];  // column major N_HIDDEN x 768
         alignas(ALIGNMENT) i16 b0[N_HIDDEN];
         // layer1: N_HIDDEN * 2 -> 1
-        alignas(ALIGNMENT) i16 W1[2 * N_HIDDEN];  // [IN][OUT]
+        alignas(ALIGNMENT) i16 W1[2 * N_HIDDEN];  // column major 1 x (2 * N_HIDDEN)
         alignas(ALIGNMENT) i16 b1;
     };
     static NnueWeights params;  // network weights and biases

@@ -238,9 +238,9 @@ endif
 .PHONY: clean clean_all
 clean:
 ifeq ($(DETECTED_OS),Windows)
-	del /Q $(subst /,\,$(MAIN_OBJS) $(UCI_OBJS) $(TEST_OBJS)) 2>nul
+	del /Q $(subst /,\,$(MAIN_OBJS) $(UCI_OBJS) $(TEST_OBJS) $(NET_SOURCE)) 2>nul
 else
-	rm -f $(MAIN_OBJS) $(UCI_OBJS) $(TEST_OBJS)
+	rm -f $(MAIN_OBJS) $(UCI_OBJS) $(TEST_OBJS) $(NET_SOURCE)
 endif
 
 clean_all: clean

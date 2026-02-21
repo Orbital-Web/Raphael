@@ -1,17 +1,12 @@
 #include <chess/include.h>
 
-#include <chrono>
-#include <iomanip>
 #include <iostream>
-#include <sstream>
 #include <tests/doctest/doctest.hpp>
-#include <tuple>
 
 using namespace chess;
 using std::cout;
-using std::endl;
+using std::flush;
 using std::string;
-using std::stringstream;
 using std::vector;
 
 
@@ -92,14 +87,12 @@ public:
             const bool is_legal = legalmoves.contains(move);
             const bool check_legal = board_.is_legal(move);
             if (check_legal != is_legal) {
-                stringstream ss;
+                cout << "is_legal failed for position " << board_.get_fen() << " move "
+                     << uci::from_move(move) << ((move.type() == Move::ENPASSANT) ? " ep" : "")
+                     << " expected " << (is_legal ? "legal" : "illegal") << " got "
+                     << (check_legal ? "legal" : "illegal") << "\n"
+                     << flush;
 
-                ss << "is_legal failed for position " << board_.get_fen() << " move "
-                   << uci::from_move(move) << ((move.type() == Move::ENPASSANT) ? " ep" : "")
-                   << " expected " << (is_legal ? "legal" : "illegal") << " got "
-                   << (check_legal ? "legal" : "illegal");
-
-                cout << ss.str() << endl;
                 CHECK(false);
             }
 
@@ -112,8 +105,8 @@ public:
     }
 
 
-    void check_all(Board& board) {
-        board_ = board;
+    void check_all(const string& fen) {
+        board_.set_fen(fen);
 
         check(4);
         CHECK(true);
@@ -139,9 +132,6 @@ TEST_SUITE("is_legal") {
         LegalChecker checker;
         checker.init_allmoves();
 
-        for (const auto& fen : test_positions) {
-            Board board(fen);
-            checker.check_all(board);
-        }
+        for (const auto& fen : test_positions) checker.check_all(fen);
     }
 }

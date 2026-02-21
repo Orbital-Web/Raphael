@@ -137,5 +137,10 @@ public:
         piece_ = static_cast<underlying>((piece_ + 6) % 12);
         return *this;
     }
+
+    [[nodiscard]] constexpr Piece relative(Color color) const {
+        if (piece_ == Piece::NONE) return Piece::NONE;
+        return Piece((piece_ + (color * 6)) % 12);
+    }
 };
 }  // namespace chess

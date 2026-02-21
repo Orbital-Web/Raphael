@@ -163,6 +163,12 @@ public:
         return *this;
     }
 
+    [[nodiscard]] constexpr Square mirrored() const { return Square(sq_ ^ 7); }
+    constexpr Square& mirror() {
+        sq_ = static_cast<underlying>(sq_ ^ 7);
+        return *this;
+    }
+
     [[nodiscard]] constexpr Square relative(Color color) const {
         return Square(sq_ ^ (color * 56));
     }

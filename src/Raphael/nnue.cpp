@@ -203,50 +203,54 @@ void Nnue::set_board(const chess::Board& board) {
     auto pieces = board.occ();
     while (pieces) {
         const auto sq = static_cast<chess::Square>(pieces.poplsb());
+        const i32 wsq = sq;
+        const i32 bsq = sq.flipped();
 
-        const i32 wpiece = board.at(sq);       // 0...5, 6...11
-        const i32 bpiece = (wpiece + 6) % 12;  // 6...11, 0...5
+        const auto piece = board.at(sq);
+        const i32 wpiece = piece;                  // 0...5, 6...11
+        const i32 bpiece = piece.color_flipped();  // 6...11, 0...5
 
-        w_features.push_back(64 * wpiece + sq);
-        b_features.push_back(64 * bpiece + (sq ^ 56));
+        w_features.push_back(64 * wpiece + wsq);
+        b_features.push_back(64 * bpiece + bsq);
     }
     refresh_accumulator(accumulators[0], w_features, chess::Color::WHITE);
     refresh_accumulator(accumulators[0], b_features, chess::Color::BLACK);
 }
 
-void Nnue::make_move(i32 ply, chess::Move move, const chess::Board& board) {
+void Nnue::make_move(const chess::Board& board, chess::Move move, i32 ply) {
     assert((ply != 0));
 
+    const auto move_type = move.type();
+    const auto stm = board.stm();
     const auto from_sq = move.from();
     const auto to_sq = move.to();
-    const auto move_type = move.type();
+    const auto from_piece = board.at(from_sq);
+    const auto to_piece = board.at(to_sq);
+    assert(from_piece != chess::Piece::NONE);
 
     auto& state = accumulator_states[ply];
     state.dirty = true;
 
+    // nullmove
     if (move == move.NULL_MOVE) {
-        state.add1[false] = -1;
-        state.add2[false] = -1;
-        state.rem1[false] = -1;
-        state.rem2[false] = -1;
-        state.add1[true] = -1;
-        state.add2[true] = -1;
-        state.rem1[true] = -1;
-        state.rem2[true] = -1;
+        state.add1[chess::Color::WHITE] = -1;
+        state.add2[chess::Color::WHITE] = -1;
+        state.rem1[chess::Color::WHITE] = -1;
+        state.rem2[chess::Color::WHITE] = -1;
+        state.add1[chess::Color::BLACK] = -1;
+        state.add2[chess::Color::BLACK] = -1;
+        state.rem1[chess::Color::BLACK] = -1;
+        state.rem2[chess::Color::BLACK] = -1;
         return;
     }
 
-    // update white and black states incrementally
+    // incremental update
     for (const auto color : {chess::Color::WHITE, chess::Color::BLACK}) {
-        // do incremental update
-        const bool moving = (board.stm() == color);
-        const i32 from_sqi = (color == chess::Color::WHITE) ? from_sq : (from_sq ^ 56);
-        const i32 to_sqi = (color == chess::Color::WHITE) ? to_sq : (to_sq ^ 56);
-        const auto from_piece = board.at(from_sq);
-        const auto to_piece = board.at(to_sq);
-        const i32 from_piecei = (color == chess::Color::WHITE) ? from_piece : (from_piece + 6) % 12;
-        const i32 to_piecei = (color == chess::Color::WHITE) ? to_piece : (to_piece + 6) % 12;
-        assert(from_piece != chess::Piece::NONE);
+        const bool moving = (stm == color);
+        const i32 from_sqi = from_sq.relative(color);
+        const i32 to_sqi = to_sq.relative(color);
+        const i32 from_piecei = from_piece.relative(color);
+        const i32 to_piecei = to_piece.relative(color);
 
         // remove moving piece
         state.add1[color] = -1;
@@ -255,10 +259,10 @@ void Nnue::make_move(i32 ply, chess::Move move, const chess::Board& board) {
         state.rem2[color] = -1;
 
         // add moved piece to add_features (handle promotion and enemy castling)
-        if (move_type == move.PROMOTION) {
+        if (move_type == chess::Move::PROMOTION) {
             const i32 promote_piecei = !moving * 6 + move.promotion_type();
             state.add1[color] = 64 * promote_piecei + to_sqi;
-        } else if (move_type == move.CASTLING) {
+        } else if (move_type == chess::Move::CASTLING) {
             const i32 new_ksqi = (to_sqi % 8 == 7) ? to_sqi - 1 : to_sqi + 2;
             const i32 new_rsqi = (to_sqi % 8 == 7) ? to_sqi - 2 : to_sqi + 3;
             state.add1[color] = 64 * from_piecei + new_ksqi;
@@ -269,7 +273,7 @@ void Nnue::make_move(i32 ply, chess::Move move, const chess::Board& board) {
         // add captured piece (castling is treated as rook capture) to rem_features
         if (to_piece != chess::Piece::NONE)
             state.rem2[color] = 64 * to_piecei + to_sqi;
-        else if (move_type == move.ENPASSANT)
+        else if (move_type == chess::Move::ENPASSANT)
             state.rem2[color] = 64 * 6 * moving + (to_sqi + 8 - moving * 16);
     }
 }

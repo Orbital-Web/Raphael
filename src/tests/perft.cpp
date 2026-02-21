@@ -3,16 +3,15 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
-#include <sstream>
 #include <tests/doctest/doctest.hpp>
-#include <tuple>
 
 using namespace chess;
 using namespace std::chrono;
 using std::cout;
-using std::endl;
+using std::flush;
+using std::left;
+using std::setw;
 using std::string;
-using std::stringstream;
 
 
 
@@ -30,10 +29,10 @@ public:
         if (depth == 1) return moves.size();
 
         u64 nodes = 0;
-        for (const auto& move : moves) {
-            board_.make_move(move.move);
+        for (const auto& smove : moves) {
+            board_.make_move(smove.move);
             nodes += perft(depth - 1);
-            board_.unmake_move(move.move);
+            board_.unmake_move(smove.move);
         }
 
         return nodes;
@@ -47,16 +46,10 @@ public:
         const auto t2 = steady_clock::now();
         const auto ms = duration_cast<milliseconds>(t2 - t1).count();
 
-        stringstream ss;
-
-        // clang-format off
-        ss << "depth " << std::left << std::setw(2) << depth
-           << " time " << std::setw(5) << ms
-           << " nodes " << std::setw(12) << nodes
-           << " nps " << std::setw(9) << (nodes * 1000) / (ms + 1)
-           << " fen " << std::setw(87) << board.get_fen();
-        // clang-format on
-        cout << ss.str() << endl;
+        cout << "depth " << left << setw(2) << depth << " time " << setw(5) << ms << " nodes "
+             << setw(12) << nodes << " nps " << setw(9) << (nodes * 1000) / (ms + 1) << " fen "
+             << setw(87) << board.get_fen() << "\n"
+             << flush;
 
         CHECK(nodes == expected_node_count);
     }

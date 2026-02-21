@@ -29,15 +29,12 @@ public:
             const auto evalw = net_.evaluate(ply, chess::Color::WHITE);
             const auto evalb = net_.evaluate(ply, chess::Color::BLACK);
 
-            check(ply + 1, depth - 1);
-
             refnet_.set_board(board_);
             const auto true_evalw = refnet_.evaluate(0, chess::Color::WHITE);
             const auto true_evalb = refnet_.evaluate(0, chess::Color::BLACK);
 
-            board_.unmake_move(smove.move);
-
             if (evalw != true_evalw || evalb != true_evalb) {
+                board_.unmake_move(smove.move);
                 cout << "fail: eval after make_move not consistent with eval after set_board "
                      << "([" << evalw << ", " << evalb << "] != [" << true_evalw << ", "
                      << true_evalb << "]) after move " << chess::uci::from_move(smove.move)
@@ -46,6 +43,10 @@ public:
 
                 CHECK(false);
             }
+
+            check(ply + 1, depth - 1);
+
+            board_.unmake_move(smove.move);
         }
     }
 

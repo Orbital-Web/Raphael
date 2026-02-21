@@ -263,10 +263,6 @@ void Nnue::make_move(const chess::Board& board, chess::Move move, i32 ply) {
             const i32 promote_piecei = !moving * 6 + move.promotion_type();
             state.add1[color] = 64 * promote_piecei + to_sqi;
         } else if (move_type == chess::Move::CASTLING) {
-            const bool is_king_side = to_sq > from_sq;
-            const auto king_sqi = chess::Square::castling_king_dest(is_king_side, stm);
-            const auto rook_sqi = chess::Square::castling_rook_dest(is_king_side, stm);
-
             const i32 new_ksqi = (to_sqi % 8 == 7) ? to_sqi - 1 : to_sqi + 2;
             const i32 new_rsqi = (to_sqi % 8 == 7) ? to_sqi - 2 : to_sqi + 3;
             state.add1[color] = 64 * from_piecei + new_ksqi;

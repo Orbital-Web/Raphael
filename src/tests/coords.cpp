@@ -244,7 +244,17 @@ TEST_SUITE("Square") {
         CHECK(Square(Square::A3).flipped() == Square::A6);
     }
 
-    TEST_CASE("Square relative_square") {
+    TEST_CASE("Square mirror/mirrored") {
+        CHECK(Square(Square::A1).mirror() == Square::H1);
+        CHECK(Square(Square::B7).mirror() == Square::G7);
+        CHECK(Square(Square::E3).mirror() == Square::D3);
+
+        CHECK(Square(Square::A1).mirrored() == Square::H1);
+        CHECK(Square(Square::B7).mirrored() == Square::G7);
+        CHECK(Square(Square::E3).mirrored() == Square::D3);
+    }
+
+    TEST_CASE("Square relative") {
         CHECK(Square(Square::A1).relative(Color::WHITE) == Square::A1);
         CHECK(Square(Square::A1).relative(Color::BLACK) == Square::A8);
         CHECK(Square(Square::A2).relative(Color::WHITE) == Square::A2);

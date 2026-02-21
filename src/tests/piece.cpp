@@ -82,4 +82,25 @@ TEST_SUITE("Piece") {
         CHECK(Piece(Piece::BLACKKING).type() == PieceType::KING);
         CHECK(Piece(Piece::NONE).type() == PieceType::NONE);
     }
+
+    TEST_CASE("color flip/flipped") {
+        CHECK(Piece(Piece::WHITEPAWN).color_flip() == Piece::BLACKPAWN);
+        CHECK(Piece(Piece::BLACKBISHOP).color_flip() == Piece::WHITEBISHOP);
+        CHECK(Piece(Piece::BLACKQUEEN).color_flip() == Piece::WHITEQUEEN);
+
+        CHECK(Piece(Piece::WHITEPAWN).color_flipped() == Piece::BLACKPAWN);
+        CHECK(Piece(Piece::BLACKBISHOP).color_flipped() == Piece::WHITEBISHOP);
+        CHECK(Piece(Piece::BLACKQUEEN).color_flipped() == Piece::WHITEQUEEN);
+    }
+
+    TEST_CASE("relative") {
+        CHECK(Piece(Piece::WHITEPAWN).relative(Color::WHITE) == Piece::WHITEPAWN);
+        CHECK(Piece(Piece::WHITEPAWN).relative(Color::BLACK) == Piece::BLACKPAWN);
+
+        CHECK(Piece(Piece::BLACKBISHOP).relative(Color::WHITE) == Piece::BLACKBISHOP);
+        CHECK(Piece(Piece::BLACKBISHOP).relative(Color::BLACK) == Piece::WHITEBISHOP);
+
+        CHECK(Piece(Piece::BLACKQUEEN).relative(Color::WHITE) == Piece::BLACKQUEEN);
+        CHECK(Piece(Piece::BLACKQUEEN).relative(Color::BLACK) == Piece::WHITEQUEEN);
+    }
 }

@@ -1,5 +1,5 @@
 use bullet_lib::{
-    game::inputs::Chess768,
+    game::inputs::ChessBucketsMirrored,
     nn::optimiser::AdamW,
     trainer::{
         save::SavedFormat,
@@ -20,16 +20,22 @@ fn main() {
     const QB: i16 = 64;
 
     // hyperparams
-    let dataset_path = "data/full.vf_relabeled";
-    let initial_lr = 0.001;
-    let final_lr = 0.001 * 0.3f32.powi(5);
+    let dataset_path = "data/full.vf";
     let superbatches = 60;
-    let wdl_proportion = 0.4; // TODO: try wdl schedule
+    let wdl_scheduler = wdl::ConstantWDL { value: 0.4 };
+    let lr_scheduler = lr::Warmup {
+        inner: lr::CosineDecayLR {
+            initial_lr: 0.001,
+            final_lr: 0.001 * 0.3f32.powi(5),
+            final_superbatch: superbatches,
+        },
+        warmup_batches: 1600,
+    };
 
     let mut trainer = ValueTrainerBuilder::default()
         .dual_perspective()
         .optimiser(AdamW)
-        .inputs(Chess768)
+        .inputs(ChessBucketsMirrored::default())
         .save_format(&[
             SavedFormat::id("l0w").round().quantise::<i16>(QA),
             SavedFormat::id("l0b").round().quantise::<i16>(QA),
@@ -58,14 +64,8 @@ fn main() {
             start_superbatch: 1,
             end_superbatch: superbatches,
         },
-        wdl_scheduler: wdl::ConstantWDL {
-            value: wdl_proportion,
-        },
-        lr_scheduler: lr::CosineDecayLR {
-            initial_lr,
-            final_lr,
-            final_superbatch: superbatches,
-        },
+        wdl_scheduler: wdl_scheduler,
+        lr_scheduler: lr_scheduler,
         save_rate: 10,
     };
 

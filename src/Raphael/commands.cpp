@@ -223,7 +223,7 @@ void evalstats(Raphael& engine, const std::string& book) {
         const auto variance = (f64(sq_total) / f64(count)) - mean * mean;
         const auto stddev = sqrt(variance);
 
-        const i32 newscale = 400.0 * DEF_TARGET_ABS_MEAN / abs_mean;
+        const i32 newscale = f64(Nnue::OUTPUT_SCALE) * DEF_TARGET_ABS_MEAN / abs_mean;
 
         lock_guard<mutex> lock(cout_mutex);
         cout << fixed << setprecision(4) << "mean:     " << mean << "\n"

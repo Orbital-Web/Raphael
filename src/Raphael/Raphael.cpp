@@ -111,7 +111,7 @@ void Raphael::set_uciinfolevel(UciInfoLevel level) { ucilevel_ = level; }
 
 void Raphael::set_board(const chess::Board& board) {
     board_ = board;
-    net_.set_board(board);
+    net_.set_board(board, 0);
 }
 
 Raphael::MoveScore Raphael::get_move(const i32 t_remain, const i32 t_inc, atomic<bool>& halt) {
@@ -316,7 +316,7 @@ i32 Raphael::negamax(
         if (depth >= NMP_DEPTH && ss->static_eval >= beta
             && (ss - 1)->move != chess::Move::NULL_MOVE && !board_.is_kingpawn(board_.stm())) {
             tt_.prefetch(board_.hash_after<true>(chess::Move::NULL_MOVE));
-            net_.make_move(ply + 1, chess::Move::NULL_MOVE, board_);
+            net_.make_move(board_, chess::Move::NULL_MOVE, ply + 1);
             board_.make_nullmove();
             ss->move = chess::Move::NULL_MOVE;
 
@@ -402,7 +402,7 @@ i32 Raphael::negamax(
         }
 
         tt_.prefetch(board_.hash_after<false>(move));
-        net_.make_move(ply + 1, move, board_);
+        net_.make_move(board_, move, ply + 1);
         board_.make_move(move);
         ss->move = move;
         move_searched++;
@@ -559,7 +559,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
         }
 
         tt_.prefetch(board_.hash_after<false>(move));
-        net_.make_move(ply + 1, move, board_);
+        net_.make_move(board_, move, ply + 1);
         board_.make_move(move);
         tm_.inc_nodes();
 

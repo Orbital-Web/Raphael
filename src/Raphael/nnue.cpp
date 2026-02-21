@@ -195,35 +195,48 @@ void Nnue::update_accumulator(
 
 
 
-void Nnue::set_board(const chess::Board& board) {
+void Nnue::set_board(const chess::Board& board, i32 ply) {
     vector<i32> w_features, b_features;
     w_features.reserve(32);
     b_features.reserve(32);
 
+    // horizontal mirroring
+    const auto wking_sq = board.king_square(chess::Color::WHITE);
+    const auto bking_sq = board.king_square(chess::Color::BLACK);
+    const auto wflip = wking_sq.file() > chess::File::D;
+    const auto bflip = bking_sq.file() > chess::File::D;
+
     auto pieces = board.occ();
     while (pieces) {
         const auto sq = static_cast<chess::Square>(pieces.poplsb());
+        const i32 wsq = (wflip) ? sq.mirrored() : sq;
+        const i32 bsq = (bflip) ? sq.mirrored().flipped() : sq.flipped();
 
-        const i32 wpiece = board.at(sq);       // 0...5, 6...11
-        const i32 bpiece = (wpiece + 6) % 12;  // 6...11, 0...5
+        const auto piece = board.at(sq);
+        const i32 wpiece = piece;                  // 0...5, 6...11
+        const i32 bpiece = piece.color_flipped();  // 6...11, 0...5
 
-        w_features.push_back(64 * wpiece + sq);
-        b_features.push_back(64 * bpiece + (sq ^ 56));
+        w_features.push_back(64 * wpiece + wsq);
+        b_features.push_back(64 * bpiece + bsq);
     }
-    refresh_accumulator(accumulators[0], w_features, chess::Color::WHITE);
-    refresh_accumulator(accumulators[0], b_features, chess::Color::BLACK);
+    refresh_accumulator(accumulators[ply], w_features, chess::Color::WHITE);
+    refresh_accumulator(accumulators[ply], b_features, chess::Color::BLACK);
 }
 
-void Nnue::make_move(i32 ply, chess::Move move, const chess::Board& board) {
+void Nnue::make_move(const chess::Board& board, chess::Move move, i32 ply) {
     assert((ply != 0));
 
+    const auto move_type = move.type();
     const auto from_sq = move.from();
     const auto to_sq = move.to();
-    const auto move_type = move.type();
+    const auto from_piece = board.at(from_sq);
+    const auto to_piece = board.at(to_sq);
+    assert(from_piece != chess::Piece::NONE);
 
     auto& state = accumulator_states[ply];
     state.dirty = true;
 
+    // nullmove
     if (move == move.NULL_MOVE) {
         state.add1[false] = -1;
         state.add2[false] = -1;
@@ -236,17 +249,13 @@ void Nnue::make_move(i32 ply, chess::Move move, const chess::Board& board) {
         return;
     }
 
-    // update white and black states incrementally
+    // incremental update
     for (const auto color : {chess::Color::WHITE, chess::Color::BLACK}) {
-        // do incremental update
         const bool moving = (board.stm() == color);
-        const i32 from_sqi = (color == chess::Color::WHITE) ? from_sq : (from_sq ^ 56);
-        const i32 to_sqi = (color == chess::Color::WHITE) ? to_sq : (to_sq ^ 56);
-        const auto from_piece = board.at(from_sq);
-        const auto to_piece = board.at(to_sq);
-        const i32 from_piecei = (color == chess::Color::WHITE) ? from_piece : (from_piece + 6) % 12;
-        const i32 to_piecei = (color == chess::Color::WHITE) ? to_piece : (to_piece + 6) % 12;
-        assert(from_piece != chess::Piece::NONE);
+        const i32 from_sqi = from_sq.relative(color);
+        const i32 to_sqi = to_sq.relative(color);
+        const i32 from_piecei = from_piece.relative(color);
+        const i32 to_piecei = to_piece.relative(color);
 
         // remove moving piece
         state.add1[color] = -1;
@@ -272,4 +281,9 @@ void Nnue::make_move(i32 ply, chess::Move move, const chess::Board& board) {
         else if (move_type == move.ENPASSANT)
             state.rem2[color] = 64 * 6 * moving + (to_sqi + 8 - moving * 16);
     }
+
+    // king refresh
+    if (from_piece.type() == chess::PieceType::KING
+        && (from_sq.file() > chess::File::D) != (to_sq.file() > chess::File::D))
+        set_board(board, ply);
 }

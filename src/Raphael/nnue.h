@@ -10,12 +10,14 @@
 
 namespace raphael {
 class Nnue {
+public:
+    static constexpr i32 OUTPUT_SCALE = 286;
+
 private:
     static constexpr i32 N_INPUTS = 12 * 64;  // all features
     static constexpr i32 N_HIDDEN = 64;       // accumulator size
     static constexpr i32 QA = 255;
     static constexpr i32 QB = 64;
-    static constexpr i32 OUTPUT_SCALE = 283;
 
 #ifdef USE_SIMD
     const VecI16 zeros = zero_i16();
@@ -98,18 +100,19 @@ public:
      */
     i32 evaluate(i32 ply, chess::Color color);
 
-    /** Sets nnue_state[ply=0] to reflect the given board
+    /** Sets nnue_state[ply] to match the given board
      *
      * \param board the board to set
+     * \param ply which ply state to update, default 0
      */
-    void set_board(const chess::Board& board);
+    void set_board(const chess::Board& board, i32 ply);
 
     /** Updates nnue_state[ply] based on the given move and nnue_state[ply-1]
      *
-     * \param ply which ply state to update, cannot be 0
-     * \param move the move to make
      * \param board the board to make the move on, should match nnue_state[ply-1]
+     * \param move the move to make
+     * \param ply which ply state to update, cannot be 0
      */
-    void make_move(i32 ply, chess::Move move, const chess::Board& board);
+    void make_move(const chess::Board& board, chess::Move move, i32 ply);
 };
 }  // namespace raphael

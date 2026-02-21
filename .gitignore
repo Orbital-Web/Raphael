@@ -240,11 +240,3 @@ src/Games/*.epd
 
 # Saved Gamelogs
 logs/
-
-# NNUE Training
-src/NNUE/train-*
-src/NNUE/traingen
-src/NNUE/nnuetest
-src/NNUE/dataset/**/*.epd
-src/NNUE/dataset/**/*.csv
-src/NNUE/dataset/**/*.png

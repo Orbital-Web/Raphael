@@ -1,5 +1,5 @@
 use bullet_lib::{
-    game::inputs::ChessBucketsMirrored,
+    game::inputs::Chess768,
     nn::optimiser::AdamW,
     trainer::{
         save::SavedFormat,
@@ -35,7 +35,7 @@ fn main() {
     let mut trainer = ValueTrainerBuilder::default()
         .dual_perspective()
         .optimiser(AdamW)
-        .inputs(ChessBucketsMirrored::default())
+        .inputs(Chess768)
         .save_format(&[
             SavedFormat::id("l0w").round().quantise::<i16>(QA),
             SavedFormat::id("l0b").round().quantise::<i16>(QA),

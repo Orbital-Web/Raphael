@@ -111,7 +111,7 @@ void Raphael::set_uciinfolevel(UciInfoLevel level) { ucilevel_ = level; }
 
 void Raphael::set_board(const chess::Board& board) {
     board_ = board;
-    net_.set_board(board, 0);
+    net_.set_board(board);
 }
 
 Raphael::MoveScore Raphael::get_move(const i32 t_remain, const i32 t_inc, atomic<bool>& halt) {

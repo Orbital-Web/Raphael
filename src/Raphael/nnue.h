@@ -11,7 +11,7 @@
 namespace raphael {
 class Nnue {
 public:
-    static constexpr i32 OUTPUT_SCALE = 286;
+    static constexpr i32 OUTPUT_SCALE = 283;
 
 private:
     static constexpr i32 N_INPUTS = 12 * 64;  // all features
@@ -90,7 +90,6 @@ private:
 
 public:
     Nnue();
-    Nnue(const std::string& nnue_path);
 
     /** Evaluates the board specified by nnue_state[ply] from the given side's perspective
      *
@@ -100,12 +99,11 @@ public:
      */
     i32 evaluate(i32 ply, chess::Color color);
 
-    /** Sets nnue_state[ply] to match the given board
+    /** Sets nnue_state[ply=0] to match the given board
      *
      * \param board the board to set
-     * \param ply which ply state to update, default 0
      */
-    void set_board(const chess::Board& board, i32 ply);
+    void set_board(const chess::Board& board);
 
     /** Updates nnue_state[ply] based on the given move and nnue_state[ply-1]
      *

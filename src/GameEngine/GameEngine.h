@@ -47,7 +47,7 @@ private:
     std::vector<Arrow> arrows;
 
     // chess game logic
-    chess::Board board;
+    raphael::Position<false> position;
     bool turn;                    // current turn (0=white, 1=black)
     std::vector<Player> players;  // (p1, p2)
     std::vector<i64> t_remain;    // time remaining ms (white, black)
@@ -122,7 +122,7 @@ private:
     /** Handles window events and renderings */
     void update_window();
 
-    /** Updates the board with a move
+    /** Updates the position with a move
      *
      * \param move_in the move to make
      */

@@ -26,7 +26,7 @@ using std::stringstream;
 using std::vector;
 using std::visit;
 
-#define whiteturn (board.stm() == chess::Color::WHITE)
+#define whiteturn (position.board().stm() == chess::Color::WHITE)
 
 
 
@@ -41,9 +41,10 @@ void GameEngine::run_match(const GameOptions& options) {
     window.create(sf::VideoMode({880, 940}), "Chess");
     window.setFramerateLimit(FRAMERATE);
 
-    // initialize board
-    board = chess::Board(options.start_fen);
+    // initialize position
+    chess::Board board(options.start_fen);
     chess::Movegen::generate_legals(movelist, board);
+    position.set_board(board);
     GameResult game_result = GameResult::NONE;
     turn = !whiteturn;
 
@@ -85,10 +86,18 @@ void GameEngine::run_match(const GameOptions& options) {
         const auto& cur_player = players[turn == p1_is_white];
         const auto& oth_player = players[turn != p1_is_white];
         const bool cur_engine = (cur_player.type == PlayerType::ENGINE);
+        const bool oth_engine = (oth_player.type == PlayerType::ENGINE);
         i64& cur_t_remain = t_remain[turn];
 
-        visit([this](auto player) { player->set_board(board); }, cur_player.player);
-        visit([this](auto player) { player->set_board(board); }, oth_player.player);
+        if (cur_engine)
+            get<raphael::Raphael*>(cur_player.player)->set_position(position);
+        else
+            get<HumanPlayer*>(cur_player.player)->set_board(position.board());
+
+        if (oth_engine)
+            get<raphael::Raphael*>(oth_player.player)->set_position(position);
+        else
+            get<HumanPlayer*>(oth_player.player)->set_board(position.board());
 
         // if current player is an engine, get its move async
         atomic<bool> halt{false};
@@ -101,7 +110,7 @@ void GameEngine::run_match(const GameOptions& options) {
 
         // if current player is a human and the opponent is an engine, ponder async
         std::future<void> _;
-        if (!cur_engine && oth_player.type == PlayerType::ENGINE)
+        if (!cur_engine && oth_engine)
             _ = ponder_async(get<raphael::Raphael*>(oth_player.player), halt);
 
         // timings
@@ -173,11 +182,11 @@ void GameEngine::run_match(const GameOptions& options) {
 
         // get game result (if any)
         game_result = GameResult::NONE;
-        if (board.is_halfmovedraw()) game_result = GameResult::DRAW;
-        if (board.is_insufficientmaterial()) game_result = GameResult::DRAW;
-        if (board.is_repetition()) game_result = GameResult::DRAW;
+        if (position.board().is_halfmovedraw()) game_result = GameResult::DRAW;
+        if (position.board().is_insufficientmaterial()) game_result = GameResult::DRAW;
+        if (position.is_repetition()) game_result = GameResult::DRAW;
         if (movelist.empty())
-            game_result = (board.in_check()) ? GameResult::LOSE : GameResult::DRAW;
+            game_result = (position.board().in_check()) ? GameResult::LOSE : GameResult::DRAW;
     }
 
 game_end:
@@ -304,10 +313,10 @@ void GameEngine::update_select() {
         // board clicked
         if (x > 50 && x < 850 && y > 70 && y < 870) {
             const auto sq = get_square(x, y);
-            const auto piece = board.at(sq);
+            const auto piece = position.board().at(sq);
 
             // own pieces clicked
-            if (piece != chess::Piece::NONE && piece.color() == board.stm()) {
+            if (piece != chess::Piece::NONE && piece.color() == position.board().stm()) {
                 selectedtiles.clear();
                 selectedtiles.push_back(sq);
                 add_selectedtiles();
@@ -434,14 +443,14 @@ void GameEngine::update_window() {
     }
 
     // draw pieces
-    auto pieces = board.occ();
+    auto pieces = position.board().occ();
     i32 check = 0;
-    if (board.in_check()) check = (whiteturn) ? 1 : -1;
+    if (position.board().in_check()) check = (whiteturn) ? 1 : -1;
     while (pieces) {
         const auto sq = static_cast<chess::Square>(pieces.poplsb());
         const auto file = sq.file();
         const auto rank = sq.rank();
-        const auto piece = board.at(sq);
+        const auto piece = position.board().at(sq);
         piecedrawer.draw(window, piece, 50 + 100 * file, 770 - 100 * rank, check);
     }
 
@@ -467,13 +476,13 @@ void GameEngine::move(chess::Move move_in) {
 
     // play sound
     if (interactive) {
-        if (board.is_capture(move_in))
+        if (position.board().is_capture(move_in))
             sounds[1].play();  // capture
         else
             sounds[0].play();  // move
     }
 
-    board.make_move(move_in);
+    position.make_move(move_in);
     movelist.clear();
-    chess::Movegen::generate_legals(movelist, board);
+    chess::Movegen::generate_legals(movelist, position.board());
 }

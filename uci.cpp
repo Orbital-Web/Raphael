@@ -427,7 +427,6 @@ vector<string> split_args(i32 argc, char** argv) {
 int main(int argc, char** argv) {
     // set to startpos
     engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::ALL);
-    engine.set_board(pending_request.board);
 
     // start search handler
     thread search_handler(handle_search);

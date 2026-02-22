@@ -2,6 +2,7 @@
 #include <Raphael/History.h>
 #include <Raphael/Transposition.h>
 #include <Raphael/nnue.h>
+#include <Raphael/position.h>
 #include <Raphael/tm.h>
 #include <Raphael/tunable.h>
 
@@ -51,8 +52,7 @@ private:
     TranspositionTable tt_;
     History history_;
     // position
-    chess::Board board_;
-    Nnue net_;
+    Position position_;
     // info
     UciInfoLevel ucilevel_ = UciInfoLevel::NONE;
     i32 seldepth_;  // maximum search depth reached in PV nodes

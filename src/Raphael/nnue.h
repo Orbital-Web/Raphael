@@ -57,6 +57,7 @@ private:
         i32 rem2[2];
     };
     AccumulatorState accumulator_states[MAX_DEPTH];
+    i32 idx_ = 0;
 
     /** Refreshes the accumulator as new_acc = b1 + W1[features]
      *
@@ -91,26 +92,30 @@ private:
 public:
     Nnue();
 
-    /** Evaluates the board specified by nnue_state[ply] from the given side's perspective
+    /** Evaluates the board from the given side's perspective
      *
-     * \param ply which ply board to evaluate
      * \param color side to evaluate from
-     * \returns the NNUE evaluation of the position in centipawns
+     * \returns the NNUE evaluation of the board in centipawns
      */
-    i32 evaluate(i32 ply, chess::Color color);
+    i32 evaluate(chess::Color color);
 
-    /** Sets nnue_state[ply=0] to match the given board
+    /** Sets internal states to match the given board
      *
      * \param board the board to set
      */
     void set_board(const chess::Board& board);
 
-    /** Updates nnue_state[ply] based on the given move and nnue_state[ply-1]
+    /** Updates internal states based on the given move
      *
-     * \param board the board to make the move on, should match nnue_state[ply-1]
+     * \param board the board before the move is played
      * \param move the move to make
-     * \param ply which ply state to update, cannot be 0
      */
-    void make_move(const chess::Board& board, chess::Move move, i32 ply);
+    void make_move(const chess::Board& board, chess::Move move);
+
+    /** Updates internal states to unmake the last move */
+    void unmake_move();
+
+    /** Resets the internal states */
+    void reset();
 };
 }  // namespace raphael

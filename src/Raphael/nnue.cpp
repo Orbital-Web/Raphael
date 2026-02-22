@@ -20,7 +20,7 @@ INCBIN(unsigned char, netfile, TOSTRING(NETWORK_FILE));
 
 
 
-Nnue::Nnue(): params(load_network()) {}
+Nnue::Nnue(): params(load_network()), idx_(0) {}
 
 const Nnue::NnueWeights* Nnue::load_network() {
     constexpr usize padded_size = 64 * ((sizeof(NnueWeights) + 63) / 64);
@@ -35,11 +35,11 @@ const Nnue::NnueWeights* Nnue::load_network() {
 
 
 
-i32 Nnue::evaluate(i32 ply, chess::Color color) {
+i32 Nnue::evaluate(chess::Color color) {
     // lazy update accumulators
-    i32 p = ply;
+    i32 p = idx_;
     while (accumulator_states[p].dirty) p--;
-    while (p++ < ply) {
+    while (p++ < idx_) {
         auto& state = accumulator_states[p];
         update_accumulator(
             accumulators[p],
@@ -63,8 +63,8 @@ i32 Nnue::evaluate(i32 ply, chess::Color color) {
     }
 
     // get address to accumulators and weights
-    const auto us_base = accumulators[ply][color];
-    const auto them_base = accumulators[ply][~color];
+    const auto us_base = accumulators[idx_][color];
+    const auto them_base = accumulators[idx_][~color];
     const auto us_w_base = params->W1;
     const auto them_w_base = params->W1 + N_HIDDEN;
 
@@ -158,17 +158,15 @@ void Nnue::update_accumulator(
     for (i32 i = 0; i < n_chunks; i++) regs[i] = load_i16(&old_acc[color][i * regw]);
 
     // subtract rem_features
-    if (rem1 >= 0)
-        for (i32 i = 0; i < n_chunks; i++)
-            regs[i] = subs_i16(regs[i], load_i16(&params->W0[rem1 * N_HIDDEN + i * regw]));
+    for (i32 i = 0; i < n_chunks; i++)
+        regs[i] = subs_i16(regs[i], load_i16(&params->W0[rem1 * N_HIDDEN + i * regw]));
     if (rem2 >= 0)
         for (i32 i = 0; i < n_chunks; i++)
             regs[i] = subs_i16(regs[i], load_i16(&params->W0[rem2 * N_HIDDEN + i * regw]));
 
     // add add_features
-    if (add1 >= 0)
-        for (i32 i = 0; i < n_chunks; i++)
-            regs[i] = adds_i16(regs[i], load_i16(&params->W0[add1 * N_HIDDEN + i * regw]));
+    for (i32 i = 0; i < n_chunks; i++)
+        regs[i] = adds_i16(regs[i], load_i16(&params->W0[add1 * N_HIDDEN + i * regw]));
     if (add2 >= 0)
         for (i32 i = 0; i < n_chunks; i++)
             regs[i] = adds_i16(regs[i], load_i16(&params->W0[add2 * N_HIDDEN + i * regw]));
@@ -180,14 +178,12 @@ void Nnue::update_accumulator(
     copy(old_acc[color], old_acc[color] + N_HIDDEN, new_acc[color]);
 
     // subtract rem_features
-    if (rem1 >= 0)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] -= params->W0[rem1 * N_HIDDEN + i];
+    for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] -= params->W0[rem1 * N_HIDDEN + i];
     if (rem2 >= 0)
         for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] -= params->W0[rem2 * N_HIDDEN + i];
 
     // add add_features
-    if (add1 >= 0)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params->W0[add1 * N_HIDDEN + i];
+    for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params->W0[add1 * N_HIDDEN + i];
     if (add2 >= 0)
         for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params->W0[add2 * N_HIDDEN + i];
 #endif
@@ -196,6 +192,8 @@ void Nnue::update_accumulator(
 
 
 void Nnue::set_board(const chess::Board& board) {
+    idx_ = 0;
+
     vector<i32> w_features, b_features;
     w_features.reserve(32);
     b_features.reserve(32);
@@ -213,12 +211,13 @@ void Nnue::set_board(const chess::Board& board) {
         w_features.push_back(64 * wpiece + wsq);
         b_features.push_back(64 * bpiece + bsq);
     }
-    refresh_accumulator(accumulators[0], w_features, chess::Color::WHITE);
-    refresh_accumulator(accumulators[0], b_features, chess::Color::BLACK);
+    refresh_accumulator(accumulators[idx_], w_features, chess::Color::WHITE);
+    refresh_accumulator(accumulators[idx_], b_features, chess::Color::BLACK);
 }
 
-void Nnue::make_move(const chess::Board& board, chess::Move move, i32 ply) {
-    assert((ply != 0));
+void Nnue::make_move(const chess::Board& board, chess::Move move) {
+    assert(idx_ < MAX_DEPTH - 1);
+    idx_++;
 
     const auto move_type = move.type();
     const auto stm = board.stm();
@@ -228,21 +227,8 @@ void Nnue::make_move(const chess::Board& board, chess::Move move, i32 ply) {
     const auto to_piece = board.at(to_sq);
     assert(from_piece != chess::Piece::NONE);
 
-    auto& state = accumulator_states[ply];
+    auto& state = accumulator_states[idx_];
     state.dirty = true;
-
-    // nullmove
-    if (move == move.NULL_MOVE) {
-        state.add1[chess::Color::WHITE] = -1;
-        state.add2[chess::Color::WHITE] = -1;
-        state.rem1[chess::Color::WHITE] = -1;
-        state.rem2[chess::Color::WHITE] = -1;
-        state.add1[chess::Color::BLACK] = -1;
-        state.add2[chess::Color::BLACK] = -1;
-        state.rem1[chess::Color::BLACK] = -1;
-        state.rem2[chess::Color::BLACK] = -1;
-        return;
-    }
 
     // incremental update
     for (const auto color : {chess::Color::WHITE, chess::Color::BLACK}) {
@@ -277,3 +263,10 @@ void Nnue::make_move(const chess::Board& board, chess::Move move, i32 ply) {
             state.rem2[color] = 64 * 6 * moving + (to_sqi + 8 - moving * 16);
     }
 }
+
+void Nnue::unmake_move() {
+    assert(idx_ > 0);
+    idx_--;
+}
+
+void Nnue::reset() { idx_ = 0; }

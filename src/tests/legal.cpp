@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <tests/doctest/doctest.hpp>
+#include <vector>
 
 using namespace chess;
 using std::cout;
@@ -13,7 +14,6 @@ using std::vector;
 
 class LegalChecker {
 private:
-    Board board_;
     vector<Move> allmoves_;
 
 
@@ -77,17 +77,17 @@ public:
     }
 
 
-    void check(i32 depth) {
+    void check(const Board& board, i32 depth) {
         if (depth == 0) return;
 
         MoveList<chess::ScoredMove> legalmoves;
-        Movegen::generate_legals(legalmoves, board_);
+        Movegen::generate_legals(legalmoves, board);
 
         for (const auto& move : allmoves_) {
             const bool is_legal = legalmoves.contains(move);
-            const bool check_legal = board_.is_legal(move);
+            const bool check_legal = board.is_legal(move);
             if (check_legal != is_legal) {
-                cout << "is_legal failed for position " << board_.get_fen() << " move "
+                cout << "is_legal failed for position " << board.get_fen() << " move "
                      << uci::from_move(move) << ((move.type() == Move::ENPASSANT) ? " ep" : "")
                      << " expected " << (is_legal ? "legal" : "illegal") << " got "
                      << (check_legal ? "legal" : "illegal") << "\n"
@@ -97,18 +97,16 @@ public:
             }
 
             if (is_legal) {
-                board_.make_move(move);
-                check(depth - 1);
-                board_.unmake_move(move);
+                Board newboard = board;
+                newboard.make_move(move);
+                check(newboard, depth - 1);
             }
         }
     }
 
 
-    void check_all(const string& fen) {
-        board_.set_fen(fen);
-
-        check(4);
+    void check_all(const Board& board) {
+        check(board, 4);
         CHECK(true);
     }
 };
@@ -132,6 +130,11 @@ TEST_SUITE("is_legal") {
         LegalChecker checker;
         checker.init_allmoves();
 
-        for (const auto& fen : test_positions) checker.check_all(fen);
+        Board board;
+
+        for (const auto& fen : test_positions) {
+            board.set_fen(fen);
+            checker.check_all(board);
+        }
     }
 }

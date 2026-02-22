@@ -67,12 +67,11 @@ TEST_SUITE("PERFT") {
              164075551,                                                                             5}
         };
 
-        Perft perft;
         Board board;
 
         for (const auto& test : test_positions) {
             board.set_fen(test.fen);
-            perft.bench_perft(board, test.depth, test.expected_node_count);
+            Perft::bench_perft(board, test.depth, test.expected_node_count);
         }
     }
 }

@@ -3,7 +3,6 @@
 #include <Raphael/simd.h>
 #include <chess/include.h>
 
-#include <string>
 #include <vector>
 
 

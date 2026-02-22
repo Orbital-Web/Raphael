@@ -1,7 +1,6 @@
 #pragma once
 #include <Raphael/History.h>
 #include <Raphael/Transposition.h>
-#include <Raphael/nnue.h>
 #include <Raphael/position.h>
 #include <Raphael/tm.h>
 #include <Raphael/tunable.h>

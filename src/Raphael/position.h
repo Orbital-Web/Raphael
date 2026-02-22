@@ -1,6 +1,5 @@
 #pragma once
 #include <Raphael/nnue.h>
-#include <chess/include.h>
 
 #include <type_traits>
 

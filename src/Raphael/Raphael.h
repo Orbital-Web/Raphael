@@ -1,7 +1,7 @@
 #pragma once
 #include <Raphael/History.h>
 #include <Raphael/Transposition.h>
-#include <Raphael/nnue.h>
+#include <Raphael/position.h>
 #include <Raphael/tm.h>
 #include <Raphael/tunable.h>
 
@@ -51,8 +51,7 @@ private:
     TranspositionTable tt_;
     History history_;
     // position
-    chess::Board board_;
-    Nnue net_;
+    Position<true> position_;
     // info
     UciInfoLevel ucilevel_ = UciInfoLevel::NONE;
     i32 seldepth_;  // maximum search depth reached in PV nodes
@@ -118,9 +117,16 @@ public:
 
     /** Sets the position to search on
      *
-     * \param board current board
+     * \param position position to set to
+     */
+    void set_position(const Position<false>& position);
+
+    /** Sets the board to search on
+     *
+     * \param board board to set to
      */
     void set_board(const chess::Board& board);
+
 
     /** Returns the best move found by Raphael from the set position. Returns immediately if halt
      * becomes true. Will print out bestmove and search statistics if UCI is true.

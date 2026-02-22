@@ -55,7 +55,7 @@ TEST_SUITE("Board") {
     }
 
     TEST_CASE("Board make_move") {
-        SUBCASE("makeMove") {
+        SUBCASE("make_move") {
             Board board = Board();
             board.make_move(Move::make(Square::E2, Square::E4));
             CHECK(board.at(Square::E2) == Piece::NONE);
@@ -64,25 +64,13 @@ TEST_SUITE("Board") {
             board.make_move(Move::make(Square::E7, Square::E5));
             CHECK(board.at(Square::E7) == Piece::NONE);
             CHECK(board.at(Square::E5) == Piece::BLACKPAWN);
-
-            board.unmake_move(Move::make(Square::E7, Square::E5));
-            CHECK(board.at(Square::E7) == Piece::BLACKPAWN);
-            CHECK(board.at(Square::E5) == Piece::NONE);
-
-            board.unmake_move(Move::make(Square::E2, Square::E4));
-            CHECK(board.at(Square::E2) == Piece::WHITEPAWN);
-            CHECK(board.at(Square::E4) == Piece::NONE);
         }
 
-        SUBCASE("make_null_move") {
+        SUBCASE("make_nullmove") {
             Board board = Board();
             board.make_nullmove();
             CHECK(board.hash() != Board().hash());
             CHECK(board.stm() == Color::BLACK);
-
-            board.unmake_nullmove();
-            CHECK(board.hash() == Board().hash());
-            CHECK(board.stm() == Color::WHITE);
         }
     }
 
@@ -120,32 +108,6 @@ TEST_SUITE("Board") {
 
         board.set_fen("rnb1k2r/ppppqppp/8/8/1b6/3P4/PPP1P1PP/RN1QK2r w Qkq - 0 1");
         CHECK(board.in_check());
-    }
-
-    TEST_CASE("Board Repetition") {
-        Board board = Board("7k/8/8/8/8/Q7/8/3K4 w - - 0 1");
-        CHECK(!board.is_repetition(1));
-        CHECK(!board.is_repetition(2));
-
-        board.make_move(Move::make(Square::D1, Square::D2));
-        board.make_move(Move::make(Square::H8, Square::H7));
-        CHECK(!board.is_repetition(1));
-        CHECK(!board.is_repetition(2));
-
-        board.make_move(Move::make(Square::D2, Square::D1));
-        board.make_move(Move::make(Square::H7, Square::H8));
-        CHECK(board.is_repetition(1));
-        CHECK(!board.is_repetition(2));
-
-        board.make_move(Move::make(Square::D1, Square::D2));
-        board.make_move(Move::make(Square::H8, Square::H7));
-        CHECK(board.is_repetition(1));
-        CHECK(!board.is_repetition(2));
-
-        board.make_move(Move::make(Square::D2, Square::D1));
-        board.make_move(Move::make(Square::H7, Square::H8));
-        CHECK(board.is_repetition(1));
-        CHECK(board.is_repetition(2));
     }
 
     TEST_CASE("Board HalfMove Draw") {

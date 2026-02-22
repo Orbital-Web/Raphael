@@ -3,8 +3,6 @@
 #include <chess/utils.h>
 #include <chess/zobrist.h>
 
-#include <vector>
-
 
 
 namespace chess {
@@ -64,33 +62,23 @@ private:
     std::array<BitBoard, 2> occ_ = {};
     std::array<Piece, 64> mailbox_ = {};
 
-    CastlingRights castle_rights_ = {};
     MultiArray<BitBoard, 2, 2> castle_path_ = {};
-    Square enpassant_ = Square::NONE;
-
-    Color stm_ = Color::WHITE;
-    u8 halfmoves_ = 0;  // plies since last capture or pawn move
-    u16 plies_ = 1;     // total plies
+    CastlingRights castle_rights_ = {};
 
     u64 hash_ = 0;
 
+    u16 plies_ = 1;     // total plies
+    u8 halfmoves_ = 0;  // plies since last capture or pawn move
+    Color stm_ = Color::WHITE;
+
+    Square enpassant_ = Square::NONE;
+
     bool chess960_ = false;
-
-    struct State {
-        u64 hash;
-        CastlingRights castling;
-        Square enpassant;
-        u8 halfmoves;
-        Piece captured;
-    };
-    std::vector<State> prev_states_;
-
 
 
 public:
     explicit Board(std::string_view fen = STARTPOS, bool chess960 = false): chess960_(chess960) {
         assert(chess960 == false);  // TODO: FRC not supported yet
-        prev_states_.reserve(256);
         set_fen(fen);
     }
 
@@ -128,37 +116,7 @@ public:
     }
 
 
-    void reset() {
-        pieces_.fill(0);
-        occ_.fill(0);
-        mailbox_.fill(Piece::NONE);
-
-        castle_rights_.clear();
-        castle_path_ = {};
-        enpassant_ = Square::NONE;
-
-        stm_ = Color::WHITE;
-        halfmoves_ = 0;
-        plies_ = 1;
-
-        hash_ = 0;
-
-        prev_states_.clear();
-    }
-
-
     [[nodiscard]] bool in_check() const { return is_attacked(king_square(stm_), ~stm_); }
-
-    [[nodiscard]] bool is_repetition(i32 count = 2) const {
-        const i32 size = prev_states_.size();
-
-        u8 c = 0;
-        for (i32 i = size - 2; i >= 0 && i >= size - halfmoves_ - 1; i -= 2) {
-            if (prev_states_[i].hash == hash_) c++;
-            if (c == count) return true;
-        }
-        return false;
-    }
 
     [[nodiscard]] bool is_halfmovedraw() const { return halfmoves_ >= 100; }
 
@@ -227,8 +185,6 @@ public:
         const auto captured = at(move.to());
         const auto capture = captured != Piece::NONE && move.type() != Move::CASTLING;
         const auto pt = at(move.from()).type();
-
-        prev_states_.emplace_back(hash_, castle_rights_, enpassant_, halfmoves_, captured);
 
         halfmoves_++;
         plies_++;
@@ -339,78 +295,7 @@ public:
         stm_ = ~stm_;
     }
 
-    void unmake_move(const Move move) {
-        const auto& prev = prev_states_.back();
-
-        enpassant_ = prev.enpassant;
-        castle_rights_ = prev.castling;
-        halfmoves_ = prev.halfmoves;
-        stm_ = ~stm_;
-        plies_--;
-
-        if (move.type() == Move::CASTLING) {
-            const bool is_king_side = move.to() > move.from();
-            const auto rook_from_sq = Square(is_king_side ? File::F : File::D, move.from().rank());
-            const auto king_to_sq = Square(is_king_side ? File::G : File::C, move.from().rank());
-
-            const auto rook = at(rook_from_sq);
-            const auto king = at(king_to_sq);
-
-            assert(rook == Piece(PieceType::ROOK, stm_));
-            assert(king == Piece(PieceType::KING, stm_));
-
-            remove_piece(rook, rook_from_sq);
-            remove_piece(king, king_to_sq);
-
-            place_piece(king, move.from());
-            place_piece(rook, move.to());
-
-        } else if (move.type() == Move::PROMOTION) {
-            const auto pawn = Piece(PieceType::PAWN, stm_);
-            const auto promo = at(move.to());
-
-            assert(promo.type() == move.promotion_type());
-            assert(promo.type() != PieceType::PAWN);
-            assert(promo.type() != PieceType::KING);
-            assert(promo.type() != PieceType::NONE);
-
-            remove_piece(promo, move.to());
-            place_piece(pawn, move.from());
-
-            if (prev.captured != Piece::NONE) {
-                assert(at(move.to()) == Piece::NONE);
-                place_piece(prev.captured, move.to());
-            }
-
-        } else {
-            assert(at(move.to()) != Piece::NONE);
-            assert(at(move.from()) == Piece::NONE);
-
-            const auto piece = at(move.to());
-
-            remove_piece(piece, move.to());
-            place_piece(piece, move.from());
-
-            if (move.type() == Move::ENPASSANT) {
-                const auto pawn = Piece(PieceType::PAWN, ~stm_);
-                const auto pawnto = enpassant_.ep_square();
-
-                assert(at(pawnto) == Piece::NONE);
-                place_piece(pawn, pawnto);
-
-            } else if (prev.captured != Piece::NONE) {
-                assert(at(move.to()) == Piece::NONE);
-                place_piece(prev.captured, move.to());
-            }
-        }
-
-        hash_ = prev.hash;
-        prev_states_.pop_back();
-    }
-
     void make_nullmove() {
-        prev_states_.emplace_back(hash_, castle_rights_, enpassant_, halfmoves_, Piece::NONE);
-
         hash_ ^= Zobrist::stm();
         if (enpassant_ != Square::NONE) hash_ ^= Zobrist::enpassant(enpassant_.file());
         enpassant_ = Square::NONE;
@@ -419,19 +304,6 @@ public:
         stm_ = ~stm_;
     }
 
-    void unmake_nullmove() {
-        const auto& prev = prev_states_.back();
-
-        enpassant_ = prev.enpassant;
-        castle_rights_ = prev.castling;
-        halfmoves_ = prev.halfmoves;
-        hash_ = prev.hash;
-
-        plies_--;
-        stm_ = ~stm_;
-
-        prev_states_.pop_back();
-    }
 
     /** Returns the zobrist hash of the board after a move
      *
@@ -708,6 +580,23 @@ public:
     }
 
 private:
+    void reset() {
+        pieces_.fill(0);
+        occ_.fill(0);
+        mailbox_.fill(Piece::NONE);
+
+        castle_rights_.clear();
+        castle_path_ = {};
+        enpassant_ = Square::NONE;
+
+        stm_ = Color::WHITE;
+        halfmoves_ = 0;
+        plies_ = 1;
+
+        hash_ = 0;
+    }
+
+
     void place_piece(Piece piece, Square sq) {
         assert(mailbox_[sq] == Piece::NONE);
 

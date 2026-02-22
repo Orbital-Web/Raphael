@@ -268,5 +268,3 @@ void Nnue::unmake_move() {
     assert(idx_ > 0);
     idx_--;
 }
-
-void Nnue::reset() { idx_ = 0; }

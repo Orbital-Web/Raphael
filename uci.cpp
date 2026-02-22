@@ -39,7 +39,7 @@ raphael::Raphael engine("Raphael");
 mutex search_mutex;
 condition_variable search_cv;
 struct SearchRequest {
-    chess::Board board;
+    raphael::Position<false> position;
     raphael::TimeManager::SearchOptions options;
     i32 t_remain;
     i32 t_inc;
@@ -120,11 +120,11 @@ void setposition(const vector<string>& tokens) {
     i32 ntokens = tokens.size();
     if (ntokens < 2) return;
 
-    // set position/fen
-    lock_guard<mutex> search_lock(search_mutex);
+    // set initial board
+    chess::Board board;
     i32 i = 2;
     if (tokens[1] == "startpos")
-        pending_request.board.set_fen(chess::Board::STARTPOS);
+        board.set_fen(chess::Board::STARTPOS);
     else if (tokens[1] == "fen") {
         string fen = tokens[2];
         i = 3;
@@ -133,16 +133,20 @@ void setposition(const vector<string>& tokens) {
             fen += " " + tokens[i];
             i++;
         }
-        pending_request.board.set_fen(fen);
+        board.set_fen(fen);
     }
+    lock_guard<mutex> search_lock(search_mutex);
+    pending_request.position.set_board(board);
 
     // play moves
     while (++i < ntokens)
-        pending_request.board.make_move(chess::uci::to_move(pending_request.board, tokens[i]));
+        pending_request.position.make_move(
+            chess::uci::to_move(pending_request.position.board(), tokens[i])
+        );
 
-    // set board
+    // set engine position
     lock_guard<mutex> engine_lock(engine_mutex);
-    engine.set_board(pending_request.board);
+    engine.set_position(pending_request.position);
 }
 
 /** Handles the go command
@@ -159,7 +163,7 @@ void search(const vector<string>& tokens) {
     pending_request.t_remain = 0;
     pending_request.t_inc = 0;
 
-    bool is_white = pending_request.board.stm() == chess::Color::WHITE;
+    bool is_white = pending_request.position.board().stm() == chess::Color::WHITE;
     i32 i = 1;
     while (i < ntokens) {
         if (tokens[i] == "depth")

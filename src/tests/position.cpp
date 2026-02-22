@@ -12,7 +12,7 @@ using std::vector;
 
 class NnueTester {
 private:
-    Position position_;
+    Position<true> position_;
     Nnue refnet_;
 
 
@@ -79,7 +79,9 @@ TEST_SUITE("Position") {
             const chess::Board board(
                 "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 2"
             );
-            Position position(board);
+            Position<false> position;
+            position.set_board(board);
+
             CHECK(position.board().at(chess::Square::D2) == chess::Piece::NONE);
             CHECK(position.board().at(chess::Square::D4) == chess::Piece::WHITEPAWN);
             CHECK(position.board().at(chess::Square::D7) == chess::Piece::NONE);
@@ -111,7 +113,8 @@ TEST_SUITE("Position") {
             const chess::Board board(
                 "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 2"
             );
-            Position position(board);
+            Position<false> position;
+            position.set_board(board);
 
             position.make_nullmove();
             CHECK(position.board().hash() != board.hash());
@@ -125,7 +128,7 @@ TEST_SUITE("Position") {
 
     TEST_CASE("Repetition") {
         chess::Board board = chess::Board("7k/8/8/8/8/Q7/8/3K4 w - - 0 1");
-        Position position;
+        Position<false> position;
         position.set_board(board);
 
         CHECK(!position.is_repetition(1));

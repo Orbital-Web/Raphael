@@ -114,8 +114,5 @@ public:
 
     /** Updates internal states to unmake the last move */
     void unmake_move();
-
-    /** Resets the internal states */
-    void reset();
 };
 }  // namespace raphael

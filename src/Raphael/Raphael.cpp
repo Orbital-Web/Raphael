@@ -109,7 +109,10 @@ void Raphael::set_searchoptions(TimeManager::SearchOptions options) { searchopt_
 void Raphael::set_uciinfolevel(UciInfoLevel level) { ucilevel_ = level; }
 
 
+void Raphael::set_position(const Position<false>& position) { position_.set_position(position); }
+
 void Raphael::set_board(const chess::Board& board) { position_.set_board(board); }
+
 
 Raphael::MoveScore Raphael::get_move(const i32 t_remain, const i32 t_inc, atomic<bool>& halt) {
     seldepth_ = 0;

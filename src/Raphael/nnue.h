@@ -24,7 +24,80 @@ private:
     const VecI16 qas = full_i16(QA);
 #endif
 
-    struct NnueWeights {
+    struct NnueFeature {
+        chess::Piece piece;
+        chess::Square square;
+
+        /** Returns the feature index
+         *
+         * \param perspective feature perspective
+         * \param mirror whether to mirror the board
+         * \return the feature index
+         */
+        i32 index(chess::Color perspective, bool mirror) const;
+    };
+
+    class NnueAccumulator {
+    public:
+        alignas(ALIGNMENT) i16 values[N_HIDDEN];
+        NnueFeature adds[2];
+        NnueFeature subs[2];
+        u8 n_adds = 0;
+        u8 n_subs = 0;
+        bool needs_refresh = false;
+        bool dirty = false;
+
+        /** Initializes the accumulator */
+        NnueAccumulator();
+
+
+        /** Returns whether the accumulator isn't dirty and doesn't need refresh
+         *
+         * \returns whether the accumulator is clean
+         */
+        bool is_clean() const;
+
+
+        /** Adds a new piece to the accumulator
+         *
+         * \param piece piece to add
+         * \param square square to add piece to
+         */
+        void add_piece(chess::Piece piece, chess::Square square);
+
+        /** Removes a piece from the accumulator
+         *
+         * \param piece piece to remove
+         * \param square square to remove piece from
+         */
+        void rem_piece(chess::Piece piece, chess::Square square);
+
+        /** Moves a piece on the accumulator
+         *
+         * \param piece piece to move
+         * \param from square to move from
+         * \param to square to move to
+         */
+        void move_piece(chess::Piece piece, chess::Square from, chess::Square to);
+
+
+        /** Updates the accumulator values
+         *
+         * \param old_acc accumulator to use as base
+         * \param weights start of W0
+         * \param perspective accumulator perspective
+         * \param mirror whether to mirror the board
+         */
+        void update(
+            const NnueAccumulator& old_acc,
+            const i16* weights,
+            chess::Color perspective,
+            bool mirror
+        );
+    };
+
+
+    struct NnueParams {
         // accumulator: N_INPUTS -> N_HIDDEN
         alignas(ALIGNMENT) i16 W0[N_INPUTS * N_HIDDEN];  // column major N_HIDDEN x 768
         alignas(ALIGNMENT) i16 b0[N_HIDDEN];
@@ -32,61 +105,24 @@ private:
         alignas(ALIGNMENT) i16 W1[2 * N_HIDDEN];  // column major 1 x (2 * N_HIDDEN)
         alignas(ALIGNMENT) i16 b1;
     };
-    const NnueWeights* params;  // network weights and biases
+    const NnueParams* params;  // network weights and biases
 
     /** Loads the embedded network
      *
      * \returns the pointer to the loaded network
      */
-    static const NnueWeights* load_network();
+    static const NnueParams* load_network();
+
+    NnueAccumulator accumulators[MAX_DEPTH][2];  // accumulators[ply][black/white][index]
 
 
-    // nnue_state variables
-    struct NnueAccumulator {
-        alignas(ALIGNMENT) i16 v[2][N_HIDDEN];
-
-        i16* operator[](chess::Color color);
-        const i16* operator[](chess::Color color) const;
-    };
-    NnueAccumulator accumulators[MAX_DEPTH];  // accumulators[ply][black/white][index]
-    struct AccumulatorState {
-        bool dirty = false;
-        i32 add1[2];
-        i32 add2[2];
-        i32 rem1[2];
-        i32 rem2[2];
-    };
-    AccumulatorState accumulator_states[MAX_DEPTH];
-
-    /** Refreshes the accumulator as new_acc = b1 + W1[features]
+    /** Refreshes an accumulators as acc = b0 + W0[features...]
      *
-     * \param new_acc accumulator to refresh
-     * \param features indicies of active features
-     * \param color which color accumulator to refresh
+     * \param acc accumulator to refresh
+     * \param board current board, which the accumulator will match
+     * \param perspective accumulator perspective
      */
-    void refresh_accumulator(
-        NnueAccumulator& new_acc, const std::vector<i32>& features, chess::Color color
-    );
-
-    /** Updates the accumulator as new_acc = old_acc + W1[add_features] - W1[rem_features]
-     *
-     * \param new_acc accumulator to write updated values to
-     * \param old_acc accumulator to use as base
-     * \param add1 index of first feature to activate
-     * \param add2 index of second feature to activate (-1 for none)
-     * \param rem1 index of first feature to deactivate
-     * \param rem2 index of second feature to deactivate (-1 for none)
-     * \param color which color accumulator to update
-     */
-    void update_accumulator(
-        NnueAccumulator& new_acc,
-        const NnueAccumulator& old_acc,
-        i32 add1,
-        i32 add2,
-        i32 rem1,
-        i32 rem2,
-        chess::Color color
-    );
+    void refresh_color(NnueAccumulator& acc, const chess::Board& board, chess::Color perspective);
 
 public:
     Nnue();

@@ -20,7 +20,7 @@ basilisk_v3       | (768hm->64)x2->1      | source: same as basilisk_v2   | Elo 
                   | activ: screlu         | dataset: 615m (5ksn)          | SPRT  | 8.0+0.08s Threads=1 Hash=16MB          | of registers, which the compiler probably      |
                   | scale: 283            | sb: 60                        | LLR   | 2.91 (-2.25, 2.89) [0.00, 5.00]        | already does.                                  |
                   | quant: [255,64]       | lr: 1600b warmup              | Games | N: 3074 W: 943 L: 797 D: 1334          |                                                |
-                  | optim: AdamW          |     cosine(0.001,0.00000243)  | Games | N: 454 W: 250 L: 59 D: 145             |                                                |
+                  | optim: AdamW          |     cosine(0.001,0.00000243)  | Penta | [51, 343, 637, 421, 85]                |                                                |
                   |                       | wdl: constant(0.4)            |                                                |                                                |
 ------------------|-----------------------|-------------------------------|------------------------------------------------|------------------------------------------------|
 basilisk_v4       | (768hm->128)x2->1     | source: same as basilisk_v2   | Elo   | 59.33 +- 14.44 (95%)                   |                                                |

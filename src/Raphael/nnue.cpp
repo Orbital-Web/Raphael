@@ -143,10 +143,8 @@ void Nnue::NnueAccumulator::refresh(
     // refresh accumulator
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
-    static_assert(N_HIDDEN % regw == 0);
     // TODO: once N_HIDDEN>=128:
     // constexpr i32 n_chunks = N_HIDDEN / regw;
-    // static_assert(n_chunks % 8 == 0);
     // for (i32 i = 0; i < n_chunks; n_chunks += 8) { ... }  // loop unroll by 8 instead of 4
 
     // copy bias
@@ -171,11 +169,11 @@ void Nnue::NnueAccumulator::refresh(
     store_i16(&values[(i + 2) * regw], acc2);
     store_i16(&values[(i + 3) * regw], acc3);
 #else
-    copy(params->b0, params->b0 + N_HIDDEN, acc.values);
+    copy(biases, biases + N_HIDDEN, values);
 
     for (i32 f = 0; f < n_features; f++) {
         const auto fidx = features[f].index(perspective, mirror);
-        for (i32 i = 0; i < N_HIDDEN; i++) values[i] += params->W0[fidx * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) values[i] += weights[fidx * N_HIDDEN + i];
     }
 #endif
 
@@ -214,18 +212,17 @@ i32 Nnue::evaluate(const chess::Board& board) {
 
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
-    static_assert(N_HIDDEN % regw == 0);
     constexpr i32 n_chunks = N_HIDDEN / regw;
 
-    VecI32 sum = zeros;
+    VecI32 sum = zero_i16();
     for (i32 i = 0; i < n_chunks; i++) {
         const VecI16 us = load_i16(&us_acc.values[i * regw]);
         const VecI16 them = load_i16(&them_acc.values[i * regw]);
         const VecI16 us_w = load_i16(&us_w_base[i * regw]);
         const VecI16 them_w = load_i16(&them_w_base[i * regw]);
 
-        const VecI16 us_clamped = clamp_i16(us, zeros, qas);
-        const VecI16 them_clamped = clamp_i16(them, zeros, qas);
+        const VecI16 us_clamped = clamp_i16(us, zero_i16(), full_i16(QA));
+        const VecI16 them_clamped = clamp_i16(them, zero_i16(), full_i16(QA));
 
         const VecI32 us_screlu = madd_i16(mul_i16(us_w, us_clamped), us_clamped);
         const VecI32 them_screlu = madd_i16(mul_i16(them_w, them_clamped), them_clamped);
@@ -233,8 +230,7 @@ i32 Nnue::evaluate(const chess::Board& board) {
         sum = add_i32(sum, add_i32(us_screlu, them_screlu));
     }
 
-    const i32 eval = QA * params->b1 + hadd_i32(sum);
-    return (eval / QA) * OUTPUT_SCALE / (QA * QB);
+    i32 eval = QA * params->b1 + hadd_i32(sum);
 #else
     i32 eval = QA * params->b1;
 
@@ -246,9 +242,12 @@ i32 Nnue::evaluate(const chess::Board& board) {
         eval += us_w_base[i] * us_clamped * us_clamped;
         eval += them_w_base[i] * them_clamped * them_clamped;
     }
-
-    return (eval / QA) * OUTPUT_SCALE / (QA * QB);
 #endif
+
+    eval /= QA;
+    eval *= OUTPUT_SCALE;
+    eval /= (QA * QB);
+    return eval;
 }
 
 

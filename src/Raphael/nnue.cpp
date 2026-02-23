@@ -127,8 +127,8 @@ void Nnue::NnueAccumulator::refresh(
     NnueFeature features[32];
     i32 n_features;
 
-    // TODO: horizontal mirroring
-    const bool mirror = false;
+    // horizontal mirroring
+    const bool mirror = board.king_square(perspective).file() > chess::File::D;
 
     // get features
     auto pieces = board.occ();
@@ -334,8 +334,8 @@ void Nnue::lazy_update(const chess::Board& board, chess::Color perspective) {
     i32 clean_idx = idx_;
     while (accumulators[clean_idx][perspective].dirty()) clean_idx--;
 
-    // TODO: horizontal mirroring
-    const bool mirror = false;
+    // horizontal mirroring
+    const bool mirror = board.king_square(perspective).file() > chess::File::D;
 
     // update up the stack
     while (clean_idx++ < idx_)

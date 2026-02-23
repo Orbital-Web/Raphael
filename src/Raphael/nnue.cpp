@@ -315,7 +315,12 @@ void Nnue::make_move(
         accumulators[idx_][chess::Color::BLACK].rem_piece(ep_pawn, ep_sq);
     }
 
-    // TODO: refresh stm on king mirror change
+    // refresh stm on king mirror change
+    if (from_piece.type() == chess::PieceType::KING
+        && (from_sq.file() > chess::File::D) != (to_sq.file() > chess::File::D))
+        accumulators[idx_][old_board.stm()].refresh(
+            params->W0, params->b0, new_board, old_board.stm()
+        );
 }
 
 void Nnue::unmake_move() {

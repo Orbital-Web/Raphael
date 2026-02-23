@@ -6,15 +6,19 @@ This document contains all the information for the various Raphael NNUE iteratio
 
 ### Basilisk v1
 
-**Architecture:** `(768 -> 64) x2 -> 1`
+**Model Parameters:**
 
-**Quantization:** `QA=255, QB=64`
+```text
+(768 -> 64) x2 -> 1
+HL=64, QA=255, QB=64, SCALE=400
+```
 
 **Training Parameters:**
 
 ```text
 lr:  linear-decay from 0.001 to 0.001 * 0.3^5
 wdl: 0.3
+sb:  n.a.
 ```
 
 **Notes:**
@@ -26,11 +30,19 @@ wdl: 0.3
 
 ### Basilisk v2
 
+**Model Parameters:**
+
+```text
+(768 -> 64) x2 -> 1
+HL=64, QA=255, QB=64, SCALE=283
+```
+
 **Training Parameters:**
 
 ```text
 lr:  cosine-decay from 0.001 to 0.001 * 0.3^5
 wdl: 0.4
+sb:  60
 ```
 
 **Results:**
@@ -47,14 +59,24 @@ Penta | [2, 9, 66, 96, 54]
 > Same arch as v1, but data comes from self-played games at 5000 softnodes. Postions were filtered using the default viriformat filter in bullet, but with `min_pieces=2`.
 >
 > Around 6m games were played with around 600m positions pre-filtering. The net was trained using bullet with basically the same settings as 1-simple.rs, apart from a few training and model parameters.
+>
+> The output scale was adjusted by comparing the abs mean eval on lichess-big3-resolved of v1 and v2, using the `evalstats` uci command. Future versions use the v1 abs mean as the baseline.
 
 ### Basilisk v3
+
+**Model Parameters:**
+
+```text
+(768 mirrored -> 64) x2 -> 1
+HL=64, QA=255, QB=64, SCALE=283
+```
 
 **Training Parameters:**
 
 ```text
 lr:  cosine-decay from 0.001 to 0.001 * 0.3^5 with warmup for 1600 batches
 wdl: 0.4
+sb:  60
 ```
 
 **Results:**
@@ -69,3 +91,33 @@ Penta | [51, 343, 637, 421, 85]
 
 **Notes:**
 > Same data as v2 but with horizontal mirroring. Some minor changes in the SIMD code (along with the necessary inference changes for mirroring) to make better use of registers which the compiler probably does already.
+
+### Basilisk v4
+
+**Model Parameters:**
+
+```text
+(768 mirrored -> 64) x2 -> 1
+HL=128, QA=255, QB=64, SCALE=283
+```
+
+**Training Parameters:**
+
+```text
+lr:  cosine-decay from 0.001 to 0.001 * 0.3^5 with warmup for 1600 batches
+wdl: 0.4
+sb:  100
+```
+
+**Results:**
+
+```text
+Elo   | 59.33 +- 14.44 (95%)
+SPRT  | 8.0+0.08s Threads=1 Hash=16MB
+LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]
+Games | N: 810 W: 302 L: 165 D: 343
+Penta | [5, 49, 182, 142, 27]
+```
+
+**Notes:**
+> Same data as v2, increased HL size to 128.

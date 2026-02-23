@@ -14,7 +14,7 @@ public:
 
 private:
     static constexpr i32 N_INPUTS = 12 * 64;  // all features
-    static constexpr i32 N_HIDDEN = 64;       // accumulator size
+    static constexpr i32 N_HIDDEN = 128;      // accumulator size
     static constexpr i32 QA = 255;
     static constexpr i32 QB = 64;
 

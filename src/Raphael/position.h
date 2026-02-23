@@ -81,7 +81,7 @@ public:
     i32 evaluate()
         requires(include_net)
     {
-        return net_.evaluate(current_.stm());
+        return net_.evaluate(current_);
     }
 
 
@@ -91,10 +91,10 @@ public:
      */
     void make_move(chess::Move move) {
         boards_.push_back(current_);
-        if constexpr (include_net) {
-            net_.make_move(current_, move);
-        }
         current_.make_move(move);
+        if constexpr (include_net) {
+            net_.make_move(boards_.back(), current_, move);
+        }
     }
 
     /** Plays a nullmove */

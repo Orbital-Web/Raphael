@@ -20,53 +20,197 @@ INCBIN(unsigned char, netfile, TOSTRING(NETWORK_FILE));
 
 
 
-Nnue::Nnue(): params(load_network()), idx_(0) {}
-
-const Nnue::NnueWeights* Nnue::load_network() {
-    constexpr usize padded_size = 64 * ((sizeof(NnueWeights) + 63) / 64);
-    if (g_netfile_size != padded_size)
-        throw runtime_error("network file and architecture doesn't match");
-
-    if (reinterpret_cast<uintptr_t>(g_netfile_data) % alignof(NnueWeights) != 0)
-        throw runtime_error("network file isn't aligned properly");
-
-    return reinterpret_cast<const NnueWeights*>(g_netfile_data);
+i32 Nnue::NnueFeature::index(chess::Color perspective, bool mirror) const {
+    const auto sq = (mirror) ? square.mirrored() : square;
+    return 64 * piece.relative(perspective) + sq.relative(perspective);
 }
 
 
 
-i32 Nnue::evaluate(chess::Color color) {
-    // lazy update accumulators
-    i32 p = idx_;
-    while (accumulator_states[p].dirty) p--;
-    while (p++ < idx_) {
-        auto& state = accumulator_states[p];
-        update_accumulator(
-            accumulators[p],
-            accumulators[p - 1],
-            state.add1[chess::Color::WHITE],
-            state.add2[chess::Color::WHITE],
-            state.rem1[chess::Color::WHITE],
-            state.rem2[chess::Color::WHITE],
-            chess::Color::WHITE
-        );
-        update_accumulator(
-            accumulators[p],
-            accumulators[p - 1],
-            state.add1[chess::Color::BLACK],
-            state.add2[chess::Color::BLACK],
-            state.rem1[chess::Color::BLACK],
-            state.rem2[chess::Color::BLACK],
-            chess::Color::BLACK
-        );
-        state.dirty = false;
+Nnue::NnueAccumulator::NnueAccumulator() {}
+
+
+bool Nnue::NnueAccumulator::dirty() const {
+    assert((n_adds > 0) == (n_subs > 0));
+    return n_adds > 0;
+}
+
+
+void Nnue::NnueAccumulator::add_piece(chess::Piece piece, chess::Square square) {
+    assert(n_adds < 2);
+    adds[n_adds++] = {.piece = piece, .square = square};
+}
+
+void Nnue::NnueAccumulator::rem_piece(chess::Piece piece, chess::Square square) {
+    assert(n_subs < 2);
+    subs[n_subs++] = {.piece = piece, .square = square};
+}
+
+void Nnue::NnueAccumulator::reset_updates() {
+    n_adds = 0;
+    n_subs = 0;
+}
+
+
+void Nnue::NnueAccumulator::update(
+    const NnueAccumulator& old_acc, const i16* weights, chess::Color perspective, bool mirror
+) {
+    assert(dirty());
+    assert(!old_acc.dirty());
+
+    i32 add1 = adds[0].index(perspective, mirror);
+    i32 add2 = (n_adds > 1) ? adds[1].index(perspective, mirror) : -1;
+    i32 sub1 = subs[0].index(perspective, mirror);
+    i32 sub2 = (n_subs > 1) ? subs[1].index(perspective, mirror) : -1;
+
+#ifdef USE_SIMD
+    constexpr i32 regw = ALIGNMENT / sizeof(i16);
+    static_assert(N_HIDDEN % regw == 0);
+    static_assert(N_HIDDEN == 64);
+
+    // TODO: once N_HIDDEN>=128:
+    // constexpr i32 n_chunks = N_HIDDEN / regw;
+    // static_assert(n_chunks % 8 == 0);
+    // for (i32 i = 0; i < n_chunks; n_chunks += 8) { ... }  // loop unroll by 8 instead of 4
+
+    constexpr i32 i = 0;
+    VecI16 acc0 = load_i16(&old_acc.values[(i + 0) * regw]);
+    VecI16 acc1 = load_i16(&old_acc.values[(i + 1) * regw]);
+    VecI16 acc2 = load_i16(&old_acc.values[(i + 2) * regw]);
+    VecI16 acc3 = load_i16(&old_acc.values[(i + 3) * regw]);
+
+    acc0 = subs_i16(acc0, load_i16(&weights[sub1 * N_HIDDEN + (i + 0) * regw]));
+    acc1 = subs_i16(acc1, load_i16(&weights[sub1 * N_HIDDEN + (i + 1) * regw]));
+    acc2 = subs_i16(acc2, load_i16(&weights[sub1 * N_HIDDEN + (i + 2) * regw]));
+    acc3 = subs_i16(acc3, load_i16(&weights[sub1 * N_HIDDEN + (i + 3) * regw]));
+
+    if (n_subs > 1) {
+        acc0 = subs_i16(acc0, load_i16(&weights[sub2 * N_HIDDEN + (i + 0) * regw]));
+        acc1 = subs_i16(acc1, load_i16(&weights[sub2 * N_HIDDEN + (i + 1) * regw]));
+        acc2 = subs_i16(acc2, load_i16(&weights[sub2 * N_HIDDEN + (i + 2) * regw]));
+        acc3 = subs_i16(acc3, load_i16(&weights[sub2 * N_HIDDEN + (i + 3) * regw]));
     }
 
+    acc0 = adds_i16(acc0, load_i16(&weights[add1 * N_HIDDEN + (i + 0) * regw]));
+    acc1 = adds_i16(acc1, load_i16(&weights[add1 * N_HIDDEN + (i + 1) * regw]));
+    acc2 = adds_i16(acc2, load_i16(&weights[add1 * N_HIDDEN + (i + 2) * regw]));
+    acc3 = adds_i16(acc3, load_i16(&weights[add1 * N_HIDDEN + (i + 3) * regw]));
+
+    if (n_adds > 1) {
+        acc0 = adds_i16(acc0, load_i16(&weights[add2 * N_HIDDEN + (i + 0) * regw]));
+        acc1 = adds_i16(acc1, load_i16(&weights[add2 * N_HIDDEN + (i + 1) * regw]));
+        acc2 = adds_i16(acc2, load_i16(&weights[add2 * N_HIDDEN + (i + 2) * regw]));
+        acc3 = adds_i16(acc3, load_i16(&weights[add2 * N_HIDDEN + (i + 3) * regw]));
+    }
+
+    store_i16(&values[(i + 0) * regw], acc0);
+    store_i16(&values[(i + 1) * regw], acc1);
+    store_i16(&values[(i + 2) * regw], acc2);
+    store_i16(&values[(i + 3) * regw], acc3);
+#else
+    for (i32 i = 0; i < N_HIDDEN; i++) {
+        values[i] = old_acc.values[i];
+
+        values[i] -= weights[sub1 * N_HIDDEN + i];
+        if (n_subs > 1) values[i] -= weights[sub2 * N_HIDDEN + i];
+        values[i] += weights[add1 * N_HIDDEN + i];
+        if (n_adds > 1) values[i] += weights[add2 * N_HIDDEN + i];
+    }
+#endif
+
+    reset_updates();
+}
+
+void Nnue::NnueAccumulator::refresh(
+    const i16* weights, const i16* biases, const chess::Board& board, chess::Color perspective
+) {
+    NnueFeature features[32];
+    i32 n_features;
+
+    // TODO: horizontal mirroring
+    const bool mirror = false;
+
+    // get features
+    auto pieces = board.occ();
+    while (pieces) {
+        const auto square = static_cast<chess::Square>(pieces.poplsb());
+        const auto piece = board.at(square);
+
+        assert(n_features < 32);
+        features[n_features++] = {.piece = piece, .square = square};
+    }
+
+    // refresh accumulator
+#ifdef USE_SIMD
+    constexpr i32 regw = ALIGNMENT / sizeof(i16);
+    static_assert(N_HIDDEN % regw == 0);
+    // TODO: once N_HIDDEN>=128:
+    // constexpr i32 n_chunks = N_HIDDEN / regw;
+    // static_assert(n_chunks % 8 == 0);
+    // for (i32 i = 0; i < n_chunks; n_chunks += 8) { ... }  // loop unroll by 8 instead of 4
+
+    // copy bias
+    constexpr i32 i = 0;
+    VecI16 acc0 = load_i16(&biases[(i + 0) * regw]);
+    VecI16 acc1 = load_i16(&biases[(i + 1) * regw]);
+    VecI16 acc2 = load_i16(&biases[(i + 2) * regw]);
+    VecI16 acc3 = load_i16(&biases[(i + 3) * regw]);
+
+    // add features
+    for (i32 f = 0; f < n_features; f++) {
+        const auto fidx = features[f].index(perspective, mirror);
+
+        acc0 = adds_i16(acc0, load_i16(&weights[fidx * N_HIDDEN + (i + 0) * regw]));
+        acc1 = adds_i16(acc1, load_i16(&weights[fidx * N_HIDDEN + (i + 1) * regw]));
+        acc2 = adds_i16(acc2, load_i16(&weights[fidx * N_HIDDEN + (i + 2) * regw]));
+        acc3 = adds_i16(acc3, load_i16(&weights[fidx * N_HIDDEN + (i + 3) * regw]));
+    }
+
+    store_i16(&values[(i + 0) * regw], acc0);
+    store_i16(&values[(i + 1) * regw], acc1);
+    store_i16(&values[(i + 2) * regw], acc2);
+    store_i16(&values[(i + 3) * regw], acc3);
+#else
+    copy(params->b0, params->b0 + N_HIDDEN, acc.values);
+
+    for (i32 f = 0; f < n_features; f++) {
+        const auto fidx = features[f].index(perspective, mirror);
+        for (i32 i = 0; i < N_HIDDEN; i++) values[i] += params->W0[fidx * N_HIDDEN + i];
+    }
+#endif
+
+    reset_updates();
+}
+
+
+
+Nnue::Nnue(): params(load_network()), idx_(0) {}
+
+const Nnue::NnueParams* Nnue::load_network() {
+    constexpr usize padded_size = 64 * ((sizeof(NnueParams) + 63) / 64);
+    if (g_netfile_size != padded_size)
+        throw runtime_error("network file and architecture doesn't match");
+
+    if (reinterpret_cast<uintptr_t>(g_netfile_data) % alignof(NnueParams) != 0)
+        throw runtime_error("network file isn't aligned properly");
+
+    return reinterpret_cast<const NnueParams*>(g_netfile_data);
+}
+
+
+
+i32 Nnue::evaluate(const chess::Board& board) {
+    // apply lazy updates
+    lazy_update(board, chess::Color::WHITE);
+    lazy_update(board, chess::Color::BLACK);
+
     // get address to accumulators and weights
-    const auto us_base = accumulators[idx_][color];
-    const auto them_base = accumulators[idx_][~color];
+    const auto us_acc = accumulators[idx_][board.stm()];
+    const auto them_acc = accumulators[idx_][~board.stm()];
     const auto us_w_base = params->W1;
     const auto them_w_base = params->W1 + N_HIDDEN;
+    assert(!us_acc.dirty());
+    assert(!them_acc.dirty());
 
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
@@ -75,8 +219,8 @@ i32 Nnue::evaluate(chess::Color color) {
 
     VecI32 sum = zeros;
     for (i32 i = 0; i < n_chunks; i++) {
-        const VecI16 us = load_i16(&us_base[i * regw]);
-        const VecI16 them = load_i16(&them_base[i * regw]);
+        const VecI16 us = load_i16(&us_acc.values[i * regw]);
+        const VecI16 them = load_i16(&them_acc.values[i * regw]);
         const VecI16 us_w = load_i16(&us_w_base[i * regw]);
         const VecI16 them_w = load_i16(&them_w_base[i * regw]);
 
@@ -96,8 +240,8 @@ i32 Nnue::evaluate(chess::Color color) {
 
     // compute W1 dot SCReLU(acc)
     for (i32 i = 0; i < N_HIDDEN; i++) {
-        const i32 us_clamped = min(max((i32)us_base[i], 0), QA);
-        const i32 them_clamped = min(max((i32)them_base[i], 0), QA);
+        const i32 us_clamped = min(max((i32)us_acc.values[i], 0), QA);
+        const i32 them_clamped = min(max((i32)them_acc.values[i], 0), QA);
 
         eval += us_w_base[i] * us_clamped * us_clamped;
         eval += them_w_base[i] * them_clamped * them_clamped;
@@ -107,164 +251,91 @@ i32 Nnue::evaluate(chess::Color color) {
 #endif
 }
 
-i16* Nnue::NnueAccumulator::operator[](chess::Color color) { return v[color]; }
-const i16* Nnue::NnueAccumulator::operator[](chess::Color color) const { return v[color]; }
-
-void Nnue::refresh_accumulator(
-    NnueAccumulator& new_acc, const vector<i32>& features, chess::Color color
-) {
-#ifdef USE_SIMD
-    constexpr i32 regw = ALIGNMENT / sizeof(i16);
-    static_assert(N_HIDDEN % regw == 0);
-    constexpr i32 n_chunks = N_HIDDEN / regw;
-    VecI16 regs[n_chunks];
-
-    // load bias into registers
-    for (i32 i = 0; i < n_chunks; i++) regs[i] = load_i16(&params->b0[i * regw]);
-
-    // add active features
-    for (i32 f : features)
-        for (i32 i = 0; i < n_chunks; i++)
-            regs[i] = adds_i16(regs[i], load_i16(&params->W0[f * N_HIDDEN + i * regw]));
-
-    // store result in accumulator
-    for (i32 i = 0; i < n_chunks; i++) store_i16(&new_acc[color][i * regw], regs[i]);
-#else
-    // copy bias
-    copy(params->b0, params->b0 + N_HIDDEN, new_acc.v[color]);
-
-    // accumulate columns of active features
-    for (i32 f : features)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params->W0[f * N_HIDDEN + i];
-#endif
-}
-
-void Nnue::update_accumulator(
-    NnueAccumulator& new_acc,
-    const NnueAccumulator& old_acc,
-    i32 add1,
-    i32 add2,
-    i32 rem1,
-    i32 rem2,
-    chess::Color color
-) {
-#ifdef USE_SIMD
-    constexpr i32 regw = ALIGNMENT / sizeof(i16);
-    static_assert(N_HIDDEN % regw == 0);
-    constexpr i32 n_chunks = N_HIDDEN / regw;
-    VecI16 regs[n_chunks];
-
-    // load previous accumulator values into registers
-    for (i32 i = 0; i < n_chunks; i++) regs[i] = load_i16(&old_acc[color][i * regw]);
-
-    // subtract rem_features
-    for (i32 i = 0; i < n_chunks; i++)
-        regs[i] = subs_i16(regs[i], load_i16(&params->W0[rem1 * N_HIDDEN + i * regw]));
-    if (rem2 >= 0)
-        for (i32 i = 0; i < n_chunks; i++)
-            regs[i] = subs_i16(regs[i], load_i16(&params->W0[rem2 * N_HIDDEN + i * regw]));
-
-    // add add_features
-    for (i32 i = 0; i < n_chunks; i++)
-        regs[i] = adds_i16(regs[i], load_i16(&params->W0[add1 * N_HIDDEN + i * regw]));
-    if (add2 >= 0)
-        for (i32 i = 0; i < n_chunks; i++)
-            regs[i] = adds_i16(regs[i], load_i16(&params->W0[add2 * N_HIDDEN + i * regw]));
-
-    // store results in new accumulator
-    for (i32 i = 0; i < n_chunks; i++) store_i16(&new_acc[color][i * regw], regs[i]);
-#else
-    // copy old_acc into new_acc
-    copy(old_acc[color], old_acc[color] + N_HIDDEN, new_acc[color]);
-
-    // subtract rem_features
-    for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] -= params->W0[rem1 * N_HIDDEN + i];
-    if (rem2 >= 0)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] -= params->W0[rem2 * N_HIDDEN + i];
-
-    // add add_features
-    for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params->W0[add1 * N_HIDDEN + i];
-    if (add2 >= 0)
-        for (i32 i = 0; i < N_HIDDEN; i++) new_acc[color][i] += params->W0[add2 * N_HIDDEN + i];
-#endif
-}
-
-
 
 void Nnue::set_board(const chess::Board& board) {
     idx_ = 0;
-
-    vector<i32> w_features, b_features;
-    w_features.reserve(32);
-    b_features.reserve(32);
-
-    auto pieces = board.occ();
-    while (pieces) {
-        const auto sq = static_cast<chess::Square>(pieces.poplsb());
-        const i32 wsq = sq;
-        const i32 bsq = sq.flipped();
-
-        const auto piece = board.at(sq);
-        const i32 wpiece = piece;                  // 0...5, 6...11
-        const i32 bpiece = piece.color_flipped();  // 6...11, 0...5
-
-        w_features.push_back(64 * wpiece + wsq);
-        b_features.push_back(64 * bpiece + bsq);
-    }
-    refresh_accumulator(accumulators[idx_], w_features, chess::Color::WHITE);
-    refresh_accumulator(accumulators[idx_], b_features, chess::Color::BLACK);
+    accumulators[idx_][chess::Color::WHITE].refresh(
+        params->W0, params->b0, board, chess::Color::WHITE
+    );
+    accumulators[idx_][chess::Color::BLACK].refresh(
+        params->W0, params->b0, board, chess::Color::BLACK
+    );
 }
 
-void Nnue::make_move(const chess::Board& board, chess::Move move) {
+void Nnue::make_move(
+    const chess::Board& old_board, const chess::Board& new_board, chess::Move move
+) {
     assert(idx_ < MAX_DEPTH - 1);
     idx_++;
 
-    const auto move_type = move.type();
-    const auto stm = board.stm();
     const auto from_sq = move.from();
     const auto to_sq = move.to();
-    const auto from_piece = board.at(from_sq);
-    const auto to_piece = board.at(to_sq);
+    const auto from_piece = old_board.at(from_sq);
+    const auto to_piece = old_board.at(to_sq);
     assert(from_piece != chess::Piece::NONE);
 
-    auto& state = accumulator_states[idx_];
-    state.dirty = true;
+    // reset updates so we can overwrite them
+    accumulators[idx_][chess::Color::WHITE].reset_updates();
+    accumulators[idx_][chess::Color::BLACK].reset_updates();
 
-    // incremental update
-    for (const auto color : {chess::Color::WHITE, chess::Color::BLACK}) {
-        const bool moving = (stm == color);
-        const i32 from_sqi = from_sq.relative(color);
-        const i32 to_sqi = to_sq.relative(color);
-        const i32 from_piecei = from_piece.relative(color);
-        const i32 to_piecei = to_piece.relative(color);
+    // remove moving piece
+    accumulators[idx_][chess::Color::WHITE].rem_piece(from_piece, from_sq);
+    accumulators[idx_][chess::Color::BLACK].rem_piece(from_piece, from_sq);
 
-        // remove moving piece
-        state.add1[color] = -1;
-        state.add2[color] = -1;
-        state.rem1[color] = 64 * from_piecei + from_sqi;
-        state.rem2[color] = -1;
+    // add moved/promoted piece
+    if (move.type() == chess::Move::PROMOTION) {
+        const auto promo = chess::Piece(move.promotion_type(), old_board.stm());
+        accumulators[idx_][chess::Color::WHITE].add_piece(promo, to_sq);
+        accumulators[idx_][chess::Color::BLACK].add_piece(promo, to_sq);
+    } else if (move.type() == chess::Move::CASTLING) {
+        assert(from_piece.type() == chess::PieceType::KING);
+        assert(to_piece.type() == chess::PieceType::ROOK);
 
-        // add moved piece to add_features (handle promotion and enemy castling)
-        if (move_type == chess::Move::PROMOTION) {
-            const i32 promote_piecei = !moving * 6 + move.promotion_type();
-            state.add1[color] = 64 * promote_piecei + to_sqi;
-        } else if (move_type == chess::Move::CASTLING) {
-            const i32 new_ksqi = (to_sqi % 8 == 7) ? to_sqi - 1 : to_sqi + 2;
-            const i32 new_rsqi = (to_sqi % 8 == 7) ? to_sqi - 2 : to_sqi + 3;
-            state.add1[color] = 64 * from_piecei + new_ksqi;
-            state.add2[color] = 64 * to_piecei + new_rsqi;
-        } else
-            state.add1[color] = 64 * from_piecei + to_sqi;
-
-        // add captured piece (castling is treated as rook capture) to rem_features
-        if (to_piece != chess::Piece::NONE)
-            state.rem2[color] = 64 * to_piecei + to_sqi;
-        else if (move_type == chess::Move::ENPASSANT)
-            state.rem2[color] = 64 * 6 * moving + (to_sqi + 8 - moving * 16);
+        const bool is_king_side = to_sq > from_sq;
+        const auto king_sq = chess::Square::castling_king_dest(is_king_side, old_board.stm());
+        const auto rook_sq = chess::Square::castling_rook_dest(is_king_side, old_board.stm());
+        accumulators[idx_][chess::Color::WHITE].add_piece(from_piece, king_sq);
+        accumulators[idx_][chess::Color::BLACK].add_piece(from_piece, king_sq);
+        accumulators[idx_][chess::Color::WHITE].add_piece(to_piece, rook_sq);
+        accumulators[idx_][chess::Color::BLACK].add_piece(to_piece, rook_sq);
+    } else {
+        accumulators[idx_][chess::Color::WHITE].add_piece(from_piece, to_sq);
+        accumulators[idx_][chess::Color::BLACK].add_piece(from_piece, to_sq);
     }
+
+    // add captured piece/ep pawn/castling rook
+    if (to_piece != chess::Piece::NONE) {
+        accumulators[idx_][chess::Color::WHITE].rem_piece(to_piece, to_sq);
+        accumulators[idx_][chess::Color::BLACK].rem_piece(to_piece, to_sq);
+    } else if (move.type() == chess::Move::ENPASSANT) {
+        assert(from_piece.type() == chess::PieceType::PAWN);
+
+        const auto ep_pawn = from_piece.color_flipped();
+        const auto ep_sq = to_sq.ep_square();
+        accumulators[idx_][chess::Color::WHITE].rem_piece(ep_pawn, ep_sq);
+        accumulators[idx_][chess::Color::BLACK].rem_piece(ep_pawn, ep_sq);
+    }
+
+    // TODO: refresh stm on king mirror change
 }
 
 void Nnue::unmake_move() {
     assert(idx_ > 0);
     idx_--;
+}
+
+
+void Nnue::lazy_update(const chess::Board& board, chess::Color perspective) {
+    // find clean accumulator
+    i32 clean_idx = idx_;
+    while (accumulators[clean_idx][perspective].dirty()) clean_idx--;
+
+    // TODO: horizontal mirroring
+    const bool mirror = false;
+
+    // update up the stack
+    while (clean_idx++ < idx_)
+        accumulators[clean_idx][perspective].update(
+            accumulators[clean_idx - 1][perspective], params->W0, perspective, mirror
+        );
 }

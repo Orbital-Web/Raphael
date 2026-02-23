@@ -59,54 +59,38 @@ void Nnue::NnueAccumulator::update(
     assert(!old_acc.dirty());
 
     i32 add1 = adds[0].index(perspective, mirror);
-    i32 add2 = (n_adds > 1) ? adds[1].index(perspective, mirror) : -1;
+    i32 add2 = adds[1].index(perspective, mirror);
     i32 sub1 = subs[0].index(perspective, mirror);
-    i32 sub2 = (n_subs > 1) ? subs[1].index(perspective, mirror) : -1;
+    i32 sub2 = subs[1].index(perspective, mirror);
 
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
+    constexpr i32 n_chunks = N_HIDDEN / regw;
+    constexpr i32 unroll = 4;
     static_assert(N_HIDDEN % regw == 0);
-    static_assert(N_HIDDEN == 64);
+    static_assert(n_chunks % unroll == 0);
 
-    // TODO: once N_HIDDEN>=128:
-    // constexpr i32 n_chunks = N_HIDDEN / regw;
-    // static_assert(n_chunks % 8 == 0);
-    // for (i32 i = 0; i < n_chunks; n_chunks += 8) { ... }  // loop unroll by 8 instead of 4
+    VecI16 acc[unroll];
 
-    constexpr i32 i = 0;
-    VecI16 acc0 = load_i16(&old_acc.values[(i + 0) * regw]);
-    VecI16 acc1 = load_i16(&old_acc.values[(i + 1) * regw]);
-    VecI16 acc2 = load_i16(&old_acc.values[(i + 2) * regw]);
-    VecI16 acc3 = load_i16(&old_acc.values[(i + 3) * regw]);
+    for (i32 i = 0; i < n_chunks; i += unroll) {
+        // load old_acc
+        for (i32 j = 0; j < n_chunks; j++) acc[j] = load_i16(&old_acc.values[(i + j) * regw]);
 
-    acc0 = subs_i16(acc0, load_i16(&weights[sub1 * N_HIDDEN + (i + 0) * regw]));
-    acc1 = subs_i16(acc1, load_i16(&weights[sub1 * N_HIDDEN + (i + 1) * regw]));
-    acc2 = subs_i16(acc2, load_i16(&weights[sub1 * N_HIDDEN + (i + 2) * regw]));
-    acc3 = subs_i16(acc3, load_i16(&weights[sub1 * N_HIDDEN + (i + 3) * regw]));
+        for (i32 j = 0; j < unroll; j++)
+            acc[j] = subs_i16(acc[j], load_i16(&weights[sub1 * N_HIDDEN + (i + j) * regw]));
+        if (n_subs > 1)
+            for (i32 j = 0; j < unroll; j++)
+                acc[j] = subs_i16(acc[j], load_i16(&weights[sub2 * N_HIDDEN + (i + j) * regw]));
 
-    if (n_subs > 1) {
-        acc0 = subs_i16(acc0, load_i16(&weights[sub2 * N_HIDDEN + (i + 0) * regw]));
-        acc1 = subs_i16(acc1, load_i16(&weights[sub2 * N_HIDDEN + (i + 1) * regw]));
-        acc2 = subs_i16(acc2, load_i16(&weights[sub2 * N_HIDDEN + (i + 2) * regw]));
-        acc3 = subs_i16(acc3, load_i16(&weights[sub2 * N_HIDDEN + (i + 3) * regw]));
+        for (i32 j = 0; j < unroll; j++)
+            acc[j] = adds_i16(acc[j], load_i16(&weights[add1 * N_HIDDEN + (i + j) * regw]));
+        if (n_adds > 1)
+            for (i32 j = 0; j < unroll; j++)
+                acc[j] = adds_i16(acc[j], load_i16(&weights[add2 * N_HIDDEN + (i + j) * regw]));
+
+        // store into self
+        for (i32 j = 0; j < unroll; j++) store_i16(&values[(i + j) * regw], acc[j]);
     }
-
-    acc0 = adds_i16(acc0, load_i16(&weights[add1 * N_HIDDEN + (i + 0) * regw]));
-    acc1 = adds_i16(acc1, load_i16(&weights[add1 * N_HIDDEN + (i + 1) * regw]));
-    acc2 = adds_i16(acc2, load_i16(&weights[add1 * N_HIDDEN + (i + 2) * regw]));
-    acc3 = adds_i16(acc3, load_i16(&weights[add1 * N_HIDDEN + (i + 3) * regw]));
-
-    if (n_adds > 1) {
-        acc0 = adds_i16(acc0, load_i16(&weights[add2 * N_HIDDEN + (i + 0) * regw]));
-        acc1 = adds_i16(acc1, load_i16(&weights[add2 * N_HIDDEN + (i + 1) * regw]));
-        acc2 = adds_i16(acc2, load_i16(&weights[add2 * N_HIDDEN + (i + 2) * regw]));
-        acc3 = adds_i16(acc3, load_i16(&weights[add2 * N_HIDDEN + (i + 3) * regw]));
-    }
-
-    store_i16(&values[(i + 0) * regw], acc0);
-    store_i16(&values[(i + 1) * regw], acc1);
-    store_i16(&values[(i + 2) * regw], acc2);
-    store_i16(&values[(i + 3) * regw], acc3);
 #else
     for (i32 i = 0; i < N_HIDDEN; i++) {
         values[i] = old_acc.values[i];
@@ -143,31 +127,27 @@ void Nnue::NnueAccumulator::refresh(
     // refresh accumulator
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
-    // TODO: once N_HIDDEN>=128:
-    // constexpr i32 n_chunks = N_HIDDEN / regw;
-    // for (i32 i = 0; i < n_chunks; n_chunks += 8) { ... }  // loop unroll by 8 instead of 4
+    constexpr i32 n_chunks = N_HIDDEN / regw;
+    constexpr i32 unroll = 4;
+    static_assert(N_HIDDEN % regw == 0);
+    static_assert(n_chunks % unroll == 0);
 
-    // copy bias
-    constexpr i32 i = 0;
-    VecI16 acc0 = load_i16(&biases[(i + 0) * regw]);
-    VecI16 acc1 = load_i16(&biases[(i + 1) * regw]);
-    VecI16 acc2 = load_i16(&biases[(i + 2) * regw]);
-    VecI16 acc3 = load_i16(&biases[(i + 3) * regw]);
+    VecI16 acc[unroll];
 
-    // add features
-    for (i32 f = 0; f < n_features; f++) {
-        const auto fidx = features[f].index(perspective, mirror);
+    for (i32 i = 0; i < n_chunks; i += unroll) {
+        // copy bias
+        for (i32 j = 0; j < unroll; j++) acc[j] = load_i16(&biases[(i + j) * regw]);
 
-        acc0 = adds_i16(acc0, load_i16(&weights[fidx * N_HIDDEN + (i + 0) * regw]));
-        acc1 = adds_i16(acc1, load_i16(&weights[fidx * N_HIDDEN + (i + 1) * regw]));
-        acc2 = adds_i16(acc2, load_i16(&weights[fidx * N_HIDDEN + (i + 2) * regw]));
-        acc3 = adds_i16(acc3, load_i16(&weights[fidx * N_HIDDEN + (i + 3) * regw]));
+        // add features
+        for (i32 f = 0; f < n_features; f++) {
+            const auto fidx = features[f].index(perspective, mirror);
+            for (i32 j = 0; j < unroll; j++)
+                acc[j] = adds_i16(acc[j], load_i16(&weights[fidx * N_HIDDEN + (i + j) * regw]));
+        }
+
+        // store into self
+        for (i32 j = 0; j < unroll; j++) store_i16(&values[(i + j) * regw], acc[j]);
     }
-
-    store_i16(&values[(i + 0) * regw], acc0);
-    store_i16(&values[(i + 1) * regw], acc1);
-    store_i16(&values[(i + 2) * regw], acc2);
-    store_i16(&values[(i + 3) * regw], acc3);
 #else
     copy(biases, biases + N_HIDDEN, values);
 

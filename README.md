@@ -168,7 +168,7 @@ The engine contains the following features:
   - [x] NNUE                                (`v2.0+`)
     - [x] Lizard SCReLU                     (`v2.0+`)
     - [x] Lazy updates                      (`v2.1+`)
-    - [ ] Horizontal mirroring
+    - [x] Horizontal mirroring              (`v3.1+`)
     - [ ] Output buckets
     - [ ] King buckets
     - [ ] Finny tables

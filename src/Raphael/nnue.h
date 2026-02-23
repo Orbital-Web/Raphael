@@ -18,12 +18,87 @@ private:
     static constexpr i32 QA = 255;
     static constexpr i32 QB = 64;
 
-#ifdef USE_SIMD
-    const VecI16 zeros = zero_i16();
-    const VecI16 qas = full_i16(QA);
-#endif
+    struct NnueFeature {
+        chess::Piece piece;
+        chess::Square square;
 
-    struct NnueWeights {
+        /** Returns the feature index
+         *
+         * \param perspective feature perspective
+         * \param mirror whether to mirror the board
+         * \return the feature index
+         */
+        i32 index(chess::Color perspective, bool mirror) const;
+    };
+
+    class NnueAccumulator {
+    public:
+        alignas(ALIGNMENT) i16 values[N_HIDDEN];
+        NnueFeature adds[2];
+        NnueFeature subs[2];
+        u8 n_adds = 0;
+        u8 n_subs = 0;
+
+        /** Initializes the accumulator */
+        NnueAccumulator();
+
+
+        /** Returns if the accumulator needs to be updated
+         *
+         * \returns whether the accumulator is dirty or not
+         */
+        bool dirty() const;
+
+
+        /** Adds a new piece to the accumulator
+         *
+         * \param piece piece to add
+         * \param square square to add piece to
+         */
+        void add_piece(chess::Piece piece, chess::Square square);
+
+        /** Removes a piece from the accumulator
+         *
+         * \param piece piece to remove
+         * \param square square to remove piece from
+         */
+        void rem_piece(chess::Piece piece, chess::Square square);
+
+        /** Resets updates stored on this accumulator */
+        void reset_updates();
+
+
+        /** Updates the accumulator values
+         *
+         * \param old_acc accumulator to use as base
+         * \param weights start of W0
+         * \param perspective accumulator perspective
+         * \param mirror whether to mirror the board
+         */
+        void update(
+            const NnueAccumulator& old_acc,
+            const i16* weights,
+            chess::Color perspective,
+            bool mirror
+        );
+
+        /** Refreshes the accumulator values
+         *
+         * \param weights start of W0
+         * \param biases start of b0
+         * \param board board to use for refreshing
+         * \param perspective accumulator perspective
+         */
+        void refresh(
+            const i16* weights,
+            const i16* biases,
+            const chess::Board& board,
+            chess::Color perspective
+        );
+    };
+
+
+    struct NnueParams {
         // accumulator: N_INPUTS -> N_HIDDEN
         alignas(ALIGNMENT) i16 W0[N_INPUTS * N_HIDDEN];  // column major N_HIDDEN x 768
         alignas(ALIGNMENT) i16 b0[N_HIDDEN];
@@ -31,72 +106,29 @@ private:
         alignas(ALIGNMENT) i16 W1[2 * N_HIDDEN];  // column major 1 x (2 * N_HIDDEN)
         alignas(ALIGNMENT) i16 b1;
     };
-    const NnueWeights* params;  // network weights and biases
+    const NnueParams* params;  // network weights and biases
 
     /** Loads the embedded network
      *
      * \returns the pointer to the loaded network
      */
-    static const NnueWeights* load_network();
+    static const NnueParams* load_network();
 
 
-    // nnue_state variables
-    struct NnueAccumulator {
-        alignas(ALIGNMENT) i16 v[2][N_HIDDEN];
-
-        i16* operator[](chess::Color color);
-        const i16* operator[](chess::Color color) const;
-    };
-    NnueAccumulator accumulators[MAX_DEPTH];  // accumulators[ply][black/white][index]
-    struct AccumulatorState {
-        bool dirty = false;
-        i32 add1[2];
-        i32 add2[2];
-        i32 rem1[2];
-        i32 rem2[2];
-    };
-    AccumulatorState accumulator_states[MAX_DEPTH];
+    // state variables
+    NnueAccumulator accumulators[MAX_DEPTH][2];  // accumulators[ply][black/white][index]
     i32 idx_ = 0;
 
-    /** Refreshes the accumulator as new_acc = b1 + W1[features]
-     *
-     * \param new_acc accumulator to refresh
-     * \param features indicies of active features
-     * \param color which color accumulator to refresh
-     */
-    void refresh_accumulator(
-        NnueAccumulator& new_acc, const std::vector<i32>& features, chess::Color color
-    );
-
-    /** Updates the accumulator as new_acc = old_acc + W1[add_features] - W1[rem_features]
-     *
-     * \param new_acc accumulator to write updated values to
-     * \param old_acc accumulator to use as base
-     * \param add1 index of first feature to activate
-     * \param add2 index of second feature to activate (-1 for none)
-     * \param rem1 index of first feature to deactivate
-     * \param rem2 index of second feature to deactivate (-1 for none)
-     * \param color which color accumulator to update
-     */
-    void update_accumulator(
-        NnueAccumulator& new_acc,
-        const NnueAccumulator& old_acc,
-        i32 add1,
-        i32 add2,
-        i32 rem1,
-        i32 rem2,
-        chess::Color color
-    );
 
 public:
     Nnue();
 
-    /** Evaluates the board from the given side's perspective
+    /** Evaluates the board from the current side to move's perspective
      *
-     * \param color side to evaluate from
+     * \param board current board (should match either set_board or new_board in make_move)
      * \returns the NNUE evaluation of the board in centipawns
      */
-    i32 evaluate(chess::Color color);
+    i32 evaluate(const chess::Board& board);
 
     /** Sets internal states to match the given board
      *
@@ -106,12 +138,21 @@ public:
 
     /** Updates internal states based on the given move
      *
-     * \param board the board before the move is played
+     * \param old_board the board before the move is played
+     * \param new_board the board after the move is played
      * \param move the move to make
      */
-    void make_move(const chess::Board& board, chess::Move move);
+    void make_move(const chess::Board& old_board, const chess::Board& new_board, chess::Move move);
 
     /** Updates internal states to unmake the last move */
     void unmake_move();
+
+private:
+    /** Lazily updates the accumulator stack for one perspective
+     *
+     * \param board current board
+     * \param perspective accumulator perspective
+     */
+    void lazy_update(const chess::Board& board, chess::Color perspective);
 };
 }  // namespace raphael

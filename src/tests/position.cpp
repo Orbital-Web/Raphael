@@ -30,7 +30,7 @@ public:
 
             const auto& newboard = position_.board();
             refnet_.set_board(newboard);
-            const auto true_eval = refnet_.evaluate(newboard.stm());
+            const auto true_eval = refnet_.evaluate(newboard);
 
             if (eval != true_eval) {
                 cout << "fail: eval after make_move not consistent with eval after set_board "
@@ -52,7 +52,7 @@ public:
 
         const auto& newboard = position_.board();
         refnet_.set_board(newboard);
-        const auto true_eval = refnet_.evaluate(newboard.stm());
+        const auto true_eval = refnet_.evaluate(newboard);
 
         if (eval != true_eval) {
             cout << "fail: eval after make_move not consistent with eval after set_board " << eval

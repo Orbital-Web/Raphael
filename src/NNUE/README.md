@@ -36,15 +36,36 @@ wdl: 0.4
 **Results:**
 
 ```text
-Results of dev vs main (8+0.08, 1t, 16MB, UHO_Lichess_4852_v1.epd):
-Elo: 155.84 +/- 23.70, nElo: 240.08 +/- 31.96
-LOS: 100.00 %, DrawRatio: 29.07 %, PairsRatio: 13.64
-Games: 454, Wins: 250, Losses: 59, Draws: 145, Points: 322.5 (71.04 %)
-Ptnml(0-2): [2, 9, 66, 96, 54], WL/DD Ratio: 2.30
-LLR: 2.89 (100.1%) (-2.25, 2.89) [0.00, 5.00]
+Elo   | 155.84 +- 23.70 (95%)
+SPRT  | 8.0+0.08s Threads=1 Hash=16MB
+LLR   | 2.89 (-2.25, 2.89) [0.00, 5.00]
+Games | N: 454 W: 250 L: 59 D: 145
+Penta | [2, 9, 66, 96, 54]
 ```
 
 **Notes:**
 > Same arch as v1, but data comes from self-played games at 5000 softnodes. Postions were filtered using the default viriformat filter in bullet, but with `min_pieces=2`.
 >
 > Around 6m games were played with around 600m positions pre-filtering. The net was trained using bullet with basically the same settings as 1-simple.rs, apart from a few training and model parameters.
+
+### Basilisk v3
+
+**Training Parameters:**
+
+```text
+lr:  cosine-decay from 0.001 to 0.001 * 0.3^5 with warmup for 1600 batches
+wdl: 0.4
+```
+
+**Results:**
+
+```text
+Elo   | 16.51 +- 8.00 (95%)
+SPRT  | 8.0+0.08s Threads=1 Hash=16MB
+LLR   | 2.91 (-2.25, 2.89) [0.00, 5.00]
+Games | N: 3074 W: 943 L: 797 D: 1334
+Penta | [51, 343, 637, 421, 85]
+```
+
+**Notes:**
+> Same data as v2 but with horizontal mirroring. Some minor changes in the SIMD code (along with the necessary inference changes for mirroring) to make better use of registers which the compiler probably does already.

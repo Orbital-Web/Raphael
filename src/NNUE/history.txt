@@ -2,47 +2,53 @@ This document contains all the information for the various Raphael NNUE iteratio
 (document style taken from https://github.com/kelseyde/hobbes-chess-engine/blob/main/network_history.txt)
 
 
-NET/DATA ID       | SPECS                 | DETAILS                       | vs. PREVIOUS                                | NOTES                                          |
-------------------|-----------------------|-------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d1          | games: n.a            | source: raphael v1.8 (HCE)    | Used roughly 200m positions from previous tests, public CCRL matches, and books, all         |
-                  | pos: 200m             | nodes: 5k soft                | positions re-evaluated using Raphael v1.8.                                                   |
-                  |                       | filter: captures, checks      |                                                                                              |
-------------------|-----------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
-basilisk_v1       | (768->64)x2->1        | data: d1                      | n.a                                         | Trained with custom pytorch trainer.           |
-default for v2.0  | activ: screlu         | sb: n.a                       |                                             |                                                |
-                  | scale: 400            | lr: linear(0.001,0.00000243)  |                                             |                                                |
-                  | quant: [255,64]       | wdl: constant(0.3)            |                                             |                                                |
-                  | optim: AdamW          |                               |                                             |                                                |
-------------------|-----------------------|-------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d2          | games: 6.29m          | source: raphael v3.0          | Training data now comes from fully self-play games using OpenBench.                          |
-                  | pos: 615m             | nodes: 5k soft                |                                                                                              |
-                  |                       | filter: noisy, checks         |                                                                                              |
-------------------|-----------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
-basilisk_v2       | (768->64)x2->1        | data: d2                      | Elo   | 155.84 +- 23.70 (95%)               | Switched to bullet for training. Scale was     |
-                  | activ: screlu         | sb: 60                        | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | adjusted by comparing the abs mean against v1  |
-                  | scale: 283            | lr: cosine(0.001,0.00000243)  | LLR   | 2.89 (-2.25, 2.89) [0.00, 5.00]     | on lichess-big3-resolved. Future outputs       |
-                  | quant: [255,64]       | wdl: constant(0.4)            | Games | N: 454 W: 250 L: 59 D: 145          | scales were also calibrated using v1 as the    |
-                  | optim: AdamW          |                               | Penta | [2, 9, 66, 96, 54]                  | baseline.                                      |
-------------------|-----------------------|-------------------------------|---------------------------------------------|------------------------------------------------|
-basilisk_v3       | (768hm->64)x2->1      | data: d2                      | Elo   | 16.51 +- 8.00 (95%)                 | Minor changes in SIMD code to make better use  |
-                  | activ: screlu         | sb: 60                        | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | of registers, which the compiler probably      |
-                  | scale: 283            | lr: 1600b warmup              | LLR   | 2.91 (-2.25, 2.89) [0.00, 5.00]     | already does.                                  |
-                  | quant: [255,64]       |     cosine(0.001,0.00000243)  | Games | N: 3074 W: 943 L: 797 D: 1334       |                                                |
-                  | optim: AdamW          | wdl: constant(0.4)            | Penta | [51, 343, 637, 421, 85]             |                                                |                                            |
-------------------|-----------------------|-------------------------------|---------------------------------------------|------------------------------------------------|
-basilisk_v4       | (768hm->128)x2->1     | data: d2                      | Elo   | 59.33 +- 14.44 (95%)                |                                                |
-                  | activ: screlu         | sb: 100                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | scale: 283            | lr: 1600b warmup              | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]       |     cosine(0.001,0.00000243)  | Games | N: 810 W: 302 L: 165 D: 343         |                                                |
-                  | optim: AdamW          | wdl: constant(0.4)            | Penta | [5, 49, 182, 142, 27]               |                                                |                                              |
-------------------|-----------------------|-------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d3          | games: 5.38m          | source: basilisk_v4           |                                                                                              |
-                  | pos: 538m             | nodes: 5k soft                |                                                                                              |
-                  |                       | filter: noisy, checks         |                                                                                              |
-------------------|-----------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
-basilisk_v5       | (768hm->256)x2->1     | data: d1-2                    | Elo   | 82.63 +- 16.84 (95%)                | Combining both d1 + d2 worked better than only |
-                  | activ: screlu         | sb: 140                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | using d2 (onlynew vs combined = -7.98 +- 6.71) |
-                  | scale: 276            | lr: 1600b warmup              | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]       |     cosine(0.001,0.00000243)  | Games | N: 634 W: 263 L: 115 D: 256         |                                                |
-                  | optim: AdamW          | wdl: constant(0.4)            | Penta | [2, 31, 131, 123, 30]               |                                                |                                            |
-------------------|-----------------------|-------------------------------|---------------------------------------------|------------------------------------------------|
+NET/DATA ID       | SPECS                  | DETAILS                       | vs. PREVIOUS                                | NOTES                                          |
+------------------|------------------------|-------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d1          | games: n.a             | source: raphael v1.8 (HCE)    | Used roughly 200m positions from previous tests, public CCRL matches, and books, all         |
+                  | pos: 200m              | nodes: 5k soft                | positions re-evaluated using Raphael v1.8.                                                   |
+                  |                        | filter: captures, checks      |                                                                                              |
+------------------|------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
+basilisk_v1       | (768->64)x2->1         | data: d1                      | n.a                                         | Trained with custom pytorch trainer.           |
+default for v2.0  | activ: screlu          | sb: n.a                       |                                             |                                                |
+                  | scale: 400             | lr: linear(0.001,0.00000243)  |                                             |                                                |
+                  | quant: [255,64]        | wdl: constant(0.3)            |                                             |                                                |
+                  | optim: AdamW           |                               |                                             |                                                |
+------------------|------------------------|-------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d2          | games: 6.29m           | source: raphael v3.0          | Training data now comes from fully self-play games using OpenBench.                          |
+                  | pos: 615m              | nodes: 5k soft                |                                                                                              |
+                  |                        | filter: noisy, checks         |                                                                                              |
+------------------|------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
+basilisk_v2       | (768->64)x2->1         | data: d2                      | Elo   | 155.84 +- 23.70 (95%)               | Switched to bullet for training. Scale was     |
+                  | activ: screlu          | sb: 60                        | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | adjusted by comparing the abs mean against v1  |
+                  | scale: 283             | lr: cosine(0.001,0.00000243)  | LLR   | 2.89 (-2.25, 2.89) [0.00, 5.00]     | on lichess-big3-resolved. Future outputs       |
+                  | quant: [255,64]        | wdl: constant(0.4)            | Games | N: 454 W: 250 L: 59 D: 145          | scales were also calibrated using v1 as the    |
+                  | optim: AdamW           |                               | Penta | [2, 9, 66, 96, 54]                  | baseline.                                      |
+------------------|------------------------|-------------------------------|---------------------------------------------|------------------------------------------------|
+basilisk_v3       | (768hm->64)x2->1       | data: d2                      | Elo   | 16.51 +- 8.00 (95%)                 | Minor changes in SIMD code to make better use  |
+                  | activ: screlu          | sb: 60                        | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | of registers, which the compiler probably      |
+                  | scale: 283             | lr: 1600b warmup              | LLR   | 2.91 (-2.25, 2.89) [0.00, 5.00]     | already does.                                  |
+                  | quant: [255,64]        |     cosine(0.001,0.00000243)  | Games | N: 3074 W: 943 L: 797 D: 1334       |                                                |
+                  | optim: AdamW           | wdl: constant(0.4)            | Penta | [51, 343, 637, 421, 85]             |                                                |
+------------------|------------------------|-------------------------------|---------------------------------------------|------------------------------------------------|
+basilisk_v4       | (768hm->128)x2->1      | data: d2                      | Elo   | 59.33 +- 14.44 (95%)                |                                                |
+                  | activ: screlu          | sb: 100                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 283             | lr: 1600b warmup              | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]        |     cosine(0.001,0.00000243)  | Games | N: 810 W: 302 L: 165 D: 343         |                                                |
+                  | optim: AdamW           | wdl: constant(0.4)            | Penta | [5, 49, 182, 142, 27]               |                                                |
+------------------|------------------------|-------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d3          | games: 5.38m           | source: basilisk_v4           |                                                                                              |
+                  | pos: 538m              | nodes: 5k soft                |                                                                                              |
+                  |                        | filter: noisy, checks         |                                                                                              |
+------------------|------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
+basilisk_v5       | (768hm->256)x2->1      | data: d1-2                    | Elo   | 82.63 +- 16.84 (95%)                | Combining both d1 + d2 worked better than only |
+                  | activ: screlu          | sb: 140                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | using d2 (onlynew vs combined = -7.98 +- 6.71) |
+                  | scale: 276             | lr: 1600b warmup              | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]        |     cosine(0.001,0.00000243)  | Games | N: 634 W: 263 L: 115 D: 256         |                                                |
+                  | optim: AdamW           | wdl: constant(0.4)            | Penta | [2, 31, 131, 123, 30]               |                                                |
+------------------|------------------------|-------------------------------|---------------------------------------------|------------------------------------------------|
+sleipnir_v1       | (768hm->256)x2->1x8    | data: d1-2                    | Elo   | 12.66 +- 6.55 (95%)                 |                                                |
+                  | activ: screlu          | sb: 160                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 276             | lr: 1600b warmup              | LLR   | 2.99 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]        |     cosine(0.001,0.00000243)  | Games | N: 3898 W: 1118 L: 976 D: 1804      |                                                |
+                  | optim: AdamW           | wdl: constant(0.4)            | Penta | [49, 420, 886, 528, 66]             |                                                |
+------------------|------------------------|-------------------------------|---------------------------------------------|------------------------------------------------|

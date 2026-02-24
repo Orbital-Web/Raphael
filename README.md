@@ -19,17 +19,17 @@ Note that elos with an asterics next to them are estimates and not official, and
 <table>
     <tr align="center">
         <th>Version</th>
-        <th><a href="https://www.computerchess.org.uk/ccrl/404/">CCRL Blitz</a></th>
-        <th><a href="https://www.computerchess.org.uk/ccrl/4040/">CCRL 40/15</a></th>
+        <th><a href="https://www.computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?family=Raphael">CCRL Blitz</a></th>
+        <th><a href="https://www.computerchess.org.uk/ccrl/4040/cgi/compare_engines.cgi?family=Raphael">CCRL 40/15</a></th>
     </tr>
-    <tr align="center"><td>3.0.0</td> <td>3321*</td> <td>3236*</td></tr>
-    <tr align="center"><td>2.3.0</td> <td>3146*</td> <td>3060</td></tr>
-    <tr align="center"><td>2.2.0</td> <td>3035*</td> <td>2954</td></tr>
-    <tr align="center"><td>2.1.0</td> <td>2739*</td> <td>2692</td></tr>
+    <tr align="center"><td>3.0.0</td> <td>3321*</td> <td>3200</td></tr>
+    <tr align="center"><td>2.3.0</td> <td>3146*</td> <td>3061</td></tr>
+    <tr align="center"><td>2.2.0</td> <td>3035*</td> <td>2953</td></tr>
+    <tr align="center"><td>2.1.0</td> <td>2739*</td> <td>2689</td></tr>
     <tr align="center"><td>2.0.0</td> <td>2646*</td> <td></td></tr>
     <tr align="center"><td>1.8.0</td> <td>2223*</td> <td></td></tr>
-    <tr align="center"><td>1.7.6</td> <td>1967</td>  <td></td></tr>
-    <tr align="center"><td>1.7.0</td> <td>1851</td>  <td></td></tr>
+    <tr align="center"><td>1.7.6</td> <td>1970</td>  <td></td></tr>
+    <tr align="center"><td>1.7.0</td> <td>1853</td>  <td></td></tr>
     <tr align="center"><td>1.6.0</td> <td>1797*</td> <td></td></tr>
     <tr align="center"><td>1.5.0</td> <td>1764*</td> <td></td></tr>
 </table>
@@ -169,7 +169,7 @@ The engine contains the following features:
     - [x] Lizard SCReLU                     (`v2.0+`)
     - [x] Lazy updates                      (`v2.1+`)
     - [x] Horizontal mirroring              (`v3.1+`)
-    - [ ] Output buckets
+    - [x] Output buckets                    (`v3.1+`)
     - [ ] King buckets
     - [ ] Finny tables
     - [ ] Pairwise multiplication

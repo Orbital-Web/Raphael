@@ -13,15 +13,15 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "basilisk_v4";
-    const HIDDEN_SIZE: usize = 128;
+    const NET_ID: &str = "basilisk_v5";
+    const HIDDEN_SIZE: usize = 256;
     const SCALE: f32 = 400.0;
     const QA: i16 = 255;
     const QB: i16 = 64;
 
     // hyperparams
     let dataset_path = "data/full.vf";
-    let superbatches = 100;
+    let superbatches = 140;
     let wdl_scheduler = wdl::ConstantWDL { value: 0.4 };
     let lr_scheduler = lr::Warmup {
         inner: lr::CosineDecayLR {

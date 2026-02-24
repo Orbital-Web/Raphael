@@ -239,13 +239,18 @@ i32 Nnue::evaluate(const chess::Board& board) {
     lazy_update(board, chess::Color::WHITE);
     lazy_update(board, chess::Color::BLACK);
 
-    // get address to accumulators and weights
+    // get address to accumulators
     const auto us_acc = accumulators[idx_][board.stm()];
     const auto them_acc = accumulators[idx_][~board.stm()];
-    const auto us_w_base = params->W1;
-    const auto them_w_base = params->W1 + N_HIDDEN;
     assert(!us_acc.dirty());
     assert(!them_acc.dirty());
+
+    // get address to weights and biases
+    constexpr i32 bucket_div = (32 + N_OUTBUCKETS - 1) / N_OUTBUCKETS;
+    const i32 bucket_idx = (board.occ().count() - 2) / bucket_div;
+    const auto us_w_base = params->W1 + bucket_idx * (2 * N_HIDDEN);
+    const auto them_w_base = us_w_base + N_HIDDEN;
+    const auto bias = params->b1[bucket_idx];
 
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
@@ -267,9 +272,9 @@ i32 Nnue::evaluate(const chess::Board& board) {
         sum = add_i32(sum, add_i32(us_screlu, them_screlu));
     }
 
-    i32 eval = QA * params->b1 + hadd_i32(sum);
+    i32 eval = QA * bias + hadd_i32(sum);
 #else
-    i32 eval = QA * params->b1;
+    i32 eval = QA * bias;
 
     // compute W1 dot SCReLU(acc)
     for (i32 i = 0; i < N_HIDDEN; i++) {
@@ -304,6 +309,7 @@ void Nnue::make_move(
     assert(idx_ < MAX_DEPTH - 1);
     idx_++;
 
+    const auto stm = old_board.stm();
     const auto from_sq = move.from();
     const auto to_sq = move.to();
     const auto from_piece = old_board.at(from_sq);
@@ -320,7 +326,7 @@ void Nnue::make_move(
 
     // add moved/promoted piece
     if (move.type() == chess::Move::PROMOTION) {
-        const auto promo = chess::Piece(move.promotion_type(), old_board.stm());
+        const auto promo = chess::Piece(move.promotion_type(), stm);
         accumulators[idx_][chess::Color::WHITE].add_piece(promo, to_sq);
         accumulators[idx_][chess::Color::BLACK].add_piece(promo, to_sq);
     } else if (move.type() == chess::Move::CASTLING) {
@@ -328,8 +334,8 @@ void Nnue::make_move(
         assert(to_piece.type() == chess::PieceType::ROOK);
 
         const bool is_king_side = to_sq > from_sq;
-        const auto king_sq = chess::Square::castling_king_dest(is_king_side, old_board.stm());
-        const auto rook_sq = chess::Square::castling_rook_dest(is_king_side, old_board.stm());
+        const auto king_sq = chess::Square::castling_king_dest(is_king_side, stm);
+        const auto rook_sq = chess::Square::castling_rook_dest(is_king_side, stm);
         accumulators[idx_][chess::Color::WHITE].add_piece(from_piece, king_sq);
         accumulators[idx_][chess::Color::BLACK].add_piece(from_piece, king_sq);
         accumulators[idx_][chess::Color::WHITE].add_piece(to_piece, rook_sq);
@@ -354,10 +360,9 @@ void Nnue::make_move(
 
     // refresh stm on king mirror change
     if (from_piece.type() == chess::PieceType::KING
-        && (from_sq.file() > chess::File::D) != (to_sq.file() > chess::File::D))
-        accumulators[idx_][old_board.stm()].refresh(
-            params->W0, params->b0, new_board, old_board.stm()
-        );
+        && (from_sq.file() > chess::File::D)
+               != (new_board.king_square(stm).file() > chess::File::D))
+        accumulators[idx_][stm].refresh(params->W0, params->b0, new_board, stm);
 }
 
 void Nnue::unmake_move() {

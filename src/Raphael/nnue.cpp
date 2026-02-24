@@ -309,6 +309,7 @@ void Nnue::make_move(
     assert(idx_ < MAX_DEPTH - 1);
     idx_++;
 
+    const auto stm = old_board.stm();
     const auto from_sq = move.from();
     const auto to_sq = move.to();
     const auto from_piece = old_board.at(from_sq);
@@ -325,7 +326,7 @@ void Nnue::make_move(
 
     // add moved/promoted piece
     if (move.type() == chess::Move::PROMOTION) {
-        const auto promo = chess::Piece(move.promotion_type(), old_board.stm());
+        const auto promo = chess::Piece(move.promotion_type(), stm);
         accumulators[idx_][chess::Color::WHITE].add_piece(promo, to_sq);
         accumulators[idx_][chess::Color::BLACK].add_piece(promo, to_sq);
     } else if (move.type() == chess::Move::CASTLING) {
@@ -333,8 +334,8 @@ void Nnue::make_move(
         assert(to_piece.type() == chess::PieceType::ROOK);
 
         const bool is_king_side = to_sq > from_sq;
-        const auto king_sq = chess::Square::castling_king_dest(is_king_side, old_board.stm());
-        const auto rook_sq = chess::Square::castling_rook_dest(is_king_side, old_board.stm());
+        const auto king_sq = chess::Square::castling_king_dest(is_king_side, stm);
+        const auto rook_sq = chess::Square::castling_rook_dest(is_king_side, stm);
         accumulators[idx_][chess::Color::WHITE].add_piece(from_piece, king_sq);
         accumulators[idx_][chess::Color::BLACK].add_piece(from_piece, king_sq);
         accumulators[idx_][chess::Color::WHITE].add_piece(to_piece, rook_sq);
@@ -359,11 +360,9 @@ void Nnue::make_move(
 
     // refresh stm on king mirror change
     if (from_piece.type() == chess::PieceType::KING
-        && (from_sq.file() > chess::File::D) != (to_sq.file() > chess::File::D))
-        // FIXME: new_board.king_sq.file() instead of to_sq.file()
-        accumulators[idx_][old_board.stm()].refresh(
-            params->W0, params->b0, new_board, old_board.stm()
-        );
+        && (from_sq.file() > chess::File::D)
+               != (new_board.king_square(stm).file() > chess::File::D))
+        accumulators[idx_][stm].refresh(params->W0, params->b0, new_board, stm);
 }
 
 void Nnue::unmake_move() {

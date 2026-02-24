@@ -10,7 +10,7 @@
 namespace raphael {
 class Nnue {
 public:
-    static constexpr i32 OUTPUT_SCALE = 283;
+    static constexpr i32 OUTPUT_SCALE = 276;
 
 private:
     static constexpr i32 N_INPUTS = 12 * 64;  // all features

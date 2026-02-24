@@ -128,7 +128,7 @@ The engine contains the following features:
     - [x] Double extensions                 (`v3.0+`)
     - [ ] Triple extensions
     - [x] Negative extensions               (`v3.0+`)
-    - [ ] Cutnode negative extensions
+    - [x] Cutnode negative extensions       (`v3.1+`)
     - [ ] Low depth singular extensions
   - [x] Reductions                          (`v1.5+`)
     - [x] Late move reductions              (`v1.5+`)
@@ -208,7 +208,7 @@ Raphael uses or has used the following tools throughout its development:
 Furthermore, the following individuals have inspired me or have helped me tremendously throughout the development process of Raphael (in no particular order):
 
 - [Sebastian Lague](https://www.youtube.com/c/SebastianLague) for inspiring me to start the development of Raphael through the Coding Adventures series
+- [Jonathan Hallström](https://github.com/JonathanHallstrom), author of [Pawnocchio](https://github.com/JonathanHallstrom/pawnocchio) (and a contributor to Raphael!!)
 - [Ciecke](https://github.com/Ciekce), author of [Stormphrax](https://github.com/Ciekce/Stormphrax)
-- [Jonathan Hallström](https://github.com/JonathanHallstrom), author of [Pawnocchio](https://github.com/JonathanHallstrom/pawnocchio)
 - [Sp00ph](https://github.com/Sp00ph), author of [Icarus](https://github.com/Sp00ph/icarus)
 - and many others on the Stockfish and AlphaBeta Discord servers

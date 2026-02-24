@@ -239,13 +239,18 @@ i32 Nnue::evaluate(const chess::Board& board) {
     lazy_update(board, chess::Color::WHITE);
     lazy_update(board, chess::Color::BLACK);
 
-    // get address to accumulators and weights
+    // get address to accumulators
     const auto us_acc = accumulators[idx_][board.stm()];
     const auto them_acc = accumulators[idx_][~board.stm()];
-    const auto us_w_base = params->W1;
-    const auto them_w_base = params->W1 + N_HIDDEN;
     assert(!us_acc.dirty());
     assert(!them_acc.dirty());
+
+    // get address to weights and biases
+    constexpr i32 bucket_div = (32 + N_OUTBUCKETS - 1) / N_OUTBUCKETS;
+    const i32 bucket_idx = (board.occ().count() - 2) / bucket_div;
+    const auto us_w_base = params->W1 + bucket_idx * (2 * N_HIDDEN);
+    const auto them_w_base = us_w_base + N_HIDDEN;
+    const auto bias = params->b1[bucket_idx];
 
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
@@ -267,9 +272,9 @@ i32 Nnue::evaluate(const chess::Board& board) {
         sum = add_i32(sum, add_i32(us_screlu, them_screlu));
     }
 
-    i32 eval = QA * params->b1 + hadd_i32(sum);
+    i32 eval = QA * bias + hadd_i32(sum);
 #else
-    i32 eval = QA * params->b1;
+    i32 eval = QA * bias;
 
     // compute W1 dot SCReLU(acc)
     for (i32 i = 0; i < N_HIDDEN; i++) {
@@ -355,6 +360,7 @@ void Nnue::make_move(
     // refresh stm on king mirror change
     if (from_piece.type() == chess::PieceType::KING
         && (from_sq.file() > chess::File::D) != (to_sq.file() > chess::File::D))
+        // FIXME: new_board.king_sq.file() instead of to_sq.file()
         accumulators[idx_][old_board.stm()].refresh(
             params->W0, params->b0, new_board, old_board.stm()
         );

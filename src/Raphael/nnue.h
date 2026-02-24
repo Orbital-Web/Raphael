@@ -15,6 +15,7 @@ public:
 private:
     static constexpr i32 N_INPUTS = 12 * 64;  // all features
     static constexpr i32 N_HIDDEN = 256;      // accumulator size
+    static constexpr i32 N_OUTBUCKETS = 8;    // output buckets
     static constexpr i32 QA = 255;
     static constexpr i32 QB = 64;
 
@@ -103,8 +104,8 @@ private:
         alignas(ALIGNMENT) i16 W0[N_INPUTS * N_HIDDEN];  // column major N_HIDDEN x 768
         alignas(ALIGNMENT) i16 b0[N_HIDDEN];
         // layer1: N_HIDDEN * 2 -> 1
-        alignas(ALIGNMENT) i16 W1[2 * N_HIDDEN];  // column major 1 x (2 * N_HIDDEN)
-        alignas(ALIGNMENT) i16 b1;
+        alignas(ALIGNMENT) i16 W1[N_OUTBUCKETS * 2 * N_HIDDEN];  // row major 8 x (2 * N_HIDDEN)
+        alignas(ALIGNMENT) i16 b1[N_OUTBUCKETS];
     };
     const NnueParams* params;  // network weights and biases
 

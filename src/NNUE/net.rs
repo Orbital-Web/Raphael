@@ -1,27 +1,28 @@
 use bullet_lib::{
-    game::inputs::ChessBucketsMirrored,
+    game::{inputs::ChessBucketsMirrored, outputs::MaterialCount},
     nn::optimiser::AdamW,
     trainer::{
         save::SavedFormat,
-        schedule::{lr, wdl, TrainingSchedule, TrainingSteps},
+        schedule::{TrainingSchedule, TrainingSteps, lr, wdl},
         settings::LocalSettings,
     },
-    value::{loader::ViriBinpackLoader, ValueTrainerBuilder},
+    value::{ValueTrainerBuilder, loader::ViriBinpackLoader},
 };
 
 use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "basilisk_v5";
+    const NET_ID: &str = "sleipnir_v1";
     const HIDDEN_SIZE: usize = 256;
+    const NUM_OUTPUT_BUCKETS: usize = 8;
     const SCALE: f32 = 400.0;
     const QA: i16 = 255;
     const QB: i16 = 64;
 
     // hyperparams
     let dataset_path = "data/full.vf";
-    let superbatches = 140;
+    let superbatches = 160;
     let wdl_scheduler = wdl::ConstantWDL { value: 0.4 };
     let lr_scheduler = lr::Warmup {
         inner: lr::CosineDecayLR {
@@ -36,23 +37,24 @@ fn main() {
         .dual_perspective()
         .optimiser(AdamW)
         .inputs(ChessBucketsMirrored::default())
+        .output_buckets(MaterialCount::<NUM_OUTPUT_BUCKETS>)
         .save_format(&[
             SavedFormat::id("l0w").round().quantise::<i16>(QA),
             SavedFormat::id("l0b").round().quantise::<i16>(QA),
-            SavedFormat::id("l1w").round().quantise::<i16>(QB),
+            SavedFormat::id("l1w").round().quantise::<i16>(QB).transpose(),
             SavedFormat::id("l1b").round().quantise::<i16>(QA * QB),
         ])
         .loss_fn(|output, target| output.sigmoid().squared_error(target))
-        .build(|builder, stm_inputs, ntm_inputs| {
+        .build(|builder, stm_inputs, ntm_inputs, output_buckets| {
             // weights
             let l0 = builder.new_affine("l0", 768, HIDDEN_SIZE);
-            let l1 = builder.new_affine("l1", 2 * HIDDEN_SIZE, 1);
+            let l1 = builder.new_affine("l1", 2 * HIDDEN_SIZE, NUM_OUTPUT_BUCKETS);
 
             // inference
             let stm_hidden = l0.forward(stm_inputs).screlu();
             let ntm_hidden = l0.forward(ntm_inputs).screlu();
             let hidden_layer = stm_hidden.concat(ntm_hidden);
-            l1.forward(hidden_layer)
+            l1.forward(hidden_layer).select(output_buckets)
         });
 
     let schedule = TrainingSchedule {

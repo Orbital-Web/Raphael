@@ -40,13 +40,13 @@ data: d3          | games: 5.38m           | source: basilisk_v4           |    
                   | pos: 538m              | nodes: 5k soft                |                                                                                              |
                   |                        | filter: noisy, checks         |                                                                                              |
 ------------------|------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
-basilisk_v5       | (768hm->256)x2->1      | data: d1-2                    | Elo   | 82.63 +- 16.84 (95%)                | Combining both d1 + d2 worked better than only |
-                  | activ: screlu          | sb: 140                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | using d2 (onlynew vs combined = -7.98 +- 6.71) |
+basilisk_v5       | (768hm->256)x2->1      | data: d2-3                    | Elo   | 82.63 +- 16.84 (95%)                | Combining both d2 + d3 worked better than only |
+                  | activ: screlu          | sb: 140                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | using d3 (onlynew vs combined = -7.98 +- 6.71) |
                   | scale: 276             | lr: 1600b warmup              | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | quant: [255,64]        |     cosine(0.001,0.00000243)  | Games | N: 634 W: 263 L: 115 D: 256         |                                                |
                   | optim: AdamW           | wdl: constant(0.4)            | Penta | [2, 31, 131, 123, 30]               |                                                |
 ------------------|------------------------|-------------------------------|---------------------------------------------|------------------------------------------------|
-sleipnir_v1       | (768hm->256)x2->1x8    | data: d1-2                    | Elo   | 12.66 +- 6.55 (95%)                 |                                                |
+sleipnir_v1       | (768hm->256)x2->1x8    | data: d2-3                    | Elo   | 12.66 +- 6.55 (95%)                 |                                                |
                   | activ: screlu          | sb: 160                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
                   | scale: 279             | lr: 1600b warmup              | LLR   | 2.99 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | quant: [255,64]        |     cosine(0.001,0.00000243)  | Games | N: 3898 W: 1118 L: 976 D: 1804      |                                                |

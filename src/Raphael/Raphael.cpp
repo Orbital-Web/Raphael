@@ -368,7 +368,7 @@ i32 Raphael::negamax(
                 }
 
                 // futility pruning
-                const i32 futility = ss->static_eval + FP_MARGIN_BASE + FP_DEPTH_SCALE * depth;
+                const i32 futility = ss->static_eval + FP_MARGIN_BASE + FP_DEPTH_SCALE * lmr_depth;
                 if (!in_check && lmr_depth <= FP_DEPTH && futility <= alpha) {
                     generator.skip_quiets();
                     continue;

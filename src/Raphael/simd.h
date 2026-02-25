@@ -5,8 +5,8 @@
     #include <immintrin.h>
     #define USE_SIMD 256
     #define ALIGNMENT 32
-typedef __m256i VecI16;  // a list of 16x i16
-typedef __m256i VecI32;  // a list of 8x i32
+using VecI16 = __m256i;  // a list of 16x i16
+using VecI32 = __m256i;  // a list of 8x i32
 
 
 

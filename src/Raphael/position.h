@@ -1,6 +1,7 @@
 #pragma once
 #include <Raphael/nnue.h>
 
+#include <cstddef>
 #include <type_traits>
 
 
@@ -12,7 +13,7 @@ private:
     chess::Board current_;
     std::vector<chess::Board> boards_;
 
-    using NetType = std::conditional_t<include_net, Nnue, nullptr_t>;
+    using NetType = std::conditional_t<include_net, Nnue, std::nullptr_t>;
     NetType net_;
 
 public:

@@ -54,6 +54,33 @@ TEST_SUITE("Board") {
         CHECK(board.get_fen() == "rnr3k1/ppb2ppp/2ppbQ2/4p3/1PP1P3/P1NP3P/5PP1/R3KBNR w KQ - 0 1");
     }
 
+    TEST_CASE("Board Fen Get/Set Chess960") {
+        Board board = Board("nbqrknbr/pppppppp/8/8/8/8/PPPPPPPP/NBQRKNBR w KQkq - 0 1", true);
+        CHECK(board.chess960() == true);
+        CHECK(board.get_fen() == "nbqrknbr/pppppppp/8/8/8/8/PPPPPPPP/NBQRKNBR w HDhd - 0 1");
+
+        board.set_fen("1rqbkrbn/1ppppp1p/1n6/p1N3p1/8/2P4P/PP1PPPP1/1RQBKRBN w FBfb - 0 9");
+        CHECK(
+            board.get_fen() == "1rqbkrbn/1ppppp1p/1n6/p1N3p1/8/2P4P/PP1PPPP1/1RQBKRBN w FBfb - 0 9"
+        );
+
+        board.set_fen("4rrb1/1kp3b1/1p1p4/pP1Pn2p/5p2/1PR2P2/2P1NB1P/2KR1B2 w D - 0 21");
+        CHECK(board.get_fen() == "4rrb1/1kp3b1/1p1p4/pP1Pn2p/5p2/1PR2P2/2P1NB1P/2KR1B2 w D - 0 21");
+
+        board.set_fen("nbqrknbr/pppppppp/8/8/8/8/PPPPPPPP/NBQRKNBR w Qkq - 0 1");
+        CHECK(board.get_fen() == "nbqrknbr/pppppppp/8/8/8/8/PPPPPPPP/NBQRKNBR w Dhd - 0 1");
+
+        // white rook not on F file
+        board.set_fen("nbqrknbr/pppppppp/8/8/8/8/PPPPPPPP/NBQRKNBR w DFdh - 0 1");
+        CHECK(board.get_fen() == "nbqrknbr/pppppppp/8/8/8/8/PPPPPPPP/NBQRKNBR w Dhd - 0 1");
+
+        // dfrc
+        board.set_fen("qbbnrkr1/p1pppppp/1p4n1/8/2P5/6N1/PPNPPPPP/1BRKBRQ1 b FCge - 1 3");
+        CHECK(
+            board.get_fen() == "qbbnrkr1/p1pppppp/1p4n1/8/2P5/6N1/PPNPPPPP/1BRKBRQ1 b FCge - 1 3"
+        );
+    }
+
     TEST_CASE("Board make_move") {
         SUBCASE("make_move") {
             Board board = Board();

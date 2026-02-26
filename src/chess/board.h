@@ -105,8 +105,7 @@ public:
 
     [[nodiscard]] bool chess960() const { return chess960_; }
 
-
-    void set_chess960(bool chess960) { chess960_ = chess960; }
+    void set960(bool chess960) { chess960_ = chess960; }
 
 
     [[nodiscard]] Square king_square(Color color) const {

@@ -42,6 +42,7 @@ struct SearchRequest {
     bool go = false;
     bool searching = false;
     bool position_ready = false;
+    bool chess960 = false;
 };
 SearchRequest pending_request;
 
@@ -121,6 +122,18 @@ inline void handle_setoption(const vector<string>& tokens) {
     // check option
     if (tokens[4] == "true" || tokens[4] == "false") {
         const bool value = (tokens[4][0] == 't');
+
+        // UCI_Chess960
+        if (tokens[2] == "UCI_Chess960") {
+            pending_request.chess960 = value;
+            lock_guard<mutex> lock(cout_mutex);
+            if (value)
+                cout << "info string enabled UCI_Chess960\n" << flush;
+            else
+                cout << "info string disabled UCI_Chess960\n" << flush;
+            return;
+        }
+
         engine.set_option(tokens[2], value);
         return;
     }
@@ -163,6 +176,8 @@ inline void handle_position(const vector<string>& tokens) {
 
     // set initial board
     chess::Board board;
+    board.set960(pending_request.chess960);
+
     i32 i = 2;
     if (tokens[1] == "startpos")
         board.set_fen(chess::Board::STARTPOS);
@@ -428,8 +443,10 @@ inline void handle_command(const string& uci_command) {
         lock_guard<mutex> lock(cout_mutex);
         cout << "id name " << engine.name << " " << engine.version << "\n"
              << "id author Rei Meguro\n"
-             << params.hash.uci() << params.threads.uci() << params.moveoverhead.uci()
-             << params.datagen.uci() << params.softnodes.uci() << params.softhardmult.uci();
+             << params.hash.uci() << params.threads.uci()
+             << "option name UCI_Chess960 type check default false\n"
+             << params.moveoverhead.uci() << params.datagen.uci() << params.softnodes.uci()
+             << params.softhardmult.uci();
 #ifdef TUNE
         for (const auto tunable : raphael::tunables) cout << tunable->uci();
 #endif

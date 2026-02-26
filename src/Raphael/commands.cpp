@@ -116,6 +116,7 @@ void bench(Raphael& engine) {
 
 
 void genfens(Raphael& engine, i32 count, u64 seed, const std::string& book, i32 randmoves) {
+    // TODO: add dfrc support (and modify uci.cpp)
     // based on https://github.com/official-clockwork/Clockwork/blob/main/src/uci.cpp
     engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::NONE);
     engine.set_searchoptions({.maxnodes = GENFENS_MAX_NODES});

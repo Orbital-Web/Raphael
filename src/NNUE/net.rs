@@ -13,7 +13,7 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "sleipnir_v2";
+    const NET_ID: &str = "sleipnir_v3";
     const HIDDEN_SIZE: usize = 512;
     const NUM_OUTPUT_BUCKETS: usize = 8;
     const SCALE: f32 = 400.0;
@@ -21,9 +21,9 @@ fn main() {
     const QB: i16 = 64;
 
     // hyperparams
-    let dataset_path = "data/full.vf";
+    let dataset_path = "data/combined.vf";
     let superbatches = 320;
-    let wdl_scheduler = wdl::ConstantWDL { value: 0.4 };
+    let wdl_scheduler = wdl::LinearWDL { start: 0.2, end: 0.4 };
     let lr_scheduler = lr::Warmup {
         inner: lr::CosineDecayLR {
             initial_lr: 0.001,

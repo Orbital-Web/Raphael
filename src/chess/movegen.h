@@ -525,14 +525,23 @@ template <Color::underlying color>
         // can't castle when in check
         if (checks != 0) return false;
 
+        // should be back rank for this side
+        if (!to.is_back_rank(static_cast<Color>(color))) return false;
+
+        // from and to squares should be our king and rook
+        if (from_pt != Piece(PieceType::KING, static_cast<Color>(color))) return false;
+        if (to_pt != Piece(PieceType::ROOK, static_cast<Color>(color))) return false;
+
         const auto rights = board.castle_rights();
         const auto side = rights.closest_side(to.file(), from.file());
 
         // should have castling rights
         if (!rights.has(static_cast<Color>(color), side)) return false;
 
-        // should be back rank for this side (on the rare case of a hash collision in tt)
-        if (!to.is_back_rank(static_cast<Color>(color))) return false;
+        // should castle with the correct rook in chess960
+        // e.g., castling file = E, king on B, rook on E & H, king cannot castle with rook on H
+        if (board.chess960() && rights.get_rook_file(static_cast<Color>(color), side) != to.file())
+            return false;
 
         // should not have pieces on the castling path
         const auto is_king_side = (side == Board::CastlingRights::Side::KING_SIDE);

@@ -115,8 +115,9 @@ void bench(Raphael& engine) {
 }
 
 
-void genfens(Raphael& engine, i32 count, u64 seed, const std::string& book, i32 randmoves) {
-    // TODO: add dfrc support (and modify uci.cpp)
+void genfens(
+    Raphael& engine, i32 count, u64 seed, const std::string& book, i32 randmoves, bool dfrc
+) {
     // based on https://github.com/official-clockwork/Clockwork/blob/main/src/uci.cpp
     engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::NONE);
     engine.set_searchoptions({.maxnodes = GENFENS_MAX_NODES});
@@ -124,6 +125,7 @@ void genfens(Raphael& engine, i32 count, u64 seed, const std::string& book, i32 
 
     mt19937_64 generator(seed);
     chess::Board board;
+    board.set960(dfrc);
     chess::MoveList<chess::ScoredMove> movelist;
 
     // load seed_fens from book

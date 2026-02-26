@@ -344,6 +344,7 @@ inline void handle_genfens(const vector<string>& tokens) {
     u64 seed = 0;
     std::string book = "None";
     i32 randmoves = 0;
+    bool dfrc = false;
 
     usize i = 2;
     while (i < tokens.size()) {
@@ -353,6 +354,8 @@ inline void handle_genfens(const vector<string>& tokens) {
             book = tokens[i + 1];
         else if (tokens[i] == "randmoves")
             randmoves = stoi(tokens[i + 1]);
+        else if (tokens[i] == "dfrc")
+            dfrc = (tokens[i + 1] == "true");
         i += 2;
     }
 
@@ -368,7 +371,7 @@ inline void handle_genfens(const vector<string>& tokens) {
         return;
     }
 
-    raphael::commands::genfens(engine, count, seed, book, randmoves);
+    raphael::commands::genfens(engine, count, seed, book, randmoves, dfrc);
 
     // quit
     quit.store(true, memory_order_relaxed);
@@ -406,12 +409,13 @@ inline void show_help() {
          << "TOOLS:\n"
          << "  bench\n"
          << "      run benchmark\n\n"
-         << "  genfens <COUNT> [seed SEED] [book BOOK] [randmoves RANDMOVES]\n"
+         << "  genfens <COUNT> [seed SEED] [book BOOK] [randmoves RANDMOVES] [dfrc DFRC]\n"
          << "      generate FENs\n"
          << "      COUNT: number of FENs to generate\n"
          << "      SEED: random seed, u64. default 0\n"
          << "      BOOK: book to start with. default is None, AKA startpos\n"
-         << "      RANDMOVES: number of random moves to play from book position. default 0\n\n"
+         << "      RANDMOVES: number of random moves to play from book position. default 0\n"
+         << "      DFCR: whether to generate DFRC positions, true/false. default false\n\n"
          << "  evalstats <BOOK>\n"
          << "      print statistics of NNUE evaluation\n"
          << "      BOOK: book to benchmark with\n\n"

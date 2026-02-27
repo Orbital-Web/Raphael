@@ -57,8 +57,10 @@ void search_thread() {
     while (true) {
         // wait until a search request is made
         unique_lock<mutex> search_lock(search_mutex);
-        search_cv.wait(search_lock, [] { return quit || pending_request.go; });
-        if (quit) break;
+        search_cv.wait(search_lock, [] {
+            return pending_request.go || quit.load(memory_order_relaxed);
+        });
+        if (quit.load(memory_order_relaxed)) break;
 
         // if position is not ready, call set_position
         assert(!pending_request.searching);
@@ -550,12 +552,12 @@ int main(int argc, char** argv) {
     if (argc > 1) {
         vector<string> args = split_args(argc, argv);
         for (const auto& arg : args)
-            if (!quit) handle_command(arg);
+            if (!quit.load(memory_order_relaxed)) handle_command(arg);
     }
 
     // listen for commands from cin
     string uci_command;
-    while (!quit) {
+    while (!quit.load(memory_order_relaxed)) {
         getline(cin, uci_command);
         handle_command(uci_command);
     }

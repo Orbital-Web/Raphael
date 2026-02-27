@@ -60,16 +60,11 @@ void search_thread() {
         search_cv.wait(search_lock, [] { return quit || pending_request.go; });
         if (quit) break;
 
-        // get search arguments
-        SearchRequest request = pending_request;  // creates a copy, safe to unlock
-        assert(!request.searching);
-        pending_request.go = false;
-        pending_request.searching = true;
-        search_lock.unlock();
-
         // if position is not ready, call set_position
-        if (!request.position_ready) {
-            engine.set_position(request.position);
+        assert(!pending_request.searching);
+        if (!pending_request.position_ready) {
+            engine.set_position(pending_request.position);
+            pending_request.position_ready = true;
 
             unique_lock<mutex> lock(cout_mutex);
             cout << "info string warning: to avoid overhead, call isready or ucinewgame after "
@@ -77,15 +72,27 @@ void search_thread() {
                  << flush;
         }
 
+        // get search options
+        const auto options = pending_request.options;
+        const auto t_remain = pending_request.t_remain;
+        const auto t_inc = pending_request.t_inc;
+        pending_request.go = false;
+        pending_request.searching = true;
+        search_lock.unlock();
+
         // do search
         halt.store(false, memory_order_relaxed);
-        engine.set_searchoptions(request.options);
-        engine.get_move(request.t_remain, request.t_inc, halt);
+        engine.set_searchoptions(options);
+        const auto result = engine.get_move(t_remain, t_inc, halt);
 
         // mark search as complete
         search_lock.lock();
         pending_request.searching = false;
         search_lock.unlock();
+
+        // print bestmove
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "bestmove " << chess::uci::from_move(result.move) << "\n" << flush;
     }
 }
 

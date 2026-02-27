@@ -85,14 +85,14 @@ void search_thread() {
         engine.set_searchoptions(options);
         const auto result = engine.get_move(t_remain, t_inc, halt);
 
-        // mark search as complete
+        // print bestmove and mark search as complete
         search_lock.lock();
+        {
+            lock_guard<mutex> lock(cout_mutex);
+            cout << "bestmove " << chess::uci::from_move(result.move) << "\n" << flush;
+        }
         pending_request.searching = false;
         search_lock.unlock();
-
-        // print bestmove
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "bestmove " << chess::uci::from_move(result.move) << "\n" << flush;
     }
 }
 
@@ -102,7 +102,7 @@ void search_thread() {
  *
  * \param tokens list of tokens for the command
  */
-void handle_setoption(const vector<string>& tokens) {
+inline void handle_setoption(const vector<string>& tokens) {
     lock_guard<mutex> search_lock(search_mutex);
     if (pending_request.searching) {
         lock_guard<mutex> lock(cout_mutex);
@@ -148,7 +148,7 @@ void handle_setoption(const vector<string>& tokens) {
  *
  * \param tokens list of tokens for the command
  */
-void handle_position(const vector<string>& tokens) {
+inline void handle_position(const vector<string>& tokens) {
     lock_guard<mutex> search_lock(search_mutex);
     if (pending_request.searching) {
         lock_guard<mutex> lock(cout_mutex);
@@ -191,7 +191,7 @@ void handle_position(const vector<string>& tokens) {
  *
  * \param tokens list of tokens for the command
  */
-void handle_go(const vector<string>& tokens) {
+inline void handle_go(const vector<string>& tokens) {
     lock_guard<mutex> search_lock(search_mutex);
     if (pending_request.searching) {
         lock_guard<mutex> lock(cout_mutex);
@@ -234,7 +234,7 @@ void handle_go(const vector<string>& tokens) {
 }
 
 /** Handles the eval command */
-void handle_eval() {
+inline void handle_eval() {
     lock_guard<mutex> search_lock(search_mutex);
     if (pending_request.searching) {
         lock_guard<mutex> lock(cout_mutex);
@@ -252,7 +252,7 @@ void handle_eval() {
 }
 
 /** Handles the isready command */
-void handle_isready() {
+inline void handle_isready() {
     lock_guard<mutex> search_lock(search_mutex);
     if (pending_request.searching) {
         // if we are still searching, simply return readyok to indicate we are alive
@@ -272,7 +272,7 @@ void handle_isready() {
 }
 
 /** Handles the ucinewgame command */
-void handle_ucinewgame() {
+inline void handle_ucinewgame() {
     lock_guard<mutex> search_lock(search_mutex);
     if (pending_request.searching) {
         lock_guard<mutex> lock(cout_mutex);
@@ -289,7 +289,7 @@ void handle_ucinewgame() {
 }
 
 /** Handles the bench command */
-void handle_bench() {
+inline void handle_bench() {
     lock_guard<mutex> search_lock(search_mutex);
     if (pending_request.searching) {
         lock_guard<mutex> lock(cout_mutex);
@@ -310,7 +310,7 @@ void handle_bench() {
  *
  * \param tokens list of tokens for the command
  */
-void handle_genfens(const vector<string>& tokens) {
+inline void handle_genfens(const vector<string>& tokens) {
     lock_guard<mutex> search_lock(search_mutex);
     if (pending_request.searching) {
         lock_guard<mutex> lock(cout_mutex);
@@ -362,7 +362,7 @@ void handle_genfens(const vector<string>& tokens) {
  *
  * \param tokens list of tokens for the command
  */
-void handle_evalstats(const vector<string>& tokens) {
+inline void handle_evalstats(const vector<string>& tokens) {
     lock_guard<mutex> search_lock(search_mutex);
     if (pending_request.searching) {
         lock_guard<mutex> lock(cout_mutex);
@@ -383,7 +383,7 @@ void handle_evalstats(const vector<string>& tokens) {
 }
 
 /** Shows the help message */
-void show_help() {
+inline void show_help() {
     lock_guard<mutex> lock(cout_mutex);
     cout << engine.name << " " << engine.version << "\n\n"
          << "TOOLS:\n"
@@ -420,7 +420,7 @@ void show_help() {
  *
  * \param uci_command the command string
  */
-void handle_command(const string& uci_command) {
+inline void handle_command(const string& uci_command) {
     if (uci_command == "uci") {
         const auto params = engine.default_params();
         lock_guard<mutex> lock(cout_mutex);
@@ -506,7 +506,7 @@ void handle_command(const string& uci_command) {
  * \param argv contents of the command line arguments
  * \returns the list of split arguments
  */
-vector<string> split_args(i32 argc, char** argv) {
+inline vector<string> split_args(i32 argc, char** argv) {
     assert(argc > 1);
 
     vector<string> args;

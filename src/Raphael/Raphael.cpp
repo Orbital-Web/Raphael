@@ -182,12 +182,6 @@ Raphael::MoveScore Raphael::get_move(const i32 t_remain, const i32 t_inc, atomic
     // print last info
     if (ucilevel_ == UciInfoLevel::MINIMAL) print_uci_info(depth, score, ss);
 
-    // print bestmove
-    if (ucilevel_ >= UciInfoLevel::MINIMAL) {
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "bestmove " << chess::uci::from_move(bestmove) << "\n" << flush;
-    }
-
     // age tt
     tt_.do_age();
 

@@ -404,6 +404,7 @@ inline void handle_evalstats(const vector<string>& tokens) {
 
 /** Shows the help message */
 inline void show_help() {
+    // help message style from pawnocchio
     lock_guard<mutex> lock(cout_mutex);
     cout << engine.name << " " << engine.version << "\n\n"
          << "TOOLS:\n"

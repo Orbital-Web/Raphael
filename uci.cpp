@@ -31,10 +31,6 @@ using std::vector;
 
 
 
-// engine
-mutex engine_mutex;
-raphael::Raphael engine("Raphael");
-
 // search globals
 mutex search_mutex;
 condition_variable search_cv;
@@ -44,17 +40,20 @@ struct SearchRequest {
     i32 t_remain;
     i32 t_inc;
     bool go = false;
+    bool searching = false;
+    bool position_ready = false;
 };
 SearchRequest pending_request;
 
 // other globals
+raphael::Raphael engine("Raphael");
 atomic<bool> halt{false};
 atomic<bool> quit{false};
 
 
 
 /** Thread function for handling search */
-void handle_search() {
+void search_thread() {
     while (true) {
         // wait until a search request is made
         unique_lock<mutex> search_lock(search_mutex);
@@ -63,14 +62,30 @@ void handle_search() {
 
         // get search arguments
         SearchRequest request = pending_request;  // creates a copy, safe to unlock
+        assert(!request.searching);
         pending_request.go = false;
+        pending_request.searching = true;
         search_lock.unlock();
 
-        // do search (ignore return value)
-        lock_guard<mutex> engine_lock(engine_mutex);
+        // if position is not ready, call set_position
+        if (!request.position_ready) {
+            engine.set_position(request.position);
+
+            unique_lock<mutex> lock(cout_mutex);
+            cout << "info string warning: to avoid overhead, call isready or ucinewgame after "
+                    "setting position\n"
+                 << flush;
+        }
+
+        // do search
         halt.store(false, memory_order_relaxed);
         engine.set_searchoptions(request.options);
         engine.get_move(request.t_remain, request.t_inc, halt);
+
+        // mark search as complete
+        search_lock.lock();
+        pending_request.searching = false;
+        search_lock.unlock();
     }
 }
 
@@ -80,14 +95,23 @@ void handle_search() {
  *
  * \param tokens list of tokens for the command
  */
-void setoption(const vector<string>& tokens) {
-    if (tokens.size() != 5) return;
-    if (tokens[1] != "name" || tokens[3] != "value") return;
+void handle_setoption(const vector<string>& tokens) {
+    lock_guard<mutex> search_lock(search_mutex);
+    if (pending_request.searching) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string still searching\n" << flush;
+        return;
+    }
+
+    if (tokens.size() != 5 || tokens[1] != "name" || tokens[3] != "value") {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string usage: setoption name <NAME> value <VALUE>\n" << flush;
+        return;
+    }
 
     // check option
     if (tokens[4] == "true" || tokens[4] == "false") {
         const bool value = (tokens[4][0] == 't');
-        lock_guard<mutex> engine_lock(engine_mutex);
         engine.set_option(tokens[2], value);
         return;
     }
@@ -97,10 +121,11 @@ void setoption(const vector<string>& tokens) {
     try {
         value = stoi(tokens[4]);
     } catch (const exception& e) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string value must either be a bool or an int\n" << flush;
         return;
     }
 
-    lock_guard<mutex> engine_lock(engine_mutex);
 #ifdef TUNE
     if (raphael::set_tunable(tokens[2], value)) {
         lock_guard<mutex> lock(cout_mutex);
@@ -116,7 +141,14 @@ void setoption(const vector<string>& tokens) {
  *
  * \param tokens list of tokens for the command
  */
-void setposition(const vector<string>& tokens) {
+void handle_position(const vector<string>& tokens) {
+    lock_guard<mutex> search_lock(search_mutex);
+    if (pending_request.searching) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string still searching\n" << flush;
+        return;
+    }
+
     i32 ntokens = tokens.size();
     if (ntokens < 2) return;
 
@@ -135,18 +167,16 @@ void setposition(const vector<string>& tokens) {
         }
         board.set_fen(fen);
     }
-    lock_guard<mutex> search_lock(search_mutex);
     pending_request.position.set_board(board);
 
-    // play moves
+    // apply moves
     while (++i < ntokens)
         pending_request.position.make_move(
             chess::uci::to_move(pending_request.position.board(), tokens[i])
         );
 
-    // set engine position
-    lock_guard<mutex> engine_lock(engine_mutex);
-    engine.set_position(pending_request.position);
+    // we modified the position, engine must call set_position
+    pending_request.position_ready = false;
 }
 
 /** Handles the go command
@@ -154,16 +184,21 @@ void setposition(const vector<string>& tokens) {
  *
  * \param tokens list of tokens for the command
  */
-void search(const vector<string>& tokens) {
-    // get arguments
-    i32 ntokens = tokens.size();
-
+void handle_go(const vector<string>& tokens) {
     lock_guard<mutex> search_lock(search_mutex);
+    if (pending_request.searching) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string already searching\n" << flush;
+        return;
+    }
+
+    // get arguments
     pending_request.options = {};
     pending_request.t_remain = 0;
     pending_request.t_inc = 0;
 
     bool is_white = pending_request.position.board().stm() == chess::Color::WHITE;
+    i32 ntokens = tokens.size();
     i32 i = 1;
     while (i < ntokens) {
         if (tokens[i] == "depth")
@@ -185,7 +220,82 @@ void search(const vector<string>& tokens) {
     }
     if (pending_request.t_remain < 0) pending_request.t_remain = 1;
     if (ntokens == 1) pending_request.options.infinite = true;
+
+    // request search
     pending_request.go = true;
+    search_cv.notify_one();
+}
+
+/** Handles the eval command */
+void handle_eval() {
+    lock_guard<mutex> search_lock(search_mutex);
+    if (pending_request.searching) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string already searching\n" << flush;
+        return;
+    }
+
+    if (!pending_request.position_ready) {
+        engine.set_position(pending_request.position);
+        pending_request.position_ready = true;
+    }
+
+    lock_guard<mutex> lock(cout_mutex);
+    cout << "info string eval: " << engine.static_eval() << "\n" << flush;
+}
+
+/** Handles the isready command */
+void handle_isready() {
+    lock_guard<mutex> search_lock(search_mutex);
+    if (pending_request.searching) {
+        // if we are still searching, simply return readyok to indicate we are alive
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "readyok\n" << flush;
+        return;
+    }
+
+    // otherwise, set up internal states
+    if (!pending_request.position_ready) {
+        engine.set_position(pending_request.position);
+        pending_request.position_ready = true;
+    }
+
+    lock_guard<mutex> lock(cout_mutex);
+    cout << "readyok\n" << flush;
+}
+
+/** Handles the ucinewgame command */
+void handle_ucinewgame() {
+    lock_guard<mutex> search_lock(search_mutex);
+    if (pending_request.searching) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string still searching\n" << flush;
+        return;
+    }
+
+    engine.reset();
+
+    if (!pending_request.position_ready) {
+        engine.set_position(pending_request.position);
+        pending_request.position_ready = true;
+    }
+}
+
+/** Handles the bench command */
+void handle_bench() {
+    lock_guard<mutex> search_lock(search_mutex);
+    if (pending_request.searching) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string still searching\n" << flush;
+        return;
+    }
+
+    engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::MINIMAL);
+    engine.reset();
+    raphael::commands::bench(engine);
+
+    // quit
+    quit.store(true, memory_order_relaxed);
     search_cv.notify_one();
 }
 
@@ -193,7 +303,14 @@ void search(const vector<string>& tokens) {
  *
  * \param tokens list of tokens for the command
  */
-void genfens(const vector<string>& tokens) {
+void handle_genfens(const vector<string>& tokens) {
+    lock_guard<mutex> search_lock(search_mutex);
+    if (pending_request.searching) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string still searching\n" << flush;
+        return;
+    }
+
     if (tokens.size() < 2) {
         cout << "info string missing required positional parameter 'count'\n" << flush;
         return;
@@ -227,22 +344,35 @@ void genfens(const vector<string>& tokens) {
         return;
     }
 
-    lock_guard<mutex> engine_lock(engine_mutex);
     raphael::commands::genfens(engine, count, seed, book, randmoves);
+
+    // quit
+    quit.store(true, memory_order_relaxed);
+    search_cv.notify_one();
 }
 
 /** Handles the evalstats command
  *
  * \param tokens list of tokens for the command
  */
-void evalstats(const vector<string>& tokens) {
+void handle_evalstats(const vector<string>& tokens) {
+    lock_guard<mutex> search_lock(search_mutex);
+    if (pending_request.searching) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string still searching\n" << flush;
+        return;
+    }
+
     if (tokens.size() < 2) {
         cout << "info string missing required positional parameter 'book'\n" << flush;
         return;
     }
 
-    lock_guard<mutex> engine_lock(engine_mutex);
     raphael::commands::evalstats(engine, tokens[1]);
+
+    // quit
+    quit.store(true, memory_order_relaxed);
+    search_cv.notify_one();
 }
 
 /** Shows the help message */
@@ -296,12 +426,10 @@ void handle_command(const string& uci_command) {
 #endif
         cout << "uciok\n" << flush;
 
-    } else if (uci_command == "isready") {
-        lock_guard<mutex> lock(cout_mutex);
-        lock_guard<mutex> engine_lock(engine_mutex);
-        cout << "readyok\n" << flush;
+    } else if (uci_command == "isready")
+        handle_isready();
 
-    } else if (uci_command == "stop")
+    else if (uci_command == "stop")
         halt.store(true, memory_order_relaxed);
 
     else if (uci_command == "quit") {
@@ -309,13 +437,10 @@ void handle_command(const string& uci_command) {
         quit.store(true, memory_order_relaxed);
         search_cv.notify_one();
 
-    } else if (uci_command == "ucinewgame") {
-        halt.store(true, memory_order_relaxed);
-        lock_guard<mutex> engine_lock(engine_mutex);
-        engine.reset();
+    } else if (uci_command == "ucinewgame")
+        handle_ucinewgame();
 
-    } else if (uci_command == "help") {
-        halt.store(true, memory_order_relaxed);
+    else if (uci_command == "help") {
         show_help();
 
         quit.store(true, memory_order_relaxed);
@@ -330,23 +455,13 @@ void handle_command(const string& uci_command) {
         cout << "info string this is not a tunable build\n" << flush;
 #endif
 
-    } else if (uci_command == "bench") {
-        halt.store(true, memory_order_relaxed);
-        lock_guard<mutex> engine_lock(engine_mutex);
-        engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::MINIMAL);
-        engine.reset();
-        raphael::commands::bench(engine);
+    } else if (uci_command == "bench")
+        handle_bench();
 
-        quit.store(true, memory_order_relaxed);
-        search_cv.notify_one();
+    else if (uci_command == "eval")
+        handle_eval();
 
-    } else if (uci_command == "eval") {
-        halt.store(true, memory_order_relaxed);
-        lock_guard<mutex> engine_lock(engine_mutex);
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "info string eval: " << engine.static_eval() << "\n" << flush;
-
-    } else {
+    else {
         // tokenize command
         vector<string> tokens;
         stringstream ss(uci_command);
@@ -355,33 +470,22 @@ void handle_command(const string& uci_command) {
         if (tokens.empty()) return;
 
         string& keyword = tokens[0];
-        if (keyword == "setoption") {
-            halt.store(true, memory_order_relaxed);
-            setoption(tokens);
+        if (keyword == "setoption")
+            handle_setoption(tokens);
 
-        } else if (keyword == "position") {
-            halt.store(true, memory_order_relaxed);
-            setposition(tokens);
+        else if (keyword == "position")
+            handle_position(tokens);
 
-        } else if (keyword == "go") {
-            halt.store(true, memory_order_relaxed);
-            search(tokens);
+        else if (keyword == "go")
+            handle_go(tokens);
 
-        } else if (keyword == "genfens") {
-            halt.store(true, memory_order_relaxed);
-            genfens(tokens);
+        else if (keyword == "genfens")
+            handle_genfens(tokens);
 
-            quit.store(true, memory_order_relaxed);
-            search_cv.notify_one();
+        else if (keyword == "evalstats")
+            handle_evalstats(tokens);
 
-        } else if (keyword == "evalstats") {
-            halt.store(true, memory_order_relaxed);
-            evalstats(tokens);
-
-            quit.store(true, memory_order_relaxed);
-            search_cv.notify_one();
-
-        } else {
+        else {
             lock_guard<mutex> lock(cout_mutex);
             cout << "info string unknown command: '" << keyword << "'\n" << flush;
         }
@@ -433,7 +537,7 @@ int main(int argc, char** argv) {
     engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::ALL);
 
     // start search handler
-    thread search_handler(handle_search);
+    thread search_handler(search_thread);
 
     // handle command line arguments
     if (argc > 1) {

@@ -79,6 +79,7 @@ void search_thread() {
         const auto options = pending_request.options;
         const auto t_remain = pending_request.t_remain;
         const auto t_inc = pending_request.t_inc;
+        const auto chess960 = pending_request.chess960;
         pending_request.go = false;
         pending_request.searching = true;
         search_lock.unlock();
@@ -92,7 +93,7 @@ void search_thread() {
         search_lock.lock();
         {
             lock_guard<mutex> lock(cout_mutex);
-            cout << "bestmove " << chess::uci::from_move(result.move) << "\n" << flush;
+            cout << "bestmove " << chess::uci::from_move(result.move, chess960) << "\n" << flush;
         }
         pending_request.searching = false;
         search_lock.unlock();

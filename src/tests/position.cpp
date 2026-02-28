@@ -35,8 +35,8 @@ public:
             if (eval != true_eval) {
                 cout << "fail: eval after make_move not consistent with eval after set_board "
                      << eval << " != " << true_eval << " after move "
-                     << chess::uci::from_move(smove.move) << " from position " << oldboard.get_fen()
-                     << "\n"
+                     << chess::uci::from_move(smove.move, oldboard.chess960()) << " from position "
+                     << oldboard.get_fen() << "\n"
                      << flush;
 
                 CHECK(false);

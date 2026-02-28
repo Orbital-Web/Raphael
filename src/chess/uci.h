@@ -6,11 +6,12 @@
 namespace chess {
 class uci {
 public:
-    [[nodiscard]] static std::string from_move(const Move move) {
+    [[nodiscard]] static std::string from_move(const Move move, bool chess960 = false) {
         Square from = move.from();
         Square to = move.to();
 
-        if (move.type() == Move::CASTLING) to = Square(to > from ? File::G : File::C, from.rank());
+        if (!chess960 && move.type() == Move::CASTLING)
+            to = Square(to > from ? File::G : File::C, from.rank());
 
         std::string movestr = static_cast<std::string>(from);
         movestr += static_cast<std::string>(to);
@@ -34,6 +35,9 @@ public:
         // castling
         if (!board.chess960() && pt == PieceType::KING && Square::value_distance(to, from) == 2) {
             to = Square(to > from ? File::H : File::A, from.rank());
+            return Move::make<Move::CASTLING>(from, to);
+        } else if (board.chess960() && pt == PieceType::KING
+                   && board.at(to) == Piece(PieceType::ROOK, board.stm())) {
             return Move::make<Move::CASTLING>(from, to);
         }
 

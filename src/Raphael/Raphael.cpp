@@ -228,8 +228,10 @@ void Raphael::print_uci_info(i32 depth, i32 score, const SearchStack* ss) const 
 }
 
 string Raphael::get_pv_line(const PVList& pv) const {
+    const bool chess960 = position_.board().chess960();
     string pvline = "";
-    for (i32 i = 0; i < pv.length; i++) pvline += chess::uci::from_move(pv.moves[i]) + " ";
+    for (i32 i = 0; i < pv.length; i++)
+        pvline += chess::uci::from_move(pv.moves[i], chess960) + " ";
     return pvline;
 }
 

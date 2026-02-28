@@ -144,9 +144,27 @@ public:
         return Square(sq_ + static_cast<i8>(dir));
     }
 
-    constexpr Square& operator++(i32) {
+    [[nodiscard]] constexpr Square operator+(i32 offset) const { return Square(sq_ + offset); }
+    [[nodiscard]] constexpr Square operator-(i32 offset) const { return Square(sq_ - offset); }
+
+    constexpr Square& operator++() {
         sq_ = static_cast<underlying>(sq_ + 1);
         return *this;
+    }
+    constexpr Square& operator--() {
+        sq_ = static_cast<underlying>(sq_ - 1);
+        return *this;
+    }
+
+    constexpr Square operator++(i32) {
+        const auto sq = sq_;
+        sq_ = static_cast<underlying>(sq_ + 1);
+        return Square(sq);
+    }
+    constexpr Square operator--(i32) {
+        const auto sq = sq_;
+        sq_ = static_cast<underlying>(sq_ - 1);
+        return Square(sq);
     }
 
     [[nodiscard]] constexpr File file() const { return File(sq_ & 7); }
@@ -199,6 +217,8 @@ public:
         return ((9 * (sq1 ^ sq2)) & 8) == 0;
     }
 
-    [[nodiscard]] static i32 value_distance(Square sq1, Square sq2) { return std::abs(sq1 - sq2); }
+    [[nodiscard]] static i32 value_distance(Square sq1, Square sq2) {
+        return std::abs(static_cast<i32>(sq1) - static_cast<i32>(sq2));
+    }
 };
 }  // namespace chess

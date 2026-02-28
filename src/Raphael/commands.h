@@ -17,8 +17,11 @@ void bench(Raphael& engine);
  * \param seed random seed
  * \param book book to use
  * \param randmoves number of random moves to play
+ * \param dfrc whether to use DFRC positions
  */
-void genfens(Raphael& engine, i32 count, u64 seed, const std::string& book, i32 randmoves);
+void genfens(
+    Raphael& engine, i32 count, u64 seed, const std::string& book, i32 randmoves, bool dfrc
+);
 
 
 /** Measures statistics of the static evals and computes the optimal output scale

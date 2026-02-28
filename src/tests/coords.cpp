@@ -293,4 +293,28 @@ TEST_SUITE("Square") {
         CHECK(s + Direction::SOUTH_WEST == Square::A2);
         CHECK(s + Direction::SOUTH_EAST == Square::C2);
     }
+
+    TEST_CASE("Square operator +/- offset") {
+        Square s = Square::B3;
+        CHECK(s + 2 == Square::D3);
+        CHECK(s - 2 == Square::H2);
+        CHECK(s + 8 == Square::B4);
+        CHECK(s - 8 == Square::B2);
+    }
+
+    TEST_CASE("Square operator++ postfix") {
+        Square s = Square::B3;
+        CHECK(s++ == Square::B3);
+        CHECK(s == Square::C3);
+        CHECK(s-- == Square::C3);
+        CHECK(s == Square::B3);
+    }
+
+    TEST_CASE("Square operator++ prefix") {
+        Square s = Square::B3;
+        CHECK(++s == Square::C3);
+        CHECK(s == Square::C3);
+        CHECK(--s == Square::B3);
+        CHECK(s == Square::B3);
+    }
 }

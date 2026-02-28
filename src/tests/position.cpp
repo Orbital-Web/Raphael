@@ -149,10 +149,20 @@ TEST_SUITE("Position") {
         CHECK(position.is_repetition(1));
         CHECK(!position.is_repetition(2));
 
+        Position<false> position2;
+        position2.set_position(position);
+        CHECK(position2.is_repetition(1));
+        CHECK(!position2.is_repetition(2));
+
         position.make_move(chess::Move::make(chess::Square::D2, chess::Square::D1));
         position.make_move(chess::Move::make(chess::Square::H7, chess::Square::H8));
         CHECK(position.is_repetition(1));
         CHECK(position.is_repetition(2));
+
+        Position<true> position3;
+        position3.set_position(position);
+        CHECK(position3.is_repetition(1));
+        CHECK(position3.is_repetition(2));
     }
 
     TEST_CASE("NNUE") {
@@ -172,6 +182,34 @@ TEST_SUITE("Position") {
 
             NnueTester tester;
             chess::Board board;
+
+            for (const auto& fen : test_positions) {
+                board.set_fen(fen);
+                tester.check_all(board);
+            }
+        }
+
+        SUBCASE("Chess960") {
+            const string test_positions[] = {
+                "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1",
+                "1rqbkrbn/1ppppp1p/1n6/p1N3p1/8/2P4P/PP1PPPP1/1RQBKRBN w FBfb - 0 9",
+                "rbbqn1kr/pp2p1pp/6n1/2pp1p2/2P4P/P7/BP1PPPP1/R1BQNNKR w HAha - 0 9",
+                "rqbbknr1/1ppp2pp/p5n1/4pp2/P7/1PP5/1Q1PPPPP/R1BBKNRN w GAga - 0 9",
+                "4rrb1/1kp3b1/1p1p4/pP1Pn2p/5p2/1PR2P2/2P1NB1P/2KR1B2 w D - 0 21",
+                "1rkr3b/1ppn3p/3pB1n1/6q1/R2P4/4N1P1/1P5P/2KRQ1B1 b Dbd - 0 14",
+                "qbbnrkr1/p1pppppp/1p4n1/8/2P5/6N1/PPNPPPPP/1BRKBRQ1 b FCge - 1 3",
+                "rr6/2kpp3/1ppn2p1/p2b1q1p/P4P1P/1PNN2P1/2PP4/1K2R2R b E - 1 20",
+                "rr6/2kpp3/1ppn2p1/p2b1q1p/P4P1P/1PNN2P1/2PP4/1K2RR2 w E - 0 20",
+                "rr6/2kpp3/1ppnb1p1/p2Q1q1p/P4P1P/1PNN2P1/2PP4/1K2RR2 b E - 2 19",
+                "rr6/2kpp3/1ppnb1p1/p4q1p/P4P1P/1PNN2P1/2PP2Q1/1K2RR2 w E - 1 19",
+                "rr6/2kpp3/1ppnb1p1/p4q1p/P4P1P/1PNN2P1/2PP2Q1/1K2RR2 w E - 1 19",
+                "rr6/2kpp3/1ppnb1p1/p4q1p/P4P1P/1PNN2P1/2PP2Q1/1K2RR2 w E - 1 19",
+                "r1kr4/pppppppp/8/8/8/8/PPPPPPPP/5RKR w KQkq - 0 1",
+            };
+
+            NnueTester tester;
+            chess::Board board;
+            board.set960(true);
 
             for (const auto& fen : test_positions) {
                 board.set_fen(fen);

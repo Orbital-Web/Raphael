@@ -78,7 +78,6 @@ private:
 
 public:
     explicit Board(std::string_view fen = STARTPOS, bool chess960 = false): chess960_(chess960) {
-        assert(chess960 == false);  // TODO: FRC not supported yet
         set_fen(fen);
     }
 
@@ -106,8 +105,11 @@ public:
 
     [[nodiscard]] bool chess960() const { return chess960_; }
 
+    void set960(bool chess960) { chess960_ = chess960; }
+
 
     [[nodiscard]] Square king_square(Color color) const {
+        assert(occ(PieceType::KING, color).count() == 1);
         return Square(occ(PieceType::KING, color).lsb());
     }
 
@@ -483,7 +485,21 @@ public:
                 else
                     continue;
             } else {
-                // TODO: chess960 castling
+                const auto color = std::isupper(c) ? Color::WHITE : Color::BLACK;
+                const auto king_sq = king_square(color);
+
+                if (c == 'K' || c == 'k') {
+                    const auto file = find_rook_on_side(color, king_side);
+                    if (file != File::NONE) set_castling_rights(color, king_side, file);
+                } else if (c == 'Q' || c == 'q') {
+                    const auto file = find_rook_on_side(color, queen_side);
+                    if (file != File::NONE) set_castling_rights(color, queen_side, file);
+                } else {
+                    const auto file = File(std::string_view(&c, 1));
+                    if (file == File::NONE) continue;
+                    const auto side = CastlingRights::closest_side(file, king_sq.file());
+                    set_castling_rights(color, side, file);
+                }
             }
         }
 
@@ -556,13 +572,24 @@ public:
         if (castle_rights_.is_empty())
             fen += '-';
         else {
+            const auto king_side = CastlingRights::Side::KING_SIDE;
+            const auto queen_side = CastlingRights::Side::QUEEN_SIDE;
+
             if (!chess960_) {
-                if (castle_rights_.has(Color::WHITE, CastlingRights::Side::KING_SIDE)) fen += 'K';
-                if (castle_rights_.has(Color::WHITE, CastlingRights::Side::QUEEN_SIDE)) fen += 'Q';
-                if (castle_rights_.has(Color::BLACK, CastlingRights::Side::KING_SIDE)) fen += 'k';
-                if (castle_rights_.has(Color::BLACK, CastlingRights::Side::QUEEN_SIDE)) fen += 'q';
+                if (castle_rights_.has(Color::WHITE, king_side)) fen += 'K';
+                if (castle_rights_.has(Color::WHITE, queen_side)) fen += 'Q';
+                if (castle_rights_.has(Color::BLACK, king_side)) fen += 'k';
+                if (castle_rights_.has(Color::BLACK, queen_side)) fen += 'q';
             } else {
-                // TODO: chess960 castling
+                for (const auto color : {Color::WHITE, Color::BLACK}) {
+                    for (const auto side : {king_side, queen_side}) {
+                        if (castle_rights_.has(color, side)) {
+                            const auto rook_file = castle_rights_.get_rook_file(color, side);
+                            const auto filestr = static_cast<std::string>(rook_file);
+                            fen += (color == Color::WHITE) ? std::toupper(filestr[0]) : filestr[0];
+                        }
+                    }
+                }
             }
         }
 
@@ -648,13 +675,29 @@ private:
 
 
     void set_castling_rights(Color color, CastlingRights::Side side, File rook_file) {
-        // check the rook and king actually exists they're supposed to
+        // check the rook and king actually exists where they're supposed to
         const auto king_sq = king_square(color);
         const auto rook_sq = Square(rook_file, king_sq.rank());
         const auto piece = at(rook_sq);
-        if (piece.type() != PieceType::ROOK || piece.color() != color) return;
+        if (piece != Piece(PieceType::ROOK, color)) return;
 
         castle_rights_.set(color, side, rook_file);
+    }
+
+    [[nodiscard]] File find_rook_on_side(Color color, CastlingRights::Side side) const {
+        const auto king_side = CastlingRights::Side::KING_SIDE;
+        const auto king_sq = king_square(color);
+        const auto corner_sq = Square((side == king_side) ? File::H : File::A, king_sq.rank());
+
+        if (side == king_side) {
+            for (Square sq = king_sq + 1; sq <= corner_sq; ++sq)
+                if (at(sq) == Piece(PieceType::ROOK, color)) return sq.file();
+        } else {
+            for (Square sq = king_sq - 1; sq >= corner_sq; --sq)
+                if (at(sq) == Piece(PieceType::ROOK, color)) return sq.file();
+        }
+
+        return File::NONE;
     }
 };
 }  // namespace chess

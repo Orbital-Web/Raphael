@@ -15,9 +15,11 @@ using std::vector;
 class LegalChecker {
 private:
     vector<Move> allmoves_;
-
+    bool chess960_;
 
 public:
+    LegalChecker(bool chess960): chess960_(chess960) {}
+
     void init_allmoves() {
         // normal moves
         for (Square from = Square::A1; from <= Square::H8; from++) {
@@ -70,10 +72,28 @@ public:
         }
 
         // castling
-        allmoves_.emplace_back(Move::make<Move::CASTLING>(Square::E1, Square::H1));
-        allmoves_.emplace_back(Move::make<Move::CASTLING>(Square::E1, Square::A1));
-        allmoves_.emplace_back(Move::make<Move::CASTLING>(Square::E8, Square::H8));
-        allmoves_.emplace_back(Move::make<Move::CASTLING>(Square::E8, Square::A8));
+        if (!chess960_) {
+            allmoves_.emplace_back(Move::make<Move::CASTLING>(Square::E1, Square::H1));
+            allmoves_.emplace_back(Move::make<Move::CASTLING>(Square::E1, Square::A1));
+            allmoves_.emplace_back(Move::make<Move::CASTLING>(Square::E8, Square::H8));
+            allmoves_.emplace_back(Move::make<Move::CASTLING>(Square::E8, Square::A8));
+        } else {
+            for (File king_file = File::A; king_file <= File::H; king_file++) {
+                for (File rook_file = File::A; rook_file <= File::H; rook_file++) {
+                    if (king_file == rook_file) continue;
+                    allmoves_.emplace_back(
+                        Move::make<Move::CASTLING>(
+                            Square(king_file, Rank::R1), Square(rook_file, Rank::R1)
+                        )
+                    );
+                    allmoves_.emplace_back(
+                        Move::make<Move::CASTLING>(
+                            Square(king_file, Rank::R8), Square(rook_file, Rank::R8)
+                        )
+                    );
+                }
+            }
+        }
     }
 
 
@@ -87,9 +107,21 @@ public:
             const bool is_legal = legalmoves.contains(move);
             const bool check_legal = board.is_legal(move);
             if (check_legal != is_legal) {
-                cout << "is_legal failed for position " << board.get_fen() << " move "
-                     << uci::from_move(move) << ((move.type() == Move::ENPASSANT) ? " ep" : "")
-                     << " expected " << (is_legal ? "legal" : "illegal") << " got "
+                string move_type;
+                if (move.type() == Move::ENPASSANT)
+                    move_type = " ep";
+                else if (move.type() == Move::CASTLING)
+                    move_type = " cs";
+                else if (move.type() == Move::PROMOTION)
+                    move_type = " pr";
+                else
+                    move_type = "";
+
+                string movestr
+                    = static_cast<std::string>(move.from()) + static_cast<std::string>(move.to());
+
+                cout << "is_legal failed for position " << board.get_fen() << " move " << movestr
+                     << move_type << " expected " << (is_legal ? "legal" : "illegal") << " got "
                      << (check_legal ? "legal" : "illegal") << "\n"
                      << flush;
 
@@ -127,12 +159,42 @@ TEST_SUITE("is_legal") {
             "5rr1/4n2k/4q2P/P1P2n2/3B1p2/4pP2/2N1P3/1RR1K2Q w - - 1 49",
         };
 
-        LegalChecker checker;
+        LegalChecker checker(false);
         checker.init_allmoves();
 
         Board board;
 
         for (const auto& fen : test_positions) {
+            board.set_fen(fen);
+            checker.check_all(board);
+        }
+    }
+
+    TEST_CASE("Chess960") {
+        const string dfrc_test_positions[] = {
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w AHah - 0 1",
+            "1rqbkrbn/1ppppp1p/1n6/p1N3p1/8/2P4P/PP1PPPP1/1RQBKRBN w FBfb - 0 9",
+            "rbbqn1kr/pp2p1pp/6n1/2pp1p2/2P4P/P7/BP1PPPP1/R1BQNNKR w HAha - 0 9",
+            "rqbbknr1/1ppp2pp/p5n1/4pp2/P7/1PP5/1Q1PPPPP/R1BBKNRN w GAga - 0 9",
+            "4rrb1/1kp3b1/1p1p4/pP1Pn2p/5p2/1PR2P2/2P1NB1P/2KR1B2 w D - 0 21",
+            "1rkr3b/1ppn3p/3pB1n1/6q1/R2P4/4N1P1/1P5P/2KRQ1B1 b Dbd - 0 14",
+            "qbbnrkr1/p1pppppp/1p4n1/8/2P5/6N1/PPNPPPPP/1BRKBRQ1 b FCge - 1 3",
+            "rr6/2kpp3/1ppn2p1/p2b1q1p/P4P1P/1PNN2P1/2PP4/1K2R2R b E - 1 20",
+            "rr6/2kpp3/1ppn2p1/p2b1q1p/P4P1P/1PNN2P1/2PP4/1K2RR2 w E - 0 20",
+            "rr6/2kpp3/1ppnb1p1/p2Q1q1p/P4P1P/1PNN2P1/2PP4/1K2RR2 b E - 2 19",
+            "rr6/2kpp3/1ppnb1p1/p4q1p/P4P1P/1PNN2P1/2PP2Q1/1K2RR2 w E - 1 19",
+            "rr6/2kpp3/1ppnb1p1/p4q1p/P4P1P/1PNN2P1/2PP2Q1/1K2RR2 w E - 1 19",
+            "rr6/2kpp3/1ppnb1p1/p4q1p/P4P1P/1PNN2P1/2PP2Q1/1K2RR2 w E - 1 19",
+            "r1kr4/pppppppp/8/8/8/8/PPPPPPPP/5RKR w KQkq - 0 1",
+        };
+
+        LegalChecker checker(true);
+        checker.init_allmoves();
+
+        Board board;
+        board.set960(true);
+
+        for (const auto& fen : dfrc_test_positions) {
             board.set_fen(fen);
             checker.check_all(board);
         }

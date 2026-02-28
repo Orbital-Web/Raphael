@@ -42,6 +42,7 @@ struct SearchRequest {
     bool go = false;
     bool searching = false;
     bool position_ready = false;
+    bool chess960 = false;
 };
 SearchRequest pending_request;
 
@@ -121,6 +122,18 @@ inline void handle_setoption(const vector<string>& tokens) {
     // check option
     if (tokens[4] == "true" || tokens[4] == "false") {
         const bool value = (tokens[4][0] == 't');
+
+        // UCI_Chess960
+        if (tokens[2] == "UCI_Chess960") {
+            pending_request.chess960 = value;
+            lock_guard<mutex> lock(cout_mutex);
+            if (value)
+                cout << "info string enabled UCI_Chess960\n" << flush;
+            else
+                cout << "info string disabled UCI_Chess960\n" << flush;
+            return;
+        }
+
         engine.set_option(tokens[2], value);
         return;
     }
@@ -163,6 +176,8 @@ inline void handle_position(const vector<string>& tokens) {
 
     // set initial board
     chess::Board board;
+    board.set960(pending_request.chess960);
+
     i32 i = 2;
     if (tokens[1] == "startpos")
         board.set_fen(chess::Board::STARTPOS);
@@ -329,6 +344,7 @@ inline void handle_genfens(const vector<string>& tokens) {
     u64 seed = 0;
     std::string book = "None";
     i32 randmoves = 0;
+    bool dfrc = false;
 
     usize i = 2;
     while (i < tokens.size()) {
@@ -338,6 +354,8 @@ inline void handle_genfens(const vector<string>& tokens) {
             book = tokens[i + 1];
         else if (tokens[i] == "randmoves")
             randmoves = stoi(tokens[i + 1]);
+        else if (tokens[i] == "dfrc")
+            dfrc = (tokens[i + 1] == "true");
         i += 2;
     }
 
@@ -353,7 +371,7 @@ inline void handle_genfens(const vector<string>& tokens) {
         return;
     }
 
-    raphael::commands::genfens(engine, count, seed, book, randmoves);
+    raphael::commands::genfens(engine, count, seed, book, randmoves, dfrc);
 
     // quit
     quit.store(true, memory_order_relaxed);
@@ -386,17 +404,19 @@ inline void handle_evalstats(const vector<string>& tokens) {
 
 /** Shows the help message */
 inline void show_help() {
+    // help message style from pawnocchio
     lock_guard<mutex> lock(cout_mutex);
     cout << engine.name << " " << engine.version << "\n\n"
          << "TOOLS:\n"
          << "  bench\n"
          << "      run benchmark\n\n"
-         << "  genfens <COUNT> [seed SEED] [book BOOK] [randmoves RANDMOVES]\n"
+         << "  genfens <COUNT> [seed SEED] [book BOOK] [randmoves RANDMOVES] [dfrc DFRC]\n"
          << "      generate FENs\n"
          << "      COUNT: number of FENs to generate\n"
          << "      SEED: random seed, u64. default 0\n"
          << "      BOOK: book to start with. default is None, AKA startpos\n"
-         << "      RANDMOVES: number of random moves to play from book position. default 0\n\n"
+         << "      RANDMOVES: number of random moves to play from book position. default 0\n"
+         << "      DFCR: whether to generate DFRC positions, true/false. default false\n\n"
          << "  evalstats <BOOK>\n"
          << "      print statistics of NNUE evaluation\n"
          << "      BOOK: book to benchmark with\n\n"
@@ -428,8 +448,10 @@ inline void handle_command(const string& uci_command) {
         lock_guard<mutex> lock(cout_mutex);
         cout << "id name " << engine.name << " " << engine.version << "\n"
              << "id author Rei Meguro\n"
-             << params.hash.uci() << params.threads.uci() << params.moveoverhead.uci()
-             << params.datagen.uci() << params.softnodes.uci() << params.softhardmult.uci();
+             << params.hash.uci() << params.threads.uci()
+             << "option name UCI_Chess960 type check default false\n"
+             << params.moveoverhead.uci() << params.datagen.uci() << params.softnodes.uci()
+             << params.softhardmult.uci();
 #ifdef TUNE
         for (const auto tunable : raphael::tunables) cout << tunable->uci();
 #endif

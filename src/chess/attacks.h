@@ -318,7 +318,7 @@ private:
         i32 rook_offset = 0;
 #endif
 
-        for (Square sq = Square::A1; sq <= Square::H8; sq++) {
+        for (Square sq = Square::A1; sq <= Square::H8; ++sq) {
             const BitBoard edges
                 = ((BitBoard(BitBoard::RANK1 | BitBoard::RANK8)) & ~BitBoard::from_rank(sq.rank()))
                   | ((BitBoard(BitBoard::FILEA | BitBoard::FILEH))

@@ -148,7 +148,7 @@ void Nnue::NnueAccumulator::refresh(
     const i16* weights, const i16* biases, const chess::Board& board, chess::Color perspective
 ) {
     NnueFeature features[32];
-    i32 n_features;
+    i32 n_features = 0;
 
     // horizontal mirroring
     const bool mirror = board.king_square(perspective).file() > chess::File::D;

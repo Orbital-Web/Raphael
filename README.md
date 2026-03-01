@@ -22,7 +22,8 @@ Note that elos with an asterics next to them are estimates and not official, and
         <th><a href="https://www.computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?family=Raphael">CCRL Blitz</a></th>
         <th><a href="https://www.computerchess.org.uk/ccrl/4040/cgi/compare_engines.cgi?family=Raphael">CCRL 40/15</a></th>
     </tr>
-    <tr align="center"><td>3.0.0</td> <td>3321*</td> <td>3200</td></tr>
+    <tr align="center"><td>3.1.0</td> <td>3520*</td> <td>3428*</td></tr>
+    <tr align="center"><td>3.0.0</td> <td>3321*</td> <td>3197</td></tr>
     <tr align="center"><td>2.3.0</td> <td>3146*</td> <td>3061</td></tr>
     <tr align="center"><td>2.2.0</td> <td>3035*</td> <td>2953</td></tr>
     <tr align="center"><td>2.1.0</td> <td>2739*</td> <td>2689</td></tr>
@@ -116,7 +117,7 @@ The engine contains the following features:
     - [ ] Improving heuristics
   - [x] Transposition table                 (`v1.1+`)
     - [x] Prefetching                       (`v2.2+`)
-    - [ ] Aging
+    - [x] Aging                             (`v3.0+`)
     - [ ] Clusters
     - [ ] Storing static evaluations
   - [x] Principle variation search          (`v2.1+`)

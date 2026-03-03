@@ -544,6 +544,8 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
 
     // search
     i32 bestscore = static_eval;
+    chess::Move bestmove = chess::Move::NO_MOVE;
+    auto ttflag = tt_.UPPER;
 
     const i32 futility = bestscore + QS_FUTILITY_MARGIN;
 
@@ -571,10 +573,19 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
 
             if (score > alpha) {
                 alpha = score;
-                if (score >= beta) break;  // prune
+                bestmove = move;
+                ttflag = tt_.EXACT;
+
+                if (score >= beta) {
+                    ttflag = tt_.LOWER;
+                    break;  // prune}
+                }
             }
         }
     }
+
+    // update transposition table
+    if (!halt.load(memory_order_relaxed)) tt_.set(ttkey, bestscore, bestmove, 0, ttflag, ply);
 
     return bestscore;
 }

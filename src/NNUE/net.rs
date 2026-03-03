@@ -13,7 +13,7 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "sleipnir_v4";
+    const NET_ID: &str = "sleipnir_v5";
     const HIDDEN_SIZE: usize = 768;
     const NUM_OUTPUT_BUCKETS: usize = 8;
     const SCALE: f32 = 400.0;

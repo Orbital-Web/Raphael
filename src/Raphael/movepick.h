@@ -18,6 +18,7 @@ public:
         BAD_NOISY,
 
         // quiescence
+        QS_TT_MOVE,
         QS_GEN_NOISY,
         QS_NOISY,
     };
@@ -59,12 +60,14 @@ public:
      * \param movelist pointer to preallocated move list to use
      * \param board pointer to current board
      * \param history pointer to history table
+     * \param ttmove transposition table move
      * \returns the move generator
      */
     static MoveGenerator quiescence(
         chess::MoveList<chess::ScoredMove>* movelist,
         const chess::Board* board,
-        const History* history
+        const History* history,
+        chess::Move ttmove
     );
 
 

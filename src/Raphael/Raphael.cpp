@@ -578,7 +578,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
 
                 if (score >= beta) {
                     ttflag = tt_.LOWER;
-                    break;  // prune}
+                    break;  // prune
                 }
             }
         }

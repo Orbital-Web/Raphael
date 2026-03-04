@@ -569,6 +569,9 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
     i32 move_searched = 0;
     while (const auto move = generator.next()) {
         if (!utils::is_loss(bestscore)) {
+            // qs late move pruning
+            if (move_searched >= QS_MAX_MOVES) break;
+
             // qs futility pruning
             if (!in_check && futility <= alpha && !SEE::see(move, board, 1)) {
                 bestscore = max(bestscore, futility);

@@ -217,6 +217,7 @@ TunableCallback(LMR_NOISY_DIVISOR, 414, 32, 512, 12, update_lmr_table, true);
 TunableCallback(LMR_NONPV, 130, 0, 384, 20, update_lmr_table, true);
 
 // quiescence
+Tunable(QS_MAX_MOVES, 3, 1, 5, 1, true);              // max moves to search in qsearch
 Tunable(QS_FUTILITY_MARGIN, 150, 50, 400, 20, true);  // margin for qs futility pruning
 Tunable(QS_SEE_THRESH, -100, -500, 200, 30, true);    // SEE threshold for qs SEE pruning
 

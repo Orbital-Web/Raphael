@@ -407,11 +407,6 @@ i32 Raphael::negamax(
         move_searched++;
         tm_.inc_nodes();
 
-        if (is_quiet)
-            mvstack.quietlist.push(move);
-        else
-            mvstack.noisylist.push(move);
-
         // principle variation search
         i32 score = INT32_MIN;
         const i32 new_depth = depth - 1 + extension;
@@ -454,35 +449,39 @@ i32 Raphael::negamax(
                 if (score >= beta) {
                     ttflag = tt_.LOWER;
 
-                    // store killer moves and update history
                     if (is_quiet) {
+                        // store killer moves and update quiet history
                         ss->killer = move;
 
                         const auto quiet_bonus = history_.quiet_bonus(depth);
                         const auto quiet_penalty = history_.quiet_penalty(depth);
 
+                        history_.update_quiet(bestmove, board.stm(), quiet_bonus);
                         for (const auto quietmove : mvstack.quietlist)
-                            history_.update_quiet(
-                                quietmove,
-                                board.stm(),
-                                (quietmove == move) ? quiet_bonus : quiet_penalty
-                            );
+                            history_.update_quiet(quietmove, board.stm(), quiet_penalty);
+                    } else {
+                        // apply capthist bonus
+                        const auto noisy_bonus = history_.noisy_bonus(depth);
+                        history_.update_noisy(bestmove, board.get_captured(bestmove), noisy_bonus);
                     }
 
-                    // always update capthist
-                    const auto noisy_bonus = history_.noisy_bonus(depth);
+                    // always apply capthist penalty
                     const auto noisy_penalty = history_.noisy_penalty(depth);
-
-                    for (const auto noisymove : mvstack.noisylist) {
-                        const auto captured = board.get_captured(noisymove);
+                    for (const auto noisymove : mvstack.noisylist)
                         history_.update_noisy(
-                            noisymove, captured, (noisymove == move) ? noisy_bonus : noisy_penalty
+                            noisymove, board.get_captured(noisymove), noisy_penalty
                         );
-                    }
 
                     break;  // prune
                 }
             }
+        }
+
+        if (move != bestmove) {
+            if (is_quiet)
+                mvstack.quietlist.push(move);
+            else
+                mvstack.noisylist.push(move);
         }
     }
 

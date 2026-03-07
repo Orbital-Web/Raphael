@@ -407,6 +407,9 @@ i32 Raphael::negamax(
         move_searched++;
         tm_.inc_nodes();
 
+        const auto& new_board = position_.board();
+        const bool gives_check = new_board.in_check();
+
         // principle variation search
         i32 score = INT32_MIN;
         const i32 new_depth = depth - 1 + extension;
@@ -415,6 +418,7 @@ i32 Raphael::negamax(
             i32 red_factor = LMR_TABLE[is_quiet][depth][move_searched];
             red_factor += !is_PV * LMR_NONPV;
             red_factor -= improving * LMR_IMPROVING;
+            red_factor -= gives_check * LMR_CHECK;
 
             const i32 red_depth = min(max(new_depth - red_factor / 128, 1), new_depth);
             score = -negamax<false>(

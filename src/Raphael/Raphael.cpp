@@ -351,6 +351,8 @@ i32 Raphael::negamax(
 
         const bool is_quiet = board.is_quiet(move);
         const auto base_lmr = LMR_TABLE[is_quiet][depth][move_searched + 1];
+        const auto history = (is_quiet) ? history_.get_quietscore(move, board.stm())
+                                        : history_.get_noisyscore(move, board.get_captured(move));
 
         // moveloop pruning
         if (!is_root && !utils::is_loss(bestscore) && (!params_.datagen || !is_PV)) {
@@ -420,6 +422,8 @@ i32 Raphael::negamax(
             red_factor += cutnode * LMR_CUTNODE;
             red_factor -= improving * LMR_IMPROVING;
             red_factor -= gives_check * LMR_CHECK;
+            red_factor
+                -= history * 128 / ((is_quiet) ? LMR_QUIET_HIST_DIVISOR : LMR_NOISY_HIST_DIVISOR);
 
             const i32 red_depth = min(max(new_depth - red_factor / 128, 1), new_depth);
             score = -negamax<false>(

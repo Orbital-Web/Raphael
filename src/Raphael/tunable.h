@@ -218,6 +218,8 @@ Tunable(LMR_NONPV, 130, 32, 384, 20, true);
 Tunable(LMR_CUTNODE, 128, 32, 384, 20, true);
 Tunable(LMR_IMPROVING, 128, 32, 384, 20, true);
 Tunable(LMR_CHECK, 128, 32, 384, 20, true);
+Tunable(LMR_QUIET_HIST_DIVISOR, 12000, 4096, 16384, 512, true);
+Tunable(LMR_NOISY_HIST_DIVISOR, 12000, 4096, 16384, 512, true);
 
 // quiescence
 Tunable(QS_FUTILITY_MARGIN, 150, 50, 400, 20, true);  // margin for qs futility pruning

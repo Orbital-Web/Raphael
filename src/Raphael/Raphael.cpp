@@ -417,6 +417,7 @@ i32 Raphael::negamax(
             // late move reduction
             i32 red_factor = LMR_TABLE[is_quiet][depth][move_searched];
             red_factor += !is_PV * LMR_NONPV;
+            red_factor += cutnode * LMR_CUTNODE;
             red_factor -= improving * LMR_IMPROVING;
             red_factor -= gives_check * LMR_CHECK;
 

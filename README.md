@@ -210,6 +210,7 @@ Furthermore, the following individuals have inspired me or have helped me tremen
 
 - [Sebastian Lague](https://www.youtube.com/c/SebastianLague) for inspiring me to start the development of Raphael through the Coding Adventures series
 - [Jonathan Hallström](https://github.com/JonathanHallstrom), author of [Pawnocchio](https://github.com/JonathanHallstrom/pawnocchio) (and a contributor to Raphael!!)
-- [Ciecke](https://github.com/Ciekce), author of [Stormphrax](https://github.com/Ciekce/Stormphrax)
+- [Ciekce](https://github.com/Ciekce), author of [Stormphrax](https://github.com/Ciekce/Stormphrax)
 - [Sp00ph](https://github.com/Sp00ph), author of [Icarus](https://github.com/Sp00ph/icarus)
 - and many others on the Stockfish and AlphaBeta Discord servers
+

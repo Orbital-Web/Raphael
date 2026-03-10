@@ -114,7 +114,7 @@ The engine contains the following features:
     - [x] SEE pruning                       (`v2.3+`)
     - [ ] History pruning
     - [ ] Multi-cut
-    - [ ] Improving heuristics
+    - [x] Improving heuristics              (`v3.2+`)
   - [x] Transposition table                 (`v1.1+`)
     - [x] Prefetching                       (`v2.2+`)
     - [x] Aging                             (`v3.0+`)
@@ -213,4 +213,3 @@ Furthermore, the following individuals have inspired me or have helped me tremen
 - [Ciekce](https://github.com/Ciekce), author of [Stormphrax](https://github.com/Ciekce/Stormphrax)
 - [Sp00ph](https://github.com/Sp00ph), author of [Icarus](https://github.com/Sp00ph/icarus)
 - and many others on the Stockfish and AlphaBeta Discord servers
-

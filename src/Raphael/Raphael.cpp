@@ -512,7 +512,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
     // timeout
     if (tm_.is_hard_limit_reached(halt)) return 0;
 
-    if (is_PV) seldepth_ = max(seldepth_, ply);
+    if constexpr (is_PV) seldepth_ = max(seldepth_, ply);
 
     const auto& board = position_.board();
 

@@ -5,7 +5,7 @@
 
 namespace raphael {
 // should remain largely unchanged
-static constexpr i32 MAX_DEPTH = 128;
+static constexpr i32 MAX_DEPTH = 250;
 static_assert(MAX_DEPTH < 256);
 
 static constexpr i32 INF_SCORE = 32767;

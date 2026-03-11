@@ -64,6 +64,11 @@ struct ScoredMove {
     Move move;
 };
 
+struct PieceMove {
+    Move move;
+    Piece moving;
+};
+
 
 template <typename T>
 class MoveList {

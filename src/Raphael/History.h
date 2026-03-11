@@ -1,5 +1,5 @@
 #pragma once
-#include <chess/include.h>
+#include <Raphael/position.h>
 
 
 
@@ -60,10 +60,10 @@ public:
     /** Applies a bonus to the quiet history score
      *
      * \param move quiet move
-     * \param color current side to move
+     * \param position current position
      * \param bonus bonus to apply, negative to apply penalty
      */
-    void update_quiet(chess::Move move, chess::Color color, i32 bonus);
+    void update_quiet(chess::Move move, const Position<true>& position, i32 bonus);
 
     /** Applies a bonus to the noisy history score
      *
@@ -77,10 +77,10 @@ public:
     /** Returns the quiet history score
      *
      * \param move quiet move
-     * \param color current side to move
+     * \param position current position
      * \returns quiet history score
      */
-    i32 get_quietscore(chess::Move move, chess::Color color) const;
+    i32 get_quietscore(chess::Move move, const Position<true>& position) const;
 
     /** Returns the noisy history score
      *

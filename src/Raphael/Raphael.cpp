@@ -337,7 +337,7 @@ i32 Raphael::negamax(
     mvstack.quietlist.clear();
     mvstack.noisylist.clear();
     auto generator
-        = MoveGenerator::negamax(&mvstack.movelist, &board, &history_, ttmove, ss->killer);
+        = MoveGenerator::negamax(&mvstack.movelist, &position_, &history_, ttmove, ss->killer);
 
     // search
     i32 bestscore = -INF_SCORE;
@@ -351,7 +351,7 @@ i32 Raphael::negamax(
 
         const bool is_quiet = board.is_quiet(move);
         const auto base_lmr = LMR_TABLE[is_quiet][depth][move_searched + 1];
-        const auto history = (is_quiet) ? history_.get_quietscore(move, board.stm())
+        const auto history = (is_quiet) ? history_.get_quietscore(move, position_)
                                         : history_.get_noisyscore(move, board.get_captured(move));
 
         // moveloop pruning
@@ -468,9 +468,9 @@ i32 Raphael::negamax(
                         const auto quiet_bonus = history_.quiet_bonus(depth);
                         const auto quiet_penalty = history_.quiet_penalty(depth);
 
-                        history_.update_quiet(bestmove, board.stm(), quiet_bonus);
+                        history_.update_quiet(bestmove, position_, quiet_bonus);
                         for (const auto quietmove : mvstack.quietlist)
-                            history_.update_quiet(quietmove, board.stm(), quiet_penalty);
+                            history_.update_quiet(quietmove, position_, quiet_penalty);
                     } else {
                         // apply capthist bonus
                         const auto noisy_bonus = history_.noisy_bonus(depth);
@@ -551,7 +551,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
     auto& mvstack = movestack_[mvidx];
     mvstack.quietlist.clear();
     mvstack.noisylist.clear();
-    auto generator = MoveGenerator::quiescence(&mvstack.movelist, &board, &history_, ttmove);
+    auto generator = MoveGenerator::quiescence(&mvstack.movelist, &position_, &history_, ttmove);
 
     // search
     i32 bestscore = static_eval;

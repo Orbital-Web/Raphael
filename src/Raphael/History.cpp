@@ -46,8 +46,10 @@ i32 History::noisy_penalty(i32 depth) const {
 }
 
 
-void History::update_quiet(chess::Move move, chess::Color color, i32 bonus) {
-    butterfly_entry(move, color).update(bonus);
+void History::update_quiet(chess::Move move, const Position<true>& position, i32 bonus) {
+    const auto stm = position.board().stm();
+
+    butterfly_entry(move, stm).update(bonus);
 }
 
 void History::update_noisy(chess::Move move, chess::Piece captured, i32 bonus) {
@@ -55,9 +57,11 @@ void History::update_noisy(chess::Move move, chess::Piece captured, i32 bonus) {
 }
 
 
-i32 History::get_quietscore(chess::Move move, chess::Color color) const {
+i32 History::get_quietscore(chess::Move move, const Position<true>& position) const {
+    const auto stm = position.board().stm();
+
     i32 score = 0;
-    score += butterfly_entry(move, color);
+    score += butterfly_entry(move, stm);
     return score;
 }
 

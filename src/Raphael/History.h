@@ -1,5 +1,5 @@
 #pragma once
-#include <chess/include.h>
+#include <Raphael/position.h>
 
 
 
@@ -18,9 +18,10 @@ struct HistoryEntry {
 
 
 
-class History {  // based on https://www.chessprogramming.org/History_Heuristic
+class History {
 private:
     HistoryEntry butterfly_hist_[2][64][64];  // [side][from][to]
+    HistoryEntry cont_hist_[12][64][12][64];  // [prev from][prev to][from][to]
     HistoryEntry capt_hist_[64][64][13];      // [from][to][piece, 12 for non-capture queening]
 
 public:
@@ -60,10 +61,10 @@ public:
     /** Applies a bonus to the quiet history score
      *
      * \param move quiet move
-     * \param color current side to move
+     * \param position current position
      * \param bonus bonus to apply, negative to apply penalty
      */
-    void update_quiet(chess::Move move, chess::Color color, i32 bonus);
+    void update_quiet(chess::Move move, const Position<true>& position, i32 bonus);
 
     /** Applies a bonus to the noisy history score
      *
@@ -77,10 +78,10 @@ public:
     /** Returns the quiet history score
      *
      * \param move quiet move
-     * \param color current side to move
+     * \param position current position
      * \returns quiet history score
      */
-    i32 get_quietscore(chess::Move move, chess::Color color) const;
+    i32 get_quietscore(chess::Move move, const Position<true>& position) const;
 
     /** Returns the noisy history score
      *
@@ -103,6 +104,18 @@ private:
      */
     const HistoryEntry& butterfly_entry(chess::Move move, chess::Color color) const;
     HistoryEntry& butterfly_entry(chess::Move move, chess::Color color);
+
+    /** Returns a reference to the continuation history entry
+     *
+     * \param move current move
+     * \param moving current moving piece
+     * \param prev_move previous move and moving piece
+     * \returns continuation history entry
+     */
+    const HistoryEntry& cont_entry(
+        chess::Move move, chess::Piece moving, chess::PieceMove prev_move
+    ) const;
+    HistoryEntry& cont_entry(chess::Move move, chess::Piece moving, chess::PieceMove prev_move);
 
     /** Returns a reference to the capture history entry
      *

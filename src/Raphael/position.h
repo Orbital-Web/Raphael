@@ -12,6 +12,7 @@ class Position {
 private:
     chess::Board current_;
     std::vector<chess::Board> boards_;
+    std::vector<chess::PieceMove> moves_;
 
     using NetType = std::conditional_t<include_net, Nnue, std::nullptr_t>;
     NetType net_;
@@ -20,6 +21,7 @@ public:
     /** Initializes the position to startpos */
     Position() {
         boards_.reserve(256);
+        moves_.reserve(256);
         if constexpr (include_net) {
             net_.set_board(current_);
         }
@@ -33,6 +35,7 @@ public:
     void set_position(const Position<false>& position) {
         current_ = position.current_;
         boards_ = position.boards_;
+        moves_ = position.moves_;
         if constexpr (include_net) {
             net_.set_board(current_);
         }
@@ -45,6 +48,7 @@ public:
     void set_board(const chess::Board& board) {
         current_ = board;
         boards_.clear();
+        moves_.clear();
         if constexpr (include_net) {
             net_.set_board(current_);
         }
@@ -56,6 +60,18 @@ public:
      * \returns current board
      */
     const chess::Board board() const { return current_; }
+
+
+    /** Returns a move n plies ago, or NO_MOVE if ply >= number of moves played
+     *
+     * \param ply number of plies to go back
+     * \returns the move and moved piece
+     */
+    const chess::PieceMove prev_move(i32 ply) const {
+        if (ply >= (i32)moves_.size())
+            return {.move = chess::Move::NO_MOVE, .moving = chess::Piece::NONE};
+        return moves_[moves_.size() - 1 - ply];
+    }
 
 
     /** Checks if the position is in repetition
@@ -92,6 +108,7 @@ public:
      */
     void make_move(chess::Move move) {
         boards_.push_back(current_);
+        moves_.push_back({.move = move, .moving = current_.at(move.from())});
         current_.make_move(move);
         if constexpr (include_net) {
             net_.make_move(boards_.back(), current_, move);
@@ -101,6 +118,7 @@ public:
     /** Plays a nullmove */
     void make_nullmove() {
         boards_.push_back(current_);
+        moves_.push_back({.move = chess::Move::NULL_MOVE, .moving = chess::Piece::NONE});
         current_.make_nullmove();
     }
 
@@ -108,6 +126,7 @@ public:
     void unmake_move() {
         current_ = boards_.back();
         boards_.pop_back();
+        moves_.pop_back();
         if constexpr (include_net) {
             net_.unmake_move();
         }
@@ -117,6 +136,7 @@ public:
     void unmake_nullmove() {
         current_ = boards_.back();
         boards_.pop_back();
+        moves_.pop_back();
     }
 
 public:

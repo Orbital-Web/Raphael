@@ -93,8 +93,6 @@ void TranspositionTable::set(u64 key, i32 score, chess::Move move, i32 depth, Fl
 
     assert(score >= INT16_MIN);
     assert(score <= INT16_MAX);
-    assert(depth > 0);
-    assert(depth < 256);
 
     // set
     entry.key = packed_key;

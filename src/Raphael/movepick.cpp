@@ -10,31 +10,35 @@ using std::swap;
 
 MoveGenerator MoveGenerator::negamax(
     chess::MoveList<chess::ScoredMove>* movelist,
-    const chess::Board* board,
+    const Position<true>* position,
     const History* history,
     chess::Move ttmove,
     chess::Move killer
 ) {
-    return MoveGenerator(Stage::TT_MOVE, movelist, board, history, ttmove, killer);
+    return MoveGenerator(Stage::TT_MOVE, movelist, position, history, ttmove, killer);
 }
 
 MoveGenerator MoveGenerator::quiescence(
     chess::MoveList<chess::ScoredMove>* movelist,
-    const chess::Board* board,
+    const Position<true>* position,
     const History* history,
     chess::Move ttmove
 ) {
-    return MoveGenerator(Stage::QS_TT_MOVE, movelist, board, history, ttmove, chess::Move::NO_MOVE);
+    return MoveGenerator(
+        Stage::QS_TT_MOVE, movelist, position, history, ttmove, chess::Move::NO_MOVE
+    );
 }
 
 
 chess::Move MoveGenerator::next() {
+    const auto& board = position_->board();
+
     switch (stage_) {
         // negamax stages
         case Stage::TT_MOVE: {
             stage_ = Stage::GEN_NOISY;
 
-            if (ttmove_ && board_->is_legal(ttmove_)) return ttmove_;
+            if (ttmove_ && board.is_legal(ttmove_)) return ttmove_;
 
             [[fallthrough]];
         }
@@ -42,9 +46,7 @@ chess::Move MoveGenerator::next() {
         case Stage::GEN_NOISY: {
             // generate noisy moves
             assert(movelist_->empty());
-            chess::Movegen::generate_legals<chess::Movegen::MoveGenType::NOISY>(
-                *movelist_, *board_
-            );
+            chess::Movegen::generate_legals<chess::Movegen::MoveGenType::NOISY>(*movelist_, board);
             end_ = movelist_->size();
 
             score_noisies();
@@ -62,7 +64,7 @@ chess::Move MoveGenerator::next() {
                 if (smove.move == ttmove_) continue;
 
                 const auto thresh = GOOD_NOISY_SEE_BASE - (smove.score * GOOD_NOISY_SEE_SCALE / 64);
-                if (SEE::see(smove.move, *board_, thresh))
+                if (SEE::see(smove.move, board, thresh))
                     return smove.move;
                 else
                     (*movelist_)[bad_noisy_end_++] = smove;
@@ -76,7 +78,7 @@ chess::Move MoveGenerator::next() {
         case Stage::KILLER: {
             stage_ = Stage::GEN_QUIET;
 
-            if (!skip_quiets_ && killer_ && killer_ != ttmove_ && board_->is_legal(killer_))
+            if (!skip_quiets_ && killer_ && killer_ != ttmove_ && board.is_legal(killer_))
                 return killer_;
 
             [[fallthrough]];
@@ -86,7 +88,7 @@ chess::Move MoveGenerator::next() {
             if (!skip_quiets_) {
                 // generate (append) quiet moves
                 chess::Movegen::generate_legals<chess::Movegen::MoveGenType::QUIET>(
-                    *movelist_, *board_
+                    *movelist_, board
                 );
                 end_ = movelist_->size();
 
@@ -136,7 +138,7 @@ chess::Move MoveGenerator::next() {
         case Stage::QS_TT_MOVE: {
             stage_ = Stage::QS_GEN_NOISY;
 
-            if (ttmove_ && board_->is_legal(ttmove_)) return ttmove_;
+            if (ttmove_ && board.is_legal(ttmove_)) return ttmove_;
 
             [[fallthrough]];
         }
@@ -144,9 +146,7 @@ chess::Move MoveGenerator::next() {
         case Stage::QS_GEN_NOISY: {
             // generate noisy moves
             assert(movelist_->empty());
-            chess::Movegen::generate_legals<chess::Movegen::MoveGenType::NOISY>(
-                *movelist_, *board_
-            );
+            chess::Movegen::generate_legals<chess::Movegen::MoveGenType::NOISY>(*movelist_, board);
             end_ = movelist_->size();
 
             score_noisies();
@@ -180,14 +180,14 @@ void MoveGenerator::skip_quiets() { skip_quiets_ = true; }
 MoveGenerator::MoveGenerator(
     Stage start_stage,
     chess::MoveList<chess::ScoredMove>* movelist,
-    const chess::Board* board,
+    const Position<true>* position,
     const History* history,
     chess::Move ttmove,
     chess::Move killer
 )
     : stage_(start_stage),
       movelist_(movelist),
-      board_(board),
+      position_(position),
       history_(history),
       ttmove_(ttmove),
       killer_(killer) {
@@ -196,9 +196,11 @@ MoveGenerator::MoveGenerator(
 
 
 void MoveGenerator::score_noisies() {
+    const auto& board = position_->board();
+
     for (usize i = idx_; i < end_; i++) {
         auto& smove = (*movelist_)[i];
-        const auto victim = board_->get_captured(smove.move);
+        const auto victim = board.get_captured(smove.move);
 
         i32 score = 0;
         score += history_->get_noisyscore(smove.move, victim) / CAPTHIST_DIVISOR;
@@ -212,7 +214,7 @@ void MoveGenerator::score_noisies() {
 void MoveGenerator::score_quiets() {
     for (usize i = idx_; i < end_; i++) {
         auto& smove = (*movelist_)[i];
-        smove.score = history_->get_quietscore(smove.move, board_->stm());
+        smove.score = history_->get_quietscore(smove.move, *position_);
     }
 }
 

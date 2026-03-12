@@ -26,7 +26,7 @@ public:
 private:
     Stage stage_;
     chess::MoveList<chess::ScoredMove>* movelist_;
-    const chess::Board* board_;
+    const Position<true>* position_;
     const History* history_;
     chess::Move ttmove_ = chess::Move::NO_MOVE;
     chess::Move killer_ = chess::Move::NO_MOVE;
@@ -41,7 +41,7 @@ public:
     /** Initializes a move generator for the negamax search
      *
      * \param movelist pointer to preallocated move list to use
-     * \param board pointer to current board
+     * \param position pointer to current position
      * \param history pointer to history table
      * \param ttmove transposition table move
      * \param killer killer move
@@ -49,7 +49,7 @@ public:
      */
     static MoveGenerator negamax(
         chess::MoveList<chess::ScoredMove>* movelist,
-        const chess::Board* board,
+        const Position<true>* position,
         const History* history,
         chess::Move ttmove,
         chess::Move killer
@@ -58,14 +58,14 @@ public:
     /** Initializes a move generator for the quiescence search
      *
      * \param movelist pointer to preallocated move list to use
-     * \param board pointer to current board
+     * \param position pointer to current position
      * \param history pointer to history table
      * \param ttmove transposition table move
      * \returns the move generator
      */
     static MoveGenerator quiescence(
         chess::MoveList<chess::ScoredMove>* movelist,
-        const chess::Board* board,
+        const Position<true>* position,
         const History* history,
         chess::Move ttmove
     );
@@ -85,7 +85,7 @@ private:
      *
      * \param start_stage the starting stage of the generator
      * \param movelist pointer to preallocated move list to use
-     * \param board pointer to current board
+     * \param position pointer to current position
      * \param history pointer to history table
      * \param ttmove transposition table move
      * \param killer killer move
@@ -93,7 +93,7 @@ private:
     MoveGenerator(
         Stage start_stage,
         chess::MoveList<chess::ScoredMove>* movelist,
-        const chess::Board* board,
+        const Position<true>* position,
         const History* history,
         chess::Move ttmove,
         chess::Move killer

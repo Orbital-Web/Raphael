@@ -46,8 +46,14 @@ i32 History::noisy_penalty(i32 depth) const {
 }
 
 
-void History::update_quiet(chess::Move move, chess::Color color, i32 bonus) {
-    butterfly_entry(move, color).update(bonus);
+void History::update_quiet(chess::Move move, const Position<true>& position, i32 bonus) {
+    const auto& board = position.board();
+    const auto stm = board.stm();
+    const auto moving = board.at(move.from());
+    const auto prev1 = position.prev_move(1);
+
+    butterfly_entry(move, stm).update(bonus);
+    if (prev1.moving != chess::Piece::NONE) cont_entry(move, moving, prev1).update(bonus);
 }
 
 void History::update_noisy(chess::Move move, chess::Piece captured, i32 bonus) {
@@ -55,9 +61,15 @@ void History::update_noisy(chess::Move move, chess::Piece captured, i32 bonus) {
 }
 
 
-i32 History::get_quietscore(chess::Move move, chess::Color color) const {
+i32 History::get_quietscore(chess::Move move, const Position<true>& position) const {
+    const auto& board = position.board();
+    const auto stm = board.stm();
+    const auto moving = board.at(move.from());
+    const auto prev1 = position.prev_move(1);
+
     i32 score = 0;
-    score += butterfly_entry(move, color);
+    score += butterfly_entry(move, stm);
+    score += (prev1.moving != chess::Piece::NONE) ? cont_entry(move, moving, prev1) : 0;
     return score;
 }
 
@@ -68,6 +80,7 @@ i32 History::get_noisyscore(chess::Move move, chess::Piece captured) const {
 
 void History::clear() {
     memset(butterfly_hist_, 0, sizeof(butterfly_hist_));
+    memset(cont_hist_, 0, sizeof(cont_hist_));
     memset(capt_hist_, 0, sizeof(capt_hist_));
 }
 
@@ -78,6 +91,23 @@ const HistoryEntry& History::butterfly_entry(chess::Move move, chess::Color colo
 }
 HistoryEntry& History::butterfly_entry(chess::Move move, chess::Color color) {
     return butterfly_hist_[color][move.from()][move.to()];
+}
+
+const HistoryEntry& History::cont_entry(
+    chess::Move move, chess::Piece moving, chess::PieceMove prev_move
+) const {
+    assert(prev_move.move != chess::Move::NO_MOVE);
+    assert(prev_move.move != chess::Move::NULL_MOVE);
+    assert(prev_move.moving != chess::Piece::NONE);
+    return cont_hist_[prev_move.moving][prev_move.move.to()][moving][move.to()];
+}
+HistoryEntry& History::cont_entry(
+    chess::Move move, chess::Piece moving, chess::PieceMove prev_move
+) {
+    assert(prev_move.move != chess::Move::NO_MOVE);
+    assert(prev_move.move != chess::Move::NULL_MOVE);
+    assert(prev_move.moving != chess::Piece::NONE);
+    return cont_hist_[prev_move.moving][prev_move.move.to()][moving][move.to()];
 }
 
 const HistoryEntry& History::capt_entry(chess::Move move, chess::Piece captured) const {

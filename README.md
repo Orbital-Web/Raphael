@@ -142,7 +142,7 @@ The engine contains the following features:
     - [x] Butterfly history                 (`v1.5+`)
     - [x] Capture history                   (`v2.3+`)
     - [ ] Piece-to history
-    - [ ] Continuation history
+    - [x] Continuation history              (`v3.2+`)
     - [ ] Correction history
     - [ ] Threats in history
     - [x] SEE                               (`v1.7+`)

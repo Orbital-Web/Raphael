@@ -51,9 +51,11 @@ void History::update_quiet(chess::Move move, const Position<true>& position, i32
     const auto stm = board.stm();
     const auto moving = board.at(move.from());
     const auto prev1 = position.prev_move(1);
+    const auto prev2 = position.prev_move(2);
 
     butterfly_entry(move, stm).update(bonus);
     if (prev1.moving != chess::Piece::NONE) cont_entry(move, moving, prev1).update(bonus);
+    if (prev2.moving != chess::Piece::NONE) cont_entry(move, moving, prev2).update(bonus);
 }
 
 void History::update_noisy(chess::Move move, chess::Piece captured, i32 bonus) {
@@ -66,10 +68,12 @@ i32 History::get_quietscore(chess::Move move, const Position<true>& position) co
     const auto stm = board.stm();
     const auto moving = board.at(move.from());
     const auto prev1 = position.prev_move(1);
+    const auto prev2 = position.prev_move(2);
 
     i32 score = 0;
     score += butterfly_entry(move, stm);
     score += (prev1.moving != chess::Piece::NONE) ? cont_entry(move, moving, prev1) : 0;
+    score += (prev2.moving != chess::Piece::NONE) ? cont_entry(move, moving, prev2) : 0;
     return score;
 }
 

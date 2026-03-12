@@ -1,6 +1,8 @@
 #pragma once
 #include <chess/piece.h>
 
+#include <bit>
+
 
 
 namespace chess {

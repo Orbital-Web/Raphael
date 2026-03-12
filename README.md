@@ -175,6 +175,8 @@ The engine contains the following features:
     - [ ] Finny tables
     - [ ] Pairwise multiplication
     - [ ] Dual activations
+    - [ ] Multilayer network
+    - [ ] Threat Inputs
 - [x] Time management                       (`v1.0+`)
   - [x] Hard/soft limit                     (`v3.0+`)
   - [ ] Node-based scaling

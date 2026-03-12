@@ -62,12 +62,16 @@ public:
     const chess::Board board() const { return current_; }
 
 
-    /** Returns a move n plies ago
+    /** Returns a move n plies ago, or NO_MOVE if ply >= number of moves played
      *
      * \param ply number of plies to go back
      * \returns the move and moved piece
      */
-    const chess::PieceMove prev_move(i32 ply) const { return moves_[moves_.size() - 1 - ply]; }
+    const chess::PieceMove prev_move(i32 ply) const {
+        if (ply >= (i32)moves_.size())
+            return {.move = chess::Move::NO_MOVE, .moving = chess::Piece::NONE};
+        return moves_[moves_.size() - 1 - ply];
+    }
 
 
     /** Checks if the position is in repetition
@@ -114,7 +118,7 @@ public:
     /** Plays a nullmove */
     void make_nullmove() {
         boards_.push_back(current_);
-        moves_.push_back({.move = chess::Move::NO_MOVE, .moving = chess::Piece::NONE});
+        moves_.push_back({.move = chess::Move::NULL_MOVE, .moving = chess::Piece::NONE});
         current_.make_nullmove();
     }
 

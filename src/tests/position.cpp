@@ -175,6 +175,9 @@ TEST_SUITE("Position") {
         auto prev = position.prev_move(0);
         CHECK(prev.move == move0);
         CHECK(prev.moving == chess::Piece::WHITEPAWN);
+        prev = position.prev_move(1);
+        CHECK(prev.move == chess::Move::NO_MOVE);
+        CHECK(prev.moving == chess::Piece::NONE);
 
         const auto move1 = chess::Move::make(chess::Square::F7, chess::Square::F5);
         position.make_move(move1);
@@ -184,6 +187,9 @@ TEST_SUITE("Position") {
         prev = position.prev_move(1);
         CHECK(prev.move == move0);
         CHECK(prev.moving == chess::Piece::WHITEPAWN);
+        prev = position.prev_move(2);
+        CHECK(prev.move == chess::Move::NO_MOVE);
+        CHECK(prev.moving == chess::Piece::NONE);
 
         const auto move2 = chess::Move::make(chess::Square::E4, chess::Square::F5);
         position.make_move(move2);
@@ -196,6 +202,9 @@ TEST_SUITE("Position") {
         prev = position.prev_move(2);
         CHECK(prev.move == move0);
         CHECK(prev.moving == chess::Piece::WHITEPAWN);
+        prev = position.prev_move(3);
+        CHECK(prev.move == chess::Move::NO_MOVE);
+        CHECK(prev.moving == chess::Piece::NONE);
 
         position.unmake_move();
         prev = position.prev_move(0);
@@ -204,10 +213,13 @@ TEST_SUITE("Position") {
         prev = position.prev_move(1);
         CHECK(prev.move == move0);
         CHECK(prev.moving == chess::Piece::WHITEPAWN);
+        prev = position.prev_move(2);
+        CHECK(prev.move == chess::Move::NO_MOVE);
+        CHECK(prev.moving == chess::Piece::NONE);
 
         position.make_nullmove();
         prev = position.prev_move(0);
-        CHECK(prev.move == chess::Move::NO_MOVE);
+        CHECK(prev.move == chess::Move::NULL_MOVE);
         CHECK(prev.moving == chess::Piece::NONE);
 
         position.unmake_nullmove();

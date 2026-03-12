@@ -52,10 +52,12 @@ void History::update_quiet(chess::Move move, const Position<true>& position, i32
     const auto moving = board.at(move.from());
     const auto prev1 = position.prev_move(1);
     const auto prev2 = position.prev_move(2);
+    const auto prev4 = position.prev_move(4);
 
     butterfly_entry(move, stm).update(bonus);
     if (prev1.moving != chess::Piece::NONE) cont_entry(move, moving, prev1).update(bonus);
     if (prev2.moving != chess::Piece::NONE) cont_entry(move, moving, prev2).update(bonus);
+    if (prev4.moving != chess::Piece::NONE) cont_entry(move, moving, prev4).update(bonus);
 }
 
 void History::update_noisy(chess::Move move, chess::Piece captured, i32 bonus) {
@@ -69,11 +71,19 @@ i32 History::get_quietscore(chess::Move move, const Position<true>& position) co
     const auto moving = board.at(move.from());
     const auto prev1 = position.prev_move(1);
     const auto prev2 = position.prev_move(2);
+    const auto prev4 = position.prev_move(4);
 
     i32 score = 0;
     score += butterfly_entry(move, stm);
-    score += (prev1.moving != chess::Piece::NONE) ? cont_entry(move, moving, prev1) : 0;
-    score += (prev2.moving != chess::Piece::NONE) ? cont_entry(move, moving, prev2) : 0;
+    score += (prev1.moving != chess::Piece::NONE)
+                 ? cont_entry(move, moving, prev1) * CONTHIST1_WEIGHT / 128
+                 : 0;
+    score += (prev2.moving != chess::Piece::NONE)
+                 ? cont_entry(move, moving, prev2) * CONTHIST2_WEIGHT / 128
+                 : 0;
+    score += (prev4.moving != chess::Piece::NONE)
+                 ? cont_entry(move, moving, prev4) * CONTHIST4_WEIGHT / 128
+                 : 0;
     return score;
 }
 

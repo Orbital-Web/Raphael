@@ -156,7 +156,7 @@ chess::Move MoveGenerator::next() {
         }
 
         case Stage::QS_NOISY: {
-            // find next noisy move
+            // find next non-tt noisy move
             while (idx_ < end_) {
                 const auto idx = select_next();
                 const auto& smove = (*movelist_)[idx];

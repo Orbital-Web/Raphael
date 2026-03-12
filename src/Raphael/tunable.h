@@ -183,7 +183,7 @@ Tunable(IIR_DEPTH, 3, 3, 6, 1, true);  // min depth to apply iir from
 
 Tunable(RFP_DEPTH, 6, 1, 10, 1, true);           // max depth to apply rfp from
 Tunable(RFP_DEPTH_SCALE, 77, 25, 150, 8, true);  // margin depth scale for rfp
-Tunable(RFP_IMPROV_SCALE, 0, 0, 100, 8, true);   // margin improving scale for rfp
+Tunable(RFP_IMPROV_SCALE, 40, 0, 100, 8, true);  // margin improving scale for rfp
 
 Tunable(RAZORING_DEPTH, 4, 1, 10, 1, true);              // max depth to apply razoring from
 Tunable(RAZORING_DEPTH_SCALE, 250, 100, 350, 40, true);  // margin depth scale for razoring

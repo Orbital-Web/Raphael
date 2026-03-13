@@ -189,7 +189,7 @@ Tunable(HARD_TIME_FACTOR, 200, 150, 250, true);  // percentage of base time to u
 Tunable(SOFT_TIME_FACTOR, 70, 50, 100, true);    // percentage of base time to use as soft time
 
 Tunable(NODE_TM_DEPTH, 5, 3, 10, true);       // min depth for node tm
-Tunable(NODE_TM_BASE, 250, 150, 300, true);   // base soft tm scale for node tm
+Tunable(NODE_TM_BASE, 200, 150, 300, true);   // base soft tm scale for node tm
 Tunable(NODE_TM_SCALE, 150, 100, 200, true);  // ratio scale of soft tm scale for node tm
 
 // search

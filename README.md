@@ -7,33 +7,33 @@ You can [scroll to the bottom](#raphael-engine) to see a list of features curren
 Raphael is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python.
 
 <p align="center">
-    <img src="https://github.com/Orbital-Web/Raphael/blob/8667a6f6db60c5cacce297145246f89a22fa5333/Demo.png" alt="demo of Raphael" width=400/>
+  <img src="https://github.com/Orbital-Web/Raphael/blob/8667a6f6db60c5cacce297145246f89a22fa5333/Demo.png" alt="demo of Raphael" width=400/>
 </p>
 
 ## Elo
 
 The following are the historic elo for Raphael.
 
-Note that elos with an asterics next to them are estimates and not official, and were estimated by running tournaments against [Stash](https://gitlab.com/mhouppin/stash-bot/-/releases) (and sometimes a few other engines) using [fastchess](https://github.com/Disservin/fastchess).
-
 <table>
-    <tr align="center">
-        <th>Version</th>
-        <th><a href="https://www.computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?family=Raphael">CCRL Blitz</a></th>
-        <th><a href="https://www.computerchess.org.uk/ccrl/4040/cgi/compare_engines.cgi?family=Raphael">CCRL 40/15</a></th>
-    </tr>
-    <tr align="center"><td>3.1.0</td> <td>3506</td> <td>3416</td></tr>
-    <tr align="center"><td>3.0.0</td> <td>3321*</td> <td>3206</td></tr>
-    <tr align="center"><td>2.3.0</td> <td>3146*</td> <td>3061</td></tr>
-    <tr align="center"><td>2.2.0</td> <td>3035*</td> <td>2953</td></tr>
-    <tr align="center"><td>2.1.0</td> <td>2739*</td> <td>2689</td></tr>
-    <tr align="center"><td>2.0.0</td> <td>2646*</td> <td></td></tr>
-    <tr align="center"><td>1.8.0</td> <td>2223*</td> <td></td></tr>
-    <tr align="center"><td>1.7.6</td> <td>1970</td>  <td></td></tr>
-    <tr align="center"><td>1.7.0</td> <td>1853</td>  <td></td></tr>
-    <tr align="center"><td>1.6.0</td> <td>1797*</td> <td></td></tr>
-    <tr align="center"><td>1.5.0</td> <td>1764*</td> <td></td></tr>
+  <tr align="center">
+    <th>Version</th>
+    <th>Release Date</th>
+    <th><a href="https://www.computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?family=Raphael">CCRL Blitz</a></th>
+    <th><a href="https://www.computerchess.org.uk/ccrl/4040/cgi/compare_engines.cgi?family=Raphael">CCRL 40/15</a></th>
+  </tr>
+  <tr align="center"><td>3.1.0</td> <td>Mar 01, 2026</td> <td>3506 </td> <td>3416</td></tr>
+  <tr align="center"><td>3.0.0</td> <td>Feb 12, 2026</td> <td>3321*</td> <td>3206</td></tr>
+  <tr align="center"><td>2.3.0</td> <td>Jan 25, 2026</td> <td>3146*</td> <td>3061</td></tr>
+  <tr align="center"><td>2.2.0</td> <td>Jan 08, 2026</td> <td>3035*</td> <td>2953</td></tr>
+  <tr align="center"><td>2.1.0</td> <td>Dec 31, 2025</td> <td>2739*</td> <td>2689</td></tr>
+  <tr align="center"><td>2.0.0</td> <td>Dec 23, 2025</td> <td>2646*</td> <td></td></tr>
+  <tr align="center"><td>1.8.0</td> <td>Dec 27, 2024</td> <td>2223*</td> <td></td></tr>
+  <tr align="center"><td>1.7.6</td> <td>Dec 16, 2024</td> <td>1970 </td> <td></td></tr>
+  <tr align="center"><td>1.7.0</td> <td>Aug 26, 2023</td> <td>1853 </td> <td></td></tr>
+  <tr align="center"><td>1.6.0</td> <td>Aug 20, 2023</td> <td>1797*</td> <td></td></tr>
+  <tr align="center"><td>1.5.0</td> <td>Aug 16, 2023</td> <td>1764*</td> <td></td></tr>
 </table>
+*estimated
 
 ## Getting Started
 
@@ -84,10 +84,7 @@ main.exe human "Human" Raphael "Raphael" -s "game.pgn"  # Windows
 ```
 
 You can see other command-line arguments by running `main.exe -h`.
-
-The human player can move a piece by either dragging and dropping a piece to the destination square, or by clicking a piece and clicking the destination square. Castling can be done by clicking the destination square of the king after castling. Only promotion by queening is currently supported. You can also annotate the board with arrows by holding and dragging the right mouse button.
-
-You can also play with different time controls, increments, and player combinations. Again, please refer to `main.exe -h` and the [setup instructions above](#getting-started) for a more in-depth guide.
+There are supports for board annotations (arrows and square highlights) using the right mouse button.
 
 ### Raphael (Engine)
 
@@ -193,6 +190,46 @@ The engine contains the following features:
 - [ ] SPSA tuning
 
 For a more in-depth documentation on the NNUE and how it was trained, refer to the [NNUE History](https://github.com/Orbital-Web/Raphael/blob/main/src/NNUE/history.txt). All iterations of Raphael's NNUE were trained on self-generated training data. The net files can be found on the [Raphael-Net](https://github.com/Orbital-Web/Raphael-Net) repository.
+
+## UCI Options
+
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Type</th>
+    <th>Default</th>
+    <th>Range</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>Hash</td> <td>spin</td> <td>64</td> <td>[1, 65536]</td>
+    <td>Memory allocated for transposition table (in MiB)</td>
+  </tr>
+  <tr>
+    <td>Threads</td> <td>spin</td> <td>1</td> <td>[1, 1]</td>
+    <td>Number of search threads</td>
+  </tr>
+  <tr>
+    <td>UCI_Chess960</td> <td>check</td> <td>false</td> <td>true/false</td>
+    <td>Whether to play Chess960 (frc/dfrc) games</td>
+  </tr>
+  <tr>
+    <td>MoveOverhead</td> <td>spin</td> <td>10</td> <td>[0, 5000]</td>
+    <td>Amount of time assumed to be lost to overhead per move (in ms)</td>
+  </tr>
+  <tr>
+    <td>Datagen</td> <td>check</td> <td>false</td> <td>true/false</td>
+    <td>Whether to enable datagen mode (modifies search behavior)</td>
+  </tr>
+  <tr>
+    <td>Softnodes</td> <td>check</td> <td>false</td> <td>true/false</td>
+    <td>Whether to use a soft node limit when sent go nodes</td>
+  </tr>
+  <tr>
+    <td>SoftNodeHardLimitMultiplier</td> <td>spin</td> <td>1678</td> <td>[1, 5000]</td>
+    <td>Scale factor of hard node limit when using softnodes</td>
+  </tr>
+</table>
 
 ## Acknowledgements
 

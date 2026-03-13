@@ -461,24 +461,26 @@ i32 Raphael::negamax(
                 if (score >= beta) {
                     ttflag = tt_.LOWER;
 
+                    const auto history_depth = depth + (!in_check && ss->static_eval <= alpha);
+
                     if (is_quiet) {
                         // store killer moves and update quiet history
                         ss->killer = move;
 
-                        const auto quiet_bonus = history_.quiet_bonus(depth);
-                        const auto quiet_penalty = history_.quiet_penalty(depth);
+                        const auto quiet_bonus = history_.quiet_bonus(history_depth);
+                        const auto quiet_penalty = history_.quiet_penalty(history_depth);
 
                         history_.update_quiet(bestmove, position_, quiet_bonus);
                         for (const auto quietmove : mvstack.quietlist)
                             history_.update_quiet(quietmove, position_, quiet_penalty);
                     } else {
                         // apply capthist bonus
-                        const auto noisy_bonus = history_.noisy_bonus(depth);
+                        const auto noisy_bonus = history_.noisy_bonus(history_depth);
                         history_.update_noisy(bestmove, board.get_captured(bestmove), noisy_bonus);
                     }
 
                     // always apply capthist penalty
-                    const auto noisy_penalty = history_.noisy_penalty(depth);
+                    const auto noisy_penalty = history_.noisy_penalty(history_depth);
                     for (const auto noisymove : mvstack.noisylist)
                         history_.update_noisy(
                             noisymove, board.get_captured(noisymove), noisy_penalty

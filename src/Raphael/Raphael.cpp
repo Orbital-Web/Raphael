@@ -66,10 +66,10 @@ void Raphael::set_option(const std::string& name, i32 value) {
         if (p->name != name) continue;
 
         // error checking
-        if (value < p->min || value > p->max) {
+        if (value < p->min_val || value > p->max_val) {
             lock_guard<mutex> lock(cout_mutex);
             cout << "info string error: option '" << p->name << "' value must be within min "
-                 << p->min << " max " << p->max << "\n"
+                 << p->min_val << " max " << p->max_val << "\n"
                  << flush;
             return;
         }

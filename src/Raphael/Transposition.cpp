@@ -15,15 +15,17 @@ using std::memset;
 
 
 
-u32 TranspositionTable::Entry::age() const { return static_cast<u32>(age_flag >> 2); }
+u32 TranspositionTable::Entry::age() const { return static_cast<u32>(age_pv_flag >> 3); }
+
+bool TranspositionTable::Entry::pv() const { return ((age_pv_flag >> 2) & 0x1) != 0; }
 
 TranspositionTable::Flag TranspositionTable::Entry::flag() const {
-    return static_cast<Flag>(age_flag & 0x3);
+    return static_cast<Flag>(age_pv_flag & 0x3);
 }
 
-void TranspositionTable::Entry::set_age_flag(u32 age, Flag flag) {
+void TranspositionTable::Entry::set_age_pv_flag(u32 age, bool pv, Flag flag) {
     assert(age <= MAX_AGE);
-    age_flag = static_cast<u8>(age << 2) | static_cast<u8>(flag);
+    age_pv_flag = (static_cast<u8>(age) << 3) | (static_cast<u8>(pv) << 2) | static_cast<u8>(flag);
 }
 
 i32 TranspositionTable::Entry::value(u32 tt_age) const {
@@ -70,6 +72,7 @@ bool TranspositionTable::get(ProbedEntry& ttentry, u64 key, i32 ply) const {
             ttentry.static_eval = static_cast<i32>(entry.static_eval);
             ttentry.move = static_cast<chess::Move>(entry.move);
             ttentry.depth = static_cast<i32>(entry.depth);
+            ttentry.was_PV = entry.pv();
             ttentry.flag = entry.flag();
 
             return true;
@@ -81,7 +84,7 @@ bool TranspositionTable::get(ProbedEntry& ttentry, u64 key, i32 ply) const {
 void TranspositionTable::prefetch(u64 key) const { __builtin_prefetch(&table_[index(key)]); }
 
 void TranspositionTable::set(
-    u64 key, i32 score, i32 static_eval, chess::Move move, i32 depth, Flag flag, i32 ply
+    u64 key, i32 score, i32 static_eval, chess::Move move, i32 depth, bool pv, Flag flag, i32 ply
 ) {
     assert(depth >= 0);
     assert(depth < 256);
@@ -116,7 +119,7 @@ void TranspositionTable::set(
     assert(entry != nullptr);
 
     if (!(flag == Flag::EXACT || packed_key != entry->key || entry->age() != age_
-          || depth + TT_REPLACEMENT_DEPTH_OFFSET > entry->depth))
+          || depth + TT_REPLACEMENT_DEPTH_OFFSET + pv * TT_REPLACEMENT_PV_OFFSET > entry->depth))
         return;
 
     if (move || entry->key != packed_key) entry->move = static_cast<u16>(move);
@@ -132,7 +135,7 @@ void TranspositionTable::set(
     entry->score = static_cast<i16>(score);
     entry->static_eval = static_cast<i16>(static_eval);
     entry->depth = static_cast<u8>(depth);
-    entry->set_age_flag(age_, flag);
+    entry->set_age_pv_flag(age_, pv, flag);
 }
 
 void TranspositionTable::clear() {

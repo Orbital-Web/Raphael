@@ -209,6 +209,7 @@ Tunable(ASPIRATION_INIT_SIZE, 50, 5, 100, true);       // initial window size
 Tunable(ASPIRATION_WIDENING_FACTOR, 12, 2, 24, true);  // window scale factor (1 + k/16)
 
 Tunable(TT_REPLACEMENT_DEPTH_OFFSET, 4, 0, 8, true);  // offset to replace tt from
+Tunable(TT_REPLACEMENT_PV_OFFSET, 2, 0, 6, true);     // offset to replace pv tt from
 Tunable(TT_VALUE_DEPTH_WEIGHT, 1, 0, 4, false);       // eviction depth weight
 Tunable(TT_VALUE_AGE_WEIGHT, 1, 0, 4, false);         // eviction age weight
 

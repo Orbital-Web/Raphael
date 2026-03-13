@@ -20,24 +20,19 @@ public:
         i16 static_eval;  // static eval of the position
         u16 move;         // bestmove
         u8 depth;         // max 255
-        u8 age_flag;      // 6 bits age, 2 bits flag
+        u8 age_pv_flag;   // 5 bits age, 1 bit ttpv, 2 bits flag
 
         u32 age() const;
+        bool pv() const;
         Flag flag() const;
 
         /** Sets the age and flag of the entry
          *
          * \param age age to set
+         * \param pv whether this entry is on the PV
          * \param flag flag to set
          */
-        void set_age_flag(u32 age, Flag flag);
-
-        /** Returns how valuable this entry is
-         *
-         * \param tt_age age of the tt
-         * \returns value of this entry
-         */
-        i32 value(u32 tt_age) const;
+        void set_age_pv_flag(u32 age, bool pv, Flag flag);
     };
     static_assert(sizeof(Entry) == 10);
 
@@ -53,6 +48,7 @@ public:
         i32 static_eval;
         i32 depth;
         chess::Move move;
+        bool was_PV;
         Flag flag;
     };
 
@@ -62,7 +58,7 @@ private:
     Cluster* table_;
 
     u32 age_ = 0;
-    static constexpr u32 AGE_BITS = 6;
+    static constexpr u32 AGE_BITS = 5;
     static constexpr u32 MAX_AGE = (1 << AGE_BITS) - 1;
 
 
@@ -108,9 +104,19 @@ public:
      * \param move bestmove
      * \param depth max 255
      * \param flag invalid, lower, exact, or upper
+     * \param pv whether the entry is on the PV
      * \param ply current distance from root
      */
-    void set(u64 key, i32 score, i32 static_eval, chess::Move move, i32 depth, Flag flag, i32 ply);
+    void set(
+        u64 key,
+        i32 score,
+        i32 static_eval,
+        chess::Move move,
+        i32 depth,
+        bool pv,
+        Flag flag,
+        i32 ply
+    );
 
     /** Clears the table */
     void clear();

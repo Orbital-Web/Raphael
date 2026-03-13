@@ -24,9 +24,14 @@ MoveGenerator MoveGenerator::quiescence(
     const History* history,
     chess::Move ttmove
 ) {
-    return MoveGenerator(
+    const auto& board = position->board();
+
+    auto generator = MoveGenerator(
         Stage::QS_TT_MOVE, movelist, position, history, ttmove, chess::Move::NO_MOVE
     );
+    if (!board.in_check()) generator.skip_quiets();
+
+    return generator;
 }
 
 
@@ -166,7 +171,40 @@ chess::Move MoveGenerator::next() {
                 return smove.move;
             }
 
-            // noisies exhausted
+            stage_ = Stage::QS_GEN_QUIET;
+            [[fallthrough]];
+        }
+
+        case Stage::QS_GEN_QUIET: {
+            if (!skip_quiets_) {
+                // generate (append) quiet moves
+                chess::Movegen::generate_legals<chess::Movegen::MoveGenType::QUIET>(
+                    *movelist_, board
+                );
+                end_ = movelist_->size();
+
+                score_quiets();
+            }
+
+            stage_ = Stage::QS_QUIET;
+            [[fallthrough]];
+        }
+
+        case Stage::QS_QUIET: {
+            if (!skip_quiets_) {
+                // find first non-tt quiet move
+                while (idx_ < end_) {
+                    const auto idx = select_next();
+                    const auto& smove = (*movelist_)[idx];
+
+                    if (smove.move == ttmove_) continue;
+
+                    idx_ = end_;  // only generate one quiet move
+                    return smove.move;
+                }
+            }
+
+            // all moves exhausted
             return chess::Move::NO_MOVE;
         }
     }

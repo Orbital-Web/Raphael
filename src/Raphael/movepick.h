@@ -21,6 +21,9 @@ public:
         QS_TT_MOVE,
         QS_GEN_NOISY,
         QS_NOISY,
+        // only if in check
+        QS_GEN_QUIET,
+        QS_QUIET
     };
 
 private:

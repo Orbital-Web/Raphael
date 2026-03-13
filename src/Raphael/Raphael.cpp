@@ -173,7 +173,7 @@ Raphael::MoveScore Raphael::get_move(const i32 t_remain, const i32 t_inc, atomic
         if (ucilevel_ == UciInfoLevel::ALL) print_uci_info(depth, score, ss);
 
         // soft limit
-        if (tm_.is_soft_limit_reached(halt, depth)) break;
+        if (tm_.is_soft_limit_reached(halt, bestmove, depth)) break;
     }
 
     // last attempt to get bestmove
@@ -403,6 +403,8 @@ i32 Raphael::negamax(
             }
         }
 
+        const u64 old_nodes = tm_.get_nodes();
+
         tt_.prefetch(board.hash_after<false>(move));
         position_.make_move(move);
         ss->move = move;
@@ -446,6 +448,8 @@ i32 Raphael::negamax(
         assert(score != INT32_MIN);
 
         position_.unmake_move();
+
+        if (is_root) tm_.inc_nodes(move, tm_.get_nodes() - old_nodes);
 
         if (score > bestscore) {
             bestscore = score;

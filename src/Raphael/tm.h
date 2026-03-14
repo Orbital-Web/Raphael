@@ -31,6 +31,9 @@ private:
 
     std::optional<i32> max_depth_;  // max depth
 
+    chess::Move prev_bestmove_;
+    i32 bestmove_stability_;
+
 
 public:
     TimeManager();
@@ -90,7 +93,7 @@ public:
      * \param depth the current search depth
      * \returns the new value of halt
      */
-    bool is_soft_limit_reached(std::atomic<bool>& halt, chess::Move bestmove, i32 depth) const;
+    bool is_soft_limit_reached(std::atomic<bool>& halt, chess::Move bestmove, i32 depth);
 
 private:
     /** Resets the time manager */
@@ -103,6 +106,6 @@ private:
      * \param depth the current search depth
      * \returns the new soft time limit
      */
-    i64 adjust_soft_time(chess::Move bestmove, i32 depth) const;
+    i64 adjust_soft_time(chess::Move bestmove, i32 depth);
 };
 }  // namespace raphael

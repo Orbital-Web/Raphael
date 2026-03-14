@@ -100,8 +100,9 @@ private:
     /** Computes the adjusted soft time limit
      *
      * \param bestmove current bestmove
+     * \param depth the current search depth
      * \returns the new soft time limit
      */
-    i64 adjust_soft_time(chess::Move bestmove) const;
+    i64 adjust_soft_time(chess::Move bestmove, i32 depth) const;
 };
 }  // namespace raphael

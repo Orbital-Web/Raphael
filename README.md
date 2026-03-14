@@ -176,7 +176,7 @@ The engine contains the following features:
     - [ ] Threat Inputs
 - [x] Time management                       (`v1.0+`)
   - [x] Hard/soft limit                     (`v3.0+`)
-  - [ ] Node-based scaling
+  - [x] Node-based scaling                  (`v3.2+`)
   - [ ] Bestmove stability
   - [ ] Score stability
   - [ ] Complexity

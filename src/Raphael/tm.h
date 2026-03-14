@@ -21,6 +21,7 @@ public:
 private:
     std::chrono::time_point<std::chrono::steady_clock> start_t_;  // search start time
     u64 nodes_;
+    u64 nodes_per_move_[64][64];
 
     std::optional<i64> hard_t_;  // hard time limit, checked every few nodes
     std::optional<i64> soft_t_;  // soft time limit, checked after each iterative deepening
@@ -53,8 +54,25 @@ public:
     /** Increments the node counter */
     void inc_nodes();
 
-    /** Returns the number of nodes visited */
+    /** Increments the node counter for a certain move
+     *
+     * \param move move to increment for
+     * \param count amount to increment by
+     */
+    void inc_nodes(chess::Move move, u64 count);
+
+    /** Returns the number of nodes visited
+     *
+     * \returns number of nodes visited
+     */
     u64 get_nodes() const;
+
+    /** Returns the number of nodes visited for a certain move
+     *
+     * \param move move to get node count for
+     * \returns number of nodes visited for that move
+     */
+    u64 get_nodes(chess::Move move) const;
 
 
     /** Sets halt and returns its value if the hard limit is reached
@@ -68,17 +86,22 @@ public:
      * Checked at the end of a search at `depth`
      *
      * \param halt bool reference which will turn false to indicate search should stop
+     * \param bestmove current bestmove
      * \param depth the current search depth
      * \returns the new value of halt
      */
-    bool is_soft_limit_reached(std::atomic<bool>& halt, i32 depth) const;
+    bool is_soft_limit_reached(std::atomic<bool>& halt, chess::Move bestmove, i32 depth) const;
 
 private:
     /** Resets the time manager */
     void reset();
 
 
-    /** Computes the adjusted soft time limit */
-    i64 adjust_soft_time() const;
+    /** Computes the adjusted soft time limit
+     *
+     * \param bestmove current bestmove
+     * \returns the new soft time limit
+     */
+    i64 adjust_soft_time(chess::Move bestmove) const;
 };
 }  // namespace raphael

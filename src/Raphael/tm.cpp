@@ -1,10 +1,13 @@
 #include <Raphael/tm.h>
 #include <Raphael/tunable.h>
 
+#include <cstring>
+
 using namespace raphael;
 using std::atomic;
 using std::max;
 using std::memory_order_relaxed;
+using std::memset;
 using std::min;
 namespace ch = std::chrono;
 
@@ -68,7 +71,15 @@ i64 TimeManager::get_time() const {
 
 void TimeManager::inc_nodes() { nodes_++; }
 
+void TimeManager::inc_nodes(chess::Move move, u64 count) {
+    nodes_per_move_[move.from()][move.to()] += count;
+}
+
 u64 TimeManager::get_nodes() const { return nodes_; }
+
+u64 TimeManager::get_nodes(chess::Move move) const {
+    return nodes_per_move_[move.from()][move.to()];
+}
 
 
 bool TimeManager::is_hard_limit_reached(atomic<bool>& halt) const {
@@ -87,7 +98,7 @@ bool TimeManager::is_hard_limit_reached(atomic<bool>& halt) const {
     return halt.load(memory_order_relaxed);
 }
 
-bool TimeManager::is_soft_limit_reached(atomic<bool>& halt, i32 depth) const {
+bool TimeManager::is_soft_limit_reached(atomic<bool>& halt, chess::Move bestmove, i32 depth) const {
     // if soft nodes is specified, check node count
     if (soft_nodes_.has_value() && nodes_ >= *soft_nodes_) {
         halt.store(true, memory_order_relaxed);
@@ -102,7 +113,7 @@ bool TimeManager::is_soft_limit_reached(atomic<bool>& halt, i32 depth) const {
 
     // if soft time is specified, check against the adjusted time
     if (soft_t_.has_value()) {
-        const auto soft_t_adj = adjust_soft_time();
+        const auto soft_t_adj = adjust_soft_time(bestmove);
         if (get_time() >= soft_t_adj) {
             halt.store(true, memory_order_relaxed);
             return true;
@@ -115,6 +126,7 @@ bool TimeManager::is_soft_limit_reached(atomic<bool>& halt, i32 depth) const {
 
 void TimeManager::reset() {
     nodes_ = 0;
+    memset(nodes_per_move_, 0, sizeof(nodes_per_move_));
     hard_t_.reset();
     soft_t_.reset();
     hard_nodes_.reset();
@@ -123,7 +135,12 @@ void TimeManager::reset() {
 }
 
 
-i64 TimeManager::adjust_soft_time() const {
+i64 TimeManager::adjust_soft_time(chess::Move bestmove) const {
     assert(soft_t_.has_value());
-    return *soft_t_;  // no adjustments for now
+
+    // node tm
+    const auto ratio = f64(get_nodes(bestmove)) / f64(get_nodes());
+    const auto node_tm_factor = (NODE_TM_BASE / 100.0) - (NODE_TM_SCALE * ratio / 100.0);
+
+    return i64(*soft_t_ * node_tm_factor);
 }

@@ -113,7 +113,7 @@ bool TimeManager::is_soft_limit_reached(atomic<bool>& halt, chess::Move bestmove
 
     // if soft time is specified, check against the adjusted time
     if (soft_t_.has_value()) {
-        const auto soft_t_adj = adjust_soft_time(bestmove);
+        const auto soft_t_adj = adjust_soft_time(bestmove, depth);
         if (get_time() >= soft_t_adj) {
             halt.store(true, memory_order_relaxed);
             return true;
@@ -135,12 +135,15 @@ void TimeManager::reset() {
 }
 
 
-i64 TimeManager::adjust_soft_time(chess::Move bestmove) const {
+i64 TimeManager::adjust_soft_time(chess::Move bestmove, i32 depth) const {
     assert(soft_t_.has_value());
+    f64 factor = 1.0;
 
     // node tm
-    const auto ratio = f64(get_nodes(bestmove)) / f64(get_nodes());
-    const auto node_tm_factor = (NODE_TM_BASE / 100.0) - (NODE_TM_SCALE * ratio / 100.0);
+    if (depth >= NODE_TM_DEPTH) {
+        const auto ratio = f64(get_nodes(bestmove)) / f64(get_nodes());
+        factor *= (NODE_TM_BASE / 100.0) - (NODE_TM_SCALE * ratio / 100.0);
+    }
 
-    return i64(*soft_t_ * node_tm_factor);
+    return i64(*soft_t_ * factor);
 }

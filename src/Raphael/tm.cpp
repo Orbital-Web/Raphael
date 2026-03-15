@@ -98,7 +98,7 @@ bool TimeManager::is_hard_limit_reached(atomic<bool>& halt) const {
     return halt.load(memory_order_relaxed);
 }
 
-bool TimeManager::is_soft_limit_reached(atomic<bool>& halt, chess::Move bestmove, i32 depth) const {
+bool TimeManager::is_soft_limit_reached(atomic<bool>& halt, chess::Move bestmove, i32 depth) {
     // if soft nodes is specified, check node count
     if (soft_nodes_.has_value() && nodes_ >= *soft_nodes_) {
         halt.store(true, memory_order_relaxed);
@@ -132,12 +132,28 @@ void TimeManager::reset() {
     hard_nodes_.reset();
     soft_nodes_.reset();
     max_depth_.reset();
+    prev_bestmove_ = chess::Move::NO_MOVE;
+    bestmove_stability_ = 0;
 }
 
 
-i64 TimeManager::adjust_soft_time(chess::Move bestmove, i32 depth) const {
+i64 TimeManager::adjust_soft_time(chess::Move bestmove, i32 depth) {
     assert(soft_t_.has_value());
     f64 factor = 1.0;
+
+    // stability tm
+    if (bestmove == prev_bestmove_)
+        bestmove_stability_++;
+    else
+        bestmove_stability_ = 0;
+    prev_bestmove_ = bestmove;
+
+    if (depth >= MOVE_STABILITY_TM_DEPTH)
+        factor *= max(
+            (MOVE_STABILITY_TM_BASE / 100.0)
+                - (MOVE_STABILITY_TM_SCALE * bestmove_stability_ / 100.0),
+            (MOVE_STABILITY_TM_MIN / 100.0)
+        );
 
     // node tm
     if (depth >= NODE_TM_DEPTH) {

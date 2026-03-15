@@ -188,6 +188,11 @@ Tunable(INC_FACTOR, 80, 50, 100, true);  // percentage of increment to use use a
 Tunable(HARD_TIME_FACTOR, 200, 150, 250, true);  // percentage of base time to use as hard time
 Tunable(SOFT_TIME_FACTOR, 70, 50, 100, true);    // percentage of base time to use as soft time
 
+Tunable(MOVE_STABILITY_TM_DEPTH, 5, 3, 10, true);      // min depth for move stability tm
+Tunable(MOVE_STABILITY_TM_BASE, 120, 100, 300, true);  // base soft limit for move stability tm
+Tunable(MOVE_STABILITY_TM_SCALE, 5, 0, 50, true);      // soft limit scale for move stability tm
+Tunable(MOVE_STABILITY_TM_MIN, 80, 50, 100, true);     // min soft limit for move stability tm
+
 Tunable(NODE_TM_DEPTH, 5, 3, 10, true);       // min depth for node tm
 Tunable(NODE_TM_BASE, 200, 100, 300, true);   // base soft limit for node tm
 Tunable(NODE_TM_SCALE, 150, 100, 200, true);  // soft limit scale for node tm

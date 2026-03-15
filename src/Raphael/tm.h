@@ -34,6 +34,9 @@ private:
     chess::Move prev_bestmove_;
     i32 bestmove_stability_;
 
+    i32 prev_score_;
+    i32 score_stability_;
+
 
 public:
     TimeManager();
@@ -90,10 +93,11 @@ public:
      *
      * \param halt bool reference which will turn false to indicate search should stop
      * \param bestmove current bestmove
-     * \param depth the current search depth
+     * \param score current score
+     * \param depth current search depth
      * \returns the new value of halt
      */
-    bool is_soft_limit_reached(std::atomic<bool>& halt, chess::Move bestmove, i32 depth);
+    bool is_soft_limit_reached(std::atomic<bool>& halt, chess::Move bestmove, i32 score, i32 depth);
 
 private:
     /** Resets the time manager */
@@ -103,9 +107,10 @@ private:
     /** Computes the adjusted soft time limit
      *
      * \param bestmove current bestmove
-     * \param depth the current search depth
+     * \param score current score
+     * \param depth current search depth
      * \returns the new soft time limit
      */
-    i64 adjust_soft_time(chess::Move bestmove, i32 depth);
+    i64 adjust_soft_time(chess::Move bestmove, i32 score, i32 depth);
 };
 }  // namespace raphael

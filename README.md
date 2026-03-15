@@ -177,7 +177,7 @@ The engine contains the following features:
 - [x] Time management                       (`v1.0+`)
   - [x] Hard/soft limit                     (`v3.0+`)
   - [x] Node-based scaling                  (`v3.2+`)
-  - [ ] Bestmove stability
+  - [x] Bestmove stability                  (`v3.2+`)
   - [ ] Score stability
   - [ ] Complexity
 - [x] Pondering                             (`v1.2+`)

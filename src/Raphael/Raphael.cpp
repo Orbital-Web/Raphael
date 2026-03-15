@@ -173,7 +173,7 @@ Raphael::MoveScore Raphael::get_move(const i32 t_remain, const i32 t_inc, atomic
         if (ucilevel_ == UciInfoLevel::ALL) print_uci_info(depth, score, ss);
 
         // soft limit
-        if (tm_.is_soft_limit_reached(halt, bestmove, depth)) break;
+        if (tm_.is_soft_limit_reached(halt, bestmove, score, depth)) break;
     }
 
     // last attempt to get bestmove

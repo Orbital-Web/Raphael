@@ -254,6 +254,7 @@ Tunable(LMR_QUIET_HIST_DIVISOR, 12000, 4096, 16384, true);
 Tunable(LMR_NOISY_HIST_DIVISOR, 12000, 4096, 16384, true);
 
 // quiescence
+Tunable(QS_MAX_MOVES, 3, 1, 5, true);             // max moves to search in qsearch
 Tunable(QS_FUTILITY_MARGIN, 150, 50, 400, true);  // margin for qs futility pruning
 Tunable(QS_SEE_THRESH, -100, -500, 200, true);    // SEE threshold for qs SEE pruning
 

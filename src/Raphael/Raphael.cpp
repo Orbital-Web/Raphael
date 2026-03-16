@@ -344,6 +344,7 @@ i32 Raphael::negamax(
     chess::Move bestmove = chess::Move::NO_MOVE;
     (ss + 1)->killer = chess::Move::NO_MOVE;
     auto ttflag = tt_.UPPER;
+    i32 alpha_raises = 0;
 
     i32 move_searched = 0;
     while (const auto move = generator.next()) {
@@ -422,6 +423,7 @@ i32 Raphael::negamax(
             i32 red_factor = LMR_TABLE[is_quiet][depth][move_searched];
             red_factor += !is_PV * LMR_NONPV;
             red_factor += cutnode * LMR_CUTNODE;
+            red_factor += alpha_raises * LMR_ALPHARAISE;
             red_factor -= improving * LMR_IMPROVING;
             red_factor -= gives_check * LMR_CHECK;
             red_factor
@@ -458,6 +460,7 @@ i32 Raphael::negamax(
                 alpha = score;
                 bestmove = move;
                 ttflag = tt_.EXACT;
+                alpha_raises++;
 
                 // update pv
                 if constexpr (is_PV) ss->pv.update(move, (ss + 1)->pv);

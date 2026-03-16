@@ -178,7 +178,7 @@ The engine contains the following features:
   - [x] Hard/soft limit                     (`v3.0+`)
   - [x] Node-based scaling                  (`v3.2+`)
   - [x] Bestmove stability                  (`v3.2+`)
-  - [ ] Score stability
+  - [x] Score stability                     (`v3.2+`)
   - [ ] Complexity
 - [x] Pondering                             (`v1.2+`)
 - [x] Performance                           (`v1.8+`)

@@ -62,15 +62,16 @@ public:
     const chess::Board board() const { return current_; }
 
 
-    /** Returns a move n plies ago, or NO_MOVE if ply >= number of moves played
+    /** Returns a move n plies ago, or NO_MOVE, Piece::NONE if ply > number of moves played
      *
      * \param ply number of plies to go back
      * \returns the move and moved piece
      */
     const chess::PieceMove prev_move(i32 ply) const {
-        if (ply >= (i32)moves_.size())
+        assert(ply > 0);
+        if (ply > (i32)moves_.size())
             return {.move = chess::Move::NO_MOVE, .moving = chess::Piece::NONE};
-        return moves_[moves_.size() - 1 - ply];
+        return moves_[moves_.size() - ply];
     }
 
 

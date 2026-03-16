@@ -432,10 +432,24 @@ i32 Raphael::negamax(
                 red_depth, ply + 1, mvidx + 1, -alpha - 1, -alpha, true, ss + 1, halt
             );
 
-            if (score > alpha && red_depth < new_depth)
+            if (score > alpha && red_depth < new_depth) {
                 score = -negamax<false>(
                     new_depth, ply + 1, mvidx + 1, -alpha - 1, -alpha, !cutnode, ss + 1, halt
                 );
+
+                if (is_quiet && (score <= alpha || score >= beta)) {
+                    const auto bonus = (score <= alpha) ? history_.quiet_penalty(new_depth)
+                                                        : history_.quiet_bonus(new_depth);
+                    history_.update_conthist(
+                        move,
+                        position_.prev_move(1).moving,
+                        position_.prev_move(2),
+                        position_.prev_move(3),
+                        position_.prev_move(5),
+                        bonus
+                    );
+                }
+            }
         } else if (!is_PV || move_searched > 1)
             score = -negamax<false>(
                 new_depth, ply + 1, mvidx + 1, -alpha - 1, -alpha, !cutnode, ss + 1, halt

@@ -65,6 +65,42 @@ public:
     i32 noisy_penalty(i32 depth) const;
 
 
+    /** Applies a bonus to the continuation history scores
+     *
+     * \param move quiet move
+     * \param moving moving piece
+     * \param prev1 move and piece 1 ply ago
+     * \param prev2 move and piece 2 plies ago
+     * \param prev4 move and piece 4 plies ago
+     * \param bonus bonus to apply, negative to apply penalty
+     */
+    void update_conthist(
+        chess::Move move,
+        chess::Piece moving,
+        chess::PieceMove prev1,
+        chess::PieceMove prev2,
+        chess::PieceMove prev4,
+        i32 bonus
+    );
+
+    /** Returns the continuation history score
+     *
+     * \param move quiet move
+     * \param moving moving piece
+     * \param prev1 move and piece 1 ply ago
+     * \param prev2 move and piece 2 plies ago
+     * \param prev4 move and piece 4 plies ago
+     * \returns continuation history score
+     */
+    i32 get_conthist(
+        chess::Move move,
+        chess::Piece moving,
+        chess::PieceMove prev1,
+        chess::PieceMove prev2,
+        chess::PieceMove prev4
+    ) const;
+
+
     /** Applies a bonus to the quiet history score
      *
      * \param move quiet move
@@ -81,14 +117,6 @@ public:
      */
     void update_noisy(chess::Move move, chess::Piece captured, i32 bonus);
 
-
-    /** Returns the continuation history score
-     *
-     * \param move quiet move
-     * \param position current position
-     * \returns continuation history score
-     */
-    i32 get_conthist(chess::Move move, const Position<true>& position) const;
 
     /** Returns the quiet history score
      *

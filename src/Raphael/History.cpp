@@ -52,17 +52,16 @@ i32 History::noisy_penalty(i32 depth) const {
 }
 
 
-void History::update_quiet(chess::Move move, const Position<true>& position, i32 bonus) {
-    const auto& board = position.board();
-    const auto stm = board.stm();
-    const auto moving = board.at(move.from());
-    const auto prev1 = position.prev_move(1);
-    const auto prev2 = position.prev_move(2);
-    const auto prev4 = position.prev_move(4);
+void History::update_conthist(
+    chess::Move move,
+    chess::Piece moving,
+    chess::PieceMove prev1,
+    chess::PieceMove prev2,
+    chess::PieceMove prev4,
+    i32 bonus
+) {
+    const auto total_conthist = get_conthist(move, moving, prev1, prev2, prev4);
 
-    const auto total_conthist = get_conthist(move, position);
-
-    butterfly_entry(move, stm).update(bonus);
     if (prev1.moving != chess::Piece::NONE)
         cont_entry(move, moving, prev1).update_with_base(bonus, total_conthist);
     if (prev2.moving != chess::Piece::NONE)
@@ -71,18 +70,13 @@ void History::update_quiet(chess::Move move, const Position<true>& position, i32
         cont_entry(move, moving, prev4).update_with_base(bonus, total_conthist);
 }
 
-void History::update_noisy(chess::Move move, chess::Piece captured, i32 bonus) {
-    capt_entry(move, captured).update(bonus);
-}
-
-
-i32 History::get_conthist(chess::Move move, const Position<true>& position) const {
-    const auto& board = position.board();
-    const auto moving = board.at(move.from());
-    const auto prev1 = position.prev_move(1);
-    const auto prev2 = position.prev_move(2);
-    const auto prev4 = position.prev_move(4);
-
+i32 History::get_conthist(
+    chess::Move move,
+    chess::Piece moving,
+    chess::PieceMove prev1,
+    chess::PieceMove prev2,
+    chess::PieceMove prev4
+) const {
     i32 score = 0;
     score += (prev1.moving != chess::Piece::NONE)
                  ? cont_entry(move, moving, prev1) * CONTHIST1_WEIGHT / 128
@@ -96,13 +90,35 @@ i32 History::get_conthist(chess::Move move, const Position<true>& position) cons
     return score;
 }
 
+
+void History::update_quiet(chess::Move move, const Position<true>& position, i32 bonus) {
+    const auto& board = position.board();
+    const auto stm = board.stm();
+    const auto moving = board.at(move.from());
+    const auto prev1 = position.prev_move(1);
+    const auto prev2 = position.prev_move(2);
+    const auto prev4 = position.prev_move(4);
+
+    butterfly_entry(move, stm).update(bonus);
+    update_conthist(move, moving, prev1, prev2, prev4, bonus);
+}
+
+void History::update_noisy(chess::Move move, chess::Piece captured, i32 bonus) {
+    capt_entry(move, captured).update(bonus);
+}
+
+
 i32 History::get_quietscore(chess::Move move, const Position<true>& position) const {
     const auto& board = position.board();
     const auto stm = board.stm();
+    const auto moving = board.at(move.from());
+    const auto prev1 = position.prev_move(1);
+    const auto prev2 = position.prev_move(2);
+    const auto prev4 = position.prev_move(4);
 
     i32 score = 0;
     score += butterfly_entry(move, stm);
-    score += get_conthist(move, position);
+    score += get_conthist(move, moving, prev1, prev2, prev4);
     return score;
 }
 

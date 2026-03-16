@@ -172,30 +172,15 @@ TEST_SUITE("Position") {
 
         const auto move0 = chess::Move::make(chess::Square::E2, chess::Square::E4);
         position.make_move(move0);
-        auto prev = position.prev_move(0);
-        CHECK(prev.move == move0);
-        CHECK(prev.moving == chess::Piece::WHITEPAWN);
-        prev = position.prev_move(1);
-        CHECK(prev.move == chess::Move::NO_MOVE);
-        CHECK(prev.moving == chess::Piece::NONE);
-
-        const auto move1 = chess::Move::make(chess::Square::F7, chess::Square::F5);
-        position.make_move(move1);
-        prev = position.prev_move(0);
-        CHECK(prev.move == move1);
-        CHECK(prev.moving == chess::Piece::BLACKPAWN);
-        prev = position.prev_move(1);
+        auto prev = position.prev_move(1);
         CHECK(prev.move == move0);
         CHECK(prev.moving == chess::Piece::WHITEPAWN);
         prev = position.prev_move(2);
         CHECK(prev.move == chess::Move::NO_MOVE);
         CHECK(prev.moving == chess::Piece::NONE);
 
-        const auto move2 = chess::Move::make(chess::Square::E4, chess::Square::F5);
-        position.make_move(move2);
-        prev = position.prev_move(0);
-        CHECK(prev.move == move2);
-        CHECK(prev.moving == chess::Piece::WHITEPAWN);
+        const auto move1 = chess::Move::make(chess::Square::F7, chess::Square::F5);
+        position.make_move(move1);
         prev = position.prev_move(1);
         CHECK(prev.move == move1);
         CHECK(prev.moving == chess::Piece::BLACKPAWN);
@@ -206,24 +191,39 @@ TEST_SUITE("Position") {
         CHECK(prev.move == chess::Move::NO_MOVE);
         CHECK(prev.moving == chess::Piece::NONE);
 
-        position.unmake_move();
-        prev = position.prev_move(0);
-        CHECK(prev.move == move1);
-        CHECK(prev.moving == chess::Piece::BLACKPAWN);
+        const auto move2 = chess::Move::make(chess::Square::E4, chess::Square::F5);
+        position.make_move(move2);
         prev = position.prev_move(1);
-        CHECK(prev.move == move0);
+        CHECK(prev.move == move2);
         CHECK(prev.moving == chess::Piece::WHITEPAWN);
         prev = position.prev_move(2);
+        CHECK(prev.move == move1);
+        CHECK(prev.moving == chess::Piece::BLACKPAWN);
+        prev = position.prev_move(3);
+        CHECK(prev.move == move0);
+        CHECK(prev.moving == chess::Piece::WHITEPAWN);
+        prev = position.prev_move(4);
+        CHECK(prev.move == chess::Move::NO_MOVE);
+        CHECK(prev.moving == chess::Piece::NONE);
+
+        position.unmake_move();
+        prev = position.prev_move(1);
+        CHECK(prev.move == move1);
+        CHECK(prev.moving == chess::Piece::BLACKPAWN);
+        prev = position.prev_move(2);
+        CHECK(prev.move == move0);
+        CHECK(prev.moving == chess::Piece::WHITEPAWN);
+        prev = position.prev_move(3);
         CHECK(prev.move == chess::Move::NO_MOVE);
         CHECK(prev.moving == chess::Piece::NONE);
 
         position.make_nullmove();
-        prev = position.prev_move(0);
+        prev = position.prev_move(1);
         CHECK(prev.move == chess::Move::NULL_MOVE);
         CHECK(prev.moving == chess::Piece::NONE);
 
         position.unmake_nullmove();
-        prev = position.prev_move(0);
+        prev = position.prev_move(1);
         CHECK(prev.move == move1);
         CHECK(prev.moving == chess::Piece::BLACKPAWN);
     }

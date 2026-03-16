@@ -82,6 +82,14 @@ public:
     void update_noisy(chess::Move move, chess::Piece captured, i32 bonus);
 
 
+    /** Returns the main history score
+     *
+     * \param move quiet move
+     * \param position current position
+     * \returns main history score
+     */
+    i32 get_mainhist(chess::Move move, const Position<true>& position) const;
+
     /** Returns the continuation history score
      *
      * \param move quiet move
@@ -89,6 +97,7 @@ public:
      * \returns continuation history score
      */
     i32 get_conthist(chess::Move move, const Position<true>& position) const;
+
 
     /** Returns the quiet history score
      *

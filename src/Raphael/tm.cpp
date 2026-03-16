@@ -4,6 +4,7 @@
 #include <cstring>
 
 using namespace raphael;
+using std::abs;
 using std::atomic;
 using std::max;
 using std::memory_order_relaxed;
@@ -98,7 +99,9 @@ bool TimeManager::is_hard_limit_reached(atomic<bool>& halt) const {
     return halt.load(memory_order_relaxed);
 }
 
-bool TimeManager::is_soft_limit_reached(atomic<bool>& halt, chess::Move bestmove, i32 depth) {
+bool TimeManager::is_soft_limit_reached(
+    atomic<bool>& halt, chess::Move bestmove, i32 score, i32 depth
+) {
     // if soft nodes is specified, check node count
     if (soft_nodes_.has_value() && nodes_ >= *soft_nodes_) {
         halt.store(true, memory_order_relaxed);
@@ -113,7 +116,7 @@ bool TimeManager::is_soft_limit_reached(atomic<bool>& halt, chess::Move bestmove
 
     // if soft time is specified, check against the adjusted time
     if (soft_t_.has_value()) {
-        const auto soft_t_adj = adjust_soft_time(bestmove, depth);
+        const auto soft_t_adj = adjust_soft_time(bestmove, score, depth);
         if (get_time() >= soft_t_adj) {
             halt.store(true, memory_order_relaxed);
             return true;
@@ -134,14 +137,16 @@ void TimeManager::reset() {
     max_depth_.reset();
     prev_bestmove_ = chess::Move::NO_MOVE;
     bestmove_stability_ = 0;
+    prev_score_ = 0;
+    score_stability_ = 0;
 }
 
 
-i64 TimeManager::adjust_soft_time(chess::Move bestmove, i32 depth) {
+i64 TimeManager::adjust_soft_time(chess::Move bestmove, i32 score, i32 depth) {
     assert(soft_t_.has_value());
     f64 factor = 1.0;
 
-    // stability tm
+    // move stability tm
     if (bestmove == prev_bestmove_)
         bestmove_stability_++;
     else
@@ -153,6 +158,20 @@ i64 TimeManager::adjust_soft_time(chess::Move bestmove, i32 depth) {
             (MOVE_STABILITY_TM_BASE / 100.0)
                 - (MOVE_STABILITY_TM_SCALE * bestmove_stability_ / 100.0),
             (MOVE_STABILITY_TM_MIN / 100.0)
+        );
+
+    // score stability tm
+    if (abs(score - prev_score_) <= SCORE_STABILITY_MARGIN)
+        score_stability_++;
+    else
+        score_stability_ = 0;
+    prev_score_ = score;
+
+    if (depth >= SCORE_STABILITY_TM_DEPTH)
+        factor *= max(
+            (SCORE_STABILITY_TM_BASE / 100.0)
+                - (SCORE_STABILITY_TM_SCALE * score_stability_ / 100.0),
+            (SCORE_STABILITY_TM_MIN / 100.0)
         );
 
     // node tm

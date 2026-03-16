@@ -193,6 +193,12 @@ Tunable(MOVE_STABILITY_TM_BASE, 120, 100, 300, true);  // base soft limit for mo
 Tunable(MOVE_STABILITY_TM_SCALE, 5, 0, 50, true);      // soft limit scale for move stability tm
 Tunable(MOVE_STABILITY_TM_MIN, 80, 50, 100, true);     // min soft limit for move stability tm
 
+Tunable(SCORE_STABILITY_MARGIN, 10, 1, 50, true);       // distance to last score to raise stability
+Tunable(SCORE_STABILITY_TM_DEPTH, 5, 3, 10, true);      // min depth for score stability tm
+Tunable(SCORE_STABILITY_TM_BASE, 120, 100, 300, true);  // base soft limit for score stability tm
+Tunable(SCORE_STABILITY_TM_SCALE, 5, 0, 50, true);      // soft limit scale for score stability tm
+Tunable(SCORE_STABILITY_TM_MIN, 80, 50, 100, true);     // min soft limit for score stability tm
+
 Tunable(NODE_TM_DEPTH, 5, 3, 10, true);       // min depth for node tm
 Tunable(NODE_TM_BASE, 200, 100, 300, true);   // base soft limit for node tm
 Tunable(NODE_TM_SCALE, 150, 100, 200, true);  // soft limit scale for node tm

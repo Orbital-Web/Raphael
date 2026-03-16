@@ -14,6 +14,13 @@ struct HistoryEntry {
      * \param bonus bonus to apply, negative to apply penalty
      */
     void update(i32 bonus);
+
+    /** Updates the entry with gravity from a base
+     *
+     * \param bonus bonus to apply, negative to apply penalty
+     * \param base base value (in normal update, base = current val)
+     */
+    void update_with_base(i32 bonus, i32 base);
 };
 
 
@@ -74,6 +81,14 @@ public:
      */
     void update_noisy(chess::Move move, chess::Piece captured, i32 bonus);
 
+
+    /** Returns the continuation history score
+     *
+     * \param move quiet move
+     * \param position current position
+     * \returns continuation history score
+     */
+    i32 get_conthist(chess::Move move, const Position<true>& position) const;
 
     /** Returns the quiet history score
      *

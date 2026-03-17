@@ -25,7 +25,6 @@ chess::Square lva(chess::BitBoard attackers, const chess::Board& board);
 
 
 /** Simulates exchanges on the move destination square to evaluate if it's winning or losing
- * https://github.com/rafid-dev/rice/blob/main/src/see.cpp#L5
  *
  * \param move the move to evaluate
  * \param board current board

@@ -46,7 +46,7 @@ TEST_SUITE("Raphael SEE") {
             {"8/4kp2/2npp3/1Nn5/1p2P1P1/7q/1PP1B3/4KR1r b - -",                   "h1f1",  0                                },
             {"2r2r1k/6bp/p7/2q2p1Q/3PpP2/1B6/P5PP/2RR3K b - -",                   "c5c1",  R - Q + R                        },
             {"r2qk1nr/pp2ppbp/2b3p1/2p1p3/8/2N2N2/PPPP1PPP/R1BQR1K1 w kq -",      "f3e5",  P                                },
-            {"6r1/4kq2/b2p1p2/p1pPb3/p1P2B1Q/2P4P/2B1R1P1/6K1 w - -",             "f4e5",  0                                },
+            {"6r1/4kq2/b2p1p2/p1pPb3/p1P2B1Q/2P4P/2B1R1P1/6K1 w - -",             "f4e5",  P                                },
             {"3q2nk/pb1r1p2/np6/3P2Pp/2p1P3/2R4B/PQ3P1P/3R2K1 w - h6",            "g5h6",  0                                },
             {"3q2nk/pb1r1p2/np6/3P2Pp/2p1P3/2R1B2B/PQ3P1P/3R2K1 w - h6",          "g5h6",  P                                },
             {"2r4r/1P4pk/p2p1b1p/7n/BB3p2/2R2p2/P1P2P2/4RK2 w - -",               "c3c8",  R                                },
@@ -100,6 +100,10 @@ TEST_SUITE("Raphael SEE") {
             {"8/8/8/1k6/6b1/4N3/2p3K1/3n4 w - -",                                 "e3d1",  N - N                            },
             {"8/8/1k6/8/8/2N1N3/4p1K1/3n4 w - -",                                 "c3d1",  N - (N + Q - P) + Q              },
             {"r1bqk1nr/pppp1ppp/2n5/1B2p3/1b2P3/5N2/PPPP1PPP/RNBQK2R w KQkq -",   "e1g1",  0                                },
+            {"rnb2b1r/ppp3bp/3k4/4r3/4n3/1K4B1/PPP3PP/RN2QB2 w - - 0 1",          "e1e4",  N                                },
+            {"rnb2b1r/ppp2kbp/5p2/4r3/3Q4/2K2R2/PPP3PP/RN3B2 w - - 0 1",          "d4e5",  R                                },
+            {"8/2p5/1p1p2p1/1P1Bpk2/p1Pr4/P3K3/4R3/8 b - - 4 42",                 "e5e4",  0                                },
+            {"r3k2r/2pb1ppp/n1pp1q2/p6Q/2P1B3/PP2P3/3N1PPP/R3K2R w KQkq - 2 16",  "e1c1",  0                                },
         };
 
         for (const auto& testdata : see_testdata) {

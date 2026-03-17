@@ -62,6 +62,8 @@ private:
     std::array<BitBoard, 2> occ_ = {};
     std::array<Piece, 64> mailbox_ = {};
 
+    BitBoard threats_ = {};
+
     MultiArray<BitBoard, 2, 2> castle_path_ = {};
     CastlingRights castle_rights_ = {};
 
@@ -163,7 +165,11 @@ public:
         );
     }
 
+    [[nodiscard]] BitBoard threats() const { return threats_; }
+
     [[nodiscard]] bool is_attacked(Square sq, Color color) const {
+        if (color == ~stm_) return threats_.is_set(sq);
+
         // cheap checks first
         if (Attacks::pawn(sq, ~color) & occ(PieceType::PAWN, color)) return true;
         if (Attacks::knight(sq) & occ(PieceType::KNIGHT, color)) return true;
@@ -295,6 +301,7 @@ public:
 
         hash_ ^= Zobrist::stm();
         stm_ = ~stm_;
+        threats_ = compute_threats();
     }
 
     void make_nullmove() {
@@ -304,6 +311,7 @@ public:
 
         plies_++;
         stm_ = ~stm_;
+        threats_ = compute_threats();
     }
 
 
@@ -535,6 +543,7 @@ public:
         }
 
         hash_ = compute_hash();
+        threats_ = compute_threats();
     }
 
     [[nodiscard]] std::string get_fen() const {
@@ -612,6 +621,8 @@ private:
         occ_.fill(0);
         mailbox_.fill(Piece::NONE);
 
+        threats_ = 0;
+
         castle_rights_.clear();
         castle_path_ = {};
         enpassant_ = Square::NONE;
@@ -649,6 +660,43 @@ private:
         pieces_[pt].unset(sq);
         occ_[color].unset(sq);
         mailbox_[sq] = Piece::NONE;
+    }
+
+
+    [[nodiscard]] BitBoard compute_threats() const {
+        BitBoard threats;
+
+        const auto queens = occ(PieceType::QUEEN, ~stm_);
+
+        auto rooks = occ(PieceType::ROOK, ~stm_) | queens;
+        while (rooks) {
+            const auto sq = Square(rooks.poplsb());
+            threats |= Attacks::rook(sq, occ());
+        }
+
+        auto bishops = occ(PieceType::BISHOP, ~stm_) | queens;
+        while (bishops) {
+            const auto sq = Square(bishops.poplsb());
+            threats |= Attacks::bishop(sq, occ());
+        }
+
+        auto knights = occ(PieceType::KNIGHT, ~stm_);
+        while (knights) {
+            const auto sq = Square(knights.poplsb());
+            threats |= Attacks::knight(sq);
+        }
+
+        const auto pawns = occ(PieceType::PAWN, ~stm_);
+        if (~stm_ == Color::WHITE)
+            threats |= Attacks::pawn_left<Color::WHITE>(pawns)
+                       | Attacks::pawn_right<Color::WHITE>(pawns);
+        else
+            threats |= Attacks::pawn_left<Color::BLACK>(pawns)
+                       | Attacks::pawn_right<Color::BLACK>(pawns);
+
+        threats |= Attacks::king(king_square(~stm_));
+
+        return threats;
     }
 
 

@@ -58,24 +58,19 @@ public:
     };
 
 private:
-    std::array<BitBoard, 6> pieces_ = {};
-    std::array<BitBoard, 2> occ_ = {};
-    std::array<Piece, 64> mailbox_ = {};
-
-    BitBoard threats_ = {};
-
-    MultiArray<BitBoard, 2, 2> castle_path_ = {};
-    CastlingRights castle_rights_ = {};
-
-    u64 hash_ = 0;
-
-    u16 plies_ = 1;     // total plies
-    u8 halfmoves_ = 0;  // plies since last capture or pawn move
-    Color stm_ = Color::WHITE;
-
-    Square enpassant_ = Square::NONE;
-
-    bool chess960_ = false;
+    std::array<BitBoard, 6> pieces_ = {};          // [048] 48  bitboard per piece type
+    std::array<BitBoard, 2> occ_ = {};             // [064] 16  bitboard per color
+    std::array<Piece, 64> mailbox_ = {};           // [128] 64  piece on each square
+    BitBoard threats_ = {};                        // [136] 16  squares attacked by ntm
+    std::array<BitBoard, 2> pinned_ = {};          // [152] 32  pinned pieces per color
+    MultiArray<BitBoard, 2, 2> castle_path_ = {};  // [184] 32  castling path for color and side
+    u64 hash_ = 0;                                 // [192] 8   zobrist hash
+    CastlingRights castle_rights_ = {};            // [200] 4   allowed castling files
+    u16 plies_ = 1;                                // [200] 2   number of plies
+    u8 halfmoves_ = 0;                             // [200] 1   plies since last capture/pawn move
+    Color stm_ = Color::WHITE;                     // [200] 1   current stm
+    Square enpassant_ = Square::NONE;              // [208] 1   enpassant square
+    bool chess960_ = false;                        // [208] 1   whether chess960 is enabled
 
 
 public:
@@ -166,6 +161,8 @@ public:
     }
 
     [[nodiscard]] BitBoard threats() const { return threats_; }
+
+    [[nodiscard]] BitBoard pinned(Color color) const { return pinned_[color]; }
 
     [[nodiscard]] bool is_attacked(Square sq, Color color) const {
         if (color == ~stm_) return threats_.is_set(sq);
@@ -302,6 +299,8 @@ public:
         hash_ ^= Zobrist::stm();
         stm_ = ~stm_;
         threats_ = compute_threats();
+        pinned_[Color::WHITE] = compute_pinned(Color::WHITE);
+        pinned_[Color::BLACK] = compute_pinned(Color::BLACK);
     }
 
     void make_nullmove() {
@@ -312,6 +311,8 @@ public:
         plies_++;
         stm_ = ~stm_;
         threats_ = compute_threats();
+        pinned_[Color::WHITE] = compute_pinned(Color::WHITE);
+        pinned_[Color::BLACK] = compute_pinned(Color::BLACK);
     }
 
 
@@ -544,6 +545,8 @@ public:
 
         hash_ = compute_hash();
         threats_ = compute_threats();
+        pinned_[Color::WHITE] = compute_pinned(Color::WHITE);
+        pinned_[Color::BLACK] = compute_pinned(Color::BLACK);
     }
 
     [[nodiscard]] std::string get_fen() const {
@@ -699,6 +702,26 @@ private:
         return threats;
     }
 
+    [[nodiscard]] BitBoard compute_pinned(Color color) const {
+        const auto occ_us = occ(color);
+        const auto occ_opp = occ(~color);
+        const auto king_sq = king_square(color);
+
+        const auto opp_queen = occ(PieceType::QUEEN, ~color);
+        const auto opp_bishop = occ(PieceType::BISHOP, ~color);
+        const auto opp_rook = occ(PieceType::ROOK, ~color);
+        auto pt_attacks = (Attacks::bishop(king_sq, occ_opp) & (opp_bishop | opp_queen))
+                          | (Attacks::rook(king_sq, occ_opp) & (opp_rook | opp_queen));
+
+        BitBoard pin;
+        while (pt_attacks) {
+            const auto possible_pinned
+                = Attacks::between(king_sq, Square(pt_attacks.poplsb())) & occ_us;
+            if ((possible_pinned).count() == 1) pin |= possible_pinned;
+        }
+        return pin;
+    }
+
 
     [[nodiscard]] u64 compute_hash() const {
         u64 hash_key = 0;
@@ -748,4 +771,6 @@ private:
         return File::NONE;
     }
 };
+
+static_assert(sizeof(Board) == 208);
 }  // namespace chess

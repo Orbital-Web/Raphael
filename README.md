@@ -141,7 +141,7 @@ The engine contains the following features:
     - [ ] Piece-to history
     - [x] Continuation history              (`v3.2+`)
     - [ ] Correction history
-    - [ ] Threats in history
+    - [x] Threats in history                (`v3.2+`)
     - [x] SEE                               (`v1.7+`)
 - [x] Quiescence search                     (`v1.0+`)
   - ~~Delta pruning~~                       (`v2.1+`)

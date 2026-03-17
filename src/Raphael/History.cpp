@@ -28,7 +28,7 @@ void HistoryEntry::update_with_base(i32 bonus, i32 base) {
 
 
 
-History::History(): butterfly_hist_{}, capt_hist_{} {}
+History::History(): butterfly_hist_{}, cont_hist_{}, capt_hist_{} {}
 
 
 i32 History::quiet_bonus(i32 depth) const {
@@ -54,7 +54,7 @@ i32 History::noisy_penalty(i32 depth) const {
 
 void History::update_quiet(chess::Move move, const Position<true>& position, i32 bonus) {
     const auto& board = position.board();
-    const auto stm = board.stm();
+    const auto threats = board.threats();
     const auto moving = board.at(move.from());
     const auto prev1 = position.prev_move(1);
     const auto prev2 = position.prev_move(2);
@@ -62,7 +62,7 @@ void History::update_quiet(chess::Move move, const Position<true>& position, i32
 
     const auto total_conthist = get_conthist(move, position);
 
-    butterfly_entry(move, stm).update(bonus);
+    butterfly_entry(move, threats).update(bonus);
     if (prev1.moving != chess::Piece::NONE)
         cont_entry(move, moving, prev1).update_with_base(bonus, total_conthist);
     if (prev2.moving != chess::Piece::NONE)
@@ -98,10 +98,10 @@ i32 History::get_conthist(chess::Move move, const Position<true>& position) cons
 
 i32 History::get_quietscore(chess::Move move, const Position<true>& position) const {
     const auto& board = position.board();
-    const auto stm = board.stm();
+    const auto threats = board.threats();
 
     i32 score = 0;
-    score += butterfly_entry(move, stm);
+    score += butterfly_entry(move, threats);
     score += get_conthist(move, position);
     return score;
 }
@@ -119,11 +119,15 @@ void History::clear() {
 
 
 
-const HistoryEntry& History::butterfly_entry(chess::Move move, chess::Color color) const {
-    return butterfly_hist_[color][move.from()][move.to()];
+const HistoryEntry& History::butterfly_entry(chess::Move move, chess::BitBoard threats) const {
+    const auto from_attacked = threats.is_set(move.from());
+    const auto to_attacked = threats.is_set(move.to());
+    return butterfly_hist_[move.from()][move.to()][from_attacked][to_attacked];
 }
-HistoryEntry& History::butterfly_entry(chess::Move move, chess::Color color) {
-    return butterfly_hist_[color][move.from()][move.to()];
+HistoryEntry& History::butterfly_entry(chess::Move move, chess::BitBoard threats) {
+    const auto from_attacked = threats.is_set(move.from());
+    const auto to_attacked = threats.is_set(move.to());
+    return butterfly_hist_[move.from()][move.to()][from_attacked][to_attacked];
 }
 
 const HistoryEntry& History::cont_entry(

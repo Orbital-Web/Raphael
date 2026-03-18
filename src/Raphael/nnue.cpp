@@ -53,7 +53,10 @@ void Nnue::NnueAccumulator::reset_updates() {
 
 
 void Nnue::NnueAccumulator::update(
-    const NnueAccumulator& old_acc, const i16* weights, chess::Color perspective, bool mirror
+    const NnueAccumulator& old_acc,
+    const i16 weights[N_INPUTS][N_HIDDEN],
+    chess::Color perspective,
+    bool mirror
 ) {
     assert(dirty());
     assert(!old_acc.dirty());
@@ -80,44 +83,44 @@ void Nnue::NnueAccumulator::update(
         VecI16 acc6 = load_i16(&old_acc.values[(i + 6) * regw]);
         VecI16 acc7 = load_i16(&old_acc.values[(i + 7) * regw]);
 
-        acc0 = subs_i16(acc0, load_i16(&weights[sub1 * N_HIDDEN + (i + 0) * regw]));
-        acc1 = subs_i16(acc1, load_i16(&weights[sub1 * N_HIDDEN + (i + 1) * regw]));
-        acc2 = subs_i16(acc2, load_i16(&weights[sub1 * N_HIDDEN + (i + 2) * regw]));
-        acc3 = subs_i16(acc3, load_i16(&weights[sub1 * N_HIDDEN + (i + 3) * regw]));
-        acc4 = subs_i16(acc4, load_i16(&weights[sub1 * N_HIDDEN + (i + 4) * regw]));
-        acc5 = subs_i16(acc5, load_i16(&weights[sub1 * N_HIDDEN + (i + 5) * regw]));
-        acc6 = subs_i16(acc6, load_i16(&weights[sub1 * N_HIDDEN + (i + 6) * regw]));
-        acc7 = subs_i16(acc7, load_i16(&weights[sub1 * N_HIDDEN + (i + 7) * regw]));
+        acc0 = subs_i16(acc0, load_i16(&weights[sub1][(i + 0) * regw]));
+        acc1 = subs_i16(acc1, load_i16(&weights[sub1][(i + 1) * regw]));
+        acc2 = subs_i16(acc2, load_i16(&weights[sub1][(i + 2) * regw]));
+        acc3 = subs_i16(acc3, load_i16(&weights[sub1][(i + 3) * regw]));
+        acc4 = subs_i16(acc4, load_i16(&weights[sub1][(i + 4) * regw]));
+        acc5 = subs_i16(acc5, load_i16(&weights[sub1][(i + 5) * regw]));
+        acc6 = subs_i16(acc6, load_i16(&weights[sub1][(i + 6) * regw]));
+        acc7 = subs_i16(acc7, load_i16(&weights[sub1][(i + 7) * regw]));
 
         if (n_subs > 1) {
-            acc0 = subs_i16(acc0, load_i16(&weights[sub2 * N_HIDDEN + (i + 0) * regw]));
-            acc1 = subs_i16(acc1, load_i16(&weights[sub2 * N_HIDDEN + (i + 1) * regw]));
-            acc2 = subs_i16(acc2, load_i16(&weights[sub2 * N_HIDDEN + (i + 2) * regw]));
-            acc3 = subs_i16(acc3, load_i16(&weights[sub2 * N_HIDDEN + (i + 3) * regw]));
-            acc4 = subs_i16(acc4, load_i16(&weights[sub2 * N_HIDDEN + (i + 4) * regw]));
-            acc5 = subs_i16(acc5, load_i16(&weights[sub2 * N_HIDDEN + (i + 5) * regw]));
-            acc6 = subs_i16(acc6, load_i16(&weights[sub2 * N_HIDDEN + (i + 6) * regw]));
-            acc7 = subs_i16(acc7, load_i16(&weights[sub2 * N_HIDDEN + (i + 7) * regw]));
+            acc0 = subs_i16(acc0, load_i16(&weights[sub2][(i + 0) * regw]));
+            acc1 = subs_i16(acc1, load_i16(&weights[sub2][(i + 1) * regw]));
+            acc2 = subs_i16(acc2, load_i16(&weights[sub2][(i + 2) * regw]));
+            acc3 = subs_i16(acc3, load_i16(&weights[sub2][(i + 3) * regw]));
+            acc4 = subs_i16(acc4, load_i16(&weights[sub2][(i + 4) * regw]));
+            acc5 = subs_i16(acc5, load_i16(&weights[sub2][(i + 5) * regw]));
+            acc6 = subs_i16(acc6, load_i16(&weights[sub2][(i + 6) * regw]));
+            acc7 = subs_i16(acc7, load_i16(&weights[sub2][(i + 7) * regw]));
         }
 
-        acc0 = adds_i16(acc0, load_i16(&weights[add1 * N_HIDDEN + (i + 0) * regw]));
-        acc1 = adds_i16(acc1, load_i16(&weights[add1 * N_HIDDEN + (i + 1) * regw]));
-        acc2 = adds_i16(acc2, load_i16(&weights[add1 * N_HIDDEN + (i + 2) * regw]));
-        acc3 = adds_i16(acc3, load_i16(&weights[add1 * N_HIDDEN + (i + 3) * regw]));
-        acc4 = adds_i16(acc4, load_i16(&weights[add1 * N_HIDDEN + (i + 4) * regw]));
-        acc5 = adds_i16(acc5, load_i16(&weights[add1 * N_HIDDEN + (i + 5) * regw]));
-        acc6 = adds_i16(acc6, load_i16(&weights[add1 * N_HIDDEN + (i + 6) * regw]));
-        acc7 = adds_i16(acc7, load_i16(&weights[add1 * N_HIDDEN + (i + 7) * regw]));
+        acc0 = adds_i16(acc0, load_i16(&weights[add1][(i + 0) * regw]));
+        acc1 = adds_i16(acc1, load_i16(&weights[add1][(i + 1) * regw]));
+        acc2 = adds_i16(acc2, load_i16(&weights[add1][(i + 2) * regw]));
+        acc3 = adds_i16(acc3, load_i16(&weights[add1][(i + 3) * regw]));
+        acc4 = adds_i16(acc4, load_i16(&weights[add1][(i + 4) * regw]));
+        acc5 = adds_i16(acc5, load_i16(&weights[add1][(i + 5) * regw]));
+        acc6 = adds_i16(acc6, load_i16(&weights[add1][(i + 6) * regw]));
+        acc7 = adds_i16(acc7, load_i16(&weights[add1][(i + 7) * regw]));
 
         if (n_adds > 1) {
-            acc0 = adds_i16(acc0, load_i16(&weights[add2 * N_HIDDEN + (i + 0) * regw]));
-            acc1 = adds_i16(acc1, load_i16(&weights[add2 * N_HIDDEN + (i + 1) * regw]));
-            acc2 = adds_i16(acc2, load_i16(&weights[add2 * N_HIDDEN + (i + 2) * regw]));
-            acc3 = adds_i16(acc3, load_i16(&weights[add2 * N_HIDDEN + (i + 3) * regw]));
-            acc4 = adds_i16(acc4, load_i16(&weights[add2 * N_HIDDEN + (i + 4) * regw]));
-            acc5 = adds_i16(acc5, load_i16(&weights[add2 * N_HIDDEN + (i + 5) * regw]));
-            acc6 = adds_i16(acc6, load_i16(&weights[add2 * N_HIDDEN + (i + 6) * regw]));
-            acc7 = adds_i16(acc7, load_i16(&weights[add2 * N_HIDDEN + (i + 7) * regw]));
+            acc0 = adds_i16(acc0, load_i16(&weights[add2][(i + 0) * regw]));
+            acc1 = adds_i16(acc1, load_i16(&weights[add2][(i + 1) * regw]));
+            acc2 = adds_i16(acc2, load_i16(&weights[add2][(i + 2) * regw]));
+            acc3 = adds_i16(acc3, load_i16(&weights[add2][(i + 3) * regw]));
+            acc4 = adds_i16(acc4, load_i16(&weights[add2][(i + 4) * regw]));
+            acc5 = adds_i16(acc5, load_i16(&weights[add2][(i + 5) * regw]));
+            acc6 = adds_i16(acc6, load_i16(&weights[add2][(i + 6) * regw]));
+            acc7 = adds_i16(acc7, load_i16(&weights[add2][(i + 7) * regw]));
         }
 
         // store into self
@@ -134,10 +137,10 @@ void Nnue::NnueAccumulator::update(
     for (i32 i = 0; i < N_HIDDEN; i++) {
         values[i] = old_acc.values[i];
 
-        values[i] -= weights[sub1 * N_HIDDEN + i];
-        if (n_subs > 1) values[i] -= weights[sub2 * N_HIDDEN + i];
-        values[i] += weights[add1 * N_HIDDEN + i];
-        if (n_adds > 1) values[i] += weights[add2 * N_HIDDEN + i];
+        values[i] -= weights[sub1][i];
+        if (n_subs > 1) values[i] -= weights[sub2][i];
+        values[i] += weights[add1][i];
+        if (n_adds > 1) values[i] += weights[add2][i];
     }
 #endif
 
@@ -145,13 +148,16 @@ void Nnue::NnueAccumulator::update(
 }
 
 void Nnue::NnueAccumulator::refresh(
-    const i16* weights, const i16* biases, const chess::Board& board, chess::Color perspective
+    const i16 weights[N_INPUTS][N_HIDDEN],
+    const i16 biases[N_HIDDEN],
+    const chess::Board& board,
+    chess::Color perspective
 ) {
     NnueFeature features[32];
     i32 n_features = 0;
 
     // horizontal mirroring
-    const bool mirror = board.king_square(perspective).file() > chess::File::D;
+    const bool mirror = Nnue::needs_mirroring(board.king_square(perspective));
 
     // get features
     auto pieces = board.occ();
@@ -185,14 +191,14 @@ void Nnue::NnueAccumulator::refresh(
         for (i32 f = 0; f < n_features; f++) {
             const auto fidx = features[f].index(perspective, mirror);
 
-            acc0 = adds_i16(acc0, load_i16(&weights[fidx * N_HIDDEN + (i + 0) * regw]));
-            acc1 = adds_i16(acc1, load_i16(&weights[fidx * N_HIDDEN + (i + 1) * regw]));
-            acc2 = adds_i16(acc2, load_i16(&weights[fidx * N_HIDDEN + (i + 2) * regw]));
-            acc3 = adds_i16(acc3, load_i16(&weights[fidx * N_HIDDEN + (i + 3) * regw]));
-            acc4 = adds_i16(acc4, load_i16(&weights[fidx * N_HIDDEN + (i + 4) * regw]));
-            acc5 = adds_i16(acc5, load_i16(&weights[fidx * N_HIDDEN + (i + 5) * regw]));
-            acc6 = adds_i16(acc6, load_i16(&weights[fidx * N_HIDDEN + (i + 6) * regw]));
-            acc7 = adds_i16(acc7, load_i16(&weights[fidx * N_HIDDEN + (i + 7) * regw]));
+            acc0 = adds_i16(acc0, load_i16(&weights[fidx][(i + 0) * regw]));
+            acc1 = adds_i16(acc1, load_i16(&weights[fidx][(i + 1) * regw]));
+            acc2 = adds_i16(acc2, load_i16(&weights[fidx][(i + 2) * regw]));
+            acc3 = adds_i16(acc3, load_i16(&weights[fidx][(i + 3) * regw]));
+            acc4 = adds_i16(acc4, load_i16(&weights[fidx][(i + 4) * regw]));
+            acc5 = adds_i16(acc5, load_i16(&weights[fidx][(i + 5) * regw]));
+            acc6 = adds_i16(acc6, load_i16(&weights[fidx][(i + 6) * regw]));
+            acc7 = adds_i16(acc7, load_i16(&weights[fidx][(i + 7) * regw]));
         }
 
         // store into self
@@ -210,7 +216,7 @@ void Nnue::NnueAccumulator::refresh(
 
     for (i32 f = 0; f < n_features; f++) {
         const auto fidx = features[f].index(perspective, mirror);
-        for (i32 i = 0; i < N_HIDDEN; i++) values[i] += weights[fidx * N_HIDDEN + i];
+        for (i32 i = 0; i < N_HIDDEN; i++) values[i] += weights[fidx][i];
     }
 #endif
 
@@ -248,7 +254,7 @@ i32 Nnue::evaluate(const chess::Board& board) {
     // get address to weights and biases
     constexpr i32 bucket_div = (32 + N_OUTBUCKETS - 1) / N_OUTBUCKETS;
     const i32 bucket_idx = (board.occ().count() - 2) / bucket_div;
-    const auto us_w_base = params->W1 + bucket_idx * (2 * N_HIDDEN);
+    const auto us_w_base = params->W1[bucket_idx];
     const auto them_w_base = us_w_base + N_HIDDEN;
     const auto bias = params->b1[bucket_idx];
 
@@ -360,8 +366,7 @@ void Nnue::make_move(
 
     // refresh stm on king mirror change
     if (from_piece.type() == chess::PieceType::KING
-        && (from_sq.file() > chess::File::D)
-               != (new_board.king_square(stm).file() > chess::File::D))
+        && (needs_mirroring(from_sq) != needs_mirroring(new_board.king_square(stm))))
         accumulators[idx_][stm].refresh(params->W0, params->b0, new_board, stm);
 }
 
@@ -371,13 +376,15 @@ void Nnue::unmake_move() {
 }
 
 
+bool Nnue::needs_mirroring(chess::Square king_sq) { return king_sq.file() > chess::File::D; }
+
 void Nnue::lazy_update(const chess::Board& board, chess::Color perspective) {
     // find clean accumulator
     i32 clean_idx = idx_;
     while (accumulators[clean_idx][perspective].dirty()) clean_idx--;
 
     // horizontal mirroring
-    const bool mirror = board.king_square(perspective).file() > chess::File::D;
+    const bool mirror = needs_mirroring(board.king_square(perspective));
 
     // update up the stack
     while (clean_idx++ < idx_)

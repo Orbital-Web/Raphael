@@ -301,11 +301,14 @@ i32 Nnue::evaluate(const chess::Board& board) {
 
 void Nnue::set_board(const chess::Board& board) {
     idx_ = 0;
+    const auto wbucket = king_bucket(board.king_square(chess::Color::WHITE), chess::Color::WHITE);
+    const auto bbucket = king_bucket(board.king_square(chess::Color::BLACK), chess::Color::BLACK);
+
     accumulators[idx_][chess::Color::WHITE].refresh(
-        params->W0, params->b0, board, chess::Color::WHITE
+        params->W0[wbucket], params->b0, board, chess::Color::WHITE
     );
     accumulators[idx_][chess::Color::BLACK].refresh(
-        params->W0, params->b0, board, chess::Color::BLACK
+        params->W0[bbucket], params->b0, board, chess::Color::BLACK
     );
 }
 
@@ -364,10 +367,14 @@ void Nnue::make_move(
         accumulators[idx_][chess::Color::BLACK].rem_piece(ep_pawn, ep_sq);
     }
 
-    // refresh stm on king mirror change
-    if (from_piece.type() == chess::PieceType::KING
-        && (needs_mirroring(from_sq) != needs_mirroring(new_board.king_square(stm))))
-        accumulators[idx_][stm].refresh(params->W0, params->b0, new_board, stm);
+    // refresh stm on king mirror or bucket change
+    if (from_piece.type() == chess::PieceType::KING) {
+        const auto new_sq = new_board.king_square(stm);
+        const auto old_bucket = king_bucket(from_sq, stm);
+        const auto new_bucket = king_bucket(new_sq, stm);
+        if ((needs_mirroring(from_sq) != needs_mirroring(new_sq)) || (old_bucket != new_bucket))
+            accumulators[idx_][stm].refresh(params->W0[new_bucket], params->b0, new_board, stm);
+    }
 }
 
 void Nnue::unmake_move() {
@@ -378,17 +385,26 @@ void Nnue::unmake_move() {
 
 bool Nnue::needs_mirroring(chess::Square king_sq) { return king_sq.file() > chess::File::D; }
 
+i32 Nnue::king_bucket(chess::Square king_sq, chess::Color perspective) {
+    const bool mirror = needs_mirroring(king_sq);
+    const auto sq = (mirror) ? king_sq.mirrored() : king_sq;
+    const i32 idx = sq.relative(perspective);
+    assert(idx % 8 < 4);
+    return BUCKETS[(idx >> 3) + (idx & 0x7)];
+}
+
 void Nnue::lazy_update(const chess::Board& board, chess::Color perspective) {
     // find clean accumulator
     i32 clean_idx = idx_;
     while (accumulators[clean_idx][perspective].dirty()) clean_idx--;
 
-    // horizontal mirroring
+    // horizontal mirroring and king bucket
     const bool mirror = needs_mirroring(board.king_square(perspective));
+    const auto bucket = king_bucket(board.king_square(perspective), perspective);
 
     // update up the stack
     while (clean_idx++ < idx_)
         accumulators[clean_idx][perspective].update(
-            accumulators[clean_idx - 1][perspective], params->W0, perspective, mirror
+            accumulators[clean_idx - 1][perspective], params->W0[bucket], perspective, mirror
         );
 }

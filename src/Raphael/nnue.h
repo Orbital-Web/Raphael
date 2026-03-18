@@ -18,6 +18,17 @@ private:
     static constexpr i32 N_OUTBUCKETS = 8;
     static constexpr i32 QA = 255;
     static constexpr i32 QB = 64;
+    static constexpr i32 N_INBUCKETS = 4;
+    static constexpr i32 BUCKETS[32] = {
+        0, 0, 1, 1,  // A1, B1, ...
+        2, 2, 2, 2,  //
+        3, 3, 3, 3,  //
+        3, 3, 3, 3,  //
+        3, 3, 3, 3,  //
+        3, 3, 3, 3,  //
+        3, 3, 3, 3,  //
+        3, 3, 3, 3   // A8, B8, ...
+    };
 
     struct NnueFeature {
         chess::Piece piece;
@@ -101,7 +112,7 @@ private:
 
     struct NnueParams {
         // accumulator: N_INPUTS -> N_HIDDEN
-        alignas(ALIGNMENT) i16 W0[N_INPUTS][N_HIDDEN];
+        alignas(ALIGNMENT) i16 W0[N_INBUCKETS][N_INPUTS][N_HIDDEN];
         alignas(ALIGNMENT) i16 b0[N_HIDDEN];
         // layer1: N_HIDDEN * 2 -> 1
         alignas(ALIGNMENT) i16 W1[N_OUTBUCKETS][2 * N_HIDDEN];
@@ -155,6 +166,14 @@ private:
      * \returns whether features should be horizontally mirrored
      */
     static bool needs_mirroring(chess::Square king_sq);
+
+    /** Returns the king bucket index
+     *
+     * \param king_sq king square for this perspective
+     * \param perspective perspective
+     * \returns input bucket index
+     */
+    static i32 king_bucket(chess::Square king_sq, chess::Color perspective);
 
     /** Lazily updates the accumulator stack for one perspective
      *

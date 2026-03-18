@@ -387,10 +387,8 @@ bool Nnue::needs_mirroring(chess::Square king_sq) { return king_sq.file() > ches
 
 i32 Nnue::king_bucket(chess::Square king_sq, chess::Color perspective) {
     const bool mirror = needs_mirroring(king_sq);
-    const auto sq = (mirror) ? king_sq.mirrored() : king_sq;
-    const i32 idx = sq.relative(perspective);
-    assert(idx % 8 < 4);
-    return BUCKETS[(idx >> 3) + (idx & 0x7)];
+    const auto sq = ((mirror) ? king_sq.mirrored() : king_sq).relative(perspective);
+    return BUCKETS[4 * sq.rank() + sq.file()];
 }
 
 void Nnue::lazy_update(const chess::Board& board, chess::Color perspective) {

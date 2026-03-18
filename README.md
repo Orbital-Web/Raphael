@@ -168,7 +168,7 @@ The engine contains the following features:
     - [x] Lazy updates                      (`v2.1+`)
     - [x] Horizontal mirroring              (`v3.1+`)
     - [x] Output buckets                    (`v3.1+`)
-    - [ ] King buckets
+    - [x] King buckets                      (`v3.2+`)
     - [ ] Finny tables
     - [ ] Pairwise multiplication
     - [ ] Dual activations

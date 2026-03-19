@@ -108,12 +108,12 @@ public:
      * \param move move to play
      */
     void make_move(chess::Move move) {
+        if constexpr (include_net) {
+            net_.make_move(current_, move);
+        }
         boards_.push_back(current_);
         moves_.push_back({.move = move, .moving = current_.at(move.from())});
         current_.make_move(move);
-        if constexpr (include_net) {
-            net_.make_move(boards_.back(), current_, move);
-        }
     }
 
     /** Plays a nullmove */
@@ -125,12 +125,12 @@ public:
 
     /** Unmakes the last move */
     void unmake_move() {
-        current_ = boards_.back();
-        boards_.pop_back();
-        moves_.pop_back();
         if constexpr (include_net) {
             net_.unmake_move();
         }
+        current_ = boards_.back();
+        boards_.pop_back();
+        moves_.pop_back();
     }
 
     /** Unmakes a nullmove */

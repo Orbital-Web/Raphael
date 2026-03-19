@@ -10,9 +10,9 @@ i32 pieceval(chess::Square sq, const chess::Board& board) { return SEE_TABLE[boa
 
 
 chess::Square lva(chess::BitBoard attackers, const chess::Board& board) {
-    for (i32 p = 0; p < 6; p++) {
-        auto attacker_of_type = attackers & board.occ(chess::PieceType(p));
-        if (attacker_of_type) return static_cast<chess::Square>(attacker_of_type.poplsb());
+    for (chess::PieceType pt = chess::PieceType::PAWN; pt <= chess::PieceType::KING; ++pt) {
+        const auto attacker_of_type = attackers & board.occ(pt);
+        if (attacker_of_type) return static_cast<chess::Square>(attacker_of_type.lsb());
     }
     return chess::Square::NONE;
 }

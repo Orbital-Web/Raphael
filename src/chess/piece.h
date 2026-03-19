@@ -49,6 +49,11 @@ public:
         constexpr static const char* ptstr[] = {"p", "n", "b", "r", "q", "k", " "};
         return ptstr[pt_];
     }
+
+    constexpr PieceType& operator++() {
+        pt_ = static_cast<underlying>(pt_ + 1);
+        return *this;
+    }
 };
 
 class Piece {

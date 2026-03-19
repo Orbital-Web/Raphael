@@ -22,7 +22,7 @@ public:
 
     void init_allmoves() {
         // normal moves
-        for (Square from = Square::A1; from <= Square::H8; from++) {
+        for (Square from = Square::A1; from <= Square::H8; ++from) {
             BitBoard to_squares
                 = Attacks::knight(from) | Attacks::bishop(from, 0) | Attacks::rook(from, 0);
 
@@ -36,7 +36,7 @@ public:
         for (const auto color : {Color::WHITE, Color::BLACK}) {
             const auto from_rank = Rank(Rank::R5).relative(color);
 
-            for (File file = File::A; file <= File::H; file++) {
+            for (File file = File::A; file <= File::H; ++file) {
                 const auto from = Square(file, from_rank);
                 auto to_squares = Attacks::pawn(from, color);
 
@@ -52,7 +52,7 @@ public:
             const auto from_rank = Rank(Rank::R7).relative(color);
             const auto to_rank = Rank(Rank::R8).relative(color);
 
-            for (File file = File::A; file <= File::H; file++) {
+            for (File file = File::A; file <= File::H; ++file) {
                 const auto from = Square(file, from_rank);
                 auto to_squares
                     = BitBoard::from_square(Square(file, to_rank)) | Attacks::pawn(from, color);
@@ -78,8 +78,8 @@ public:
             allmoves_.emplace_back(Move::make<Move::CASTLING>(Square::E8, Square::H8));
             allmoves_.emplace_back(Move::make<Move::CASTLING>(Square::E8, Square::A8));
         } else {
-            for (File king_file = File::A; king_file <= File::H; king_file++) {
-                for (File rook_file = File::A; rook_file <= File::H; rook_file++) {
+            for (File king_file = File::A; king_file <= File::H; ++king_file) {
+                for (File rook_file = File::A; rook_file <= File::H; ++rook_file) {
                     if (king_file == rook_file) continue;
                     allmoves_.emplace_back(
                         Move::make<Move::CASTLING>(

@@ -43,6 +43,49 @@ private:
         i32 index(chess::Color perspective, bool mirror) const;
     };
 
+    class NnueFinnyEntry {
+    public:
+        alignas(ALIGNMENT) i16 values[N_HIDDEN];
+
+    private:
+        std::array<chess::BitBoard, 6> pieces_ = {};  // bitboard per piece type
+        std::array<chess::BitBoard, 2> occ_ = {};     // bitboard per color
+
+
+    public:
+        /** Dummy constructor */
+        NnueFinnyEntry();
+
+        /** Initializes the finny entry to equal the bias value
+         *
+         * \param biases start of b0
+         */
+        void initialize(const i16 biases[N_HIDDEN]);
+
+        /** Updates the finny entry incrementally to match the new board state
+         *
+         * \param weights start of W0
+         * \param board new board state, should match this entry's king bucket index & mirroring
+         * \param perspective accumulator perspective, should match this entry's perspective
+         * \param mirror whether to mirror the board, should match this entry's mirroring
+         */
+        void update(
+            const i16 weights[N_INPUTS][N_HIDDEN],
+            const chess::Board& board,
+            chess::Color perspective,
+            bool mirror
+        );
+
+    private:
+        /** Returns the occupancy BitBoard for a piecetype and color
+         *
+         * \param pt piecetype
+         * \param color color
+         * \returns occupancy bitboard
+         */
+        chess::BitBoard occ(chess::PieceType pt, chess::Color color) const;
+    };
+
     class NnueAccumulator {
     public:
         alignas(ALIGNMENT) i16 values[N_HIDDEN];
@@ -50,17 +93,16 @@ private:
         NnueFeature subs[2];
         u8 n_adds = 0;
         u8 n_subs = 0;
+        bool needs_refresh = false;
 
         /** Initializes the accumulator */
         NnueAccumulator();
-
 
         /** Returns if the accumulator needs to be updated
          *
          * \returns whether the accumulator is dirty or not
          */
         bool dirty() const;
-
 
         /** Adds a new piece to the accumulator
          *
@@ -79,7 +121,6 @@ private:
         /** Resets updates stored on this accumulator */
         void reset_updates();
 
-
         /** Updates the accumulator values
          *
          * \param old_acc accumulator to use as base
@@ -94,19 +135,11 @@ private:
             bool mirror
         );
 
-        /** Refreshes the accumulator values
+        /** Refreshes the accumulator by copying the finny entry
          *
-         * \param weights start of W0
-         * \param biases start of b0
-         * \param board board to use for refreshing
-         * \param perspective accumulator perspective
+         * \param finny_entry finny entry to copy
          */
-        void refresh(
-            const i16 weights[N_INPUTS][N_HIDDEN],
-            const i16 biases[N_HIDDEN],
-            const chess::Board& board,
-            chess::Color perspective
-        );
+        void refresh_from(const NnueFinnyEntry& finny_entry);
     };
 
 
@@ -128,7 +161,8 @@ private:
 
 
     // state variables
-    NnueAccumulator accumulators[MAX_DEPTH][2];  // accumulators[ply][black/white][index]
+    NnueFinnyEntry finny_table[2][2][N_INBUCKETS];  // finny_table[perspective][mirror][bucket]
+    NnueAccumulator accumulators[MAX_DEPTH][2];     // accumulators[ply][perspective][index]
     i32 idx_ = 0;
 
 
@@ -150,11 +184,10 @@ public:
 
     /** Updates internal states based on the given move
      *
-     * \param old_board the board before the move is played
-     * \param new_board the board after the move is played
+     * \param board current board (before move is played)
      * \param move the move to make
      */
-    void make_move(const chess::Board& old_board, const chess::Board& new_board, chess::Move move);
+    void make_move(const chess::Board& board, chess::Move move);
 
     /** Updates internal states to unmake the last move */
     void unmake_move();

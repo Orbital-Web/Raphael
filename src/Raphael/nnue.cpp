@@ -27,14 +27,130 @@ i32 Nnue::NnueFeature::index(chess::Color perspective, bool mirror) const {
 
 
 
-Nnue::NnueAccumulator::NnueAccumulator() {}
+Nnue::NnueFinnyEntry::NnueFinnyEntry() {}
 
+void Nnue::NnueFinnyEntry::initialize(const i16 biases[N_HIDDEN]) {
+    copy(biases, biases + N_HIDDEN, values);
+}
+
+void Nnue::NnueFinnyEntry::update(
+    const i16 weights[N_INPUTS][N_HIDDEN],
+    const chess::Board& board,
+    chess::Color perspective,
+    bool mirror
+) {
+    i32 adds[32];
+    i32 subs[32];
+    i32 n_adds = 0;
+    i32 n_subs = 0;
+
+    // compute diff from finny_entry
+    for (chess::PieceType pt = chess::PieceType::PAWN; pt <= chess::PieceType::KING; ++pt) {
+        for (const auto color : {chess::Color::WHITE, chess::Color::BLACK}) {
+            const auto old_occ = occ(pt, color);
+            const auto new_occ = board.occ(pt, color);
+
+            auto adds_occ = new_occ & ~old_occ;
+            while (adds_occ) {
+                const auto sq = chess::Square(adds_occ.poplsb());
+                const auto piece = chess::Piece(pt, color);
+
+                assert(n_adds < 32);
+                adds[n_adds++] = NnueFeature(piece, sq).index(perspective, mirror);
+            }
+
+            auto subs_occ = old_occ & ~new_occ;
+            while (subs_occ) {
+                const auto sq = chess::Square(subs_occ.poplsb());
+                const auto piece = chess::Piece(pt, color);
+
+                assert(n_subs < 32);
+                subs[n_subs++] = NnueFeature(piece, sq).index(perspective, mirror);
+            }
+        }
+    }
+
+    // update occupancy bitboards
+    for (chess::PieceType pt = chess::PieceType::PAWN; pt <= chess::PieceType::KING; ++pt)
+        pieces_[pt] = board.occ(pt);
+    for (const auto color : {chess::Color::WHITE, chess::Color::BLACK})
+        occ_[color] = board.occ(color);
+
+#ifdef USE_SIMD
+    constexpr i32 regw = ALIGNMENT / sizeof(i16);
+    constexpr i32 n_chunks = N_HIDDEN / regw;
+    static_assert(N_HIDDEN % regw == 0);
+    static_assert(n_chunks % 8 == 0);
+
+    for (i32 i = 0; i < n_chunks; i += 8) {
+        // copy bias
+        VecI16 acc0 = load_i16(&values[(i + 0) * regw]);
+        VecI16 acc1 = load_i16(&values[(i + 1) * regw]);
+        VecI16 acc2 = load_i16(&values[(i + 2) * regw]);
+        VecI16 acc3 = load_i16(&values[(i + 3) * regw]);
+        VecI16 acc4 = load_i16(&values[(i + 4) * regw]);
+        VecI16 acc5 = load_i16(&values[(i + 5) * regw]);
+        VecI16 acc6 = load_i16(&values[(i + 6) * regw]);
+        VecI16 acc7 = load_i16(&values[(i + 7) * regw]);
+
+        // add features
+        for (i32 f = 0; f < n_adds; f++) {
+            const auto fidx = adds[f];
+
+            acc0 = adds_i16(acc0, load_i16(&weights[fidx][(i + 0) * regw]));
+            acc1 = adds_i16(acc1, load_i16(&weights[fidx][(i + 1) * regw]));
+            acc2 = adds_i16(acc2, load_i16(&weights[fidx][(i + 2) * regw]));
+            acc3 = adds_i16(acc3, load_i16(&weights[fidx][(i + 3) * regw]));
+            acc4 = adds_i16(acc4, load_i16(&weights[fidx][(i + 4) * regw]));
+            acc5 = adds_i16(acc5, load_i16(&weights[fidx][(i + 5) * regw]));
+            acc6 = adds_i16(acc6, load_i16(&weights[fidx][(i + 6) * regw]));
+            acc7 = adds_i16(acc7, load_i16(&weights[fidx][(i + 7) * regw]));
+        }
+
+        // rem features
+        for (i32 f = 0; f < n_subs; f++) {
+            const auto fidx = subs[f];
+
+            acc0 = subs_i16(acc0, load_i16(&weights[fidx][(i + 0) * regw]));
+            acc1 = subs_i16(acc1, load_i16(&weights[fidx][(i + 1) * regw]));
+            acc2 = subs_i16(acc2, load_i16(&weights[fidx][(i + 2) * regw]));
+            acc3 = subs_i16(acc3, load_i16(&weights[fidx][(i + 3) * regw]));
+            acc4 = subs_i16(acc4, load_i16(&weights[fidx][(i + 4) * regw]));
+            acc5 = subs_i16(acc5, load_i16(&weights[fidx][(i + 5) * regw]));
+            acc6 = subs_i16(acc6, load_i16(&weights[fidx][(i + 6) * regw]));
+            acc7 = subs_i16(acc7, load_i16(&weights[fidx][(i + 7) * regw]));
+        }
+
+        // store into self
+        store_i16(&values[(i + 0) * regw], acc0);
+        store_i16(&values[(i + 1) * regw], acc1);
+        store_i16(&values[(i + 2) * regw], acc2);
+        store_i16(&values[(i + 3) * regw], acc3);
+        store_i16(&values[(i + 4) * regw], acc4);
+        store_i16(&values[(i + 5) * regw], acc5);
+        store_i16(&values[(i + 6) * regw], acc6);
+        store_i16(&values[(i + 7) * regw], acc7);
+    }
+#else
+    for (i32 f = 0; f < n_adds; f++)
+        for (i32 i = 0; i < N_HIDDEN; i++) values[i] += weights[adds[f]][i];
+    for (i32 f = 0; f < n_subs; f++)
+        for (i32 i = 0; i < N_HIDDEN; i++) values[i] -= weights[subs[f]][i];
+#endif
+}
+
+chess::BitBoard Nnue::NnueFinnyEntry::occ(chess::PieceType pt, chess::Color color) const {
+    return pieces_[pt] & occ_[color];
+}
+
+
+
+Nnue::NnueAccumulator::NnueAccumulator() {}
 
 bool Nnue::NnueAccumulator::dirty() const {
     assert((n_adds > 0) == (n_subs > 0));
     return n_adds > 0;
 }
-
 
 void Nnue::NnueAccumulator::add_piece(chess::Piece piece, chess::Square square) {
     assert(n_adds < 2);
@@ -51,7 +167,6 @@ void Nnue::NnueAccumulator::reset_updates() {
     n_subs = 0;
 }
 
-
 void Nnue::NnueAccumulator::update(
     const NnueAccumulator& old_acc,
     const i16 weights[N_INPUTS][N_HIDDEN],
@@ -60,6 +175,7 @@ void Nnue::NnueAccumulator::update(
 ) {
     assert(dirty());
     assert(!old_acc.dirty());
+    assert(!old_acc.needs_refresh);
 
     i32 add1 = adds[0].index(perspective, mirror);
     i32 add2 = adds[1].index(perspective, mirror);
@@ -147,85 +263,21 @@ void Nnue::NnueAccumulator::update(
     reset_updates();
 }
 
-void Nnue::NnueAccumulator::refresh(
-    const i16 weights[N_INPUTS][N_HIDDEN],
-    const i16 biases[N_HIDDEN],
-    const chess::Board& board,
-    chess::Color perspective
-) {
-    NnueFeature features[32];
-    i32 n_features = 0;
-
-    // horizontal mirroring
-    const bool mirror = Nnue::needs_mirroring(board.king_square(perspective));
-
-    // get features
-    auto pieces = board.occ();
-    while (pieces) {
-        const auto square = static_cast<chess::Square>(pieces.poplsb());
-        const auto piece = board.at(square);
-
-        assert(n_features < 32);
-        features[n_features++] = {.piece = piece, .square = square};
-    }
-
-    // refresh accumulator
-#ifdef USE_SIMD
-    constexpr i32 regw = ALIGNMENT / sizeof(i16);
-    constexpr i32 n_chunks = N_HIDDEN / regw;
-    static_assert(N_HIDDEN % regw == 0);
-    static_assert(n_chunks % 8 == 0);
-
-    for (i32 i = 0; i < n_chunks; i += 8) {
-        // copy bias
-        VecI16 acc0 = load_i16(&biases[(i + 0) * regw]);
-        VecI16 acc1 = load_i16(&biases[(i + 1) * regw]);
-        VecI16 acc2 = load_i16(&biases[(i + 2) * regw]);
-        VecI16 acc3 = load_i16(&biases[(i + 3) * regw]);
-        VecI16 acc4 = load_i16(&biases[(i + 4) * regw]);
-        VecI16 acc5 = load_i16(&biases[(i + 5) * regw]);
-        VecI16 acc6 = load_i16(&biases[(i + 6) * regw]);
-        VecI16 acc7 = load_i16(&biases[(i + 7) * regw]);
-
-        // add features
-        for (i32 f = 0; f < n_features; f++) {
-            const auto fidx = features[f].index(perspective, mirror);
-
-            acc0 = adds_i16(acc0, load_i16(&weights[fidx][(i + 0) * regw]));
-            acc1 = adds_i16(acc1, load_i16(&weights[fidx][(i + 1) * regw]));
-            acc2 = adds_i16(acc2, load_i16(&weights[fidx][(i + 2) * regw]));
-            acc3 = adds_i16(acc3, load_i16(&weights[fidx][(i + 3) * regw]));
-            acc4 = adds_i16(acc4, load_i16(&weights[fidx][(i + 4) * regw]));
-            acc5 = adds_i16(acc5, load_i16(&weights[fidx][(i + 5) * regw]));
-            acc6 = adds_i16(acc6, load_i16(&weights[fidx][(i + 6) * regw]));
-            acc7 = adds_i16(acc7, load_i16(&weights[fidx][(i + 7) * regw]));
-        }
-
-        // store into self
-        store_i16(&values[(i + 0) * regw], acc0);
-        store_i16(&values[(i + 1) * regw], acc1);
-        store_i16(&values[(i + 2) * regw], acc2);
-        store_i16(&values[(i + 3) * regw], acc3);
-        store_i16(&values[(i + 4) * regw], acc4);
-        store_i16(&values[(i + 5) * regw], acc5);
-        store_i16(&values[(i + 6) * regw], acc6);
-        store_i16(&values[(i + 7) * regw], acc7);
-    }
-#else
-    copy(biases, biases + N_HIDDEN, values);
-
-    for (i32 f = 0; f < n_features; f++) {
-        const auto fidx = features[f].index(perspective, mirror);
-        for (i32 i = 0; i < N_HIDDEN; i++) values[i] += weights[fidx][i];
-    }
-#endif
-
+void Nnue::NnueAccumulator::refresh_from(const NnueFinnyEntry& finny_entry) {
+    copy(finny_entry.values, finny_entry.values + N_HIDDEN, values);
     reset_updates();
+    needs_refresh = false;
 }
 
 
 
-Nnue::Nnue(): params(load_network()), idx_(0) {}
+Nnue::Nnue(): params(load_network()), idx_(0) {
+    // set the finny table entries to the bias
+    for (const auto perspective : {chess::Color::WHITE, chess::Color::BLACK})
+        for (const auto mirror : {false, true})
+            for (i32 bucket = 0; bucket < N_INBUCKETS; bucket++)
+                finny_table[perspective][mirror][bucket].initialize(params->b0);
+}
 
 const Nnue::NnueParams* Nnue::load_network() {
     constexpr usize padded_size = 64 * ((sizeof(NnueParams) + 63) / 64);
@@ -301,25 +353,27 @@ i32 Nnue::evaluate(const chess::Board& board) {
 
 void Nnue::set_board(const chess::Board& board) {
     idx_ = 0;
-    accumulators[idx_][chess::Color::WHITE].refresh(
-        params->W0, params->b0, board, chess::Color::WHITE
-    );
-    accumulators[idx_][chess::Color::BLACK].refresh(
-        params->W0, params->b0, board, chess::Color::BLACK
-    );
+    for (const auto perspective : {chess::Color::WHITE, chess::Color::BLACK}) {
+        const bool mirror = needs_mirroring(board.king_square(perspective));
+        const auto bucket = king_bucket(board.king_square(perspective), perspective);
+
+        finny_table[perspective][mirror][bucket].update(
+            params->W0[bucket], board, perspective, mirror
+        );
+        accumulators[idx_][perspective].refresh_from(finny_table[perspective][mirror][bucket]);
+    }
 }
 
-void Nnue::make_move(
-    const chess::Board& old_board, const chess::Board& new_board, chess::Move move
-) {
+void Nnue::make_move(const chess::Board& board, chess::Move move) {
     assert(idx_ < MAX_DEPTH - 1);
     idx_++;
 
-    const auto stm = old_board.stm();
+    const auto stm = board.stm();
     const auto from_sq = move.from();
     const auto to_sq = move.to();
-    const auto from_piece = old_board.at(from_sq);
-    const auto to_piece = old_board.at(to_sq);
+    const auto from_piece = board.at(from_sq);
+    const auto to_piece = board.at(to_sq);
+    auto new_king_sq = move.to();  // assuming from_piece == KING
     assert(from_piece != chess::Piece::NONE);
 
     // reset updates so we can overwrite them
@@ -340,10 +394,10 @@ void Nnue::make_move(
         assert(to_piece.type() == chess::PieceType::ROOK);
 
         const bool is_king_side = to_sq > from_sq;
-        const auto king_sq = chess::Square::castling_king_dest(is_king_side, stm);
+        new_king_sq = chess::Square::castling_king_dest(is_king_side, stm);
         const auto rook_sq = chess::Square::castling_rook_dest(is_king_side, stm);
-        accumulators[idx_][chess::Color::WHITE].add_piece(from_piece, king_sq);
-        accumulators[idx_][chess::Color::BLACK].add_piece(from_piece, king_sq);
+        accumulators[idx_][chess::Color::WHITE].add_piece(from_piece, new_king_sq);
+        accumulators[idx_][chess::Color::BLACK].add_piece(from_piece, new_king_sq);
         accumulators[idx_][chess::Color::WHITE].add_piece(to_piece, rook_sq);
         accumulators[idx_][chess::Color::BLACK].add_piece(to_piece, rook_sq);
     } else {
@@ -364,10 +418,13 @@ void Nnue::make_move(
         accumulators[idx_][chess::Color::BLACK].rem_piece(ep_pawn, ep_sq);
     }
 
-    // refresh stm on king mirror change
+    // need refresh only if previous accumulator needs refresh or we change mirroring/bucket
+    accumulators[idx_][stm].needs_refresh = accumulators[idx_ - 1][stm].needs_refresh;
+
     if (from_piece.type() == chess::PieceType::KING
-        && (needs_mirroring(from_sq) != needs_mirroring(new_board.king_square(stm))))
-        accumulators[idx_][stm].refresh(params->W0, params->b0, new_board, stm);
+        && ((needs_mirroring(from_sq) != needs_mirroring(new_king_sq))
+            || (king_bucket(from_sq, stm) != king_bucket(new_king_sq, stm))))
+        accumulators[idx_][stm].needs_refresh = true;
 }
 
 void Nnue::unmake_move() {
@@ -378,17 +435,36 @@ void Nnue::unmake_move() {
 
 bool Nnue::needs_mirroring(chess::Square king_sq) { return king_sq.file() > chess::File::D; }
 
-void Nnue::lazy_update(const chess::Board& board, chess::Color perspective) {
-    // find clean accumulator
-    i32 clean_idx = idx_;
-    while (accumulators[clean_idx][perspective].dirty()) clean_idx--;
+i32 Nnue::king_bucket(chess::Square king_sq, chess::Color perspective) {
+    const bool mirror = needs_mirroring(king_sq);
+    const auto sq = ((mirror) ? king_sq.mirrored() : king_sq).relative(perspective);
+    return BUCKETS[4 * sq.rank() + sq.file()];
+}
 
-    // horizontal mirroring
+void Nnue::lazy_update(const chess::Board& board, chess::Color perspective) {
+    // find first clean/needs_refresh accumulator
+    i32 clean_idx = idx_;
+    while (accumulators[clean_idx][perspective].dirty()
+           && !accumulators[clean_idx][perspective].needs_refresh)
+        clean_idx--;
+
+    // horizontal mirroring and king bucket
     const bool mirror = needs_mirroring(board.king_square(perspective));
+    const auto bucket = king_bucket(board.king_square(perspective), perspective);
+
+    // if an accumulator needs refresh, refresh at idx_ since we don't know the bucket and mirror
+    // states for the in between accumulators, only the current one
+    if (accumulators[clean_idx][perspective].needs_refresh) {
+        finny_table[perspective][mirror][bucket].update(
+            params->W0[bucket], board, perspective, mirror
+        );
+        accumulators[idx_][perspective].refresh_from(finny_table[perspective][mirror][bucket]);
+        return;
+    }
 
     // update up the stack
     while (clean_idx++ < idx_)
         accumulators[clean_idx][perspective].update(
-            accumulators[clean_idx - 1][perspective], params->W0, perspective, mirror
+            accumulators[clean_idx - 1][perspective], params->W0[bucket], perspective, mirror
         );
 }

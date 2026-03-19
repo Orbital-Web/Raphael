@@ -70,7 +70,7 @@ public:
     [[nodiscard]] constexpr operator i32() const { return file_; }
     [[nodiscard]] explicit operator std::string() const { return std::string(1, file_ + 'a'); }
 
-    constexpr File& operator++(i32) {
+    constexpr File& operator++() {
         file_ = static_cast<underlying>(file_ + 1);
         return *this;
     }
@@ -94,7 +94,7 @@ public:
     [[nodiscard]] constexpr operator i32() const { return rank_; }
     [[nodiscard]] explicit operator std::string() const { return std::string(1, rank_ + '1'); }
 
-    constexpr Rank& operator++(i32) {
+    constexpr Rank& operator++() {
         rank_ = static_cast<underlying>(rank_ + 1);
         return *this;
     }

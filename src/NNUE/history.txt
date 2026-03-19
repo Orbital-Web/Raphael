@@ -8,7 +8,7 @@ data: d1          | games: n.a              | source: raphael v1.8 (HCE)    | Us
                   | pos: 200m               | nodes: 5k soft                | positions re-evaluated using Raphael v1.8.                                                   |
                   |                         | filter: captures, checks      |                                                                                              |
 ------------------|-------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
-basilisk_v1       | (768->64)x2->1          | data: d1                      | n.a                                         | Trained with custom pytorch trainer.           |
+basilisk_v1       | (768->64)x2->1          | data: d1 (0.2b)               | n.a                                         | Trained with custom pytorch trainer.           |
 default for v2.0  | activ: screlu           | sb: n.a                       |                                             |                                                |
                   | scale: 400              | lr: linear(0.001,0.00000243)  |                                             |                                                |
                   | quant: [255,64]         | wdl: constant(0.3)            |                                             |                                                |
@@ -18,19 +18,19 @@ data: d2          | games: 6.29m            | source: raphael v3.0          | Tr
                   | pos: 615m               | nodes: 5k soft                |                                                                                              |
                   |                         | filter: noisy, checks         |                                                                                              |
 ------------------|-------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
-basilisk_v2       | (768->64)x2->1          | data: d2                      | Elo   | 155.84 +- 23.70 (95%)               | Switched to bullet for training. Scale was     |
+basilisk_v2       | (768->64)x2->1          | data: d2 (0.6b)               | Elo   | 155.84 +- 23.70 (95%)               | Switched to bullet for training. Scale was     |
                   | activ: screlu           | sb: 60                        | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | adjusted by comparing the abs mean against v1  |
                   | scale: 283              | lr: cosine(0.001,0.00000243)  | LLR   | 2.89 (-2.25, 2.89) [0.00, 5.00]     | on lichess-big3-resolved. Future outputs       |
                   | quant: [255,64]         | wdl: constant(0.4)            | Games | N: 454 W: 250 L: 59 D: 145          | scales were also calibrated using v1 as the    |
                   | optim: AdamW            |                               | Penta | [2, 9, 66, 96, 54]                  | baseline.                                      |
 ------------------|-------------------------|-------------------------------|---------------------------------------------|------------------------------------------------|
-basilisk_v3       | (768hm->64)x2->1        | data: d2                      | Elo   | 16.51 +- 8.00 (95%)                 | Minor changes in SIMD code to make better use  |
+basilisk_v3       | (768hm->64)x2->1        | data: d2 (0.6b)               | Elo   | 16.51 +- 8.00 (95%)                 | Minor changes in SIMD code to make better use  |
                   | activ: screlu           | sb: 60                        | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | of registers, which the compiler probably      |
                   | scale: 283              | lr: 1600b warmup              | LLR   | 2.91 (-2.25, 2.89) [0.00, 5.00]     | already does.                                  |
                   | quant: [255,64]         |     cosine(0.001,0.00000243)  | Games | N: 3074 W: 943 L: 797 D: 1334       |                                                |
                   | optim: AdamW            | wdl: constant(0.4)            | Penta | [51, 343, 637, 421, 85]             |                                                |
 ------------------|-------------------------|-------------------------------|---------------------------------------------|------------------------------------------------|
-basilisk_v4       | (768hm->128)x2->1       | data: d2                      | Elo   | 59.33 +- 14.44 (95%)                |                                                |
+basilisk_v4       | (768hm->128)x2->1       | data: d2 (0.6b)               | Elo   | 59.33 +- 14.44 (95%)                |                                                |
                   | activ: screlu           | sb: 100                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
                   | scale: 283              | lr: 1600b warmup              | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | quant: [255,64]         |     cosine(0.001,0.00000243)  | Games | N: 810 W: 302 L: 165 D: 343         |                                                |
@@ -40,19 +40,19 @@ data: d3          | games: 5.38m            | source: basilisk_v4           |   
                   | pos: 538m               | nodes: 5k soft                |                                                                                              |
                   |                         | filter: noisy, checks         |                                                                                              |
 ------------------|-------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
-basilisk_v5       | (768hm->256)x2->1       | data: d2-3                    | Elo   | 82.63 +- 16.84 (95%)                | Combining both d2 + d3 worked better than only |
+basilisk_v5       | (768hm->256)x2->1       | data: d2-3 (1.1b)             | Elo   | 82.63 +- 16.84 (95%)                | Combining both d2 + d3 worked better than only |
                   | activ: screlu           | sb: 140                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | using d3 (onlynew vs combined = -7.98 +- 6.71) |
                   | scale: 276              | lr: 1600b warmup              | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | quant: [255,64]         |     cosine(0.001,0.00000243)  | Games | N: 634 W: 263 L: 115 D: 256         |                                                |
                   | optim: AdamW            | wdl: constant(0.4)            | Penta | [2, 31, 131, 123, 30]               |                                                |
 ------------------|-------------------------|-------------------------------|---------------------------------------------|------------------------------------------------|
-sleipnir_v1       | (768hm->256)x2->1x8     | data: d2-3                    | Elo   | 12.66 +- 6.55 (95%)                 |                                                |
+sleipnir_v1       | (768hm->256)x2->1x8     | data: d2-3 (1.1b)             | Elo   | 12.66 +- 6.55 (95%)                 |                                                |
                   | activ: screlu           | sb: 160                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
                   | scale: 279              | lr: 1600b warmup              | LLR   | 2.99 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | quant: [255,64]         |     cosine(0.001,0.00000243)  | Games | N: 3898 W: 1118 L: 976 D: 1804      |                                                |
                   | optim: AdamW            | wdl: constant(0.4)            | Penta | [49, 420, 886, 528, 66]             |                                                |
 ------------------|-------------------------|-------------------------------|---------------------------------------------|------------------------------------------------|
-sleipnir_v2       | (768hm->512)x2->1x8     | data: d2-3                    | Elo   | 18.14 +- 8.09 (95%)                 |                                                |
+sleipnir_v2       | (768hm->512)x2->1x8     | data: d2-3 (1.1b)             | Elo   | 18.14 +- 8.09 (95%)                 |                                                |
                   | activ: screlu           | sb: 320                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
                   | scale: 280              | lr: 1600b warmup              | LLR   | 2.97 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | quant: [255,64]         |     cosine(0.001,0.00000243)  | Games | N: 2646 W: 771 L: 633 D: 1242       |                                                |
@@ -62,14 +62,14 @@ data: d4          | games: 3.87m            | source: sleipnir_v2           |   
                   | pos: 383m               | nodes: 5k soft                |                                                                                              |
                   |                         | filter: noisy, checks         |                                                                                              |
 ------------------|-------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
-sleipnir_v3       | (768hm->512)x2->1x8     | data: d2-3                    | Elo   | 5.41 +- 3.86 (95%)                  | Normally, lowering wdl (average is now 0.3)    |
+sleipnir_v3       | (768hm->512)x2->1x8     | data: d2-3 (1.1b)             | Elo   | 5.41 +- 3.86 (95%)                  | Normally, lowering wdl (average is now 0.3)    |
                   | activ: screlu           | sb: 320                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | leads to antiscaling. This surprisingly wasn't |
                   | scale: 278              | lr: 1600b warmup              | LLR   | 3.02 (-2.25, 2.89) [0.00, 5.00]     | the case (5.59 +- 3.88 at 40+0.4). Trying 0.2  |
                   | quant: [255,64]         |     cosine(0.001,0.00000243)  | Games | N: 11104 W: 2965 L: 2792 D: 5347    | to 0.6 wdl at this point did not gain elo stc  |
                   | optim: AdamW            | wdl: linear(0.2, 0.4)         | Penta | [138, 1320, 2482, 1455, 157]        | (-0.85 +- 3.35).                               |
 ------------------|-------------------------|-------------------------------|---------------------------------------------|------------------------------------------------|
-sleipnir_v4       | (768hm->768)x2->1x8     | data: d2-4                    | Elo   | 15.73 +- 7.45 (95%)                 |                                                |
-                  | activ: screlu           | sb: 360                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+sleipnir_v4       | (768hm->768)x2->1x8     | data: d2-4 (1.5b)             | Elo   | 15.73 +- 7.45 (95%)                 |                                                |
+default for v3.1  | activ: screlu           | sb: 360                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
                   | scale: 276              | lr: 1600b warmup              | LLR   | 2.92 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | quant: [255,64]         |     cosine(0.001,0.00000243)  | Games | N: 2962 W: 831 L: 697 D: 1434       |                                                |
                   | optim: AdamW            | wdl: linear(0.2, 0.4)         | Penta | [34, 314, 661, 428, 44]             |                                                |
@@ -78,7 +78,7 @@ data: d5          | games: 3.97m (dfrc)     | source: sleipnir_v4           |   
                   | pos: 440m               | nodes: 5k soft                |                                                                                              |
                   |                         | filter: noisy, checks         |                                                                                              |
 ------------------|-------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
-sleipnir_v5       | (768hm->768)x2->1x8     | data: d2-5                    | Elo   | 16.03 +- 7.49 (95%)                 | STC results in DFRC games was 121.70 +- 21.31. |
+sleipnir_v5       | (768hm->768)x2->1x8     | data: d2-5 (1.9b)             | Elo   | 16.03 +- 7.49 (95%)                 | STC results in DFRC games was 121.70 +- 21.31. |
                   | activ: screlu           | sb: 360                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
                   | scale: 275              | lr: 1600b warmup              | LLR   | 2.92 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | quant: [255,64]         |     cosine(0.001,0.00000243)  | Games | N: 2884 W: 799 L: 666 D: 1419       |                                                |
@@ -88,9 +88,43 @@ data: d6          | games: 5.91m (dfrc)     | source: sleipnir_v5           |   
                   | pos: 633m               | nodes: 5k soft                |                                                                                              |
                   |                         | filter: noisy, checks         |                                                                                              |
 ------------------|-------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
-sleipnir_v6       | (768hm->1024)x2->1x8    | data: d2-6                    | Elo   | 6.59 +- 4.45 (95%)                  |                                                |
+sleipnir_v6       | (768hm->1024)x2->1x8    | data: d2-6 (2.6b)             | Elo   | 6.59 +- 4.45 (95%)                  |                                                |
                   | activ: screlu           | sb: 400                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
                   | scale: 274              | lr: 1600b warmup              | LLR   | 2.91 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | quant: [255,64]         |     cosine(0.001,0.00000243)  | Games | N: 8016 W: 2155 L: 2003 D: 3858     |                                                |
                   | optim: AdamW            | wdl: linear(0.2, 0.4)         | Penta | [87, 933, 1832, 1053, 103]          |                                                |
+------------------|-------------------------|-------------------------------|---------------------------------------------┴------------------------------------------------|
+hydra_v1          | (768x4hm->1024)x2->1x8  | data: d2-6 (2.6b)             | Elo   | 2.90 +- 2.21 (95%)                  | Did not pass STC against main. STC results of  |
+                  | activ: screlu           | sb: 400                       | SPRT  | N=25000 Threads=1 Hash=16MB         | hydra_v1 with finny tables vs without was      |
+                  | scale: 277              | lr: 1600b warmup              | LLR   | 3.19 (-2.25, 2.89) [0.00, 5.00]     | Elo   | 6.14 +- 3.96 (95%)                     |
+                  | quant: [255,64]         |     cosine(0.001,0.00000243)  | Games | N: 45022 W: 13500 L: 13124 D: 18398 | SPRT  | 8.0+0.08s Threads=1 Hash=16MB          |
+                  | optim: AdamW            | wdl: linear(0.2, 0.4)         | Penta | [1281, 5310, 9028, 5536, 1356]      | LLR   | 3.05 (-2.25, 2.89) [0.00, 5.00]        |
+                  | buckets:                |                               |                                             | Games | N: 7750 W: 1887 L: 1750 D: 4113        |
+                  | 0, 0, 1, 1              |                               |                                             | Penta | [22, 840, 2033, 939, 41]               |
+                  | 2, 2, 2, 2              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+------------------|-------------------------|-------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d7          | games: 9.98m (mix dfrc) | source: sleipnir_v6           | 60% dfrc games. Didn't use hydra_v1 for data as I simply forgot.                             |
+                  | pos: 1094m              | nodes: 5k soft                |                                                                                              |
+                  |                         | filter: noisy, checks         |                                                                                              |
+------------------|-------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
+hydra_v2          | (768x4hm->1024)x2->1x8  | data: d3-7 (3.0b)             | Elo   | 25.42 +- 9.23 (95%)                 |                                                |
+                  | activ: screlu           | sb: 400                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 274              | lr: 1600b warmup              | LLR   | 2.91 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]         |     cosine(0.001,0.00000243)  | Games | N: 1588 W: 461 L: 345 D: 782        |                                                |
+                  | optim: AdamW            | wdl: linear(0.2, 0.4)         | Penta | [4, 152, 376, 248, 14]              |                                                |
+                  | buckets:                |                               |                                             |                                                |
+                  | 0, 0, 1, 1              |                               |                                             |                                                |
+                  | 2, 2, 2, 2              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
 ------------------|-------------------------|-------------------------------|---------------------------------------------┴------------------------------------------------|

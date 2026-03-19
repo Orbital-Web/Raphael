@@ -66,9 +66,9 @@ Follow these steps to build Raphael yourself. Note that it is highly recommended
 3. Compile as follows:
 
     ```shell
-    make uci       # build UCI engine
-    make packages  # download SFML, required to build main
-    make main      # build GUI
+    make -j uci       # build UCI engine
+    make -j packages  # download SFML, required to build main
+    make -j main      # build GUI
     ```
 
 ## Features
@@ -169,7 +169,7 @@ The engine contains the following features:
     - [x] Horizontal mirroring              (`v3.1+`)
     - [x] Output buckets                    (`v3.1+`)
     - [x] King buckets                      (`v3.2+`)
-    - [ ] Finny tables
+    - [x] Finny tables                      (`v3.2+`)
     - [ ] Pairwise multiplication
     - [ ] Dual activations
     - [ ] Multilayer network
@@ -251,4 +251,5 @@ Furthermore, the following individuals have inspired me or have helped me tremen
 - [Jonathan Hallström](https://github.com/JonathanHallstrom), author of [Pawnocchio](https://github.com/JonathanHallstrom/pawnocchio) (and a contributor to Raphael!!)
 - [Ciekce](https://github.com/Ciekce), author of [Stormphrax](https://github.com/Ciekce/Stormphrax)
 - [Sp00ph](https://github.com/Sp00ph), author of [Icarus](https://github.com/Sp00ph/icarus)
+- [Dan](https://github.com/kelseyde), author of [Hobbes](https://github.com/kelseyde/hobbes-chess-engine)
 - and many others on the Stockfish and AlphaBeta Discord servers

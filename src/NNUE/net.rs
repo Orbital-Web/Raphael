@@ -19,7 +19,7 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "hydra_v2";
+    const NET_ID: &str = "hydra_v3";
     const HIDDEN_SIZE: usize = 1024;
     const NUM_OUTPUT_BUCKETS: usize = 8;
     const SCALE: f32 = 400.0;
@@ -96,12 +96,13 @@ fn main() {
     trainer.optimiser.set_params_for_weight("l0w", stricter_clipping);
     trainer.optimiser.set_params_for_weight("l0f", stricter_clipping);
 
+    const BATCH_GLOM: usize = 8;
     let schedule = TrainingSchedule {
         net_id: NET_ID.to_string(),
         eval_scale: SCALE,
         steps: TrainingSteps {
-            batch_size: 16_384,
-            batches_per_superbatch: 6104,
+            batch_size: 16_384 * BATCH_GLOM,
+            batches_per_superbatch: 6104 / BATCH_GLOM,
             start_superbatch: 1,
             end_superbatch: superbatches,
         },

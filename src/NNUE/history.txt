@@ -114,11 +114,26 @@ data: d7          | games: 9.98m (mix dfrc) | source: sleipnir_v6           | 60
                   |                         | filter: noisy, checks         |                                                                                              |
 ------------------|-------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
 hydra_v2          | (768x4hm->1024)x2->1x8  | data: d3-7 (3.0b)             | Elo   | 25.42 +- 9.23 (95%)                 |                                                |
-                  | activ: screlu           | sb: 400                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+default for v3.2  | activ: screlu           | sb: 400                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
                   | scale: 274              | lr: 1600b warmup              | LLR   | 2.91 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | quant: [255,64]         |     cosine(0.001,0.00000243)  | Games | N: 1588 W: 461 L: 345 D: 782        |                                                |
                   | optim: AdamW            | wdl: linear(0.2, 0.4)         | Penta | [4, 152, 376, 248, 14]              |                                                |
                   | buckets:                |                               |                                             |                                                |
+                  | 0, 0, 1, 1              |                               |                                             |                                                |
+                  | 2, 2, 2, 2              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+                  | 3, 3, 3, 3              |                               |                                             |                                                |
+------------------|-------------------------|-------------------------------|---------------------------------------------┴------------------------------------------------|
+hydra_v3          | (768x4hm->1024)x2->1x8  | data: d3-7 (3.0b)             | Elo   | 0.32 +- 2.97 (95%)                  | Increased batch size by a factor of 8, and     |
+                  | activ: screlu           | sb: 400                       | SPRT  | N=25000 Threads=1 Hash=16MB         | decreased batches per sb by a factor of 8.     |
+                  | scale: 274              | lr: 1600b warmup              | LLR   | 3.05 (-2.25, 2.89) [-5.00, 0.00]    | This sped up network training time by roughly  |
+                  | quant: [255,64]         |     cosine(0.001,0.00000243)  | Games | N: 24834 W: 7340 L: 7317 D: 10177   | half an hour (down to 5h). Perhaps with a      |
+                  | optim: AdamW            | wdl: linear(0.2, 0.4)         | Penta | [690, 3054, 4946, 2997, 730]        | proper desktop GPU (mine is a laptop RTX 5060) |
+                  | buckets:                |                               |                                             | the speedup would be even higher.              |
                   | 0, 0, 1, 1              |                               |                                             |                                                |
                   | 2, 2, 2, 2              |                               |                                             |                                                |
                   | 3, 3, 3, 3              |                               |                                             |                                                |

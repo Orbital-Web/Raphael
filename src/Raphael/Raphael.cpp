@@ -25,7 +25,7 @@ using std::swap;
 
 
 
-const string Raphael::version = "3.2.0";
+const string Raphael::version = "3.3.0-dev";
 
 const Raphael::EngineOptions& Raphael::default_params() {
     static EngineOptions opts{

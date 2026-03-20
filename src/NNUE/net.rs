@@ -19,7 +19,7 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "hydra_v3";
+    const NET_ID: &str = "hydra_v4";
     const HIDDEN_SIZE: usize = 1024;
     const NUM_OUTPUT_BUCKETS: usize = 8;
     const SCALE: f32 = 400.0;
@@ -119,11 +119,12 @@ fn main() {
     };
 
     let filter = Filter {
-        min_pieces: 2,
-        // TODO: try wdl filtering
+        min_pieces: 2, // TODO: try 4 (default)
+        random_fen_skipping: true,
+        random_fen_skip_probability: 0.5,
         ..Filter::default()
     };
-    let dataloader = ViriBinpackLoader::new(&dataset_path, 512, 6, filter);
+    let dataloader = ViriBinpackLoader::new(&dataset_path, 512, 6, filter); // TODO: try larger buffer size
 
     trainer.run(&schedule, &settings, &dataloader);
 }

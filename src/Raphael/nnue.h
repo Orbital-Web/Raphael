@@ -10,7 +10,7 @@
 namespace raphael {
 class Nnue {
 public:
-    static constexpr i32 OUTPUT_SCALE = 271;
+    static constexpr i32 OUTPUT_SCALE = 266;
 
 private:
     static constexpr i32 N_INPUTS = 12 * 64;  // all features
@@ -18,16 +18,16 @@ private:
     static constexpr i32 N_OUTBUCKETS = 8;
     static constexpr i32 QA = 255;
     static constexpr i32 QB = 64;
-    static constexpr i32 N_INBUCKETS = 4;
+    static constexpr i32 N_INBUCKETS = 6;
     static constexpr i32 BUCKETS[32] = {
         0, 0, 1, 1,  // A1, B1, ...
-        2, 2, 2, 2,  //
-        3, 3, 3, 3,  //
-        3, 3, 3, 3,  //
-        3, 3, 3, 3,  //
-        3, 3, 3, 3,  //
-        3, 3, 3, 3,  //
-        3, 3, 3, 3   // A8, B8, ...
+        2, 2, 3, 3,  //
+        4, 4, 4, 4,  //
+        4, 4, 4, 4,  //
+        4, 4, 4, 4,  //
+        5, 5, 5, 5,  //
+        5, 5, 5, 5,  //
+        5, 5, 5, 5   // A8, B8, ...
     };
 
     struct NnueFeature {

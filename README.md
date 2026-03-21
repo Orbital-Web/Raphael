@@ -141,14 +141,19 @@ The engine contains the following features:
     - [x] Capture history                   (`v2.3+`)
     - [ ] Piece-to history
     - [x] Continuation history              (`v3.2+`)
-    - [ ] Correction history
     - [x] Threats in history                (`v3.2+`)
     - [x] SEE                               (`v1.7+`)
+    - [ ] Pawn correction history
+    - [ ] Major piece correction history
+    - [ ] Nonpawn correction history
+    - [ ] Continuation correction history
 - [x] Quiescence search                     (`v1.0+`)
   - ~~Delta pruning~~                       (`v2.1+`)
   - [x] Futility pruning                    (`v2.3+`)
   - [x] SEE pruning                         (`v2.3+`)
+  - [x] Late move pruning                   (`v3.2+`)
   - [x] Transposition table cutoff          (`v3.0+`)
+  - [x] Storing into transposition table    (`v3.2+`)
 - [x] Evaluation                            (`v1.0+`)
   - [x] Hand-crafted evaluation             (`v1.0+`)
     - [x] Materials                         (`v1.0+`)

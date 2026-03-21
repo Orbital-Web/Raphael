@@ -452,8 +452,7 @@ void Nnue::lazy_update(const chess::Board& board, chess::Color perspective) {
     const bool mirror = needs_mirroring(board.king_square(perspective));
     const auto bucket = king_bucket(board.king_square(perspective), perspective);
 
-    // if an accumulator needs refresh, refresh at idx_ since we don't know the bucket and mirror
-    // states for the in between accumulators, only the current one
+    // if an accumulator needs refresh, refresh at idx_ since we don't know the board at clean_idx
     if (accumulators[clean_idx][perspective].needs_refresh) {
         finny_table[perspective][mirror][bucket].update(
             params->W0[bucket], board, perspective, mirror

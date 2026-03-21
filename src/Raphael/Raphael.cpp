@@ -294,7 +294,8 @@ i32 Raphael::negamax(
     if (depth >= IIR_DEPTH && !ss->excluded && (is_PV || cutnode) && !ttmove) depth--;
 
     const bool in_check = board.in_check();
-    if (!ss->excluded) ss->static_eval = (in_check) ? NONE_SCORE : position_.evaluate();
+    if (!ss->excluded)
+        ss->static_eval = (in_check) ? NONE_SCORE : history_.correct(board, position_.evaluate());
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
 
     // pre-moveloop pruning
@@ -507,8 +508,14 @@ i32 Raphael::negamax(
     if (move_searched == 0) return (in_check) ? -MATE_SCORE + ply : 0;  // reward faster mate
 
     // update transposition table
-    if (!halt.load(memory_order_relaxed) && !ss->excluded)
+    if (!ss->excluded && !halt.load(memory_order_relaxed)) {
+        // update corrhist
+        if (!in_check && (bestmove == chess::Move::NO_MOVE || board.is_quiet(bestmove))
+            && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && ttentry.score > ss->static_eval)
+                || (ttflag == tt_.UPPER && ttentry.score < ss->static_eval)))
+            history_.update_corrections(board, depth, bestscore, ss->static_eval);
         tt_.set(ttkey, bestscore, bestmove, depth, ttflag, ply);
+    }
 
     return bestscore;
 }

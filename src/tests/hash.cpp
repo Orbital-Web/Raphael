@@ -11,39 +11,46 @@ TEST_SUITE("Zobrist Hash") {
     TEST_CASE("Test Zobrist Hash Startpos") {
         Board b = Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         CHECK(b.hash() == 0x463b96181691fc9c);
+        CHECK(b.pawn_hash() == 0x37FC40DA841E1692);
 
         auto mv = Move::make(Square::E2, Square::E4);
         CHECK(b.hash_after<true>(mv) == 0x823c9b50fd114196);
         CHECK(b.hash_after<false>(mv) == 0x823c9b50fd114196);
         b.make_move(mv);
         CHECK(b.hash() == 0x823c9b50fd114196);
+        CHECK(b.pawn_hash() == 0xB2D6B38C0B92E91);
 
         mv = Move::make(Square::D7, Square::D5);
         CHECK(b.hash_after<true>(mv) == 0x0756b94461c50fb0);
         CHECK(b.hash_after<false>(mv) == 0x0756b94461c50fb0);
         b.make_move(mv);
         CHECK(b.hash() == 0x0756b94461c50fb0);
+        CHECK(b.pawn_hash() == 0x76916F86F34AE5BE);
 
         mv = Move::make(Square::E4, Square::E5);
         CHECK(b.hash_after<true>(mv) == 0x662fafb965db29d4);
         CHECK(b.hash_after<false>(mv) == 0x662fafb965db29d4);
         b.make_move(mv);
         CHECK(b.hash() == 0x662fafb965db29d4);
+        CHECK(b.pawn_hash() == 0xEF3E5FD1587346D3);
 
         mv = Move::make(Square::F7, Square::F5);
         CHECK(b.hash_after<true>(mv) == 0x22a48b5a8e47ff78);
         b.make_move(mv);
         CHECK(b.hash() == 0x22a48b5a8e47ff78);
+        CHECK(b.pawn_hash() == 0x53635D981CC81576);
 
         mv = Move::make(Square::E1, Square::E2);
         CHECK(b.hash_after<true>(mv) == 0x652a607ca3f242c1);
         b.make_move(mv);
         CHECK(b.hash() == 0x652a607ca3f242c1);
+        CHECK(b.pawn_hash() == 0x83871FE249DCEE04);
 
         mv = Move::make(Square::E8, Square::F7);
         CHECK(b.hash_after<true>(mv) == 0x00fdd303c946bdd9);
         b.make_move(mv);
         CHECK(b.hash() == 0x00fdd303c946bdd9);
+        CHECK(b.pawn_hash() == 0x83871FE249DCEE04);
     }
 
     TEST_CASE("Test Zobrist Hash Second Position") {
@@ -53,35 +60,42 @@ TEST_SUITE("Zobrist Hash") {
         CHECK(b.hash_after<true>(mv) == 0x2DF2E8F47B022952);
         CHECK(b.hash_after<false>(mv) == 0x2DF2E8F47B022952);
         b.make_move(mv);
+        CHECK(b.pawn_hash() == 0xA4E3189C46AA4655);
 
         mv = Move::make(Square::B7, Square::B5);
         CHECK(b.hash_after<true>(mv) == 0x4DF682E1E0AF946F);
         CHECK(b.hash_after<false>(mv) == 0x4DF682E1E0AF946F);
         b.make_move(mv);
+        CHECK(b.pawn_hash() == 0x3C31542372207E61);
 
         mv = Move::make(Square::H2, Square::H4);
         CHECK(b.hash_after<true>(mv) == 0xD1551EC84B90ED11);
         CHECK(b.hash_after<false>(mv) == 0xD1551EC84B90ED11);
         b.make_move(mv);
+        CHECK(b.pawn_hash() == 0x5844EEA076388216);
 
         mv = Move::make(Square::B5, Square::B4);
         CHECK(b.hash_after<true>(mv) == 0xB0982F168A89B452);
         CHECK(b.hash_after<false>(mv) == 0xB0982F168A89B452);
         b.make_move(mv);
+        CHECK(b.pawn_hash() == 0xC15FF9D418065E5C);
 
         mv = Move::make(Square::C2, Square::C4);
         CHECK(b.hash_after<true>(mv) == 0x3C8123EA7B067637);
         b.make_move(mv);
+        CHECK(b.pawn_hash() == 0xB590D38246AE1930);
 
         CHECK(b.hash() == 0x3c8123ea7b067637);
 
         mv = Move::make<Move::ENPASSANT>(Square::B4, Square::C3);
         CHECK(b.hash_after<true>(mv) == 0x93D32682782EDFAE);
         b.make_move(mv);
+        CHECK(b.pawn_hash() == 0xE214F040EAA135A0);
 
         mv = Move::make(Square::A1, Square::A3);
         CHECK(b.hash_after<true>(mv) == 0x5c3f9b829b279560);
         b.make_move(mv);
+        CHECK(b.pawn_hash() == 0xE214F040EAA135A0);
 
         CHECK(b.hash() == 0x5c3f9b829b279560);
     }
@@ -224,9 +238,11 @@ TEST_SUITE("Zobrist Hash") {
             CHECK(b.hash_after<true>(mv) == 7868419208351108928ull);
             b.make_move(mv);
             CHECK(b.hash() == 7868419208351108928ull);
+            CHECK(b.pawn_hash() == 0x1CF5EB56432F254E);
 
             b.set_fen("rnbqkbnr/pppp1ppp/8/4pP2/8/8/PPPPP1PP/RNBQKBNR w KQkq e6 0 2");
             CHECK(b.hash() == 7868419208351108928ull);
+            CHECK(b.pawn_hash() == 0x1CF5EB56432F254E);
         }
 
         {
@@ -235,9 +251,11 @@ TEST_SUITE("Zobrist Hash") {
             CHECK(b.hash_after<true>(mv) == 14328713941299708535ull);
             b.make_move(mv);
             CHECK(b.hash() == 14328713941299708535ull);
+            CHECK(b.pawn_hash() == 0x4FC8210192F32D70);
 
             b.set_fen("rnbqkbnr/pppp1ppp/4P3/8/8/8/PPPPP1PP/RNBQKBNR b KQkq - 0 2");
             CHECK(b.hash() == 14328713941299708535ull);
+            CHECK(b.pawn_hash() == 0x4FC8210192F32D70);
         }
 
         {
@@ -246,9 +264,11 @@ TEST_SUITE("Zobrist Hash") {
             CHECK(b.hash_after<true>(mv) == 1093876600604329325ull);
             b.make_move(mv);
             CHECK(b.hash() == 1093876600604329325ull);
+            CHECK(b.pawn_hash() == 0x863FCA90C28A6A6A);
 
             b.set_fen("rnbqkbnr/pppp1ppp/8/4pP2/8/4P3/PPPP2PP/RNBQKBNR b KQkq - 0 2");
             CHECK(b.hash() == 1093876600604329325ull);
+            CHECK(b.pawn_hash() == 0x863FCA90C28A6A6A);
         }
 
         {
@@ -257,9 +277,11 @@ TEST_SUITE("Zobrist Hash") {
             CHECK(b.hash_after<true>(mv) == 2265987269840498900ull);
             b.make_move(mv);
             CHECK(b.hash() == 2265987269840498900ull);
+            CHECK(b.pawn_hash() == 0x96639702B1CE1FD3);
 
             b.set_fen("rnbqkbnr/pppp1ppp/5P2/4p3/8/8/PPPPP1PP/RNBQKBNR b KQkq - 0 2");
             CHECK(b.hash() == 2265987269840498900ull);
+            CHECK(b.pawn_hash() == 0x96639702B1CE1FD3);
         }
     }
 
@@ -270,5 +292,21 @@ TEST_SUITE("Zobrist Hash") {
         CHECK(b.hash_after<true>(Move::NULL_MOVE) == 13757846718353144213ull);
         b.make_nullmove();
         CHECK(b.hash() == 13757846718353144213ull);
+    }
+
+    TEST_CASE("Test Zobrist Hash Pawn") {
+        Board b;
+
+        b.set_fen("4k3/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1");
+        CHECK(b.pawn_hash() == 0x37FC40DA841E1692);
+
+        b.set_fen("4k3/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/4K3 w - f6 0 3");
+        CHECK(b.pawn_hash() == 0x53635D981CC81576);
+
+        b.make_nullmove();
+        CHECK(b.pawn_hash() == 0x83871FE249DCEE04);
+
+        b.set_fen("4k3/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/4K3 w - - 0 3");
+        CHECK(b.pawn_hash() == 0x83871FE249DCEE04);
     }
 }

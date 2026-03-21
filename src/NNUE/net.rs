@@ -19,7 +19,7 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "hydra_v4";
+    const NET_ID: &str = "hydra_v5";
     const HIDDEN_SIZE: usize = 1024;
     const NUM_OUTPUT_BUCKETS: usize = 8;
     const SCALE: f32 = 400.0;
@@ -28,16 +28,16 @@ fn main() {
     #[rustfmt::skip]
     const BUCKET_LAYOUT: [usize; 32] = [
         0, 0, 1, 1,
-        2, 2, 2, 2,
-        3, 3, 3, 3,
-        3, 3, 3, 3,
-        3, 3, 3, 3,
-        3, 3, 3, 3,
-        3, 3, 3, 3,
-        3, 3, 3, 3
+        2, 2, 3, 3,
+        4, 4, 4, 4,
+        4, 4, 4, 4,
+        4, 4, 4, 4,
+        5, 5, 5, 5,
+        5, 5, 5, 5,
+        5, 5, 5, 5
     ];
     const NUM_INPUT_BUCKETS: usize = get_num_buckets(&BUCKET_LAYOUT);
-    assert!(NUM_INPUT_BUCKETS == 4);
+    assert!(NUM_INPUT_BUCKETS == 6);
 
     // hyperparams
     let dataset_path = "data/combined.vf";
@@ -119,12 +119,12 @@ fn main() {
     };
 
     let filter = Filter {
-        min_pieces: 2, // TODO: try 4 (default)
+        min_pieces: 4,
         random_fen_skipping: true,
         random_fen_skip_probability: 0.5,
         ..Filter::default()
     };
-    let dataloader = ViriBinpackLoader::new(&dataset_path, 512, 6, filter); // TODO: try larger buffer size
+    let dataloader = ViriBinpackLoader::new(&dataset_path, 4096, 6, filter);
 
     trainer.run(&schedule, &settings, &dataloader);
 }

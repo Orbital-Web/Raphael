@@ -162,11 +162,11 @@ data: d8          | games: 13.99m (mix dfrc) | source: hydra_v1-3            | 2
                   | pos: 1474m               | nodes: 5k soft                |                                                                                              |
                   |                          | filter: noisy, checks         |                                                                                              |
 ------------------|--------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
-hydra_v5          | (768x6hm->1024)x2->1x8   | data: d4-8 (4.0b)             | Elo   | 2.36 +- 1.87 (95%)                  | Increased input bucket count to 6.             |
-merged as #??     | activ: screlu            | sb: 400                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | scale: 266               | lr: 1600b warmup              | LLR   | 2.96 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]          |     cosine(0.001,0.00000243)  | Games | N: 40050 W: 10051 L: 9779 D: 20220  |                                                |
-                  | optim: AdamW             | wdl: linear(0.2, 0.4)         | Penta | [263, 4826, 9637, 4974, 325]        |                                                |
+hydra_v5          | (768x6hm->1024)x2->1x8   | data: d4-8 (4.0b)             | Elo   | 33.36 +- 10.48 (95%)                | Increased input bucket count to 6.             |
+merged as #59     | activ: screlu            | sb: 400                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 266               | lr: 1600b warmup              | LLR   | 2.93 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]          |     cosine(0.001,0.00000243)  | Games | N: 1212 W: 353 L: 237 D: 622        |                                                |
+                  | optim: AdamW             | wdl: linear(0.2, 0.4)         | Penta | [4, 94, 306, 186, 16]               |                                                |
                   | buckets:                 | random fen skipping: 0.5      |                                             |                                                |
                   | 0, 0, 1, 1               |                               |                                             |                                                |
                   | 2, 2, 3, 3               |                               |                                             |                                                |

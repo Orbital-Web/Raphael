@@ -73,12 +73,13 @@ private:
     u64 hash_ = 0;                                 // [192] 8   zobrist hash
     u64 pawn_hash_ = 0;                            // [200] 8   zobrist hash of pawns
     u64 major_hash_ = 0;                           // [208] 8   zobrist hash of major pieces
-    CastlingRights castle_rights_ = {};            // [216] 2   allowed castling files
-    u16 plies_ = 1;                                // [216] 2   number of plies
-    u8 halfmoves_ = 0;                             // [216] 1   plies since last capture/pawn move
-    Color stm_ = Color::WHITE;                     // [216] 1   current stm
-    Square enpassant_ = Square::NONE;              // [216] 1   enpassant square
-    bool chess960_ = false;                        // [216] 1   whether chess960 is enabled
+    u64 minor_hash_ = 0;                           // [216] 8   zobrist hash of minor pieces
+    CastlingRights castle_rights_ = {};            // [224] 2   allowed castling files
+    u16 plies_ = 1;                                // [224] 2   number of plies
+    u8 halfmoves_ = 0;                             // [224] 1   plies since last capture/pawn move
+    Color stm_ = Color::WHITE;                     // [224] 1   current stm
+    Square enpassant_ = Square::NONE;              // [224] 1   enpassant square
+    bool chess960_ = false;                        // [224] 1   whether chess960 is enabled
 
 
 public:
@@ -109,6 +110,7 @@ public:
     [[nodiscard]] u64 hash() const { return hash_; }
     [[nodiscard]] u64 pawn_hash() const { return pawn_hash_; }
     [[nodiscard]] u64 major_hash() const { return major_hash_; }
+    [[nodiscard]] u64 minor_hash() const { return minor_hash_; }
 
     [[nodiscard]] bool chess960() const { return chess960_; }
 
@@ -635,6 +637,7 @@ private:
         hash_ = 0;
         pawn_hash_ = 0;
         major_hash_ = 0;
+        minor_hash_ = 0;
     }
 
 
@@ -678,6 +681,8 @@ private:
             pawn_hash_ ^= key;
         else if (piece.type() == PieceType::ROOK || piece.type() == PieceType::QUEEN)
             major_hash_ ^= key;
+        else if (piece.type() == PieceType::KNIGHT || piece.type() == PieceType::BISHOP)
+            minor_hash_ ^= key;
     }
 
     void update_ep_hash(File file) {
@@ -702,6 +707,7 @@ private:
         hash_ = 0;
         pawn_hash_ = 0;
         major_hash_ = 0;
+        minor_hash_ = 0;
 
         auto pieces = occ();
         while (pieces) {
@@ -801,5 +807,5 @@ private:
     }
 };
 
-static_assert(sizeof(Board) == 216);
+static_assert(sizeof(Board) == 224);
 }  // namespace chess

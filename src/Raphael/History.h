@@ -46,6 +46,7 @@ private:
 
     CorrectionEntry pawn_correction_[2][CORRHIST_SIZE];   // [stm][pawn_hash % CORRHIST_SIZE]
     CorrectionEntry major_correction_[2][CORRHIST_SIZE];  // [stm][major_hash % CORRHIST_SIZE]
+    CorrectionEntry minor_correction_[2][CORRHIST_SIZE];  // [stm][minor_hash % CORRHIST_SIZE]
 
 public:
     /** Initializes all the history tables with zeros */
@@ -190,5 +191,13 @@ private:
      */
     const CorrectionEntry& major_corr_entry(const chess::Board& board) const;
     CorrectionEntry& major_corr_entry(const chess::Board& board);
+
+    /** Returns a reference to the minor corrhist entry
+     *
+     * \param board current board
+     * \returns minor corrhist entry
+     */
+    const CorrectionEntry& minor_corr_entry(const chess::Board& board) const;
+    CorrectionEntry& minor_corr_entry(const chess::Board& board);
 };
 }  // namespace raphael

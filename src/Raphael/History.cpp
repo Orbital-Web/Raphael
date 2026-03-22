@@ -37,7 +37,12 @@ void CorrectionEntry::update(i32 bonus) {
 
 
 History::History()
-    : butterfly_hist_{}, cont_hist_{}, capt_hist_{}, pawn_correction_{}, major_correction_{} {}
+    : butterfly_hist_{},
+      cont_hist_{},
+      capt_hist_{},
+      pawn_correction_{},
+      major_correction_{},
+      minor_correction_{} {}
 
 
 i32 History::quiet_bonus(i32 depth) const {
@@ -128,12 +133,14 @@ void History::update_corrections(const chess::Board& board, i32 depth, i32 score
     );
     pawn_corr_entry(board).update(bonus);
     major_corr_entry(board).update(bonus);
+    minor_corr_entry(board).update(bonus);
 }
 
 i32 History::correct(const chess::Board& board, i32 score) const {
     i32 correction = 0;
     correction += pawn_corr_entry(board) * PAWN_CORRHIST_WEIGHT;
     correction += major_corr_entry(board) * MAJOR_CORRHIST_WEIGHT;
+    correction += minor_corr_entry(board) * MINOR_CORRHIST_WEIGHT;
     correction /= CORRHIST_MAX;
 
     return clamp(score + correction, -MATE_SCORE + 1, MATE_SCORE - 1);
@@ -146,6 +153,7 @@ void History::clear() {
     memset(capt_hist_, 0, sizeof(capt_hist_));
     memset(pawn_correction_, 0, sizeof(pawn_correction_));
     memset(major_correction_, 0, sizeof(major_correction_));
+    memset(minor_correction_, 0, sizeof(minor_correction_));
 }
 
 
@@ -197,4 +205,11 @@ const CorrectionEntry& History::major_corr_entry(const chess::Board& board) cons
 }
 CorrectionEntry& History::major_corr_entry(const chess::Board& board) {
     return major_correction_[board.stm()][board.major_hash() % CORRHIST_SIZE];
+}
+
+const CorrectionEntry& History::minor_corr_entry(const chess::Board& board) const {
+    return minor_correction_[board.stm()][board.minor_hash() % CORRHIST_SIZE];
+}
+CorrectionEntry& History::minor_corr_entry(const chess::Board& board) {
+    return minor_correction_[board.stm()][board.minor_hash() % CORRHIST_SIZE];
 }

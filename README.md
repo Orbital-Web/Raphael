@@ -145,6 +145,7 @@ The engine contains the following features:
     - [x] SEE                               (`v1.7+`)
     - [x] Pawn correction history           (`v3.3+`)
     - [x] Major piece correction history    (`v3.3+`)
+    - [x] Minor piece correction history    (`v3.3+`)
     - [ ] Nonpawn correction history
     - [ ] Continuation correction history
 - [x] Quiescence search                     (`v1.0+`)

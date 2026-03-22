@@ -552,7 +552,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
     if (in_check)
         static_eval = -MATE_SCORE + ply;
     else {
-        static_eval = position_.evaluate();
+        static_eval = history_.correct(board, position_.evaluate());
 
         if (static_eval >= beta) return static_eval;
 

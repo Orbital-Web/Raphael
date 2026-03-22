@@ -65,12 +65,13 @@ private:
     std::array<BitBoard, 2> pinned_ = {};          // [152] 32  pinned pieces per color
     MultiArray<BitBoard, 2, 2> castle_path_ = {};  // [184] 32  castling path for color and side
     u64 hash_ = 0;                                 // [192] 8   zobrist hash
-    CastlingRights castle_rights_ = {};            // [200] 4   allowed castling files
-    u16 plies_ = 1;                                // [200] 2   number of plies
-    u8 halfmoves_ = 0;                             // [200] 1   plies since last capture/pawn move
-    Color stm_ = Color::WHITE;                     // [200] 1   current stm
-    Square enpassant_ = Square::NONE;              // [208] 1   enpassant square
-    bool chess960_ = false;                        // [208] 1   whether chess960 is enabled
+    u64 pawn_hash_ = 0;                            // [200] 8   zobrist hash of pawns
+    CastlingRights castle_rights_ = {};            // [208] 4   allowed castling files
+    u16 plies_ = 1;                                // [208] 2   number of plies
+    u8 halfmoves_ = 0;                             // [208] 1   plies since last capture/pawn move
+    Color stm_ = Color::WHITE;                     // [208] 1   current stm
+    Square enpassant_ = Square::NONE;              // [216] 1   enpassant square
+    bool chess960_ = false;                        // [216] 1   whether chess960 is enabled
 
 
 public:
@@ -99,6 +100,7 @@ public:
     [[nodiscard]] i32 fullmoves() const { return 1 + plies_ / 2; }
 
     [[nodiscard]] u64 hash() const { return hash_; }
+    [[nodiscard]] u64 pawn_hash() const { return pawn_hash_; }
 
     [[nodiscard]] bool chess960() const { return chess960_; }
 
@@ -194,14 +196,13 @@ public:
         halfmoves_++;
         plies_++;
 
-        if (enpassant_ != Square::NONE) hash_ ^= Zobrist::enpassant(enpassant_.file());
+        if (enpassant_ != Square::NONE) update_ep_hash(enpassant_.file());
         enpassant_ = Square::NONE;
 
         if (capture) {
             remove_piece(captured, move.to());
 
             halfmoves_ = 0;
-            hash_ ^= Zobrist::piece(captured, move.to());
 
             // remove castling rights if rook is captured
             if (captured.type() == PieceType::ROOK && move.to().rank().is_back_rank(~stm_)) {
@@ -238,7 +239,7 @@ public:
                 if (ep_mask & occ(PieceType::PAWN, ~stm_)) {
                     assert(at(move.to().ep_square()) == Piece::NONE);
                     enpassant_ = move.to().ep_square();
-                    hash_ ^= Zobrist::enpassant(move.to().ep_square().file());
+                    update_ep_hash(enpassant_.file());
                 }
             }
         }
@@ -259,10 +260,6 @@ public:
 
             place_piece(king, kingto);
             place_piece(rook, rookto);
-
-            hash_ ^= Zobrist::piece(king, move.from()) ^ Zobrist::piece(king, kingto);
-            hash_ ^= Zobrist::piece(rook, move.to()) ^ Zobrist::piece(rook, rookto);
-
         } else if (move.type() == Move::PROMOTION) {
             const auto pawn = at(move.from());
             const auto prom = Piece(move.promotion_type(), stm_);
@@ -271,9 +268,6 @@ public:
 
             remove_piece(pawn, move.from());
             place_piece(prom, move.to());
-
-            hash_ ^= Zobrist::piece(pawn, move.from()) ^ Zobrist::piece(prom, move.to());
-
         } else {
             assert(at(move.from()) != Piece::NONE);
             assert(at(move.to()) == Piece::NONE);
@@ -282,8 +276,6 @@ public:
 
             remove_piece(piece, move.from());
             place_piece(piece, move.to());
-
-            hash_ ^= Zobrist::piece(piece, move.from()) ^ Zobrist::piece(piece, move.to());
         }
 
         if (move.type() == Move::ENPASSANT) {
@@ -292,8 +284,6 @@ public:
             const auto piece = Piece(PieceType::PAWN, ~stm_);
 
             remove_piece(piece, move.to().ep_square());
-
-            hash_ ^= Zobrist::piece(piece, move.to().ep_square());
         }
 
         hash_ ^= Zobrist::stm();
@@ -305,7 +295,7 @@ public:
 
     void make_nullmove() {
         hash_ ^= Zobrist::stm();
-        if (enpassant_ != Square::NONE) hash_ ^= Zobrist::enpassant(enpassant_.file());
+        if (enpassant_ != Square::NONE) update_ep_hash(enpassant_.file());
         enpassant_ = Square::NONE;
 
         plies_++;
@@ -543,7 +533,7 @@ public:
             }
         }
 
-        hash_ = compute_hash();
+        recompute_hash();
         threats_ = compute_threats();
         pinned_[Color::WHITE] = compute_pinned(Color::WHITE);
         pinned_[Color::BLACK] = compute_pinned(Color::BLACK);
@@ -635,6 +625,7 @@ private:
         plies_ = 1;
 
         hash_ = 0;
+        pawn_hash_ = 0;
     }
 
 
@@ -650,7 +641,10 @@ private:
         pieces_[pt].set(sq);
         occ_[color].set(sq);
         mailbox_[sq] = piece;
+
+        update_piece_hash(piece, sq);
     }
+
     void remove_piece(Piece piece, Square sq) {
         assert(mailbox_[sq] == piece && piece != Piece::NONE);
 
@@ -663,6 +657,38 @@ private:
         pieces_[pt].unset(sq);
         occ_[color].unset(sq);
         mailbox_[sq] = Piece::NONE;
+
+        update_piece_hash(piece, sq);
+    }
+
+
+    void update_piece_hash(Piece piece, Square sq) {
+        const auto key = Zobrist::piece(piece, sq);
+        hash_ ^= key;
+        if (piece.type() == PieceType::PAWN) pawn_hash_ ^= key;
+    }
+
+    void update_ep_hash(File file) {
+        const auto key = Zobrist::enpassant(file);
+        hash_ ^= key;
+        pawn_hash_ ^= key;
+    }
+
+    void recompute_hash() {
+        hash_ = 0;
+        pawn_hash_ = 0;
+
+        auto pieces = occ();
+        while (pieces) {
+            const auto sq = Square(pieces.poplsb());
+            update_piece_hash(at(sq), sq);
+        }
+
+        if (enpassant_ != Square::NONE) update_ep_hash(enpassant_.file());
+
+        if (stm_ == Color::WHITE) hash_ ^= Zobrist::stm();
+
+        hash_ ^= Zobrist::castling(castle_rights_.hash_index());
     }
 
 
@@ -723,28 +749,6 @@ private:
     }
 
 
-    [[nodiscard]] u64 compute_hash() const {
-        u64 hash_key = 0;
-
-        auto pieces = occ();
-        while (pieces) {
-            const auto sq = Square(pieces.poplsb());
-            hash_key ^= Zobrist::piece(at(sq), sq);
-        }
-
-        u64 ep_hash = 0;
-        if (enpassant_ != Square::NONE) ep_hash ^= Zobrist::enpassant(enpassant_.file());
-
-        u64 stm_hash = 0;
-        if (stm_ == Color::WHITE) stm_hash ^= Zobrist::stm();
-
-        u64 castling_hash = 0;
-        castling_hash ^= Zobrist::castling(castle_rights_.hash_index());
-
-        return hash_key ^ ep_hash ^ stm_hash ^ castling_hash;
-    }
-
-
     void set_castling_rights(Color color, CastlingRights::Side side, File rook_file) {
         // check the rook and king actually exists where they're supposed to
         const auto king_sq = king_square(color);
@@ -772,5 +776,5 @@ private:
     }
 };
 
-static_assert(sizeof(Board) == 208);
+static_assert(sizeof(Board) == 216);
 }  // namespace chess

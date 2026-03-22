@@ -1,5 +1,4 @@
 #include <Raphael/History.h>
-#include <Raphael/tunable.h>
 #include <Raphael/utils.h>
 
 #include <algorithm>
@@ -27,8 +26,17 @@ void HistoryEntry::update_with_base(i32 bonus, i32 base) {
 }
 
 
+CorrectionEntry::operator i32() const { return value; }
 
-History::History(): butterfly_hist_{}, cont_hist_{}, capt_hist_{} {}
+void CorrectionEntry::update(i32 bonus) {
+    assert(bonus >= -CORRHIST_MAX);
+    assert(bonus <= CORRHIST_MAX);
+    value += bonus - value * abs(bonus) / CORRHIST_MAX;
+}
+
+
+
+History::History(): butterfly_hist_{}, cont_hist_{}, capt_hist_{}, pawn_correction_{} {}
 
 
 i32 History::quiet_bonus(i32 depth) const {
@@ -111,10 +119,29 @@ i32 History::get_noisyscore(chess::Move move, chess::Piece captured) const {
 }
 
 
+void History::update_corrections(const chess::Board& board, i32 depth, i32 score, i32 static_eval) {
+    const auto bonus = clamp(
+        (score - static_eval) * depth / CORRHIST_BONUS_DEPTH_DIVISOR,
+        -CORRHIST_BONUS_MAX,
+        CORRHIST_BONUS_MAX
+    );
+    pawn_corr_entry(board).update(bonus);
+}
+
+i32 History::correct(const chess::Board& board, i32 score) const {
+    i32 correction = 0;
+    correction += pawn_corr_entry(board) * PAWN_CORRHIST_WEIGHT;
+    correction /= CORRHIST_MAX;
+
+    return clamp(score + correction, -MATE_SCORE + 1, MATE_SCORE - 1);
+}
+
+
 void History::clear() {
     memset(butterfly_hist_, 0, sizeof(butterfly_hist_));
     memset(cont_hist_, 0, sizeof(cont_hist_));
     memset(capt_hist_, 0, sizeof(capt_hist_));
+    memset(pawn_correction_, 0, sizeof(pawn_correction_));
 }
 
 
@@ -152,4 +179,11 @@ const HistoryEntry& History::capt_entry(chess::Move move, chess::Piece captured)
 }
 HistoryEntry& History::capt_entry(chess::Move move, chess::Piece captured) {
     return capt_hist_[move.from()][move.to()][captured];
+}
+
+const CorrectionEntry& History::pawn_corr_entry(const chess::Board& board) const {
+    return pawn_correction_[board.stm()][board.pawn_hash() % CORRHIST_SIZE];
+}
+CorrectionEntry& History::pawn_corr_entry(const chess::Board& board) {
+    return pawn_correction_[board.stm()][board.pawn_hash() % CORRHIST_SIZE];
 }

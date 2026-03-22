@@ -1,5 +1,6 @@
 #pragma once
 #include <Raphael/position.h>
+#include <Raphael/tunable.h>
 
 
 
@@ -23,6 +24,18 @@ struct HistoryEntry {
     void update_with_base(i32 bonus, i32 base);
 };
 
+struct CorrectionEntry {
+    i16 value = 0;
+
+    operator i32() const;
+
+    /** Updates the corrhist entry with gravity
+     *
+     * \param bonus bonus to apply, negative to apply penalty
+     */
+    void update(i32 bonus);
+};
+
 
 
 class History {
@@ -30,6 +43,8 @@ private:
     HistoryEntry butterfly_hist_[64][64][2][2];  // [from][to][from attacked][to attacked]
     HistoryEntry cont_hist_[12][64][12][64];     // [prev from][prev to][from][to]
     HistoryEntry capt_hist_[64][64][13];         // [from][to][piece, 12 for non-capture queening]
+
+    CorrectionEntry pawn_correction_[2][CORRHIST_SIZE];  // [stm][pawn_hash % CORRHIST_SIZE]
 
 public:
     /** Initializes all the history tables with zeros */
@@ -107,6 +122,24 @@ public:
     i32 get_noisyscore(chess::Move move, chess::Piece captured) const;
 
 
+    /** Updates the correction histories
+     *
+     * \param board current board
+     * \param depth current depth
+     * \param score current score
+     * \param static_eval current static eval
+     */
+    void update_corrections(const chess::Board& board, i32 depth, i32 score, i32 static_eval);
+
+    /** Returns the corrected score
+     *
+     * \param board current board
+     * \param score score to correct
+     * \returns the corrected score
+     */
+    i32 correct(const chess::Board& board, i32 score) const;
+
+
     /** Zeros out all the histories */
     void clear();
 
@@ -140,5 +173,13 @@ private:
      */
     const HistoryEntry& capt_entry(chess::Move move, chess::Piece captured) const;
     HistoryEntry& capt_entry(chess::Move move, chess::Piece captured);
+
+    /** Returns a reference to the pawn corrhist entry
+     *
+     * \param board current board
+     * \returns pawn corrhist entry
+     */
+    const CorrectionEntry& pawn_corr_entry(const chess::Board& board) const;
+    CorrectionEntry& pawn_corr_entry(const chess::Board& board);
 };
 }  // namespace raphael

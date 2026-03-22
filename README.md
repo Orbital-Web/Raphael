@@ -143,7 +143,7 @@ The engine contains the following features:
     - [x] Continuation history              (`v3.2+`)
     - [x] Threats in history                (`v3.2+`)
     - [x] SEE                               (`v1.7+`)
-    - [ ] Pawn correction history
+    - [x] Pawn correction history           (`v3.3+`)
     - [ ] Major piece correction history
     - [ ] Nonpawn correction history
     - [ ] Continuation correction history

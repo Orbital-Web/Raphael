@@ -291,6 +291,14 @@ Tunable(CAPTHIST_PENALTY_DEPTH_SCALE, 100, 32, 512, true);
 Tunable(CAPTHIST_PENALTY_OFFSET, 100, 32, 768, true);
 Tunable(CAPTHIST_PENALTY_MAX, 2000, 1024, 4096, true);
 
+// corrections
+static constexpr i32 CORRHIST_SIZE = 16384;
+static constexpr i32 CORRHIST_MAX = 1024;
+static constexpr i32 CORRHIST_BONUS_DEPTH_DIVISOR = 8;
+static constexpr i32 CORRHIST_BONUS_MAX = 256;
+
+Tunable(PAWN_CORRHIST_WEIGHT, 64, 32, 384, true);
+
 // commands
 static constexpr i32 BENCH_DEPTH = 14;
 

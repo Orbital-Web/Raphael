@@ -254,6 +254,7 @@ Raphael uses or has used the following tools throughout its development:
 Furthermore, the following individuals have inspired me or have helped me tremendously throughout the development process of Raphael (in no particular order):
 
 - [Sebastian Lague](https://www.youtube.com/c/SebastianLague) for inspiring me to start the development of Raphael through the Coding Adventures series
+- [Zahrizhal Ali](https://github.com/ZahrizhalAli) for providing me with kaggle compute for running tests, datagen, etc.
 - [Jonathan Hallström](https://github.com/JonathanHallstrom), author of [Pawnocchio](https://github.com/JonathanHallstrom/pawnocchio) (and a contributor to Raphael!!)
 - [Ciekce](https://github.com/Ciekce), author of [Stormphrax](https://github.com/Ciekce/Stormphrax)
 - [Sp00ph](https://github.com/Sp00ph), author of [Icarus](https://github.com/Sp00ph/icarus)

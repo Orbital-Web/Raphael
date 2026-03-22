@@ -144,7 +144,7 @@ The engine contains the following features:
     - [x] Threats in history                (`v3.2+`)
     - [x] SEE                               (`v1.7+`)
     - [x] Pawn correction history           (`v3.3+`)
-    - [ ] Major piece correction history
+    - [x] Major piece correction history    (`v3.3+`)
     - [ ] Nonpawn correction history
     - [ ] Continuation correction history
 - [x] Quiescence search                     (`v1.0+`)

@@ -298,6 +298,7 @@ static constexpr i32 CORRHIST_BONUS_DEPTH_DIVISOR = 8;
 static constexpr i32 CORRHIST_BONUS_MAX = 256;
 
 Tunable(PAWN_CORRHIST_WEIGHT, 64, 32, 384, true);
+Tunable(MAJOR_CORRHIST_WEIGHT, 64, 32, 384, true);
 
 // commands
 static constexpr i32 BENCH_DEPTH = 14;

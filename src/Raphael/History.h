@@ -44,7 +44,8 @@ private:
     HistoryEntry cont_hist_[12][64][12][64];     // [prev from][prev to][from][to]
     HistoryEntry capt_hist_[64][64][13];         // [from][to][piece, 12 for non-capture queening]
 
-    CorrectionEntry pawn_correction_[2][CORRHIST_SIZE];  // [stm][pawn_hash % CORRHIST_SIZE]
+    CorrectionEntry pawn_correction_[2][CORRHIST_SIZE];   // [stm][pawn_hash % CORRHIST_SIZE]
+    CorrectionEntry major_correction_[2][CORRHIST_SIZE];  // [stm][major_hash % CORRHIST_SIZE]
 
 public:
     /** Initializes all the history tables with zeros */
@@ -181,5 +182,13 @@ private:
      */
     const CorrectionEntry& pawn_corr_entry(const chess::Board& board) const;
     CorrectionEntry& pawn_corr_entry(const chess::Board& board);
+
+    /** Returns a reference to the major corrhist entry
+     *
+     * \param board current board
+     * \returns major corrhist entry
+     */
+    const CorrectionEntry& major_corr_entry(const chess::Board& board) const;
+    CorrectionEntry& major_corr_entry(const chess::Board& board);
 };
 }  // namespace raphael

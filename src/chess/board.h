@@ -11,24 +11,32 @@ public:
     static constexpr auto STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
     class CastlingRights {
+    private:
+        u16 rooks_ = 0x8888;  // 4-bit values for [color][castle]
+        static_assert(static_cast<u32>(File::NONE) == 0x8);
+
     public:
         enum Side : u8 { KING_SIDE, QUEEN_SIDE };
 
         constexpr void set(Color color, Side castle, File rook_file) {
-            rooks[color][castle] = rook_file;
+            i32 shift = 4 * (castle + 2 * color);
+            u32 mask = 0xF << shift;
+            rooks_ = (rooks_ & ~mask) | (static_cast<u32>(rook_file) << shift);
         }
 
-        constexpr void clear() {
-            rooks[0][0] = rooks[0][1] = rooks[1][0] = rooks[1][1] = File::NONE;
+        constexpr void clear() { rooks_ = 0x8888; }
+        constexpr void clear(Color color) {
+            i32 shift = 4 * 2 * color;
+            u32 mask = 0xFF << shift;
+            rooks_ = (rooks_ & ~mask) | (0x88 << shift);
         }
-        constexpr void clear(Color color) { rooks[color][0] = rooks[color][1] = File::NONE; }
         constexpr i32 clear(Color color, Side castle) {
-            rooks[color][castle] = File::NONE;
+            set(color, castle, File::NONE);
             return castle + color * 2;
         }
 
         [[nodiscard]] constexpr bool has(Color color, Side castle) const {
-            return rooks[color][castle] != File::NONE;
+            return get_rook_file(color, castle) != File::NONE;
         }
 
         [[nodiscard]] constexpr bool has(Color color) const {
@@ -36,7 +44,8 @@ public:
         }
 
         [[nodiscard]] constexpr File get_rook_file(Color color, Side castle) const {
-            return rooks[color][castle];
+            i32 shift = 4 * (castle + 2 * color);
+            return File((rooks_ >> shift) & 0xF);
         }
 
         [[nodiscard]] constexpr i32 hash_index() const {
@@ -52,9 +61,6 @@ public:
         [[nodiscard]] static constexpr Side closest_side(File to, File from) {
             return to > from ? Side::KING_SIDE : Side::QUEEN_SIDE;
         }
-
-    private:
-        MultiArray<File, 2, 2> rooks = {};
     };
 
 private:
@@ -66,10 +72,11 @@ private:
     MultiArray<BitBoard, 2, 2> castle_path_ = {};  // [184] 32  castling path for color and side
     u64 hash_ = 0;                                 // [192] 8   zobrist hash
     u64 pawn_hash_ = 0;                            // [200] 8   zobrist hash of pawns
-    CastlingRights castle_rights_ = {};            // [208] 4   allowed castling files
-    u16 plies_ = 1;                                // [208] 2   number of plies
-    u8 halfmoves_ = 0;                             // [208] 1   plies since last capture/pawn move
-    Color stm_ = Color::WHITE;                     // [208] 1   current stm
+    u64 major_hash_ = 0;                           // [208] 8   zobrist hash of major pieces
+    CastlingRights castle_rights_ = {};            // [216] 2   allowed castling files
+    u16 plies_ = 1;                                // [216] 2   number of plies
+    u8 halfmoves_ = 0;                             // [216] 1   plies since last capture/pawn move
+    Color stm_ = Color::WHITE;                     // [216] 1   current stm
     Square enpassant_ = Square::NONE;              // [216] 1   enpassant square
     bool chess960_ = false;                        // [216] 1   whether chess960 is enabled
 
@@ -101,6 +108,7 @@ public:
 
     [[nodiscard]] u64 hash() const { return hash_; }
     [[nodiscard]] u64 pawn_hash() const { return pawn_hash_; }
+    [[nodiscard]] u64 major_hash() const { return major_hash_; }
 
     [[nodiscard]] bool chess960() const { return chess960_; }
 
@@ -210,15 +218,15 @@ public:
                 const auto side = CastlingRights::closest_side(move.to().file(), king_sq.file());
 
                 if (castle_rights_.get_rook_file(~stm_, side) == move.to().file())
-                    hash_ ^= Zobrist::castle_index(castle_rights_.clear(~stm_, side));
+                    update_castling_change_hash(castle_rights_.clear(~stm_, side));
             }
         }
 
         if (pt == PieceType::KING && castle_rights_.has(stm_)) {
             // remove castling rights if king moves
-            hash_ ^= Zobrist::castling(castle_rights_.hash_index());
+            update_castling_hash(castle_rights_.hash_index());
             castle_rights_.clear(stm_);
-            hash_ ^= Zobrist::castling(castle_rights_.hash_index());
+            update_castling_hash(castle_rights_.hash_index());
 
         } else if (pt == PieceType::ROOK && move.from().is_back_rank(stm_)) {
             // remove castling rights if rook moves from back rank
@@ -226,7 +234,7 @@ public:
             const auto side = CastlingRights::closest_side(move.from().file(), king_sq.file());
 
             if (castle_rights_.get_rook_file(stm_, side) == move.from().file())
-                hash_ ^= Zobrist::castle_index(castle_rights_.clear(stm_, side));
+                update_castling_change_hash(castle_rights_.clear(stm_, side));
 
         } else if (pt == PieceType::PAWN) {
             halfmoves_ = 0;
@@ -626,6 +634,7 @@ private:
 
         hash_ = 0;
         pawn_hash_ = 0;
+        major_hash_ = 0;
     }
 
 
@@ -665,7 +674,10 @@ private:
     void update_piece_hash(Piece piece, Square sq) {
         const auto key = Zobrist::piece(piece, sq);
         hash_ ^= key;
-        if (piece.type() == PieceType::PAWN) pawn_hash_ ^= key;
+        if (piece.type() == PieceType::PAWN)
+            pawn_hash_ ^= key;
+        else if (piece.type() == PieceType::ROOK || piece.type() == PieceType::QUEEN)
+            major_hash_ ^= key;
     }
 
     void update_ep_hash(File file) {
@@ -674,9 +686,22 @@ private:
         pawn_hash_ ^= key;
     }
 
+    void update_castling_hash(i32 castling) {
+        const auto key = Zobrist::castling(castling);
+        hash_ ^= key;
+        major_hash_ ^= key;
+    }
+
+    void update_castling_change_hash(i32 index) {
+        const auto key = Zobrist::castle_index(index);
+        hash_ ^= key;
+        major_hash_ ^= key;
+    }
+
     void recompute_hash() {
         hash_ = 0;
         pawn_hash_ = 0;
+        major_hash_ = 0;
 
         auto pieces = occ();
         while (pieces) {
@@ -688,7 +713,7 @@ private:
 
         if (stm_ == Color::WHITE) hash_ ^= Zobrist::stm();
 
-        hash_ ^= Zobrist::castling(castle_rights_.hash_index());
+        update_castling_hash(castle_rights_.hash_index());
     }
 
 

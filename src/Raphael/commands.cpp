@@ -2,6 +2,7 @@
 #include <Raphael/commands.h>
 
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <random>
 

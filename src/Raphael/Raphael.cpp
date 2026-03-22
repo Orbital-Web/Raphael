@@ -511,8 +511,8 @@ i32 Raphael::negamax(
     if (!ss->excluded && !halt.load(memory_order_relaxed)) {
         // update corrhist
         if (!in_check && (bestmove == chess::Move::NO_MOVE || board.is_quiet(bestmove))
-            && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && ttentry.score > ss->static_eval)
-                || (ttflag == tt_.UPPER && ttentry.score < ss->static_eval)))
+            && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
+                || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
             history_.update_corrections(board, depth, bestscore, ss->static_eval);
         tt_.set(ttkey, bestscore, bestmove, depth, ttflag, ply);
     }

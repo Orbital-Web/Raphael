@@ -536,7 +536,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
 
     // max ply
     const bool in_check = board.in_check();
-    if (ply >= MAX_DEPTH - 1) return (in_check) ? 0 : position_.evaluate();
+    if (ply >= MAX_DEPTH - 1) return (in_check) ? 0 : history_.correct(board, position_.evaluate());
 
     // probe transposition table
     const auto ttkey = board.hash();

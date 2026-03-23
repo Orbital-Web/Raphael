@@ -200,7 +200,10 @@ void Raphael::ponder(atomic<bool>& halt) {
 }
 
 
-i32 Raphael::static_eval() { return position_.evaluate(); }
+i32 Raphael::static_eval(bool corrected) {
+    const auto raw_score = position_.evaluate();
+    return (corrected) ? history_.correct(position_.board(), raw_score) : raw_score;
+}
 
 
 void Raphael::reset() {

@@ -63,7 +63,7 @@ void Raphael::set_option(const std::string& name, i32 value) {
              &params_.moveoverhead,
              &params_.softhardmult,
          }) {
-        if (p->name != name) continue;
+        if (!utils::is_case_insensitive_equals(p->name, name)) continue;
 
         // error checking
         if (value < p->min_val || value > p->max_val) {
@@ -87,7 +87,7 @@ void Raphael::set_option(const std::string& name, i32 value) {
 }
 void Raphael::set_option(const std::string& name, bool value) {
     for (CheckOption* p : {&params_.datagen, &params_.softnodes}) {
-        if (p->name != name) continue;
+        if (!utils::is_case_insensitive_equals(p->name, name)) continue;
 
         // set value
         p->set(value);

@@ -1,5 +1,5 @@
 #pragma once
-#include <chess/types.h>
+#include <Raphael/utils.h>
 
 #include <functional>
 #include <string>
@@ -130,7 +130,7 @@ inline std::vector<SpinOption<true>*> tunables;
  */
 inline bool set_tunable(const std::string& name, i32 value) {
     for (const auto& tunable : tunables) {
-        if (tunable->name == name) {
+        if (utils::is_case_insensitive_equals(tunable->name, name)) {
             // assume value is valid
             tunable->set(value);
             return true;

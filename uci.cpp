@@ -125,7 +125,7 @@ inline void handle_setoption(const vector<string>& tokens) {
         const bool value = (tokens[4][0] == 't');
 
         // UCI_Chess960
-        if (tokens[2] == "UCI_Chess960") {
+        if (raphael::utils::is_case_insensitive_equals(tokens[2], "UCI_Chess960")) {
             pending_request.chess960 = value;
             lock_guard<mutex> lock(cout_mutex);
             if (value)

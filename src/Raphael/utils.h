@@ -31,4 +31,13 @@ bool is_mate(i32 score);
  * \returns mate distance
  */
 i32 mate_distance(i32 score);
+
+
+/** Compares two strings case insensitively
+ *
+ * \param str1 first string
+ * \param str2 other string
+ * \returns whether the two strings are case-insensitive equal
+ */
+bool is_case_insensitive_equals(std::string_view str1, std::string_view str2);
 }  // namespace raphael::utils

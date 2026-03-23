@@ -34,12 +34,12 @@ using std::vector;
 // search globals
 mutex search_mutex;
 condition_variable search_cv;
+condition_variable uci_cv;
 struct SearchRequest {
     raphael::Position<false> position;
     raphael::TimeManager::SearchOptions options;
     i32 t_remain;
     i32 t_inc;
-    bool go = false;
     bool searching = false;
     bool position_ready = false;
     bool chess960 = false;
@@ -59,12 +59,11 @@ void search_thread() {
         // wait until a search request is made
         unique_lock<mutex> search_lock(search_mutex);
         search_cv.wait(search_lock, [] {
-            return pending_request.go || quit.load(memory_order_relaxed);
+            return pending_request.searching || quit.load(memory_order_relaxed);
         });
         if (quit.load(memory_order_relaxed)) break;
 
         // if position is not ready, call set_position
-        assert(!pending_request.searching);
         if (!pending_request.position_ready) {
             engine.set_position(pending_request.position);
             pending_request.position_ready = true;
@@ -76,12 +75,11 @@ void search_thread() {
         }
 
         // get search options
+        assert(pending_request.searching);
         const auto options = pending_request.options;
         const auto t_remain = pending_request.t_remain;
         const auto t_inc = pending_request.t_inc;
         const auto chess960 = pending_request.chess960;
-        pending_request.go = false;
-        pending_request.searching = true;
         search_lock.unlock();
 
         // do search
@@ -96,6 +94,7 @@ void search_thread() {
             cout << "bestmove " << chess::uci::from_move(result.move, chess960) << "\n" << flush;
         }
         pending_request.searching = false;
+        uci_cv.notify_one();
         search_lock.unlock();
     }
 }
@@ -247,12 +246,15 @@ inline void handle_go(const vector<string>& tokens) {
     if (ntokens == 1) pending_request.options.infinite = true;
 
     // request search
-    pending_request.go = true;
+    pending_request.searching = true;
     search_cv.notify_one();
 }
 
-/** Handles the eval command */
-inline void handle_eval() {
+/** Handles the eval command
+ *
+ * \param corrected whether to show the corrected or raw static eval
+ */
+inline void handle_eval(bool corrected) {
     lock_guard<mutex> search_lock(search_mutex);
     if (pending_request.searching) {
         lock_guard<mutex> lock(cout_mutex);
@@ -266,7 +268,7 @@ inline void handle_eval() {
     }
 
     lock_guard<mutex> lock(cout_mutex);
-    cout << "info string eval: " << engine.static_eval() << "\n" << flush;
+    cout << "info string eval: " << engine.static_eval(corrected) << "\n" << flush;
 }
 
 /** Handles the isready command */
@@ -304,6 +306,15 @@ inline void handle_ucinewgame() {
         engine.set_position(pending_request.position);
         pending_request.position_ready = true;
     }
+}
+
+/** Handles the wait command */
+inline void handle_wait() {
+    unique_lock<mutex> search_lock(search_mutex);
+    uci_cv.wait(search_lock, [] { return !pending_request.searching; });
+
+    lock_guard<mutex> lock(cout_mutex);
+    cout << "info string search finished\n" << flush;
 }
 
 /** Handles the bench command */
@@ -433,8 +444,10 @@ inline void show_help() {
          << "  position                 - set board (fen <FEN> | startpos) [moves ...]\n"
          << "  go                       - start search. params: depth, nodes, movetime, movestogo\n"
          << "                             wtime, btime, winc, binc, infinite\n"
+         << "  eval                     - show raw static eval\n"
+         << "  ceval                    - show corrected static eval\n"
          << "  stop                     - stop current search\n"
-         << "  eval                     - show static eval\n"
+         << "  wait                     - wait until the current search finishes\n"
          << "  quit                     - exit\n";
 }
 
@@ -469,7 +482,10 @@ inline void handle_command(const string& uci_command) {
         quit.store(true, memory_order_relaxed);
         search_cv.notify_one();
 
-    } else if (uci_command == "ucinewgame")
+    } else if (uci_command == "wait")
+        handle_wait();
+
+    else if (uci_command == "ucinewgame")
         handle_ucinewgame();
 
     else if (uci_command == "help") {
@@ -491,7 +507,10 @@ inline void handle_command(const string& uci_command) {
         handle_bench();
 
     else if (uci_command == "eval")
-        handle_eval();
+        handle_eval(false);
+
+    else if (uci_command == "ceval")
+        handle_eval(true);
 
     else {
         // tokenize command

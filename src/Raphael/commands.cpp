@@ -211,7 +211,7 @@ void evalstats(Raphael& engine, const std::string& book) {
         if (board.in_check()) continue;
 
         engine.set_board(board);
-        i64 eval = engine.static_eval();
+        i64 eval = engine.static_eval(false);
 
         count++;
         total += eval;

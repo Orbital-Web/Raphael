@@ -146,8 +146,12 @@ public:
     void ponder(std::atomic<bool>& halt);
 
 
-    /** Returns the static eval of the set position */
-    i32 static_eval();
+    /** Returns the static eval of the set position
+     *
+     * \param corrected whether to return the corrected or raw static eval
+     * \returns the static eval
+     */
+    i32 static_eval(bool corrected);
 
 
     /** Resets Raphael */

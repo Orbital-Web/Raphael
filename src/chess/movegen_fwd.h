@@ -91,7 +91,7 @@ private:
 
     template <Color::underlying color>
     [[nodiscard]] static BitBoard generate_legal_castles(
-        const Board& board, Square sq, BitBoard seen, BitBoard pin_hv
+        const Board& board, Square sq, BitBoard seen
     );
 
 

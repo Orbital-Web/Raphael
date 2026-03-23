@@ -48,6 +48,9 @@ template <Color::underlying color>
 [[nodiscard]] inline std::pair<BitBoard, i32> Movegen::check_mask(const Board& board, Square sq) {
     assert(board.stm() == color);
 
+    // short circuit if our king isn't attacked
+    if (!board.threats().is_set(sq)) return {BitBoard::FULL, 0};
+
     const auto opp_knight = board.occ(PieceType::KNIGHT, ~static_cast<Color>(color));
     const auto opp_bishop = board.occ(PieceType::BISHOP, ~static_cast<Color>(color));
     const auto opp_rook = board.occ(PieceType::ROOK, ~static_cast<Color>(color));
@@ -85,7 +88,7 @@ template <Color::underlying color>
         checks++;
     }
 
-    if (!mask) return {BitBoard::FULL, checks};
+    assert(!mask.is_empty());
     return {mask, checks};
 }
 
@@ -95,6 +98,9 @@ template <Color::underlying color, PieceType::underlying pt>
 ) {
     static_assert(pt == PieceType::BISHOP || pt == PieceType::ROOK);
     assert(board.stm() == color);
+
+    // short circuit if none of our pieces are pinned
+    if (board.pinned(static_cast<Color>(color)).is_empty()) return BitBoard(0);
 
     const auto opp_pt_queen = (board.occ(static_cast<PieceType>(pt)) | board.occ(PieceType::QUEEN))
                               & board.occ(~static_cast<Color>(color));
@@ -355,7 +361,7 @@ template <Color::underlying color>
 
 template <Color::underlying color>
 [[nodiscard]] inline BitBoard Movegen::generate_legal_castles(
-    const Board& board, Square sq, BitBoard seen, BitBoard pin_hv
+    const Board& board, Square sq, BitBoard seen
 ) {
     assert(board.stm() == color);
 
@@ -381,8 +387,7 @@ template <Color::underlying color>
         const auto rook_from = BitBoard::from_square(
             Square(rights.get_rook_file(static_cast<Color>(color), side), sq.rank())
         );
-        if (board.chess960() && (pin_hv & board.occ(static_cast<Color>(color)) & rook_from))
-            continue;
+        if (board.chess960() && (board.pinned(static_cast<Color>(color)) & rook_from)) continue;
 
         moves |= rook_from;
     }
@@ -435,7 +440,7 @@ inline void Movegen::generate_legals(MoveList<ScoredMove>& movelist, const Board
     });
 
     if (mt != MoveGenType::NOISY && checks == 0) {
-        BitBoard moves = generate_legal_castles<color>(board, king_sq, seen, pin_hv);
+        BitBoard moves = generate_legal_castles<color>(board, king_sq, seen);
         while (moves) {
             const auto to = static_cast<Square>(moves.poplsb());
             movelist.push({.move = Move::make<Move::CASTLING>(king_sq, to)});

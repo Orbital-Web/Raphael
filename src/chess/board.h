@@ -516,6 +516,10 @@ public:
             }
         }
 
+        threats_ = compute_threats();
+        pinmask_[Color::WHITE] = compute_pinmask(Color::WHITE);
+        pinmask_[Color::BLACK] = compute_pinmask(Color::BLACK);
+
         // validate enpassant
         if (enpassant_ != Square::NONE) {
             bool valid;
@@ -548,9 +552,6 @@ public:
         }
 
         recompute_hash();
-        threats_ = compute_threats();
-        pinmask_[Color::WHITE] = compute_pinmask(Color::WHITE);
-        pinmask_[Color::BLACK] = compute_pinmask(Color::BLACK);
     }
 
     [[nodiscard]] std::string get_fen() const {

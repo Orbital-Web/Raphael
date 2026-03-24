@@ -13,6 +13,8 @@ TEST_SUITE("Zobrist Hash") {
         CHECK(b.hash() == 0x463b96181691fc9c);
         CHECK(b.pawn_hash() == 0x37FC40DA841E1692);
         CHECK(b.major_hash() == 0x35DB1B902419D42F);
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x99A544452583308C);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x6B8E9986CFAAF062);
 
         auto mv = Move::make(Square::E2, Square::E4);
         CHECK(b.hash_after<true>(mv) == 0x823c9b50fd114196);
@@ -21,6 +23,8 @@ TEST_SUITE("Zobrist Hash") {
         CHECK(b.hash() == 0x823c9b50fd114196);
         CHECK(b.pawn_hash() == 0xB2D6B38C0B92E91);
         CHECK(b.major_hash() == 0x35DB1B902419D42F);
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x99A544452583308C);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x6B8E9986CFAAF062);
 
         mv = Move::make(Square::D7, Square::D5);
         CHECK(b.hash_after<true>(mv) == 0x0756b94461c50fb0);
@@ -29,6 +33,8 @@ TEST_SUITE("Zobrist Hash") {
         CHECK(b.hash() == 0x0756b94461c50fb0);
         CHECK(b.pawn_hash() == 0x76916F86F34AE5BE);
         CHECK(b.major_hash() == 0x35DB1B902419D42F);
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x99A544452583308C);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x6B8E9986CFAAF062);
 
         mv = Move::make(Square::E4, Square::E5);
         CHECK(b.hash_after<true>(mv) == 0x662fafb965db29d4);
@@ -37,6 +43,8 @@ TEST_SUITE("Zobrist Hash") {
         CHECK(b.hash() == 0x662fafb965db29d4);
         CHECK(b.pawn_hash() == 0xEF3E5FD1587346D3);
         CHECK(b.major_hash() == 0x35DB1B902419D42F);
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x99A544452583308C);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x6B8E9986CFAAF062);
 
         mv = Move::make(Square::F7, Square::F5);
         CHECK(b.hash_after<true>(mv) == 0x22a48b5a8e47ff78);
@@ -44,6 +52,8 @@ TEST_SUITE("Zobrist Hash") {
         CHECK(b.hash() == 0x22a48b5a8e47ff78);
         CHECK(b.pawn_hash() == 0x53635D981CC81576);
         CHECK(b.major_hash() == 0x35DB1B902419D42F);
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x99A544452583308C);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x6B8E9986CFAAF062);
 
         mv = Move::make(Square::E1, Square::E2);
         CHECK(b.hash_after<true>(mv) == 0x652a607ca3f242c1);
@@ -51,6 +61,8 @@ TEST_SUITE("Zobrist Hash") {
         CHECK(b.hash() == 0x652a607ca3f242c1);
         CHECK(b.pawn_hash() == 0x83871FE249DCEE04);
         CHECK(b.major_hash() == 0xF569B3D99F2296AF);
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x36AB63FA493EB1CE);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x6B8E9986CFAAF062);
 
         mv = Move::make(Square::E8, Square::F7);
         CHECK(b.hash_after<true>(mv) == 0x00fdd303c946bdd9);
@@ -58,6 +70,8 @@ TEST_SUITE("Zobrist Hash") {
         CHECK(b.hash() == 0x00fdd303c946bdd9);
         CHECK(b.pawn_hash() == 0x83871FE249DCEE04);
         CHECK(b.major_hash() == 0x4EE1363BF3987BC6);
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x36AB63FA493EB1CE);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x4D0789B16683671A);
     }
 
     TEST_CASE("Test Zobrist Hash Second Position") {
@@ -69,6 +83,8 @@ TEST_SUITE("Zobrist Hash") {
         b.make_move(mv);
         CHECK(b.pawn_hash() == 0xA4E3189C46AA4655);
         CHECK(b.major_hash() == 0x35DB1B902419D42F);
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x99A544452583308C);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x6B8E9986CFAAF062);
 
         mv = Move::make(Square::B7, Square::B5);
         CHECK(b.hash_after<true>(mv) == 0x4DF682E1E0AF946F);
@@ -76,6 +92,8 @@ TEST_SUITE("Zobrist Hash") {
         b.make_move(mv);
         CHECK(b.pawn_hash() == 0x3C31542372207E61);
         CHECK(b.major_hash() == 0x35DB1B902419D42F);
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x99A544452583308C);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x6B8E9986CFAAF062);
 
         mv = Move::make(Square::H2, Square::H4);
         CHECK(b.hash_after<true>(mv) == 0xD1551EC84B90ED11);
@@ -83,6 +101,8 @@ TEST_SUITE("Zobrist Hash") {
         b.make_move(mv);
         CHECK(b.pawn_hash() == 0x5844EEA076388216);
         CHECK(b.major_hash() == 0x35DB1B902419D42F);
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x99A544452583308C);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x6B8E9986CFAAF062);
 
         mv = Move::make(Square::B5, Square::B4);
         CHECK(b.hash_after<true>(mv) == 0xB0982F168A89B452);
@@ -90,12 +110,16 @@ TEST_SUITE("Zobrist Hash") {
         b.make_move(mv);
         CHECK(b.pawn_hash() == 0xC15FF9D418065E5C);
         CHECK(b.major_hash() == 0x35DB1B902419D42F);
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x99A544452583308C);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x6B8E9986CFAAF062);
 
         mv = Move::make(Square::C2, Square::C4);
         CHECK(b.hash_after<true>(mv) == 0x3C8123EA7B067637);
         b.make_move(mv);
         CHECK(b.pawn_hash() == 0xB590D38246AE1930);
         CHECK(b.major_hash() == 0x35DB1B902419D42F);
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x99A544452583308C);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x6B8E9986CFAAF062);
 
         CHECK(b.hash() == 0x3c8123ea7b067637);
 
@@ -104,12 +128,16 @@ TEST_SUITE("Zobrist Hash") {
         b.make_move(mv);
         CHECK(b.pawn_hash() == 0xE214F040EAA135A0);
         CHECK(b.major_hash() == 0x35DB1B902419D42F);
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x99A544452583308C);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x6B8E9986CFAAF062);
 
         mv = Move::make(Square::A1, Square::A3);
         CHECK(b.hash_after<true>(mv) == 0x5c3f9b829b279560);
         b.make_move(mv);
         CHECK(b.pawn_hash() == 0xE214F040EAA135A0);
         CHECK(b.major_hash() == 0x2E1803A68371BE8);
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x5FFA6A68B6247EDB);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x6B8E9986CFAAF062);
 
         CHECK(b.hash() == 0x5c3f9b829b279560);
     }
@@ -347,5 +375,33 @@ TEST_SUITE("Zobrist Hash") {
 
         b.make_move(Move::make(Square::E8, Square::E7));
         CHECK(b.major_hash() == 0xD7333DA186CEA120);
+    }
+
+    TEST_CASE("Test Zobrist Nonpawn Pawn") {
+        Board b;
+
+        b.set_fen("r3kbnr/ppp1p1pp/8/8/8/8/PPPP1PPP/2N1K2R w Kkq - 0 3");
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0x9AEA3DFDD65D0B88);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0xB146EEEF9EB5E006);
+
+        b.make_move(Move::make<Move::CASTLING>(Square::E1, Square::H1));
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0xDCFBC82ABEB21711);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0xB146EEEF9EB5E006);
+
+        b.make_move(Move::make<Move::CASTLING>(Square::E8, Square::A8));
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0xDCFBC82ABEB21711);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0xC12ED8F9123EDC5C);
+
+        b.make_move(Move::make(Square::D2, Square::D4));
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0xDCFBC82ABEB21711);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0xC12ED8F9123EDC5C);
+
+        b.make_move(Move::make(Square::D8, Square::D4));
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0xDCFBC82ABEB21711);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x1FD0EE7063B4A5FC);
+
+        b.make_move(Move::make(Square::C1, Square::D3));
+        CHECK(b.nonpawn_hash(Color::WHITE) == 0xD1C7F409513FF167);
+        CHECK(b.nonpawn_hash(Color::BLACK) == 0x1FD0EE7063B4A5FC);
     }
 }

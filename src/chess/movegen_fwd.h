@@ -47,14 +47,6 @@ private:
     template <Color::underlying color>
     [[nodiscard]] static std::pair<BitBoard, i32> check_mask(const Board& board, Square sq);
 
-    template <Color::underlying color, PieceType::underlying pt>
-    [[nodiscard]] static BitBoard pin_mask(
-        const Board& board, Square sq, BitBoard occ_opp, BitBoard occ_us
-    );
-
-    template <Color::underlying color>
-    [[nodiscard]] static BitBoard seen_squares(const Board& board, BitBoard opp_empty);
-
 
     template <Color::underlying color, MoveGenType mt>
     static void generate_legal_pawns(
@@ -91,7 +83,7 @@ private:
 
     template <Color::underlying color>
     [[nodiscard]] static BitBoard generate_legal_castles(
-        const Board& board, Square sq, BitBoard seen, BitBoard pin_hv
+        const Board& board, Square sq, BitBoard seen
     );
 
 

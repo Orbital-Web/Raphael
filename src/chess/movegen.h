@@ -26,13 +26,12 @@ template <Color::underlying color>
 [[nodiscard]] inline bool Movegen::is_ep_valid(const Board& board, Square ep) {
     assert(board.stm() == color);
 
-    const auto occ_us = board.occ(static_cast<Color>(color));
-    const auto occ_opp = board.occ(~static_cast<Color>(color));
     const auto king_sq = board.king_square(static_cast<Color>(color));
 
     const auto [checkmask, _] = check_mask<color>(board, king_sq);
-    const auto pin_hv = pin_mask<color, PieceType::ROOK>(board, king_sq, occ_opp, occ_us);
-    const auto pin_d = pin_mask<color, PieceType::BISHOP>(board, king_sq, occ_opp, occ_us);
+    const auto pinmask = board.pinmask(static_cast<Color>(color));
+    const auto pin_hv = Attacks::rook(king_sq, BitBoard(0)) & pinmask;
+    const auto pin_d = Attacks::bishop(king_sq, BitBoard(0)) & pinmask;
 
     const auto pawns = board.occ(PieceType::PAWN, static_cast<Color>(color));
     const auto pawns_lr = pawns & ~pin_hv;
@@ -47,6 +46,9 @@ template <Color::underlying color>
 template <Color::underlying color>
 [[nodiscard]] inline std::pair<BitBoard, i32> Movegen::check_mask(const Board& board, Square sq) {
     assert(board.stm() == color);
+
+    // short circuit if our king isn't attacked
+    if (!board.threats().is_set(sq)) return {BitBoard::FULL, 0};
 
     const auto opp_knight = board.occ(PieceType::KNIGHT, ~static_cast<Color>(color));
     const auto opp_bishop = board.occ(PieceType::BISHOP, ~static_cast<Color>(color));
@@ -85,50 +87,8 @@ template <Color::underlying color>
         checks++;
     }
 
-    if (!mask) return {BitBoard::FULL, checks};
+    assert(!mask.is_empty());
     return {mask, checks};
-}
-
-template <Color::underlying color, PieceType::underlying pt>
-[[nodiscard]] inline BitBoard Movegen::pin_mask(
-    const Board& board, Square sq, BitBoard occ_opp, BitBoard occ_us
-) {
-    static_assert(pt == PieceType::BISHOP || pt == PieceType::ROOK);
-    assert(board.stm() == color);
-
-    const auto opp_pt_queen = (board.occ(static_cast<PieceType>(pt)) | board.occ(PieceType::QUEEN))
-                              & board.occ(~static_cast<Color>(color));
-    auto pt_attacks = Attacks::slider<pt>(sq, occ_opp) & opp_pt_queen;
-
-    BitBoard pin = 0;
-    while (pt_attacks) {
-        const auto possible_pin = Attacks::between(sq, static_cast<Square>(pt_attacks.poplsb()));
-        if ((possible_pin & occ_us).count() == 1) pin |= possible_pin;
-    }
-    return pin;
-}
-
-template <Color::underlying color>
-[[nodiscard]] inline BitBoard Movegen::seen_squares(const Board& board, BitBoard opp_empty) {
-    const auto king_sq = board.king_square(~static_cast<Color>(color));
-    BitBoard map_king_atk = Attacks::king(king_sq) & opp_empty;
-    if (map_king_atk.is_empty() && !board.chess960()) return 0;
-
-    const auto occ = board.occ() ^ BitBoard::from_square(king_sq);
-    const auto queens = board.occ(PieceType::QUEEN, static_cast<Color>(color));
-    const auto pawns = board.occ(PieceType::PAWN, static_cast<Color>(color));
-    auto knights = board.occ(PieceType::KNIGHT, static_cast<Color>(color));
-    auto bishops = board.occ(PieceType::BISHOP, static_cast<Color>(color)) | queens;
-    auto rooks = board.occ(PieceType::ROOK, static_cast<Color>(color)) | queens;
-
-    auto seen = Attacks::pawn_left<color>(pawns) | Attacks::pawn_right<color>(pawns);
-
-    while (knights) seen |= Attacks::knight(static_cast<Square>(knights.poplsb()));
-    while (bishops) seen |= Attacks::bishop(static_cast<Square>(bishops.poplsb()), occ);
-    while (rooks) seen |= Attacks::rook(static_cast<Square>(rooks.poplsb()), occ);
-    seen |= Attacks::king(board.king_square(static_cast<Color>(color)));
-
-    return seen;
 }
 
 
@@ -355,7 +315,7 @@ template <Color::underlying color>
 
 template <Color::underlying color>
 [[nodiscard]] inline BitBoard Movegen::generate_legal_castles(
-    const Board& board, Square sq, BitBoard seen, BitBoard pin_hv
+    const Board& board, Square sq, BitBoard seen
 ) {
     assert(board.stm() == color);
 
@@ -381,8 +341,7 @@ template <Color::underlying color>
         const auto rook_from = BitBoard::from_square(
             Square(rights.get_rook_file(static_cast<Color>(color), side), sq.rank())
         );
-        if (board.chess960() && (pin_hv & board.occ(static_cast<Color>(color)) & rook_from))
-            continue;
+        if (board.chess960() && (board.pinned(static_cast<Color>(color)) & rook_from)) continue;
 
         moves |= rook_from;
     }
@@ -413,29 +372,29 @@ inline void Movegen::generate_legals(MoveList<ScoredMove>& movelist, const Board
     const auto occ_us = board.occ(static_cast<Color>(color));
     const auto occ_opp = board.occ(~static_cast<Color>(color));
     const auto occ_all = occ_us | occ_opp;
-    const auto opp_empty = ~occ_us;
 
     const auto [checkmask, checks] = check_mask<color>(board, king_sq);
-    const auto pin_hv = pin_mask<color, PieceType::ROOK>(board, king_sq, occ_opp, occ_us);
-    const auto pin_d = pin_mask<color, PieceType::BISHOP>(board, king_sq, occ_opp, occ_us);
+    const auto pinmask = board.pinmask(static_cast<Color>(color));
+    const auto pin_hv = Attacks::rook(king_sq, BitBoard(0)) & pinmask;
+    const auto pin_d = Attacks::bishop(king_sq, BitBoard(0)) & pinmask;
     assert(checks <= 2);
 
     BitBoard movable_square;
     if constexpr (mt == MoveGenType::ALL)
-        movable_square = opp_empty;
+        movable_square = ~occ_us;
     else if constexpr (mt == MoveGenType::NOISY)
         movable_square = occ_opp;
     else
         movable_square = ~occ_all;
 
     // generate king moves
-    const auto seen = seen_squares<~color>(board, opp_empty);
+    const auto seen = board.threats();
     push_moves(movelist, BitBoard::from_square(king_sq), [&](Square sq) {
         return generate_legal_kings(sq, seen, movable_square);
     });
 
     if (mt != MoveGenType::NOISY && checks == 0) {
-        BitBoard moves = generate_legal_castles<color>(board, king_sq, seen, pin_hv);
+        BitBoard moves = generate_legal_castles<color>(board, king_sq, seen);
         while (moves) {
             const auto to = static_cast<Square>(moves.poplsb());
             movelist.push({.move = Move::make<Move::CASTLING>(king_sq, to)});
@@ -501,11 +460,10 @@ template <Color::underlying color>
     const auto occ_us = board.occ(static_cast<Color>(color));
     const auto occ_opp = board.occ(~static_cast<Color>(color));
     const auto occ_all = occ_us | occ_opp;
-    const auto opp_empty = ~occ_us;
 
     // non-castling king moves (check for normal as king could be in place of a previous promo/ep)
     if (from_pt.type() == PieceType::KING && move.type() == Move::NORMAL) {
-        const auto seen = seen_squares<~color>(board, opp_empty);
+        const auto seen = board.threats();
         if (seen.is_set(to)) return false;
         if (!(Attacks::king(from).is_set(to))) return false;
         return true;
@@ -514,8 +472,9 @@ template <Color::underlying color>
     const auto king_sq = board.king_square(static_cast<Color>(color));
 
     const auto [checkmask, checks] = check_mask<color>(board, king_sq);
-    const auto pin_hv = pin_mask<color, PieceType::ROOK>(board, king_sq, occ_opp, occ_us);
-    const auto pin_d = pin_mask<color, PieceType::BISHOP>(board, king_sq, occ_opp, occ_us);
+    const auto pinmask = board.pinmask(static_cast<Color>(color));
+    const auto pin_hv = Attacks::rook(king_sq, BitBoard(0)) & pinmask;
+    const auto pin_d = Attacks::bishop(king_sq, BitBoard(0)) & pinmask;
     assert(checks <= 2);
 
     // only king moves allowed in double check
@@ -549,7 +508,7 @@ template <Color::underlying color>
 
         // king path should not be attacked
         const auto king_to = Square::castling_king_dest(is_king_side, static_cast<Color>(color));
-        const auto seen = seen_squares<~color>(board, opp_empty);
+        const auto seen = board.threats();
         if (Attacks::between(from, king_to) & seen) return false;
 
         // rook on backrank should not be pinned in chess960

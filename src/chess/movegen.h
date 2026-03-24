@@ -26,13 +26,12 @@ template <Color::underlying color>
 [[nodiscard]] inline bool Movegen::is_ep_valid(const Board& board, Square ep) {
     assert(board.stm() == color);
 
-    const auto occ_us = board.occ(static_cast<Color>(color));
-    const auto occ_opp = board.occ(~static_cast<Color>(color));
     const auto king_sq = board.king_square(static_cast<Color>(color));
 
     const auto [checkmask, _] = check_mask<color>(board, king_sq);
-    const auto pin_hv = pin_mask<color, PieceType::ROOK>(board, king_sq, occ_opp, occ_us);
-    const auto pin_d = pin_mask<color, PieceType::BISHOP>(board, king_sq, occ_opp, occ_us);
+    const auto pinmask = board.pinmask(static_cast<Color>(color));
+    const auto pin_hv = Attacks::rook(king_sq, BitBoard(0)) & pinmask;
+    const auto pin_d = Attacks::bishop(king_sq, BitBoard(0)) & pinmask;
 
     const auto pawns = board.occ(PieceType::PAWN, static_cast<Color>(color));
     const auto pawns_lr = pawns & ~pin_hv;
@@ -90,28 +89,6 @@ template <Color::underlying color>
 
     assert(!mask.is_empty());
     return {mask, checks};
-}
-
-template <Color::underlying color, PieceType::underlying pt>
-[[nodiscard]] inline BitBoard Movegen::pin_mask(
-    const Board& board, Square sq, BitBoard occ_opp, BitBoard occ_us
-) {
-    static_assert(pt == PieceType::BISHOP || pt == PieceType::ROOK);
-    assert(board.stm() == color);
-
-    // short circuit if none of our pieces are pinned
-    if (board.pinned(static_cast<Color>(color)).is_empty()) return BitBoard(0);
-
-    const auto opp_pt_queen = (board.occ(static_cast<PieceType>(pt)) | board.occ(PieceType::QUEEN))
-                              & board.occ(~static_cast<Color>(color));
-    auto pt_attacks = Attacks::slider<pt>(sq, occ_opp) & opp_pt_queen;
-
-    BitBoard pin = 0;
-    while (pt_attacks) {
-        const auto possible_pin = Attacks::between(sq, static_cast<Square>(pt_attacks.poplsb()));
-        if ((possible_pin & occ_us).count() == 1) pin |= possible_pin;
-    }
-    return pin;
 }
 
 
@@ -397,8 +374,9 @@ inline void Movegen::generate_legals(MoveList<ScoredMove>& movelist, const Board
     const auto occ_all = occ_us | occ_opp;
 
     const auto [checkmask, checks] = check_mask<color>(board, king_sq);
-    const auto pin_hv = pin_mask<color, PieceType::ROOK>(board, king_sq, occ_opp, occ_us);
-    const auto pin_d = pin_mask<color, PieceType::BISHOP>(board, king_sq, occ_opp, occ_us);
+    const auto pinmask = board.pinmask(static_cast<Color>(color));
+    const auto pin_hv = Attacks::rook(king_sq, BitBoard(0)) & pinmask;
+    const auto pin_d = Attacks::bishop(king_sq, BitBoard(0)) & pinmask;
     assert(checks <= 2);
 
     BitBoard movable_square;
@@ -494,8 +472,9 @@ template <Color::underlying color>
     const auto king_sq = board.king_square(static_cast<Color>(color));
 
     const auto [checkmask, checks] = check_mask<color>(board, king_sq);
-    const auto pin_hv = pin_mask<color, PieceType::ROOK>(board, king_sq, occ_opp, occ_us);
-    const auto pin_d = pin_mask<color, PieceType::BISHOP>(board, king_sq, occ_opp, occ_us);
+    const auto pinmask = board.pinmask(static_cast<Color>(color));
+    const auto pin_hv = Attacks::rook(king_sq, BitBoard(0)) & pinmask;
+    const auto pin_d = Attacks::bishop(king_sq, BitBoard(0)) & pinmask;
     assert(checks <= 2);
 
     // only king moves allowed in double check

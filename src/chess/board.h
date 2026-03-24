@@ -68,7 +68,7 @@ private:
     std::array<BitBoard, 2> occ_ = {};             // [064] 16  bitboard per color
     std::array<Piece, 64> mailbox_ = {};           // [128] 64  piece on each square
     BitBoard threats_ = {};                        // [136] 16  attacked sqs by ntm (xrays stm king)
-    std::array<BitBoard, 2> pinned_ = {};          // [152] 32  pinned pieces per color
+    std::array<BitBoard, 2> pinmask_ = {};         // [152] 32  pin rays per color
     MultiArray<BitBoard, 2, 2> castle_path_ = {};  // [184] 32  castling path for color and side
     u64 hash_ = 0;                                 // [192] 8   zobrist hash
     u64 pawn_hash_ = 0;                            // [200] 8   zobrist hash of pawns
@@ -172,7 +172,9 @@ public:
 
     [[nodiscard]] BitBoard threats() const { return threats_; }
 
-    [[nodiscard]] BitBoard pinned(Color color) const { return pinned_[color]; }
+    [[nodiscard]] BitBoard pinned(Color color) const { return pinmask_[color] & occ(color); }
+
+    [[nodiscard]] BitBoard pinmask(Color color) const { return pinmask_[color]; }
 
     [[nodiscard]] bool is_attacked(Square sq, Color color) const {
         if (color == ~stm_) return threats_.is_set(sq);
@@ -299,8 +301,8 @@ public:
         hash_ ^= Zobrist::stm();
         stm_ = ~stm_;
         threats_ = compute_threats();
-        pinned_[Color::WHITE] = compute_pinned(Color::WHITE);
-        pinned_[Color::BLACK] = compute_pinned(Color::BLACK);
+        pinmask_[Color::WHITE] = compute_pinmask(Color::WHITE);
+        pinmask_[Color::BLACK] = compute_pinmask(Color::BLACK);
     }
 
     void make_nullmove() {
@@ -311,8 +313,8 @@ public:
         plies_++;
         stm_ = ~stm_;
         threats_ = compute_threats();
-        pinned_[Color::WHITE] = compute_pinned(Color::WHITE);
-        pinned_[Color::BLACK] = compute_pinned(Color::BLACK);
+        pinmask_[Color::WHITE] = compute_pinmask(Color::WHITE);
+        pinmask_[Color::BLACK] = compute_pinmask(Color::BLACK);
     }
 
 
@@ -545,8 +547,8 @@ public:
 
         recompute_hash();
         threats_ = compute_threats();
-        pinned_[Color::WHITE] = compute_pinned(Color::WHITE);
-        pinned_[Color::BLACK] = compute_pinned(Color::BLACK);
+        pinmask_[Color::WHITE] = compute_pinmask(Color::WHITE);
+        pinmask_[Color::BLACK] = compute_pinmask(Color::BLACK);
     }
 
     [[nodiscard]] std::string get_fen() const {
@@ -756,7 +758,7 @@ private:
         return threats;
     }
 
-    [[nodiscard]] BitBoard compute_pinned(Color color) const {
+    [[nodiscard]] BitBoard compute_pinmask(Color color) const {
         const auto occ_us = occ(color);
         const auto occ_opp = occ(~color);
         const auto king_sq = king_square(color);
@@ -769,9 +771,8 @@ private:
 
         BitBoard pin;
         while (pt_attacks) {
-            const auto possible_pinned
-                = Attacks::between(king_sq, Square(pt_attacks.poplsb())) & occ_us;
-            if ((possible_pinned).count() == 1) pin |= possible_pinned;
+            const auto possible_pin = Attacks::between(king_sq, Square(pt_attacks.poplsb()));
+            if ((possible_pin & occ_us).count() == 1) pin |= possible_pin;
         }
         return pin;
     }

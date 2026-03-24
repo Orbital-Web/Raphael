@@ -67,7 +67,7 @@ private:
     std::array<BitBoard, 6> pieces_ = {};          // [048] 48  bitboard per piece type
     std::array<BitBoard, 2> occ_ = {};             // [064] 16  bitboard per color
     std::array<Piece, 64> mailbox_ = {};           // [128] 64  piece on each square
-    BitBoard threats_ = {};                        // [136] 16  squares attacked by ntm
+    BitBoard threats_ = {};                        // [136] 16  attacked sqs by ntm (xrays stm king)
     std::array<BitBoard, 2> pinned_ = {};          // [152] 32  pinned pieces per color
     MultiArray<BitBoard, 2, 2> castle_path_ = {};  // [184] 32  castling path for color and side
     u64 hash_ = 0;                                 // [192] 8   zobrist hash
@@ -178,13 +178,15 @@ public:
         if (color == ~stm_) return threats_.is_set(sq);
 
         // cheap checks first
+        const auto xrayocc = occ() ^ BitBoard::from_square(king_square(stm_));
         if (Attacks::pawn(sq, ~color) & occ(PieceType::PAWN, color)) return true;
         if (Attacks::knight(sq) & occ(PieceType::KNIGHT, color)) return true;
         if (Attacks::king(sq) & occ(PieceType::KING, color)) return true;
-        if (Attacks::bishop(sq, occ()) & (occ(PieceType::BISHOP) | occ(PieceType::QUEEN))
+        if (Attacks::bishop(sq, xrayocc) & (occ(PieceType::BISHOP) | occ(PieceType::QUEEN))
             & occ(color))
             return true;
-        if (Attacks::rook(sq, occ()) & (occ(PieceType::ROOK) | occ(PieceType::QUEEN)) & occ(color))
+        if (Attacks::rook(sq, xrayocc) & (occ(PieceType::ROOK) | occ(PieceType::QUEEN))
+            & occ(color))
             return true;
 
         return false;
@@ -720,18 +722,19 @@ private:
     [[nodiscard]] BitBoard compute_threats() const {
         BitBoard threats;
 
+        const auto xrayocc = occ() ^ BitBoard::from_square(king_square(stm_));
         const auto queens = occ(PieceType::QUEEN, ~stm_);
 
         auto rooks = occ(PieceType::ROOK, ~stm_) | queens;
         while (rooks) {
             const auto sq = Square(rooks.poplsb());
-            threats |= Attacks::rook(sq, occ());
+            threats |= Attacks::rook(sq, xrayocc);
         }
 
         auto bishops = occ(PieceType::BISHOP, ~stm_) | queens;
         while (bishops) {
             const auto sq = Square(bishops.poplsb());
-            threats |= Attacks::bishop(sq, occ());
+            threats |= Attacks::bishop(sq, xrayocc);
         }
 
         auto knights = occ(PieceType::KNIGHT, ~stm_);

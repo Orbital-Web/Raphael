@@ -52,9 +52,6 @@ private:
         const Board& board, Square sq, BitBoard occ_opp, BitBoard occ_us
     );
 
-    template <Color::underlying color>
-    [[nodiscard]] static BitBoard seen_squares(const Board& board, BitBoard opp_empty);
-
 
     template <Color::underlying color, MoveGenType mt>
     static void generate_legal_pawns(

@@ -37,7 +37,12 @@ void CorrectionEntry::update(i32 bonus) {
 
 
 History::History()
-    : butterfly_hist_{}, cont_hist_{}, capt_hist_{}, pawn_correction_{}, major_correction_{} {}
+    : butterfly_hist_{},
+      cont_hist_{},
+      capt_hist_{},
+      pawn_correction_{},
+      major_correction_{},
+      nonpawn_correction_{} {}
 
 
 i32 History::quiet_bonus(i32 depth) const {
@@ -128,12 +133,16 @@ void History::update_corrections(const chess::Board& board, i32 depth, i32 score
     );
     pawn_corr_entry(board).update(bonus);
     major_corr_entry(board).update(bonus);
+    nonpawn_corr_entry(board, chess::Color::WHITE).update(bonus);
+    nonpawn_corr_entry(board, chess::Color::BLACK).update(bonus);
 }
 
 i32 History::correct(const chess::Board& board, i32 score) const {
     i32 correction = 0;
     correction += pawn_corr_entry(board) * PAWN_CORRHIST_WEIGHT;
     correction += major_corr_entry(board) * MAJOR_CORRHIST_WEIGHT;
+    correction += nonpawn_corr_entry(board, chess::Color::WHITE) * NONPAWN_CORRHIST_WEIGHT;
+    correction += nonpawn_corr_entry(board, chess::Color::BLACK) * NONPAWN_CORRHIST_WEIGHT;
     correction /= CORRHIST_MAX;
 
     return clamp(score + correction, -MATE_SCORE + 1, MATE_SCORE - 1);
@@ -146,6 +155,7 @@ void History::clear() {
     memset(capt_hist_, 0, sizeof(capt_hist_));
     memset(pawn_correction_, 0, sizeof(pawn_correction_));
     memset(major_correction_, 0, sizeof(major_correction_));
+    memset(nonpawn_correction_, 0, sizeof(nonpawn_correction_));
 }
 
 
@@ -197,4 +207,13 @@ const CorrectionEntry& History::major_corr_entry(const chess::Board& board) cons
 }
 CorrectionEntry& History::major_corr_entry(const chess::Board& board) {
     return major_correction_[board.stm()][board.major_hash() % CORRHIST_SIZE];
+}
+
+const CorrectionEntry& History::nonpawn_corr_entry(
+    const chess::Board& board, chess::Color color
+) const {
+    return nonpawn_correction_[board.stm()][color][board.nonpawn_hash(color) % CORRHIST_SIZE];
+}
+CorrectionEntry& History::nonpawn_corr_entry(const chess::Board& board, chess::Color color) {
+    return nonpawn_correction_[board.stm()][color][board.nonpawn_hash(color) % CORRHIST_SIZE];
 }

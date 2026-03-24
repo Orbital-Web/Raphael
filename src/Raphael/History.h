@@ -44,8 +44,9 @@ private:
     HistoryEntry cont_hist_[12][64][12][64];     // [prev from][prev to][from][to]
     HistoryEntry capt_hist_[64][64][13];         // [from][to][piece, 12 for non-capture queening]
 
-    CorrectionEntry pawn_correction_[2][CORRHIST_SIZE];   // [stm][pawn_hash % CORRHIST_SIZE]
-    CorrectionEntry major_correction_[2][CORRHIST_SIZE];  // [stm][major_hash % CORRHIST_SIZE]
+    CorrectionEntry pawn_correction_[2][CORRHIST_SIZE];        // [stm][pawn_hash idx]
+    CorrectionEntry major_correction_[2][CORRHIST_SIZE];       // [stm][major_hash idx]
+    CorrectionEntry nonpawn_correction_[2][2][CORRHIST_SIZE];  // [stm][color][nonpawn_hash idx]
 
 public:
     /** Initializes all the history tables with zeros */
@@ -190,5 +191,14 @@ private:
      */
     const CorrectionEntry& major_corr_entry(const chess::Board& board) const;
     CorrectionEntry& major_corr_entry(const chess::Board& board);
+
+    /** Returns a reference to the non-pawn corrhist entry
+     *
+     * \param board current board
+     * \param color color of non-pawns
+     * \returns non-pawn corrhist entry
+     */
+    const CorrectionEntry& nonpawn_corr_entry(const chess::Board& board, chess::Color color) const;
+    CorrectionEntry& nonpawn_corr_entry(const chess::Board& board, chess::Color color);
 };
 }  // namespace raphael

@@ -73,12 +73,13 @@ private:
     u64 hash_ = 0;                                 // [192] 8   zobrist hash
     u64 pawn_hash_ = 0;                            // [200] 8   zobrist hash of pawns
     u64 major_hash_ = 0;                           // [208] 8   zobrist hash of major pieces
-    CastlingRights castle_rights_ = {};            // [216] 2   allowed castling files
-    u16 plies_ = 1;                                // [216] 2   number of plies
-    u8 halfmoves_ = 0;                             // [216] 1   plies since last capture/pawn move
-    Color stm_ = Color::WHITE;                     // [216] 1   current stm
-    Square enpassant_ = Square::NONE;              // [216] 1   enpassant square
-    bool chess960_ = false;                        // [216] 1   whether chess960 is enabled
+    u64 nonpawn_hash_[2] = {};                     // [224] 16  zobrist hash of non-pawns per color
+    CastlingRights castle_rights_ = {};            // [232] 2   allowed castling files
+    u16 plies_ = 1;                                // [232] 2   number of plies
+    u8 halfmoves_ = 0;                             // [232] 1   plies since last capture/pawn move
+    Color stm_ = Color::WHITE;                     // [232] 1   current stm
+    Square enpassant_ = Square::NONE;              // [232] 1   enpassant square
+    bool chess960_ = false;                        // [232] 1   whether chess960 is enabled
 
 
 public:
@@ -109,6 +110,7 @@ public:
     [[nodiscard]] u64 hash() const { return hash_; }
     [[nodiscard]] u64 pawn_hash() const { return pawn_hash_; }
     [[nodiscard]] u64 major_hash() const { return major_hash_; }
+    [[nodiscard]] u64 nonpawn_hash(Color color) const { return nonpawn_hash_[color]; }
 
     [[nodiscard]] bool chess960() const { return chess960_; }
 
@@ -514,6 +516,10 @@ public:
             }
         }
 
+        threats_ = compute_threats();
+        pinmask_[Color::WHITE] = compute_pinmask(Color::WHITE);
+        pinmask_[Color::BLACK] = compute_pinmask(Color::BLACK);
+
         // validate enpassant
         if (enpassant_ != Square::NONE) {
             bool valid;
@@ -546,9 +552,6 @@ public:
         }
 
         recompute_hash();
-        threats_ = compute_threats();
-        pinmask_[Color::WHITE] = compute_pinmask(Color::WHITE);
-        pinmask_[Color::BLACK] = compute_pinmask(Color::BLACK);
     }
 
     [[nodiscard]] std::string get_fen() const {
@@ -639,6 +642,8 @@ private:
         hash_ = 0;
         pawn_hash_ = 0;
         major_hash_ = 0;
+        nonpawn_hash_[Color::WHITE] = 0;
+        nonpawn_hash_[Color::BLACK] = 0;
     }
 
 
@@ -680,8 +685,10 @@ private:
         hash_ ^= key;
         if (piece.type() == PieceType::PAWN)
             pawn_hash_ ^= key;
-        else if (piece.type() == PieceType::ROOK || piece.type() == PieceType::QUEEN)
-            major_hash_ ^= key;
+        else
+            nonpawn_hash_[piece.color()] ^= key;
+
+        if (piece.type() == PieceType::ROOK || piece.type() == PieceType::QUEEN) major_hash_ ^= key;
     }
 
     void update_ep_hash(File file) {
@@ -706,6 +713,8 @@ private:
         hash_ = 0;
         pawn_hash_ = 0;
         major_hash_ = 0;
+        nonpawn_hash_[Color::WHITE] = 0;
+        nonpawn_hash_[Color::BLACK] = 0;
 
         auto pieces = occ();
         while (pieces) {
@@ -805,5 +814,5 @@ private:
     }
 };
 
-static_assert(sizeof(Board) == 216);
+static_assert(sizeof(Board) == 232);
 }  // namespace chess

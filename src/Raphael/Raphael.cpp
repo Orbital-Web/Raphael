@@ -288,8 +288,15 @@ i32 Raphael::negamax(
             && (ttentry.flag == tt_.EXACT                                 // exact
                 || (ttentry.flag == tt_.LOWER && ttentry.score >= beta)   // lower
                 || (ttentry.flag == tt_.UPPER && ttentry.score <= alpha)  // upper
-        ))
+        )) {
+            const auto ttmove = ttentry.move;
+            if (ttentry.score >= beta && ttmove != chess::Move::NO_MOVE && board.is_quiet(ttmove)
+                && board.is_legal(ttmove)) {
+                const auto quiet_bonus = history_.quiet_bonus(depth);
+                history_.update_quiet(ttmove, position_, quiet_bonus);
+            }
             return ttentry.score;
+        }
     }
     const auto ttmove = ttentry.move;
 

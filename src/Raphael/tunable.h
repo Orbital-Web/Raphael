@@ -313,7 +313,7 @@ static constexpr i32 DATAGEN_DRAW_ADJ_MVNUM = 32;
 static constexpr i32 DATAGEN_DRAW_ADJ_MVCNT = 6;
 static constexpr i32 DATAGEN_DRAW_ADJ_SCORE = 15;
 static constexpr i32 DATAGEN_HASH = 16;
-static constexpr i32 DATAGEN_BATCH_SIZE = 1;
+static constexpr i32 DATAGEN_BATCH_SIZE = 32;
 
 static constexpr f64 DEF_TARGET_ABS_MEAN = 491.0081;  // average for lichess-big3-resolved
 

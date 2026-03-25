@@ -77,8 +77,10 @@ void Raphael::set_option(const std::string& name, i32 value) {
         // set value
         p->set(value);
 
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "info string set " << p->name << " to " << value << "\n" << flush;
+        if (ucilevel_ != UciInfoLevel::NONE) {
+            lock_guard<mutex> lock(cout_mutex);
+            cout << "info string set " << p->name << " to " << value << "\n" << flush;
+        }
         return;
     }
 
@@ -92,11 +94,13 @@ void Raphael::set_option(const std::string& name, bool value) {
         // set value
         p->set(value);
 
-        lock_guard<mutex> lock(cout_mutex);
-        if (value)
-            cout << "info string enabled " << p->name << "\n" << flush;
-        else
-            cout << "info string disabled " << p->name << "\n" << flush;
+        if (ucilevel_ != UciInfoLevel::NONE) {
+            lock_guard<mutex> lock(cout_mutex);
+            if (value)
+                cout << "info string enabled " << p->name << "\n" << flush;
+            else
+                cout << "info string disabled " << p->name << "\n" << flush;
+        }
         return;
     }
 

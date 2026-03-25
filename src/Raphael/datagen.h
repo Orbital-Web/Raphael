@@ -9,6 +9,7 @@ namespace internal {
 inline std::mutex gen_mutex;
 inline i32 num_batch_remaining = 0;
 inline i32 num_games_generated = 0;
+inline std::chrono::_V2::system_clock::time_point start_time;
 
 
 enum class Outcome : u8 { BLACK_WIN = 0, DRAW, WHITE_WIN, INVALID };

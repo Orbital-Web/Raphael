@@ -1,5 +1,4 @@
 #include <GameEngine/consts.h>
-#include <Raphael/Raphael.h>
 #include <Raphael/commands.h>
 #include <Raphael/datagen.h>
 #include <Raphael/tunable.h>

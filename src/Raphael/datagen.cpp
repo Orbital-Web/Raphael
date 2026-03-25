@@ -51,10 +51,10 @@ PackedBoard PackedBoard::pack(const chess::Board& board, i16 score) {
         const u8 col_id = static_cast<u8>((p.color() == chess::Color::WHITE) ? 0 : (1 << 3));
 
         if (p.type() == chess::PieceType::ROOK
-            && (sq.file() == cr.get_rook_file(chess::Color::WHITE, kside)
-                || sq.file() == cr.get_rook_square(chess::Color::WHITE, qside)
-                || sq.file() == cr.get_rook_square(chess::Color::BLACK, kside)
-                || sq.file() == cr.get_rook_square(chess::Color::BLACK, qside)))
+            && (sq == cr.get_rook_file(chess::Color::WHITE, kside)
+                || sq == cr.get_rook_square(chess::Color::WHITE, qside)
+                || sq == cr.get_rook_square(chess::Color::BLACK, kside)
+                || sq == cr.get_rook_square(chess::Color::BLACK, qside)))
             pt_id = unmoved_rook_id;
 
         const u8 encoding = pt_id | col_id;
@@ -65,10 +65,8 @@ PackedBoard PackedBoard::pack(const chess::Board& board, i16 score) {
     }
 
     const u8 stm_id = (board.stm() == chess::Color::WHITE) ? 0 : (1 << 7);
-    const auto enpassant = board.enpassant_square();
-    const auto rel_enpassant = (enpassant == chess::Square::NONE) ? chess::Square::NONE
-                                                                  : enpassant.relative(board.stm());
-    packed.stm_enpassant = stm_id | static_cast<u8>(rel_enpassant);
+    const auto ep_id = static_cast<u8>(board.enpassant_square());
+    packed.stm_enpassant = stm_id | ep_id;
     packed.halfmoves = board.halfmoves();
     packed.fullmoves = board.fullmoves();
     packed.eval = score;
@@ -86,9 +84,10 @@ ViriMove ViriMove::from_move(chess::Move move, i32 score) {
         static_cast<u16>(0x8000),  // castling
     };
 
-    // the move type is encoded slightly differently, so we replace it
-    virimove.move |= static_cast<u16>(move);
-    virimove.move &= 0x3FFF;
+    // encode move
+    virimove.move |= static_cast<u16>(move.from());
+    virimove.move |= static_cast<u16>(move.to()) << 6;
+    virimove.move |= static_cast<u16>(move.promotion_type() - chess::PieceType::KNIGHT) << 12;
     virimove.move |= virimovetypes[move.type() >> 14];
 
     assert(score <= INT16_MAX);
@@ -260,7 +259,11 @@ void generation_thread(
         {
             lock_guard<mutex> lock(cout_mutex);
             num_games_generated += generated;
-            cout << "\rgenerated: " + to_string(num_games_generated) + " games" << flush;
+            const auto delta
+                = ch::duration_cast<ch::milliseconds>(ch::system_clock::now() - start_time).count();
+            const auto games_persec = f64(num_games_generated) * 1000.0 / delta;
+            cout << "\rgenerated: " + to_string(num_games_generated) + " games (" << games_persec
+                 << " games/sec)" << flush;
         }
     }
 
@@ -313,9 +316,10 @@ void generate_games(
     }
 
     // get current time to use as seed
-    const auto current_time = ch::system_clock::now().time_since_epoch();
-    const auto base_seed
-        = static_cast<u64>(ch::duration_cast<ch::milliseconds>(current_time).count());
+    internal::start_time = ch::system_clock::now();
+    const auto base_seed = static_cast<u64>(
+        ch::duration_cast<ch::milliseconds>(internal::start_time.time_since_epoch()).count()
+    );
     mt19937_64 generator(base_seed);
     uniform_int_distribution<u64> distribution(0, UINT64_MAX);
 
@@ -324,7 +328,7 @@ void generate_games(
     {
         lock_guard<mutex> lock(cout_mutex);
         cout << "starting generation of " + to_string(games) + " games\n"
-             << "generated: 0 games" << flush;
+             << "generated: 0 games (0.0000 games/sec)" << flush;
     }
 
     // start generation threads

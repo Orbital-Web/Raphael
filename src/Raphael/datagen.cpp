@@ -51,7 +51,7 @@ PackedBoard PackedBoard::pack(const chess::Board& board, i16 score) {
         const u8 col_id = static_cast<u8>((p.color() == chess::Color::WHITE) ? 0 : (1 << 3));
 
         if (p.type() == chess::PieceType::ROOK
-            && (sq == cr.get_rook_file(chess::Color::WHITE, kside)
+            && (sq == cr.get_rook_square(chess::Color::WHITE, kside)
                 || sq == cr.get_rook_square(chess::Color::WHITE, qside)
                 || sq == cr.get_rook_square(chess::Color::BLACK, kside)
                 || sq == cr.get_rook_square(chess::Color::BLACK, qside)))
@@ -215,8 +215,10 @@ void generation_thread(
                         winning_for = 0;
                         losing_for++;
                         drawing_for = 0;
-                    } else if (curr_board.fullmoves() > DATAGEN_DRAW_ADJ_MVNUM
-                               && abs(abs_score) < DATAGEN_DRAW_ADJ_SCORE) {
+                    } else if (
+                        curr_board.fullmoves() > DATAGEN_DRAW_ADJ_MVNUM
+                        && abs(abs_score) < DATAGEN_DRAW_ADJ_SCORE
+                    ) {
                         winning_for = 0;
                         losing_for = 0;
                         drawing_for++;

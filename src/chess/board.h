@@ -50,6 +50,7 @@ public:
 
         [[nodiscard]] constexpr Square get_rook_square(Color color, Side castle) const {
             const auto file = get_rook_file(color, castle);
+            if (file == File::NONE) return Square::NONE;
             const auto rank = Rank(color * 7);
             return Square(file, rank);
         }

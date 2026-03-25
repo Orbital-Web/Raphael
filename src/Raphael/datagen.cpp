@@ -92,7 +92,7 @@ ViriMove ViriMove::from_move(chess::Move move, i32 score) {
 
     assert(score <= INT16_MAX);
     assert(score >= INT16_MIN);
-    virimove.score = score;
+    virimove.score = static_cast<i16>(score);
 
     return virimove;
 }
@@ -228,11 +228,11 @@ void generation_thread(
                         drawing_for = 0;
                     }
 
-                    if (winning_for >= DATAGEN_WIN_ADJ_MVCNT)
+                    if (winning_for > DATAGEN_WIN_ADJ_MVCNT)
                         outcome = Outcome::WHITE_WIN;
-                    else if (losing_for >= DATAGEN_WIN_ADJ_MVCNT)
+                    else if (losing_for > DATAGEN_WIN_ADJ_MVCNT)
                         outcome = Outcome::BLACK_WIN;
-                    else if (drawing_for >= DATAGEN_DRAW_ADJ_MVCNT)
+                    else if (drawing_for > DATAGEN_DRAW_ADJ_MVCNT)
                         outcome = Outcome::DRAW;
                 }
 

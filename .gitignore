@@ -235,6 +235,7 @@ bullet
 src/Games/stockfish/
 src/Games/*.pgn
 src/Games/*.epd
+*.vf
 
 # UCI
 *.uci_options

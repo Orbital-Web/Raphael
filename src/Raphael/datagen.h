@@ -38,6 +38,12 @@ struct ViriMove {
     u16 move = 0;
     u16 score = 0;
 
+    /** Packs a move and a score into a 4 byte entry
+     *
+     * \param move move to record
+     * \param score score to record
+     * \returns the packed viriformat move
+     */
     static ViriMove from_move(chess::Move move, i32 score);
 };
 static_assert(sizeof(ViriMove) == 4);

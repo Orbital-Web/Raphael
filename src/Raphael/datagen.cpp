@@ -181,7 +181,6 @@ void generation_thread(
             vector<ViriMove> movescores;
             movescores.reserve(256);
             Outcome outcome = Outcome::INVALID;
-            bool side = false;
             i32 winning_for = 0;
             i32 losing_for = 0;
             i32 drawing_for = 0;
@@ -191,8 +190,8 @@ void generation_thread(
                 const auto stm = curr_board.stm();
 
                 halt.store(false, memory_order_relaxed);
-                engines[side]->set_position(position);
-                const auto res = engines[side]->get_move(0, 0, halt);
+                engines[stm]->set_position(position);
+                const auto res = engines[stm]->get_move(0, 0, halt);
                 auto abs_score = (stm == chess::Color::WHITE) ? res.score : -res.score;
 
                 // handle terminal state
@@ -245,7 +244,6 @@ void generation_thread(
                 }
 
                 position.make_move(res.move);
-                side = !side;
 
                 // handle draws
                 if (curr_board.is_halfmovedraw() || curr_board.is_insufficientmaterial()

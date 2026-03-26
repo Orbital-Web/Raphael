@@ -172,8 +172,8 @@ void generation_thread(
 
             // play from here
             for (i32 i = 0; i < 2; i++) {
-                engines[0]->reset();
-                engines[0]->set_searchoptions({.maxnodes = softnodes});
+                engines[i]->reset();
+                engines[i]->set_searchoptions({.maxnodes = softnodes});
             }
             position.set_board(board);
 

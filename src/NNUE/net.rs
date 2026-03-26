@@ -19,7 +19,7 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "hydra_v5";
+    const NET_ID: &str = "hydra_v7";
     const HIDDEN_SIZE: usize = 1024;
     const NUM_OUTPUT_BUCKETS: usize = 8;
     const SCALE: f32 = 400.0;
@@ -27,17 +27,17 @@ fn main() {
     const QB: i16 = 64;
     #[rustfmt::skip]
     const BUCKET_LAYOUT: [usize; 32] = [
-        0, 0, 1, 1,
-        2, 2, 3, 3,
-        4, 4, 4, 4,
-        4, 4, 4, 4,
-        4, 4, 4, 4,
-        5, 5, 5, 5,
-        5, 5, 5, 5,
-        5, 5, 5, 5
+        0, 1, 2, 3,
+        4, 4, 5, 5,
+        6, 6, 6, 6,
+        6, 6, 6, 6,
+        6, 6, 6, 6,
+        7, 7, 7, 7,
+        7, 7, 7, 7,
+        7, 7, 7, 7
     ];
     const NUM_INPUT_BUCKETS: usize = get_num_buckets(&BUCKET_LAYOUT);
-    assert!(NUM_INPUT_BUCKETS == 6);
+    assert!(NUM_INPUT_BUCKETS == 8);
 
     // hyperparams
     let dataset_path = "data/combined.vf";

@@ -1,4 +1,5 @@
 This document contains all the information for the various Raphael NNUE iterations
+Note that this document also includes failed experiments for future references
 (document style taken from https://github.com/kelseyde/hobbes-chess-engine/blob/main/network_history.txt)
 
 
@@ -8,7 +9,7 @@ data: d1          | games: n.a               | source: raphael v1.8 (HCE)    | U
                   | pos: 200m                | nodes: 5k soft                | positions re-evaluated using Raphael v1.8.                                                   |
                   |                          | filter: captures, checks      |                                                                                              |
 ------------------|--------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
-basilisk_v1       | (768->64)x2->1           | data: d1 (0.2b)               | n.a                                         | Trained with custom pytorch trainer.           |
+basilisk_v1       | (768->64)x2->1           | data: d1 (0.2b)               | n.a, likely +200-300                        | Trained with custom pytorch trainer.           |
 default for v2.0  | activ: screlu            | sb: n.a                       |                                             |                                                |
                   | scale: 400               | lr: linear(0.001,0.00000243)  |                                             |                                                |
                   | quant: [255,64]          | wdl: constant(0.3)            |                                             |                                                |
@@ -191,4 +192,23 @@ unmerged          | activ: screlu            | sb: 400                       | S
                   | 5, 5, 5, 5               |                               |                                             |                                                |
                   | 5, 5, 5, 5               |                               |                                             |                                                |
                   | 5, 5, 5, 5               |                               |                                             |                                                |
+------------------|--------------------------|-------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d9          | games: 17.94m (mix dfrc) | source: hydra_v4-5            | 44% dfrc games.                                                                              |
+                  | pos: 1861m               | nodes: 5k soft                |                                                                                              |
+                  |                          | filter: noisy, checks         |                                                                                              |
+------------------|--------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
+hydra_v7          | (768x8hm->1024)x2->1x8   | data: d5-9 (5.5b)             | Elo   | 10.32 +- 5.53 (95%)                 | Increased input bucket count to 8.             |
+merged as #68     | activ: screlu            | sb: 400                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 261               | lr: 1600b warmup              | LLR   | 2.96 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]          |     cosine(0.001,0.00000243)  | Games | N: 4174 W: 1106 L: 982 D: 2086      |                                                |
+                  | optim: AdamW             | wdl: linear(0.2, 0.4)         | Penta | [16, 445, 1046, 559, 21]            |                                                |
+                  | buckets:                 | random fen skipping: 0.5      |                                             |                                                |
+                  | 0, 1, 2, 3               |                               |                                             |                                                |
+                  | 4, 4, 5, 5               |                               |                                             |                                                |
+                  | 6, 6, 6, 6               |                               |                                             |                                                |
+                  | 6, 6, 6, 6               |                               |                                             |                                                |
+                  | 6, 6, 6, 6               |                               |                                             |                                                |
+                  | 7, 7, 7, 7               |                               |                                             |                                                |
+                  | 7, 7, 7, 7               |                               |                                             |                                                |
+                  | 7, 7, 7, 7               |                               |                                             |                                                |
 ------------------|--------------------------|-------------------------------|---------------------------------------------┴------------------------------------------------|

@@ -212,3 +212,7 @@ merged as #68     | activ: screlu            | sb: 400                       | S
                   | 7, 7, 7, 7               |                               |                                             |                                                |
                   | 7, 7, 7, 7               |                               |                                             |                                                |
 ------------------|--------------------------|-------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d10         | games: 2.00m (dfrc)      | source: hydra_v5              | Generated using custom datagen script that is 23% faster than OpenBench. Trained two 64HL    |
+                  | pos: 208m                | nodes: 5k soft                | nets using OpenBench and new data. Results were 1.88 +- 3.84 25k nodes nonregr using the new |
+                  |                          | filter: noisy, checks         | data. Interestingly, using shared tt + history was -3.77 +- 2.80 against the old data.       |
+------------------|--------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|

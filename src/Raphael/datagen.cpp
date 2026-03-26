@@ -107,18 +107,22 @@ void generation_thread(
     i32 randmoves,
     bool dfrc
 ) {
-    // create engine if not passed
+    // create engines for both sides
+    Raphael* engines[2] = {engine, nullptr};
     bool created_engine = false;
     if (engine == nullptr) {
-        engine = new Raphael("Raphael");
+        engines[0] = new Raphael("Raphael");
         created_engine = true;
     }
+    engines[1] = new Raphael("Raphael");
 
-    // initialize engine
-    engine->set_uciinfolevel(raphael::Raphael::UciInfoLevel::NONE);
-    engine->set_option("Softnodes", true);
-    engine->set_option("Hash", DATAGEN_HASH);
-    engine->set_option("Threads", 1);
+    // initialize engines
+    for (i32 i = 0; i < 2; i++) {
+        engines[i]->set_uciinfolevel(raphael::Raphael::UciInfoLevel::NONE);
+        engines[i]->set_option("Softnodes", true);
+        engines[i]->set_option("Hash", DATAGEN_HASH);
+        engines[i]->set_option("Threads", 1);
+    }
 
     // initialize other stuff
     ofstream outfile(filename);
@@ -158,16 +162,19 @@ void generation_thread(
 
             // filter unbalanced/illegal positions
             halt.store(false, memory_order_relaxed);
-            engine->reset();
-            engine->set_searchoptions({.maxnodes = GENFENS_MAX_NODES});
-            engine->set_board(board);
-            const auto res = engine->get_move(0, 0, halt);
+            engines[0]->reset();
+            engines[0]->set_searchoptions({.maxnodes = GENFENS_MAX_NODES});
+            engines[0]->set_board(board);
+            const auto res = engines[0]->get_move(0, 0, halt);
             if (res.move == chess::Move::NO_MOVE || res.is_mate
                 || abs(res.score) > GENFENS_MAX_SCORE)
                 continue;
 
             // play from here
-            engine->set_searchoptions({.maxnodes = softnodes});
+            for (i32 i = 0; i < 2; i++) {
+                engines[i]->reset();
+                engines[i]->set_searchoptions({.maxnodes = softnodes});
+            }
             position.set_board(board);
 
             auto packed = PackedBoard::pack(board, 0);
@@ -183,8 +190,8 @@ void generation_thread(
                 const auto stm = curr_board.stm();
 
                 halt.store(false, memory_order_relaxed);
-                engine->set_position(position);
-                const auto res = engine->get_move(0, 0, halt);
+                engines[stm]->set_position(position);
+                const auto res = engines[stm]->get_move(0, 0, halt);
                 auto abs_score = (stm == chess::Color::WHITE) ? res.score : -res.score;
 
                 // handle terminal state
@@ -270,7 +277,8 @@ void generation_thread(
     }
 
     outfile.close();
-    if (created_engine) delete engine;
+    if (created_engine) delete engines[0];
+    delete engines[1];
 }
 
 

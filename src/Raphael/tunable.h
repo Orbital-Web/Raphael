@@ -307,6 +307,14 @@ static constexpr i32 BENCH_DEPTH = 14;
 static constexpr i32 GENFENS_MAX_NODES = 1000;
 static constexpr i32 GENFENS_MAX_SCORE = 1000;
 
+static constexpr i32 DATAGEN_WIN_ADJ_MVCNT = 5;
+static constexpr i32 DATAGEN_WIN_ADJ_SCORE = 2000;
+static constexpr i32 DATAGEN_DRAW_ADJ_MVNUM = 32;
+static constexpr i32 DATAGEN_DRAW_ADJ_MVCNT = 6;
+static constexpr i32 DATAGEN_DRAW_ADJ_SCORE = 15;
+static constexpr i32 DATAGEN_HASH = 16;
+static constexpr i32 DATAGEN_BATCH_SIZE = 32;
+
 static constexpr f64 DEF_TARGET_ABS_MEAN = 491.0081;  // average for lichess-big3-resolved
 
 

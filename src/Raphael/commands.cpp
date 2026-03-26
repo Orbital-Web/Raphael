@@ -121,7 +121,6 @@ void genfens(
 ) {
     // based on https://github.com/official-clockwork/Clockwork/blob/main/src/uci.cpp
     engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::NONE);
-    engine.set_searchoptions({.maxnodes = GENFENS_MAX_NODES});
     engine.set_option("Softnodes", true);
 
     mt19937_64 generator(seed);
@@ -173,6 +172,8 @@ void genfens(
 
         // filter unbalanced/illegal positions
         atomic<bool> halt{false};
+        engine.reset();
+        engine.set_searchoptions({.maxnodes = GENFENS_MAX_NODES});
         engine.set_board(board);
         const auto res = engine.get_move(0, 0, halt);
         if (res.move == chess::Move::NO_MOVE || res.is_mate || abs(res.score) > GENFENS_MAX_SCORE)

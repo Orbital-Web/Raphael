@@ -1,6 +1,6 @@
 #include <GameEngine/consts.h>
-#include <Raphael/Raphael.h>
 #include <Raphael/commands.h>
+#include <Raphael/datagen.h>
 #include <Raphael/tunable.h>
 
 #include <condition_variable>
@@ -390,6 +390,75 @@ inline void handle_genfens(const vector<string>& tokens) {
     search_cv.notify_one();
 }
 
+/** Handles the datagen command
+ *
+ * \param tokens list of tokens for the command
+ */
+inline void handle_datagen(const vector<string>& tokens) {
+    lock_guard<mutex> search_lock(search_mutex);
+    if (pending_request.searching) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string still searching\n" << flush;
+        return;
+    }
+
+    if (tokens.size() < 3) {
+        cout << "info string missing required positional parameters 'softnodes' and 'games'\n"
+             << flush;
+        return;
+    }
+
+    i32 softnodes = stoi(tokens[1]);
+    i32 games = stoi(tokens[2]);
+    std::string book = "None";
+    i32 randmoves = 0;
+    bool dfrc = false;
+    i32 concurrency = 1;
+
+    usize i = 3;
+    while (i < tokens.size()) {
+        if (tokens[i] == "book")
+            book = tokens[i + 1];
+        else if (tokens[i] == "randmoves")
+            randmoves = stoi(tokens[i + 1]);
+        else if (tokens[i] == "dfrc")
+            dfrc = (tokens[i + 1] == "true");
+        else if (tokens[i] == "threads")
+            concurrency = stoi(tokens[i + 1]);
+        i += 2;
+    }
+
+    if (softnodes <= 0) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string softnodes must be positive\n" << flush;
+        return;
+    }
+
+    if (games <= 0) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string count must be positive\n" << flush;
+        return;
+    }
+
+    if (randmoves < 0) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string randmoves must be non-negative\n" << flush;
+        return;
+    }
+
+    if (concurrency <= 0) {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "info string threads must be positive\n" << flush;
+        return;
+    }
+
+    raphael::datagen::generate_games(engine, softnodes, games, book, randmoves, dfrc, concurrency);
+
+    // quit
+    quit.store(true, memory_order_relaxed);
+    search_cv.notify_one();
+}
+
 /** Handles the evalstats command
  *
  * \param tokens list of tokens for the command
@@ -428,7 +497,16 @@ inline void show_help() {
          << "      SEED: random seed, u64. default 0\n"
          << "      BOOK: book to start with. default is None, AKA startpos\n"
          << "      RANDMOVES: number of random moves to play from book position. default 0\n"
-         << "      DFCR: whether to generate DFRC positions, true/false. default false\n\n"
+         << "      DFRC: whether to generate DFRC positions, true/false. default false\n\n"
+         << " datagen <SOFTNODES> <GAMES> [book BOOK] [randmoves RANDMOVES] [dfrc DFRC] [threads "
+            "THREADS]\n"
+         << "      generate training data\n"
+         << "      SOFTNODES: number of softnodes to generate with\n"
+         << "      GAMES: number of games to generate\n"
+         << "      BOOK: book to start with. defualt is None, AKA startpos\n"
+         << "      RANDMOVES: number of random moves to play from book position. default 0\n"
+         << "      DFRC: whether to generate DFRC positions, true/false. default false\n"
+         << "      THREADS: number of threads to generate with\n\n"
          << "  evalstats <BOOK>\n"
          << "      print statistics of NNUE evaluation\n"
          << "      BOOK: book to benchmark with\n\n"
@@ -532,6 +610,9 @@ inline void handle_command(const string& uci_command) {
 
         else if (keyword == "genfens")
             handle_genfens(tokens);
+
+        else if (keyword == "datagen")
+            handle_datagen(tokens);
 
         else if (keyword == "evalstats")
             handle_evalstats(tokens);

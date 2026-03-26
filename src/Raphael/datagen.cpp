@@ -329,7 +329,8 @@ void generate_games(
     internal::num_batch_remaining = (games + DATAGEN_BATCH_SIZE - 1) / DATAGEN_BATCH_SIZE;
     {
         lock_guard<mutex> lock(cout_mutex);
-        cout << "starting generation of " + to_string(games) + " games\n"
+        cout << "starting generation of " + to_string(games) + " games with "
+             << to_string(softnodes) << " softnodes, " << to_string(concurrency) << " threads\n"
              << "generated: 0 games (0.0000 games/sec)" << flush;
     }
 

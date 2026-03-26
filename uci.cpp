@@ -506,7 +506,7 @@ inline void show_help() {
          << "      BOOK: book to start with. defualt is None, AKA startpos\n"
          << "      RANDMOVES: number of random moves to play from book position. default 0\n"
          << "      DFRC: whether to generate DFRC positions, true/false. default false\n"
-         << "      THReADS: number of threads to generate with\n\n"
+         << "      THREADS: number of threads to generate with\n\n"
          << "  evalstats <BOOK>\n"
          << "      print statistics of NNUE evaluation\n"
          << "      BOOK: book to benchmark with\n\n"

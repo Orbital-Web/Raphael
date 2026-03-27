@@ -368,14 +368,15 @@ i32 Raphael::negamax(
 
             if (is_quiet) {
                 // late move pruning
-                if (move_searched >= LMP_TABLE[improving][depth] + board.gives_direct_check(move)) {
+                if (move_searched >= LMP_TABLE[improving][depth]) {
                     generator.skip_quiets();
                     continue;
                 }
 
                 // futility pruning
                 const i32 futility = ss->static_eval + FP_MARGIN_BASE + FP_DEPTH_SCALE * lmr_depth;
-                if (!in_check && lmr_depth <= FP_DEPTH && futility <= alpha) {
+                if (!in_check && lmr_depth <= FP_DEPTH && futility <= alpha
+                    && !board.gives_direct_check(move)) {
                     generator.skip_quiets();
                     continue;
                 }

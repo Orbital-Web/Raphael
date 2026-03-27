@@ -375,8 +375,7 @@ i32 Raphael::negamax(
 
                 // futility pruning
                 const i32 futility = ss->static_eval + FP_MARGIN_BASE + FP_DEPTH_SCALE * lmr_depth;
-                if (!in_check && lmr_depth <= FP_DEPTH && futility <= alpha
-                    && !board.gives_direct_check(move)) {
+                if (!in_check && lmr_depth <= FP_DEPTH && futility <= alpha) {
                     generator.skip_quiets();
                     continue;
                 }
@@ -590,7 +589,8 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
             if (move_searched >= QS_MAX_MOVES) break;
 
             // qs futility pruning
-            if (!in_check && futility <= alpha && !SEE::see(move, board, 1)) {
+            if (!in_check && futility <= alpha && !board.gives_direct_check(move)
+                && !SEE::see(move, board, 1)) {
                 bestscore = max(bestscore, futility);
                 continue;
             }

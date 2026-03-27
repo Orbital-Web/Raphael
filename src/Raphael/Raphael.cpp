@@ -368,7 +368,8 @@ i32 Raphael::negamax(
 
             if (is_quiet) {
                 // late move pruning
-                if (move_searched >= LMP_TABLE[improving][depth]) {
+                if (move_searched >= LMP_TABLE[improving][depth]
+                    && !board.gives_direct_check(move)) {
                     generator.skip_quiets();
                     continue;
                 }

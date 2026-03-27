@@ -74,19 +74,20 @@ private:
     std::array<BitBoard, 6> pieces_ = {};          // [048] 48  bitboard per piece type
     std::array<BitBoard, 2> occ_ = {};             // [064] 16  bitboard per color
     std::array<Piece, 64> mailbox_ = {};           // [128] 64  piece on each square
-    BitBoard threats_ = {};                        // [136] 16  attacked sqs by ntm (xrays stm king)
-    std::array<BitBoard, 2> pinmask_ = {};         // [152] 32  pin rays per color
-    MultiArray<BitBoard, 2, 2> castle_path_ = {};  // [184] 32  castling path for color and side
-    u64 hash_ = 0;                                 // [192] 8   zobrist hash
-    u64 pawn_hash_ = 0;                            // [200] 8   zobrist hash of pawns
-    u64 major_hash_ = 0;                           // [208] 8   zobrist hash of major pieces
-    u64 nonpawn_hash_[2] = {};                     // [224] 16  zobrist hash of non-pawns per color
-    CastlingRights castle_rights_ = {};            // [232] 2   allowed castling files
-    u16 plies_ = 1;                                // [232] 2   number of plies
-    u8 halfmoves_ = 0;                             // [232] 1   plies since last capture/pawn move
-    Color stm_ = Color::WHITE;                     // [232] 1   current stm
-    Square enpassant_ = Square::NONE;              // [232] 1   enpassant square
-    bool chess960_ = false;                        // [232] 1   whether chess960 is enabled
+    BitBoard threats_ = {};                        // [136] 8   attacked sqs by ntm (xrays stm king)
+    std::array<BitBoard, 2> pinmask_ = {};         // [152] 16  pin rays per color
+    std::array<BitBoard, 4> checkzones_ = {};      // [184] 32  checkzones of ntm king for pnbr
+    MultiArray<BitBoard, 2, 2> castle_path_ = {};  // [216] 32  castling path for color and side
+    u64 hash_ = 0;                                 // [224] 8   zobrist hash
+    u64 pawn_hash_ = 0;                            // [232] 8   zobrist hash of pawns
+    u64 major_hash_ = 0;                           // [240] 8   zobrist hash of major pieces
+    u64 nonpawn_hash_[2] = {};                     // [256] 16  zobrist hash of non-pawns per color
+    CastlingRights castle_rights_ = {};            // [264] 2   allowed castling files
+    u16 plies_ = 1;                                // [264] 2   number of plies
+    u8 halfmoves_ = 0;                             // [264] 1   plies since last capture/pawn move
+    Color stm_ = Color::WHITE;                     // [264] 1   current stm
+    Square enpassant_ = Square::NONE;              // [264] 1   enpassant square
+    bool chess960_ = false;                        // [264] 1   whether chess960 is enabled
 
 
 public:
@@ -179,11 +180,20 @@ public:
         );
     }
 
+
     [[nodiscard]] BitBoard threats() const { return threats_; }
 
     [[nodiscard]] BitBoard pinned(Color color) const { return pinmask_[color] & occ(color); }
 
     [[nodiscard]] BitBoard pinmask(Color color) const { return pinmask_[color]; }
+
+    [[nodiscard]] BitBoard checkzones(PieceType pt) const {
+        assert(pt != PieceType::KING);
+        return (pt != PieceType::QUEEN)
+                   ? checkzones_[pt]
+                   : checkzones_[PieceType::BISHOP] | checkzones_[PieceType::ROOK];
+    }
+
 
     [[nodiscard]] bool is_attacked(Square sq, Color color) const {
         if (color == ~stm_) return threats_.is_set(sq);
@@ -203,6 +213,20 @@ public:
         return false;
     }
 
+    [[nodiscard]] bool gives_direct_check(Move move) const {
+        auto pt = at(move.from()).type();
+        auto sq = move.to();
+
+        if (move.type() == Move::PROMOTION)
+            pt = move.promotion_type();
+        else if (move.type() == Move::CASTLING) {
+            const bool is_king_side = move.to() > move.from();
+            pt = PieceType::ROOK;
+            sq = Square::castling_rook_dest(is_king_side, stm_);
+        }
+
+        return (pt == PieceType::KING) ? false : checkzones(pt).is_set(sq);
+    }
 
     [[nodiscard]] bool is_legal(Move move) const { return Movegen::is_legal(*this, move); }
 
@@ -312,6 +336,7 @@ public:
         threats_ = compute_threats();
         pinmask_[Color::WHITE] = compute_pinmask(Color::WHITE);
         pinmask_[Color::BLACK] = compute_pinmask(Color::BLACK);
+        update_checkzones();
     }
 
     void make_nullmove() {
@@ -324,6 +349,7 @@ public:
         threats_ = compute_threats();
         pinmask_[Color::WHITE] = compute_pinmask(Color::WHITE);
         pinmask_[Color::BLACK] = compute_pinmask(Color::BLACK);
+        update_checkzones();
     }
 
 
@@ -526,6 +552,7 @@ public:
         threats_ = compute_threats();
         pinmask_[Color::WHITE] = compute_pinmask(Color::WHITE);
         pinmask_[Color::BLACK] = compute_pinmask(Color::BLACK);
+        update_checkzones();
 
         // validate enpassant
         if (enpassant_ != Square::NONE) {
@@ -793,6 +820,12 @@ private:
         return pin;
     }
 
+    void update_checkzones() {
+        checkzones_[PieceType::PAWN] = Attacks::pawn(king_square(~stm_), ~stm_);
+        checkzones_[PieceType::KNIGHT] = Attacks::knight(king_square(~stm_));
+        checkzones_[PieceType::BISHOP] = Attacks::bishop(king_square(~stm_), occ());
+        checkzones_[PieceType::ROOK] = Attacks::rook(king_square(~stm_), occ());
+    }
 
     void set_castling_rights(Color color, CastlingRights::Side side, File rook_file) {
         // check the rook and king actually exists where they're supposed to
@@ -821,5 +854,5 @@ private:
     }
 };
 
-static_assert(sizeof(Board) == 232);
+static_assert(sizeof(Board) == 264);
 }  // namespace chess

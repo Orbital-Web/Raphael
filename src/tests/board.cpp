@@ -264,4 +264,70 @@ TEST_SUITE("Board") {
             CHECK(board.get_captured(mv) == Piece::BLACKKNIGHT);
         }
     }
+
+    TEST_CASE("Board gives_direct_check") {
+        Board board = Board("6B1/1PPkq3/4n1N1/1Pp2P2/8/8/Q7/R3K2R w KQ - 16 42");
+
+        // pawn
+        auto mv = Move::make(Square::F5, Square::E6);
+        CHECK(board.gives_direct_check(mv) == true);
+
+        mv = Move::make(Square::F5, Square::F6);
+        CHECK(board.gives_direct_check(mv) == false);
+
+        // knight
+        mv = Move::make(Square::G6, Square::F8);
+        CHECK(board.gives_direct_check(mv) == true);
+
+        mv = Move::make(Square::G6, Square::H4);
+        CHECK(board.gives_direct_check(mv) == false);
+
+        // bishop
+        mv = Move::make(Square::G8, Square::E6);
+        CHECK(board.gives_direct_check(mv) == true);
+
+        mv = Move::make(Square::G8, Square::F7);
+        CHECK(board.gives_direct_check(mv) == false);
+
+        // rook
+        mv = Move::make(Square::A1, Square::D1);
+        CHECK(board.gives_direct_check(mv) == true);
+
+        mv = Move::make(Square::A1, Square::C1);
+        CHECK(board.gives_direct_check(mv) == false);
+
+        // queen
+        mv = Move::make(Square::A2, Square::E6);
+        CHECK(board.gives_direct_check(mv) == true);
+
+        mv = Move::make(Square::A2, Square::D2);
+        CHECK(board.gives_direct_check(mv) == true);
+
+        mv = Move::make(Square::A2, Square::A4);
+        CHECK(board.gives_direct_check(mv) == false);
+
+        // castling
+        mv = Move::make<Move::CASTLING>(Square::E1, Square::A1);
+        CHECK(board.gives_direct_check(mv) == true);
+
+        mv = Move::make<Move::CASTLING>(Square::E1, Square::H1);
+        CHECK(board.gives_direct_check(mv) == false);
+
+        // enpassant
+        mv = Move::make<Move::ENPASSANT>(Square::B5, Square::C6);
+        CHECK(board.gives_direct_check(mv) == true);
+
+        // promotion
+        mv = Move::make<Move::PROMOTION>(Square::B7, Square::B8, PieceType::KNIGHT);
+        CHECK(board.gives_direct_check(mv) == true);
+
+        mv = Move::make<Move::PROMOTION>(Square::C7, Square::C8, PieceType::QUEEN);
+        CHECK(board.gives_direct_check(mv) == true);
+
+        mv = Move::make<Move::PROMOTION>(Square::B7, Square::B8, PieceType::BISHOP);
+        CHECK(board.gives_direct_check(mv) == false);
+
+        mv = Move::make<Move::PROMOTION>(Square::C7, Square::C8, PieceType::ROOK);
+        CHECK(board.gives_direct_check(mv) == false);
+    }
 }

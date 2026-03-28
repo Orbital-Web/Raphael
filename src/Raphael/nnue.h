@@ -18,16 +18,16 @@ private:
     static constexpr i32 N_OUTBUCKETS = 8;
     static constexpr i32 QA = 255;
     static constexpr i32 QB = 64;
-    static constexpr i32 N_INBUCKETS = 8;
+    static constexpr i32 N_INBUCKETS = 10;
     static constexpr i32 BUCKETS[32] = {
         0, 1, 2, 3,  // A1, B1, ...
-        4, 4, 5, 5,  //
-        6, 6, 6, 6,  //
-        6, 6, 6, 6,  //
-        6, 6, 6, 6,  //
-        7, 7, 7, 7,  //
-        7, 7, 7, 7,  //
-        7, 7, 7, 7   // A8, B8, ...
+        4, 5, 6, 7,  //
+        8, 8, 8, 8,  //
+        9, 9, 9, 9,  //
+        9, 9, 9, 9,  //
+        9, 9, 9, 9,  //
+        9, 9, 9, 9,  //
+        9, 9, 9, 9   // A8, B8, ...
     };
 
     struct NnueFeature {

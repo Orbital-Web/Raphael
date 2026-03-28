@@ -161,7 +161,7 @@ i32 TimeManager::get_score_trend(i32 score) const {
     if (delta == 0) return score_trend_;
     const i32 score_trend
         = (((score_trend_ > 0) == (delta > 0)) ? score_trend_ : 0) + ((delta > 0) ? 1 : -1);
-    return max(min(score_trend, SCORE_TREND_MAX), -SCORE_TREND_MAX);
+    return max(min(score_trend, SCORE_TREND_MAX), SCORE_TREND_MIN);
 }
 
 

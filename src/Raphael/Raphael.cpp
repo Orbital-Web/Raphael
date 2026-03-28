@@ -186,8 +186,9 @@ Raphael::MoveScore Raphael::get_move(const i32 t_remain, const i32 t_inc, atomic
     // print last info
     if (ucilevel_ == UciInfoLevel::MINIMAL) print_uci_info(depth, score, ss);
 
-    // age tt
+    // age tt and record score for time management
     tt_.do_age();
+    tm_.record_score(score);
 
     // return result
     if (utils::is_mate(score))
@@ -214,6 +215,7 @@ void Raphael::reset() {
     seldepth_ = 0;
     tt_.clear();
     history_.clear();
+    tm_.hard_reset();
     searchopt_ = {};
 }
 

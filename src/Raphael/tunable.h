@@ -199,6 +199,11 @@ Tunable(SCORE_STABILITY_TM_BASE, 120, 100, 300, true);  // base soft limit for s
 Tunable(SCORE_STABILITY_TM_SCALE, 5, 0, 50, true);      // soft limit scale for score stability tm
 Tunable(SCORE_STABILITY_TM_MIN, 80, 50, 100, true);     // min soft limit for score stability tm
 
+Tunable(SCORE_TREND_TM_DEPTH, 5, 3, 10, true);     // min depth for score trend tm
+Tunable(SCORE_TREND_TM_BASE, 100, 80, 120, true);  // base soft limit for score trend tm
+Tunable(SCORE_TREND_TM_SCALE, 4, 0, 50, true);     // soft limit scale for score trend tm
+Tunable(SCORE_TREND_MAX, 5, 3, 10, true);          // max abs value of score trend
+
 Tunable(NODE_TM_DEPTH, 5, 3, 10, true);       // min depth for node tm
 Tunable(NODE_TM_BASE, 200, 100, 300, true);   // base soft limit for node tm
 Tunable(NODE_TM_SCALE, 150, 100, 200, true);  // soft limit scale for node tm

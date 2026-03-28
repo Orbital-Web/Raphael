@@ -37,9 +37,17 @@ private:
     i32 prev_score_;
     i32 score_stability_;
 
+    i32 last_score_;
+    i32 score_trend_;
+
 
 public:
     TimeManager();
+
+
+    /** Hard resets the time manager, e.g., for a new game */
+    void hard_reset();
+
 
     /** Sets the limits and starts the search timer
      *
@@ -55,6 +63,13 @@ public:
 
     /** Returns the time elapsed (in ms) since the start of search */
     i64 get_time() const;
+
+
+    /** Records the final score at the end of a search
+     *
+     * \param score final score to record
+     */
+    void record_score(i32 score);
 
 
     /** Increments the node counter */
@@ -100,8 +115,16 @@ public:
     bool is_soft_limit_reached(std::atomic<bool>& halt, chess::Move bestmove, i32 score, i32 depth);
 
 private:
-    /** Resets the time manager */
-    void reset();
+    /** Resets the time manager for this move */
+    void soft_reset();
+
+
+    /** Returns the new score trend
+     *
+     * \param current score
+     * \returns new score trend
+     */
+    i32 get_score_trend(i32 score) const;
 
 
     /** Computes the adjusted soft time limit

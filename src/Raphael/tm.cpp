@@ -14,12 +14,20 @@ namespace ch = std::chrono;
 
 
 
-TimeManager::TimeManager() { reset(); }
+TimeManager::TimeManager() { hard_reset(); }
+
+
+void TimeManager::hard_reset() {
+    last_score_ = 0;
+    score_trend_ = 0;
+    soft_reset();
+}
+
 
 void TimeManager::start_timer(
     const SearchOptions& searchopt, i32 t_remain, i32 t_inc, i32 t_overhead, i32 softhardmult
 ) {
-    reset();
+    soft_reset();
 
     // non-standard limits
     if (searchopt.movetime.has_value() || searchopt.maxdepth.has_value()
@@ -67,6 +75,12 @@ void TimeManager::start_timer(
 i64 TimeManager::get_time() const {
     const auto now = ch::steady_clock::now();
     return ch::duration_cast<ch::milliseconds>(now - start_t_).count();
+}
+
+
+void TimeManager::record_score(i32 score) {
+    score_trend_ = get_score_trend(score);
+    last_score_ = score;
 }
 
 
@@ -127,7 +141,7 @@ bool TimeManager::is_soft_limit_reached(
 }
 
 
-void TimeManager::reset() {
+void TimeManager::soft_reset() {
     nodes_ = 0;
     memset(nodes_per_move_, 0, sizeof(nodes_per_move_));
     hard_t_.reset();
@@ -139,6 +153,15 @@ void TimeManager::reset() {
     bestmove_stability_ = 0;
     prev_score_ = 0;
     score_stability_ = 0;
+}
+
+
+i32 TimeManager::get_score_trend(i32 score) const {
+    const i32 delta = score - last_score_;
+    if (delta == 0) return score_trend_;
+    const i32 score_trend
+        = (((score_trend_ > 0) == (delta > 0)) ? score_trend_ : 0) + ((delta > 0) ? 1 : -1);
+    return max(min(score_trend, SCORE_TREND_MAX), -SCORE_TREND_MAX);
 }
 
 
@@ -174,11 +197,17 @@ i64 TimeManager::adjust_soft_time(chess::Move bestmove, i32 score, i32 depth) {
             (SCORE_STABILITY_TM_MIN / 100.0)
         );
 
+    // score trend tm
+    if (depth >= SCORE_TREND_TM_DEPTH)
+        factor *= (SCORE_TREND_TM_BASE / 100.0)
+                  - (SCORE_TREND_TM_SCALE * get_score_trend(score) / 100.0);
+
     // node tm
     if (depth >= NODE_TM_DEPTH) {
         const auto ratio = f64(get_nodes(bestmove)) / f64(get_nodes());
         factor *= (NODE_TM_BASE / 100.0) - (NODE_TM_SCALE * ratio / 100.0);
     }
 
+    assert(factor > 0);
     return i64(*soft_t_ * factor);
 }

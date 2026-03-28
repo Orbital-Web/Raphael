@@ -19,7 +19,7 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "hydra_v7";
+    const NET_ID: &str = "hydra_v8";
     const HIDDEN_SIZE: usize = 1024;
     const NUM_OUTPUT_BUCKETS: usize = 8;
     const SCALE: f32 = 400.0;
@@ -28,20 +28,20 @@ fn main() {
     #[rustfmt::skip]
     const BUCKET_LAYOUT: [usize; 32] = [
         0, 1, 2, 3,
-        4, 4, 5, 5,
-        6, 6, 6, 6,
-        6, 6, 6, 6,
-        6, 6, 6, 6,
-        7, 7, 7, 7,
-        7, 7, 7, 7,
-        7, 7, 7, 7
+        4, 5, 6, 7,
+        8, 8, 8, 8,
+        9, 9, 9, 9,
+        9, 9, 9, 9,
+        9, 9, 9, 9,
+        9, 9, 9, 9,
+        9, 9, 9, 9
     ];
     const NUM_INPUT_BUCKETS: usize = get_num_buckets(&BUCKET_LAYOUT);
-    assert!(NUM_INPUT_BUCKETS == 8);
+    assert!(NUM_INPUT_BUCKETS == 10);
 
     // hyperparams
     let dataset_path = "data/combined.vf";
-    let superbatches = 400;
+    let superbatches = 500;
     let wdl_scheduler = wdl::LinearWDL { start: 0.2, end: 0.4 };
     let lr_scheduler = lr::Warmup {
         inner: lr::CosineDecayLR {

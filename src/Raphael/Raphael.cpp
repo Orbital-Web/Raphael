@@ -283,9 +283,10 @@ i32 Raphael::negamax(
     // probe transposition table
     const auto ttkey = board.hash();
     auto ttentry = TranspositionTable::ProbedEntry();
+    bool tthit = false;
 
     if (!ss->excluded) {
-        const bool tthit = tt_.get(ttentry, ttkey, ply);
+        tthit = tt_.get(ttentry, ttkey, ply);
 
         // tt cutoff
         if (!is_PV && tthit && ttentry.depth >= depth
@@ -301,8 +302,21 @@ i32 Raphael::negamax(
     if (depth >= IIR_DEPTH && !ss->excluded && (is_PV || cutnode) && !ttmove) depth--;
 
     const bool in_check = board.in_check();
-    if (!ss->excluded)
-        ss->static_eval = (in_check) ? NONE_SCORE : history_.correct(board, position_.evaluate());
+    i32 raw_static_eval;
+
+    if (!ss->excluded) {
+        if (in_check) {
+            raw_static_eval = NONE_SCORE;
+            ss->static_eval = NONE_SCORE;
+        } else {
+            if (tthit && ttentry.static_eval != NONE_SCORE)
+                raw_static_eval = ttentry.static_eval;
+            else
+                raw_static_eval = position_.evaluate();
+
+            ss->static_eval = history_.correct(board, raw_static_eval);
+        }
+    }
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
 
     // pre-moveloop pruning
@@ -524,7 +538,7 @@ i32 Raphael::negamax(
             && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
                 || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
             history_.update_corrections(board, depth, bestscore, ss->static_eval);
-        tt_.set(ttkey, bestscore, bestmove, depth, ttflag, ply);
+        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, depth, ttflag, ply);
     }
 
     return bestscore;
@@ -558,11 +572,19 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
         return ttentry.score;
 
     // standing pat
+    i32 raw_static_eval;
     i32 static_eval;
-    if (in_check)
+
+    if (in_check) {
+        raw_static_eval = NONE_SCORE;
         static_eval = -MATE_SCORE + ply;
-    else {
-        static_eval = history_.correct(board, position_.evaluate());
+    } else {
+        if (tthit && ttentry.static_eval != NONE_SCORE)
+            raw_static_eval = ttentry.static_eval;
+        else
+            raw_static_eval = position_.evaluate();
+
+        static_eval = history_.correct(board, raw_static_eval);
 
         if (static_eval >= beta) return static_eval;
 
@@ -630,7 +652,8 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
     if (in_check && move_searched == 0) return -MATE_SCORE + ply;
 
     // update transposition table
-    if (!halt.load(memory_order_relaxed)) tt_.set(ttkey, bestscore, bestmove, 0, ttflag, ply);
+    if (!halt.load(memory_order_relaxed))
+        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, 0, ttflag, ply);
 
     return bestscore;
 }

@@ -290,9 +290,9 @@ i32 Raphael::negamax(
 
         // tt cutoff
         if (!is_PV && tthit && ttentry.depth >= depth
-            && (ttentry.flag == tt_.EXACT                                 // exact
-                || (ttentry.flag == tt_.LOWER && ttentry.score >= beta)   // lower
-                || (ttentry.flag == tt_.UPPER && ttentry.score <= alpha)  // upper
+            && (ttentry.flag == tt_.EXACT                                 //
+                || (ttentry.flag == tt_.LOWER && ttentry.score >= beta)   //
+                || (ttentry.flag == tt_.UPPER && ttentry.score <= alpha)  //
         ))
             return ttentry.score;
     }
@@ -535,8 +535,10 @@ i32 Raphael::negamax(
     if (!ss->excluded && !halt.load(memory_order_relaxed)) {
         // update corrhist
         if (!in_check && (bestmove == chess::Move::NO_MOVE || board.is_quiet(bestmove))
-            && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
-                || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
+            && (ttflag == tt_.EXACT                                      //
+                || (ttflag == tt_.LOWER && bestscore > ss->static_eval)  //
+                || (ttflag == tt_.UPPER && bestscore < ss->static_eval)  //
+        ))
             history_.update_corrections(board, depth, bestscore, ss->static_eval);
         tt_.set(ttkey, bestscore, raw_static_eval, bestmove, depth, ttflag, ply);
     }
@@ -565,9 +567,9 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
 
     // tt cutoff
     if (!is_PV && tthit
-        && (ttentry.flag == tt_.EXACT                                 // exact
-            || (ttentry.flag == tt_.LOWER && ttentry.score >= beta)   // lower
-            || (ttentry.flag == tt_.UPPER && ttentry.score <= alpha)  // upper
+        && (ttentry.flag == tt_.EXACT                                 //
+            || (ttentry.flag == tt_.LOWER && ttentry.score >= beta)   //
+            || (ttentry.flag == tt_.UPPER && ttentry.score <= alpha)  //
     ))
         return ttentry.score;
 
@@ -585,6 +587,13 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
             raw_static_eval = position_.evaluate();
 
         static_eval = history_.correct(board, raw_static_eval);
+
+        if (
+            ttentry.flag == tt_.EXACT                                      //
+            || (ttentry.flag == tt_.LOWER && ttentry.score > static_eval)  //
+            || (ttentry.flag == tt_.UPPER && ttentry.score < static_eval)  //
+        )
+            static_eval = ttentry.score;
 
         if (static_eval >= beta) return static_eval;
 

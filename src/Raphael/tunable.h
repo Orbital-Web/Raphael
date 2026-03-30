@@ -209,6 +209,8 @@ Tunable(ASPIRATION_INIT_SIZE, 50, 5, 100, true);       // initial window size
 Tunable(ASPIRATION_WIDENING_FACTOR, 12, 2, 24, true);  // window scale factor (1 + k/16)
 
 Tunable(TT_REPLACEMENT_DEPTH_OFFSET, 4, 0, 8, true);  // offset to replace tt from
+Tunable(TT_VALUE_DEPTH_WEIGHT, 1, 0, 4, false);       // eviction depth weight
+Tunable(TT_VALUE_AGE_WEIGHT, 1, 0, 4, false);         // eviction age weight
 
 // negamax
 Tunable(IIR_DEPTH, 3, 3, 6, true);  // min depth to apply iir from

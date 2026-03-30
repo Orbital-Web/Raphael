@@ -236,7 +236,7 @@ Tunable(SEE_NOISY_DEPTH_SCALE, -90, -128, -30, true);  // depth scale for noisy 
 
 Tunable(SE_DEPTH, 8, 6, 12, true);          // min depth to apply singular extensions from
 Tunable(SE_TT_DEPTH, 3, 3, 6, true);        // min tt depth margin for singular extensions
-Tunable(SE_DEPTH_MARGIN, 32, 4, 64, true);  // depth margin for singular extension beta
+Tunable(SE_DEPTH_MARGIN, 16, 4, 64, true);  // depth margin for singular extension beta
 Tunable(DE_MARGIN, 30, 4, 64, true);        // score margin for double extensions
 
 Tunable(LMR_DEPTH, 3, 1, 5, true);              // depth to apply lmr from

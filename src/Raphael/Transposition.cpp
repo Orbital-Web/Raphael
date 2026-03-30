@@ -22,8 +22,13 @@ TranspositionTable::Flag TranspositionTable::Entry::flag() const {
 }
 
 void TranspositionTable::Entry::set_age_flag(u32 age, Flag flag) {
-    assert(age < (1 << AGE_BITS));
+    assert(age <= MAX_AGE);
     age_flag = static_cast<u8>(age << 2) | static_cast<u8>(flag);
+}
+
+i32 TranspositionTable::Entry::value(u32 tt_age) const {
+    const i32 relative_age = (MAX_AGE + 1 + tt_age - age()) & MAX_AGE;
+    return TT_VALUE_DEPTH_WEIGHT * depth - TT_VALUE_AGE_WEIGHT * relative_age;
 }
 
 
@@ -35,7 +40,7 @@ TranspositionTable::~TranspositionTable() { deallocate(); }
 
 void TranspositionTable::resize(i32 size_mb) {
     assert(size_mb > 0 && size_mb <= MAX_TABLE_SIZE_MB);
-    const usize newsize = (usize)size_mb * 1024 * 1024 / ENTRY_SIZE;
+    const usize newsize = (usize)size_mb * 1024 * 1024 / CLUSTER_SIZE;
 
     // re-allocate if necessary
     if (newsize > capacity_ || newsize <= capacity_ / 2) {
@@ -49,25 +54,27 @@ void TranspositionTable::resize(i32 size_mb) {
 
 bool TranspositionTable::get(ProbedEntry& ttentry, u64 key, i32 ply) const {
     // get
-    const auto& entry = table_[index(key)];
+    const auto& cluster = table_[index(key)];
     const auto packed_key = static_cast<u16>(key);
 
-    if (packed_key == entry.key && entry.flag() != Flag::INVALID) {
-        // correct mate score when retrieving (https://youtu.be/XfeuxubYlT0)
-        i32 score = static_cast<i32>(entry.score);
-        if (utils::is_loss(score))
-            score += ply;
-        else if (utils::is_win(score))
-            score -= ply;
-        ttentry.score = score;
-        ttentry.static_eval = static_cast<i32>(entry.static_eval);
-        ttentry.move = static_cast<chess::Move>(entry.move);
-        ttentry.depth = static_cast<i32>(entry.depth);
-        ttentry.flag = entry.flag();
+    for (usize i = 0; i < ENTRIES_PER_CLUSTER; i++) {
+        const auto& entry = cluster.entries[i];
+        if (packed_key == entry.key && entry.flag() != Flag::INVALID) {
+            // correct mate score when retrieving (https://youtu.be/XfeuxubYlT0)
+            i32 score = static_cast<i32>(entry.score);
+            if (utils::is_loss(score))
+                score += ply;
+            else if (utils::is_win(score))
+                score -= ply;
+            ttentry.score = score;
+            ttentry.static_eval = static_cast<i32>(entry.static_eval);
+            ttentry.move = static_cast<chess::Move>(entry.move);
+            ttentry.depth = static_cast<i32>(entry.depth);
+            ttentry.flag = entry.flag();
 
-        return true;
+            return true;
+        }
     }
-
     return false;
 }
 
@@ -78,15 +85,41 @@ void TranspositionTable::set(
 ) {
     assert(depth >= 0);
     assert(depth < 256);
+    assert(score >= INT16_MIN);
+    assert(score <= INT16_MAX);
+    assert(static_eval >= INT16_MIN);
+    assert(static_eval <= INT16_MAX);
 
-    Entry entry = table_[index(key)];
+    auto& cluster = table_[index(key)];
     const auto packed_key = static_cast<u16>(key);
 
-    if (!(flag == Flag::EXACT || packed_key != entry.key || entry.age() != age_
-          || depth + TT_REPLACEMENT_DEPTH_OFFSET > entry.depth))
+    // choose candidate to evict
+    Entry* entry = nullptr;
+    i32 min_value = INT32_MAX;
+
+    for (usize i = 0; i < ENTRIES_PER_CLUSTER; i++) {
+        auto& candidate = cluster.entries[i];
+
+        // replace if empty or same key
+        if (candidate.flag() == Flag::INVALID || packed_key == candidate.key) {
+            entry = &candidate;
+            break;
+        }
+
+        // otherwise replace worst entry
+        const i32 value = candidate.value(age_);
+        if (value < min_value) {
+            min_value = value;
+            entry = &candidate;
+        }
+    }
+    assert(entry != nullptr);
+
+    if (!(flag == Flag::EXACT || packed_key != entry->key || entry->age() != age_
+          || depth + TT_REPLACEMENT_DEPTH_OFFSET > entry->depth))
         return;
 
-    if (move || entry.key != packed_key) entry.move = static_cast<u16>(move);
+    if (move || entry->key != packed_key) entry->move = static_cast<u16>(move);
 
     // correct mate score when storing (https://youtu.be/XfeuxubYlT0)
     if (utils::is_loss(score))
@@ -94,41 +127,37 @@ void TranspositionTable::set(
     else if (utils::is_win(score))
         score += ply;
 
-    assert(score >= INT16_MIN);
-    assert(score <= INT16_MAX);
-    assert(static_eval >= INT16_MIN);
-    assert(static_eval <= INT16_MAX);
-
     // set
-    entry.key = packed_key;
-    entry.score = static_cast<i16>(score);
-    entry.static_eval = static_cast<i16>(static_eval);
-    entry.depth = static_cast<u8>(depth);
-    entry.set_age_flag(age_, flag);
-
-    table_[index(key)] = entry;
+    entry->key = packed_key;
+    entry->score = static_cast<i16>(score);
+    entry->static_eval = static_cast<i16>(static_eval);
+    entry->depth = static_cast<u8>(depth);
+    entry->set_age_flag(age_, flag);
 }
 
 void TranspositionTable::clear() {
     assert(table_ != nullptr);
     assert(size_ > 0);
 
-    memset(table_, 0, size_ * ENTRY_SIZE);
+    memset(table_, 0, size_ * CLUSTER_SIZE);
 
     age_ = 0;
 }
 
-void TranspositionTable::do_age() { age_ = (age_ + 1) % (1 << AGE_BITS); }
+void TranspositionTable::do_age() { age_ = (age_ + 1) & MAX_AGE; }
 
 i32 TranspositionTable::hashfull() const {
     i32 filled = 0;
 
     for (usize i = 0; i < 1000; i++) {
-        const auto& entry = table_[i];
-        if (entry.flag() != Flag::INVALID && entry.age() == age_) filled++;
+        const auto& cluster = table_[i];
+        for (usize j = 0; j < ENTRIES_PER_CLUSTER; j++) {
+            const auto& entry = cluster.entries[j];
+            if (entry.flag() != Flag::INVALID && entry.age() == age_) filled++;
+        }
     }
 
-    return filled;
+    return filled / ENTRIES_PER_CLUSTER;
 }
 
 
@@ -147,17 +176,16 @@ void TranspositionTable::allocate(usize newsize) {
     static constexpr usize page_size = 4096;
 #endif
 
-    const usize newsize_s = ((newsize * ENTRY_SIZE + page_size - 1) / page_size) * page_size;
-    capacity_ = newsize_s / ENTRY_SIZE;
+    const usize newsize_s = ((newsize * CLUSTER_SIZE + page_size - 1) / page_size) * page_size;
+    capacity_ = newsize_s / CLUSTER_SIZE;
 
 #if defined(__linux__)
-    table_ = static_cast<Entry*>(aligned_alloc(page_size, newsize_s));
+    table_ = static_cast<Cluster*>(aligned_alloc(page_size, newsize_s));
     madvise(table_, newsize_s, MADV_HUGEPAGE);
 #elif defined(_WIN32)
-    // TODO: windows huge page support
-    table_ = static_cast<Entry*>(_aligned_malloc(newsize_s, page_size));
+    table_ = static_cast<Cluster*>(_aligned_malloc(newsize_s, page_size));
 #else
-    table_ = static_cast<Entry*>(aligned_alloc(page_size, newsize_s));
+    table_ = static_cast<Cluster*>(aligned_alloc(page_size, newsize_s));
 #endif
 }
 

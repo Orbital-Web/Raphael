@@ -10,6 +10,7 @@ class TranspositionTable {
 public:
     static constexpr i32 MAX_TABLE_SIZE_MB = 65536;  // 64GB
     static constexpr i32 DEF_TABLE_SIZE_MB = 64;
+    static constexpr usize ENTRIES_PER_CLUSTER = 3;
 
     enum Flag : u8 { INVALID = 0, LOWER, EXACT, UPPER };
 
@@ -24,10 +25,28 @@ public:
         u32 age() const;
         Flag flag() const;
 
+        /** Sets the age and flag of the entry
+         *
+         * \param age age to set
+         * \param flag flag to set
+         */
         void set_age_flag(u32 age, Flag flag);
+
+        /** Returns how valuable this entry is
+         *
+         * \param tt_age age of the tt
+         * \returns value of this entry
+         */
+        i32 value(u32 tt_age) const;
     };
-    static constexpr usize ENTRY_SIZE = sizeof(Entry);
-    static_assert(ENTRY_SIZE == 10);
+    static_assert(sizeof(Entry) == 10);
+
+    struct alignas(32) Cluster {
+        Entry entries[ENTRIES_PER_CLUSTER];
+        u16 pad;
+    };
+    static constexpr usize CLUSTER_SIZE = sizeof(Cluster);
+    static_assert(CLUSTER_SIZE == 32);
 
     struct ProbedEntry {
         i32 score;
@@ -40,10 +59,11 @@ public:
 private:
     usize size_;
     usize capacity_;
-    Entry* table_;
+    Cluster* table_;
 
     u32 age_ = 0;
     static constexpr u32 AGE_BITS = 6;
+    static constexpr u32 MAX_AGE = (1 << AGE_BITS) - 1;
 
 
 public:

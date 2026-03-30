@@ -60,6 +60,7 @@ bool TranspositionTable::get(ProbedEntry& ttentry, u64 key, i32 ply) const {
         else if (utils::is_win(score))
             score -= ply;
         ttentry.score = score;
+        ttentry.static_eval = static_cast<i32>(entry.static_eval);
         ttentry.move = static_cast<chess::Move>(entry.move);
         ttentry.depth = static_cast<i32>(entry.depth);
         ttentry.flag = entry.flag();
@@ -72,7 +73,9 @@ bool TranspositionTable::get(ProbedEntry& ttentry, u64 key, i32 ply) const {
 
 void TranspositionTable::prefetch(u64 key) const { __builtin_prefetch(&table_[index(key)]); }
 
-void TranspositionTable::set(u64 key, i32 score, chess::Move move, i32 depth, Flag flag, i32 ply) {
+void TranspositionTable::set(
+    u64 key, i32 score, i32 static_eval, chess::Move move, i32 depth, Flag flag, i32 ply
+) {
     assert(depth >= 0);
     assert(depth < 256);
 
@@ -93,10 +96,13 @@ void TranspositionTable::set(u64 key, i32 score, chess::Move move, i32 depth, Fl
 
     assert(score >= INT16_MIN);
     assert(score <= INT16_MAX);
+    assert(static_eval >= INT16_MIN);
+    assert(static_eval <= INT16_MAX);
 
     // set
     entry.key = packed_key;
     entry.score = static_cast<i16>(score);
+    entry.static_eval = static_cast<i16>(static_eval);
     entry.depth = static_cast<u8>(depth);
     entry.set_age_flag(age_, flag);
 

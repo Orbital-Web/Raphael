@@ -14,11 +14,12 @@ public:
     enum Flag : u8 { INVALID = 0, LOWER, EXACT, UPPER };
 
     struct Entry {
-        u16 key;      // zobrist hash of position
-        i16 score;    // score of the position
-        u16 move;     // bestmove
-        u8 depth;     // max 255
-        u8 age_flag;  // 6 bits age, 2 bits flag
+        u16 key;          // zobrist hash of position
+        i16 score;        // score of the position
+        i16 static_eval;  // static eval of the position
+        u16 move;         // bestmove
+        u8 depth;         // max 255
+        u8 age_flag;      // 6 bits age, 2 bits flag
 
         u32 age() const;
         Flag flag() const;
@@ -26,10 +27,11 @@ public:
         void set_age_flag(u32 age, Flag flag);
     };
     static constexpr usize ENTRY_SIZE = sizeof(Entry);
-    static_assert(ENTRY_SIZE == 8);
+    static_assert(ENTRY_SIZE == 10);
 
     struct ProbedEntry {
         i32 score;
+        i32 static_eval;
         i32 depth;
         chess::Move move;
         Flag flag;
@@ -82,12 +84,13 @@ public:
      *
      * \param key zobrist hash of position
      * \param score score of the position
+     * \param static_eval static eval of the position
      * \param move bestmove
      * \param depth max 255
      * \param flag invalid, lower, exact, or upper
      * \param ply current distance from root
      */
-    void set(u64 key, i32 score, chess::Move move, i32 depth, Flag flag, i32 ply);
+    void set(u64 key, i32 score, i32 static_eval, chess::Move move, i32 depth, Flag flag, i32 ply);
 
     /** Clears the table */
     void clear();

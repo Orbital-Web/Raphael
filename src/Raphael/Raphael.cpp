@@ -406,7 +406,10 @@ i32 Raphael::negamax(
         i32 extension = 0;
         if (!is_root && depth >= SE_DEPTH && move == ttmove && !ss->excluded
             && ttentry.depth >= depth - SE_TT_DEPTH && ttentry.flag != tt_.UPPER) {
-            const i32 s_beta = max(-MATE_SCORE + 1, ttentry.score - depth * SE_DEPTH_MARGIN / 16);
+            const i32 s_beta = max(
+                -MATE_SCORE + 1,
+                ttentry.score - depth * SE_DEPTH_MARGIN * ((ttentry.flag == tt_.EXACT) ? 1 : 2) / 16
+            );
             const i32 s_depth = (depth - 1) / 2;
 
             ss->excluded = move;

@@ -339,7 +339,8 @@ i32 Raphael::negamax(
             position_.make_nullmove();
             ss->move = chess::Move::NULL_MOVE;
 
-            const i32 red_depth = depth - NMP_REDUCTION;
+            const i32 red_factor = NMP_REDUCTION + depth * NMP_DEPTH_SCALE;
+            const i32 red_depth = depth - red_factor / 128;
             const i32 score = -negamax<false>(
                 red_depth, ply + 1, mvidx, -beta, -beta + 1, !cutnode, ss + 1, halt
             );

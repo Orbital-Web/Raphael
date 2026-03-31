@@ -342,6 +342,7 @@ i32 Raphael::negamax(
             i32 red_factor = NMP_REDUCTION;
             red_factor += depth * NMP_DEPTH_SCALE;
             red_factor += min((ss->static_eval - beta) * NMP_EVAL_SCALE, NMP_EVAL_MAX);
+            red_factor += improving * NMP_IMPROVING;
 
             const i32 red_depth = depth - red_factor / 128;
             const i32 score = -negamax<false>(

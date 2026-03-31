@@ -524,6 +524,8 @@ inline void show_help() {
          << "                             wtime, btime, winc, binc, infinite\n"
          << "  eval                     - show raw static eval\n"
          << "  ceval                    - show corrected static eval\n"
+         << "  fen                      - show current position's fen\n"
+         << "  board                    - show current position's board\n"
          << "  stop                     - stop current search\n"
          << "  wait                     - wait until the current search finishes\n"
          << "  quit                     - exit\n";
@@ -573,8 +575,8 @@ inline void handle_command(const string& uci_command) {
         search_cv.notify_one();
 
     } else if (uci_command == "obspsa") {
-#ifdef TUNE
         lock_guard<mutex> lock(cout_mutex);
+#ifdef TUNE
         for (const auto tunable : raphael::tunables) cout << tunable->ob();
         cout << flush;
 #else
@@ -590,7 +592,15 @@ inline void handle_command(const string& uci_command) {
     else if (uci_command == "ceval")
         handle_eval(true);
 
-    else {
+    else if (uci_command == "fen") {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << pending_request.position.board().get_fen() << "\n" << flush;
+
+    } else if (uci_command == "board") {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << pending_request.position.board().pretty_print() << flush;
+
+    } else {
         // tokenize command
         vector<string> tokens;
         stringstream ss(uci_command);

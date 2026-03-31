@@ -657,6 +657,65 @@ public:
         return fen;
     }
 
+
+    [[nodiscard]] std::string pretty_print() const {
+        std::string boardstr;
+        boardstr.reserve(400);
+
+        for (i32 rank = Rank::R8; rank >= Rank::R1; --rank) {
+            boardstr += std::to_string(rank + 1) + " ";
+            for (i32 file = File::A; file <= File::H; ++file) {
+                const auto piece = at(Square(File(file), Rank(rank)));
+                boardstr += static_cast<std::string>(piece) + ' ';
+            }
+
+            // show other meta info
+            if (rank == Rank::R7) {
+                boardstr += " Side: ";
+                boardstr += ((stm_ == Color::WHITE) ? "White" : "Black");
+            } else if (rank == Rank::R6) {
+                boardstr += " Castling:  ";
+
+                if (castle_rights_.is_empty())
+                    boardstr += '-';
+                else {
+                    const auto king_side = CastlingRights::Side::KING_SIDE;
+                    const auto queen_side = CastlingRights::Side::QUEEN_SIDE;
+
+                    if (!chess960_) {
+                        if (castle_rights_.has(Color::WHITE, king_side)) boardstr += 'K';
+                        if (castle_rights_.has(Color::WHITE, queen_side)) boardstr += 'Q';
+                        if (castle_rights_.has(Color::BLACK, king_side)) boardstr += 'k';
+                        if (castle_rights_.has(Color::BLACK, queen_side)) boardstr += 'q';
+                    } else {
+                        for (const auto color : {Color::WHITE, Color::BLACK}) {
+                            for (const auto side : {king_side, queen_side}) {
+                                if (castle_rights_.has(color, side)) {
+                                    const auto rook_file
+                                        = castle_rights_.get_rook_file(color, side);
+                                    const auto filestr = static_cast<std::string>(rook_file);
+                                    boardstr += (color == Color::WHITE) ? std::toupper(filestr[0])
+                                                                        : filestr[0];
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (rank == Rank::R5) {
+                boardstr += " Enpassant: ";
+                boardstr
+                    += ((enpassant_ == Square::NONE) ? "-" : static_cast<std::string>(enpassant_));
+            } else if (rank == Rank::R4)
+                boardstr += " Halfmoves: " + std::to_string(halfmoves());
+            else if (rank == Rank::R3)
+                boardstr += " Fullmoves: " + std::to_string(fullmoves());
+
+            boardstr += '\n';
+        }
+        boardstr += "  a b c d e f g h\n";
+        return boardstr;
+    }
+
 private:
     void reset() {
         pieces_.fill(0);

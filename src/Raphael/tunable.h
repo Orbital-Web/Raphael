@@ -225,7 +225,9 @@ Tunable(RAZORING_MARGIN_BASE, 300, 0, 400, true);    // base margin for razoring
 
 Tunable(NMP_DEPTH, 3, 1, 10, true);           // depth to apply nmp from
 Tunable(NMP_REDUCTION, 512, 32, 1024, true);  // depth reduction for nmp
-Tunable(NMP_DEPTH_SCALE, 25, 1, 64, true);    // depth scale for nmp reduction
+Tunable(NMP_DEPTH_SCALE, 25, 1, 128, true);   // depth scale for nmp reduction
+Tunable(NMP_EVAL_SCALE, 82, 1, 128, true);    // eval minus beta scale for nmp reduction
+Tunable(NMP_EVAL_MAX, 384, 32, 1024, true);   // max eval minus beta nmp reduction
 
 inline MultiArray<i32, 2, 256> LMP_TABLE;  // lmp threshold[improving][depth]
 TunableCallback(LMP_THRESH_BASE, 3, 1, 12, update_lmp_table, true);

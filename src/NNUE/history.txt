@@ -237,7 +237,7 @@ data: d11         | games: 40.00m (mix dfrc) | source: hydra_v7-8            | 2
 ------------------|--------------------------|-------------------------------|---------------------------------------------┬------------------------------------------------|
 hydra_v9          | (768x16hm->1024)x2->1x8  | data: d5-11 (10.7b)           | Elo   | 9.73 +- 5.42 (95%)                  | Increased input bucket count to 16.            |
 merged as #??     | activ: screlu            | sb: 600                       | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | scale: ???               | lr: 1600b warmup              | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | scale: 257               | lr: 1600b warmup              | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | quant: [255,64]          |     cosine(0.001,0.00000243)  | Games | N: 4574 W: 1212 L: 1084 D: 2278     |                                                |
                   | optim: AdamW             | wdl: linear(0.2, 0.4)         | Penta | [17, 514, 1115, 606, 35]            |                                                |
                   | buckets:                 | random fen skipping: 0.5      |                                             |                                                |

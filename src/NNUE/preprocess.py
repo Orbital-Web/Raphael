@@ -20,7 +20,7 @@ BUCKETS = [
 
 def load_network(filename: str) -> dict[str, np.ndarray]:
     assert len(set(BUCKETS)) == NUM_INPUT_BUCKET, "incorrect input bucket count"
-    assert max(BUCKETS) + 1 == NUM_OUTPUT_BUCKET, "incorrect output bucket count"
+    assert max(BUCKETS) + 1 == NUM_INPUT_BUCKET, "incorrect output bucket count"
 
     W0_SIZE = 12 * 64 * NUM_INPUT_BUCKET * HIDDEN_SIZE
     B0_SIZE = HIDDEN_SIZE

@@ -13,8 +13,8 @@ public:
     static constexpr i32 OUTPUT_SCALE = 257;
 
 private:
-    static constexpr i32 N_INPUTS = 12 * 64;  // all features
-    static constexpr i32 N_HIDDEN = 1024;     // accumulator size
+    static constexpr i32 N_INPUTS = 11 * 64;
+    static constexpr i32 N_HIDDEN = 1024;
     static constexpr i32 N_OUTBUCKETS = 8;
     static constexpr i32 QA = 255;
     static constexpr i32 QB = 64;

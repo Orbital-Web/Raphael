@@ -4,7 +4,7 @@ Raphael is a superhuman UCI Chess Engine built using C++. It also comes with a G
 
 You can [scroll to the bottom](#raphael-engine) to see a list of features currently implemented, and also download the prebuilt binaries to try Raphael out for yourself.
 
-Raphael is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk), and is a revisit/successor to a previous engine I coded in Python.
+Raphael is largely inspired by [Sebastian Lague's Coding Adventure series on implementing a Chess Engine](https://youtu.be/U4ogK0MIzqk).
 
 <p align="center">
   <img src="https://github.com/Orbital-Web/Raphael/blob/8667a6f6db60c5cacce297145246f89a22fa5333/Demo.png" alt="demo of Raphael" width=400/>
@@ -38,9 +38,11 @@ The following are the historic elo for Raphael.
 
 ## Getting Started
 
-Builds of the UCI engine for Windows and Linux/WSL are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page. In general, you should use the `avx2-bmi2` build (on pre-Zen 3 AMD CPUs, the `avx2` build can be significantly faster than the `avx2-bmi2` build).
+Prebuilt binaries of the UCI engine for Windows and Linux/WSL are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page.
+In general, you should use the `avx2-bmi2` build (on pre-Zen 3 AMD CPUs, the `avx2` build can be significantly faster than the `avx2-bmi2` build).
 
-Please refer to the [following section](#compiling-from-source) to compile the GUI and/or the engine yourself on Windows and Linux. The [features section](#features) outline the supported commands and features of the GUI and UCI engine.
+Please refer to the [following section](#compiling-from-source) to compile the GUI and/or the engine yourself on Windows and Linux.
+The [features section](#features) outline the supported commands and features of the GUI and UCI engine.
 
 ### Compiling From Source
 
@@ -80,8 +82,7 @@ The GUI is a quick and easy way to start engine battles or play against Raphael 
 To start a quick GUI match against yourself and Raphael as follows:
 
 ```shell
-main.exe human "Human" Raphael "Raphael" -s "game.pgn"  # Windows
-./main human "Human" Raphael "Raphael" -s "game.pgn"    # Linux/WSL
+main.exe human "Human" Raphael "Raphael"
 ```
 
 You can see other command-line arguments by running `main.exe -h`.
@@ -89,9 +90,13 @@ There are supports for board annotations (arrows and square highlights) using th
 
 ### Raphael (Engine)
 
-Raphael is a UCI-compliant chess engine. To use it in other UCI-compliant softwares, compile `uci.cpp` using the [instructions above](#getting-started). To see all supported commands, run `uci.exe help`
+Raphael is a UCI-compliant chess engine.
+To use it in other UCI-compliant softwares, compile `uci.cpp` or download the prebuilt binaries using the [instructions above](#getting-started).
+To see all supported commands, run `uci.exe help`
 
-The engine contains the following features:
+<details>
+
+<summary>Click to show the list of implemented features:</summary>
 
 - [x] Search                                (`v1.0+`)
   - [x] Iterative deepening                 (`v1.1+`)
@@ -195,7 +200,11 @@ The engine contains the following features:
 - [ ] Lazy SMP
 - [ ] SPSA tuning
 
-For a more in-depth documentation on the NNUE and how it was trained, refer to the [NNUE History](https://github.com/Orbital-Web/Raphael/blob/main/src/NNUE/history.txt). All iterations of Raphael's NNUE were trained on self-generated training data. The net files can be found on the [Raphael-Net](https://github.com/Orbital-Web/Raphael-Net) repository.
+</details>
+
+For a more in-depth documentation on the NNUE and how it was trained, refer to the [NNUE History](https://github.com/Orbital-Web/Raphael/blob/main/src/NNUE/history.txt).
+All iterations of Raphael's NNUE were trained on self-generated training data.
+The net files can be found on the [Raphael-Net](https://github.com/Orbital-Web/Raphael-Net) repository.
 
 ## UCI Options
 
@@ -254,9 +263,9 @@ Raphael uses or has used the following tools throughout its development:
 Furthermore, the following individuals have inspired me or have helped me tremendously throughout the development process of Raphael (in no particular order):
 
 - [Sebastian Lague](https://www.youtube.com/c/SebastianLague) for inspiring me to start the development of Raphael through the Coding Adventures series
-- [Zahrizhal Ali](https://github.com/ZahrizhalAli) for providing me with kaggle compute for running tests, datagen, etc.
 - [Jonathan Hallström](https://github.com/JonathanHallstrom), author of [Pawnocchio](https://github.com/JonathanHallstrom/pawnocchio) (and a contributor to Raphael!!)
 - [Ciekce](https://github.com/Ciekce), author of [Stormphrax](https://github.com/Ciekce/Stormphrax)
 - [Sp00ph](https://github.com/Sp00ph), author of [Icarus](https://github.com/Sp00ph/icarus)
 - [Dan](https://github.com/kelseyde), author of [Hobbes](https://github.com/kelseyde/hobbes-chess-engine)
+- [Zahrizhal Ali](https://github.com/ZahrizhalAli) for providing me with kaggle compute for running tests, datagen, etc.
 - and many others on the Stockfish and AlphaBeta Discord servers

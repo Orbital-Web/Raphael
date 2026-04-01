@@ -10,25 +10,25 @@
 namespace raphael {
 class Nnue {
 public:
-    static constexpr i32 OUTPUT_SCALE = 261;
+    static constexpr i32 OUTPUT_SCALE = 257;
 
 private:
-    static constexpr i32 N_INPUTS = 12 * 64;  // all features
-    static constexpr i32 N_HIDDEN = 1024;     // accumulator size
+    static constexpr i32 N_INPUTS = 11 * 64;
+    static constexpr i32 N_HIDDEN = 1024;
     static constexpr i32 N_OUTBUCKETS = 8;
     static constexpr i32 QA = 255;
     static constexpr i32 QB = 64;
-    static constexpr i32 N_INBUCKETS = 10;
-    static constexpr i32 BUCKETS[32] = {
-        0, 1, 2, 3,  // A1, B1, ...
-        4, 5, 6, 7,  //
-        8, 8, 8, 8,  //
-        9, 9, 9, 9,  //
-        9, 9, 9, 9,  //
-        9, 9, 9, 9,  //
-        9, 9, 9, 9,  //
-        9, 9, 9, 9   // A8, B8, ...
-    };
+    static constexpr i32 N_INBUCKETS = 16;
+    static constexpr i32 BUCKETS[32] = {  // clang-format off
+        0,  1,  2,  3,
+        4,  5,  6,  7,
+        8,  8,  9,  9,
+        10, 10, 11, 11,
+        12, 12, 13, 13,
+        12, 12, 13, 13,
+        14, 14, 15, 15,
+        14, 14, 15, 15
+    };  // clang-format on
 
     struct NnueFeature {
         chess::Piece piece;

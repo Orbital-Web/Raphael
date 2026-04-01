@@ -22,7 +22,9 @@ INCBIN(unsigned char, netfile, TOSTRING(NETWORK_FILE));
 
 i32 Nnue::NnueFeature::index(chess::Color perspective, bool mirror) const {
     const auto sq = (mirror) ? square.mirrored() : square;
-    return 64 * piece.relative(perspective) + sq.relative(perspective);
+    const auto pc = (piece.type() == chess::PieceType::KING) ? chess::Piece::WHITEKING
+                                                             : piece.relative(perspective);
+    return 64 * pc + sq.relative(perspective);
 }
 
 

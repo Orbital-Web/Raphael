@@ -297,7 +297,7 @@ i32 Raphael::negamax(
             return ttentry.score;
     }
     const auto ttmove = ttentry.move;
-    const bool ttpv = is_PV | ttentry.was_PV;
+    const bool ttpv = is_PV || ttentry.was_PV;
 
     // internal iterative reduction
     if (depth >= IIR_DEPTH && !ss->excluded && (is_PV || cutnode) && !ttmove) depth--;
@@ -457,6 +457,7 @@ i32 Raphael::negamax(
             i32 red_factor = LMR_TABLE[is_quiet][depth][move_searched];
             red_factor += !is_PV * LMR_NONPV;
             red_factor += cutnode * LMR_CUTNODE;
+            red_factor += (ttpv && tthit && ttentry.score <= alpha) * LMR_TTPV_FAIL_LOW;
             red_factor -= improving * LMR_IMPROVING;
             red_factor -= gives_check * LMR_CHECK;
             red_factor
@@ -572,7 +573,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
     auto ttentry = TranspositionTable::ProbedEntry();
     const bool tthit = tt_.get(ttentry, ttkey, ply);
     const auto ttmove = ttentry.move;
-    const bool ttpv = is_PV | ttentry.was_PV;
+    const bool ttpv = is_PV || ttentry.was_PV;
 
     // tt cutoff
     if (!is_PV && tthit

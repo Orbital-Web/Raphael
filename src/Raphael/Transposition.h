@@ -26,13 +26,20 @@ public:
         bool pv() const;
         Flag flag() const;
 
-        /** Sets the age and flag of the entry
+        /** Sets the age, pv, and flag of the entry
          *
          * \param age age to set
          * \param pv whether this entry is on the PV
          * \param flag flag to set
          */
         void set_age_pv_flag(u32 age, bool pv, Flag flag);
+
+        /** Returns how valuable this entry is
+         *
+         * \param tt_age age of the tt
+         * \returns value of this entry
+         */
+        i32 value(u32 tt_age) const;
     };
     static_assert(sizeof(Entry) == 10);
 
@@ -47,9 +54,9 @@ public:
         i32 score;
         i32 static_eval;
         i32 depth;
-        chess::Move move;
-        bool was_PV;
-        Flag flag;
+        chess::Move move = chess::Move::NO_MOVE;
+        bool was_PV = false;
+        Flag flag = Flag::INVALID;
     };
 
 private:

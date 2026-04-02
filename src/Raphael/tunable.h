@@ -211,7 +211,7 @@ Tunable(ASPIRATION_WIDENING_FACTOR, 12, 2, 24, true);  // window scale factor (1
 Tunable(TT_REPLACEMENT_DEPTH_OFFSET, 4, 0, 8, true);  // offset to replace tt from
 Tunable(TT_REPLACEMENT_PV_OFFSET, 2, 0, 6, true);     // offset to replace pv tt from
 Tunable(TT_VALUE_DEPTH_WEIGHT, 1, 0, 4, false);       // eviction depth weight
-Tunable(TT_VALUE_AGE_WEIGHT, 1, 0, 4, false);         // eviction age weight
+Tunable(TT_VALUE_AGE_WEIGHT, 2, 0, 4, false);         // eviction age weight
 
 // negamax
 Tunable(IIR_DEPTH, 3, 3, 6, true);  // min depth to apply iir from
@@ -254,6 +254,7 @@ TunableCallback(LMR_QUIET_DIVISOR, 354, 32, 512, update_lmr_table, true);
 TunableCallback(LMR_NOISY_DIVISOR, 414, 32, 512, update_lmr_table, true);
 Tunable(LMR_NONPV, 130, 32, 384, true);
 Tunable(LMR_CUTNODE, 128, 32, 384, true);
+Tunable(LMR_TTPV_FAIL_LOW, 128, 32, 384, true);
 Tunable(LMR_IMPROVING, 128, 32, 384, true);
 Tunable(LMR_CHECK, 128, 32, 384, true);
 Tunable(LMR_QUIET_HIST_DIVISOR, 12000, 4096, 16384, true);

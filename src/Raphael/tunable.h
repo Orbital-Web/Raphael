@@ -232,6 +232,10 @@ Tunable(NMP_RED_EVAL_MAX, 384, 128, 512, false);
 inline MultiArray<i32, 2, 256> LMP_TABLE;  // lmp moves threshold[improving][depth]
 TunableCallback(LMP_THRESH_BASE, 3, 1, 12, update_lmp_table, false);
 
+Tunable(NOISY_HP_MAX_DEPTH, 4, 1, 10, true);
+Tunable(NOISY_HP_DEPTH_MUL, -1000, -3000, -500, true);
+Tunable(NOISY_HP_BASE, -2000, -4000, 4000, true);
+
 Tunable(FP_MAX_DEPTH, 7, 4, 12, false);
 Tunable(FP_MARGIN_DEPTH_MUL, 85, 32, 384, true);
 Tunable(FP_MARGIN_BASE, 106, 32, 384, true);

@@ -407,7 +407,12 @@ i32 Raphael::negamax(
             const i32 see_thresh = (is_quiet) ? SEE_QUIET_DEPTH_MUL * lmr_depth * lmr_depth
                                               : SEE_NOISY_DEPTH_MUL * depth;
             if (!SEE::see(move, board, see_thresh)) continue;
-        }
+
+        } else if (
+            depth <= NOISY_HP_MAX_DEPTH  // noisy history pruning
+            && history < NOISY_HP_BASE + NOISY_HP_DEPTH_MUL * depth * depth
+        )
+            continue;
 
         // extensions
         i32 extension = 0;

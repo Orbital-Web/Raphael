@@ -143,11 +143,11 @@ Raphael::MoveScore Raphael::get_move(const i32 t_remain, const i32 t_inc, atomic
         if (halt.load(memory_order_relaxed)) break;
 
         // initialize aspiration window
-        i32 delta = ASPIRATION_INIT_SIZE;
+        i32 delta = ASP_INIT_SIZE;
         i32 alpha = -INF_SCORE;
         i32 beta = INF_SCORE;
 
-        if (depth >= ASPIRATION_DEPTH) {
+        if (depth >= ASP_MIN_DEPTH) {
             alpha = max(score - delta, -INF_SCORE);
             beta = min(score + delta, INF_SCORE);
         }
@@ -165,7 +165,7 @@ Raphael::MoveScore Raphael::get_move(const i32 t_remain, const i32 t_inc, atomic
             else
                 break;
 
-            delta += delta * ASPIRATION_WIDENING_FACTOR / 16;
+            delta += delta * ASP_WIDENING_FACTOR / 16;
         }
 
         if (halt.load(memory_order_relaxed)) break;  // don't use results if timeout
@@ -299,7 +299,7 @@ i32 Raphael::negamax(
     const auto ttmove = ttentry.move;
 
     // internal iterative reduction
-    if (depth >= IIR_DEPTH && !ss->excluded && (is_PV || cutnode) && !ttmove) depth--;
+    if (depth >= IIR_MIN_DEPTH && !ss->excluded && (is_PV || cutnode) && !ttmove) depth--;
 
     const bool in_check = board.in_check();
     i32 raw_static_eval;
@@ -322,18 +322,18 @@ i32 Raphael::negamax(
     // pre-moveloop pruning
     if (!is_PV && !in_check && !ss->excluded) {
         // reverse futility pruning
-        const i32 rfp_margin = RFP_DEPTH_SCALE * depth - RFP_IMPROV_SCALE * improving;
-        if (depth <= RFP_DEPTH && ss->static_eval - rfp_margin >= beta) return ss->static_eval;
+        const i32 rfp_margin = RFP_MARGIN_DEPTH_MUL * depth - RFP_MARGIN_IMPROV_MUL * improving;
+        if (depth <= RFP_MAX_DEPTH && ss->static_eval - rfp_margin >= beta) return ss->static_eval;
 
         // razoring
-        const i32 razor_margin = RAZORING_MARGIN_BASE + RAZORING_DEPTH_SCALE * depth * depth;
-        if (depth <= RAZORING_DEPTH && alpha <= 2048 && ss->static_eval + razor_margin <= alpha) {
+        const i32 razor_margin = RAZOR_MARGIN_BASE + RAZOR_MARGIN_DEPTH_MUL * depth * depth;
+        if (depth <= RAZOR_MAX_DEPTH && alpha <= 2048 && ss->static_eval + razor_margin <= alpha) {
             const i32 score = quiescence<false>(ply, mvidx, alpha, alpha + 1, halt);
             if (score <= alpha) return score;
         }
 
         // null move pruning
-        if (depth >= NMP_DEPTH && ss->static_eval >= beta
+        if (depth >= NMP_MIN_DEPTH && ss->static_eval >= beta
             && (ss - 1)->move != chess::Move::NULL_MOVE
             && !(ttentry.flag == tt_.UPPER && ttentry.score < beta)
             && !board.is_kingpawn(board.stm())) {
@@ -341,9 +341,9 @@ i32 Raphael::negamax(
             position_.make_nullmove();
             ss->move = chess::Move::NULL_MOVE;
 
-            i32 red_factor = NMP_REDUCTION;
-            red_factor += depth * NMP_DEPTH_SCALE;
-            red_factor += min((ss->static_eval - beta) * NMP_EVAL_SCALE, NMP_EVAL_MAX);
+            i32 red_factor = NMP_RED_BASE;
+            red_factor += depth * NMP_RED_DEPTH_MUL;
+            red_factor += min<i32>((ss->static_eval - beta) * NMP_RED_EVAL_MUL, NMP_RED_EVAL_MAX);
 
             const i32 red_depth = depth - red_factor / 128;
             const i32 score = -negamax<false>(
@@ -394,8 +394,9 @@ i32 Raphael::negamax(
                 }
 
                 // futility pruning
-                const i32 futility = ss->static_eval + FP_MARGIN_BASE + FP_DEPTH_SCALE * lmr_depth;
-                if (!in_check && lmr_depth <= FP_DEPTH && futility <= alpha
+                const i32 futility
+                    = ss->static_eval + FP_MARGIN_BASE + FP_MARGIN_DEPTH_MUL * lmr_depth;
+                if (!in_check && lmr_depth <= FP_MAX_DEPTH && futility <= alpha
                     && !board.gives_direct_check(move)) {
                     generator.skip_quiets();
                     continue;
@@ -403,18 +404,19 @@ i32 Raphael::negamax(
             }
 
             // SEE pruning
-            const i32 see_thresh = (is_quiet) ? SEE_QUIET_DEPTH_SCALE * lmr_depth * lmr_depth
-                                              : SEE_NOISY_DEPTH_SCALE * depth;
+            const i32 see_thresh = (is_quiet) ? SEE_QUIET_DEPTH_MUL * lmr_depth * lmr_depth
+                                              : SEE_NOISY_DEPTH_MUL * depth;
             if (!SEE::see(move, board, see_thresh)) continue;
         }
 
         // extensions
         i32 extension = 0;
-        if (!is_root && depth >= SE_DEPTH && move == ttmove && !ss->excluded
-            && ttentry.depth >= depth - SE_TT_DEPTH && ttentry.flag != tt_.UPPER) {
+        if (!is_root && depth >= SE_MIN_DEPTH && move == ttmove && !ss->excluded
+            && ttentry.depth >= depth - SE_MIN_TT_DEPTH && ttentry.flag != tt_.UPPER) {
             const i32 s_beta = max(
                 -MATE_SCORE + 1,
-                ttentry.score - depth * SE_DEPTH_MARGIN * ((ttentry.flag == tt_.EXACT) ? 1 : 2) / 16
+                ttentry.score
+                    - depth * SE_MARGIN_DEPTH_MUL * ((ttentry.flag == tt_.EXACT) ? 1 : 2) / 16
             );
             const i32 s_depth = (depth - 1) / 2;
 
@@ -451,15 +453,14 @@ i32 Raphael::negamax(
         // principle variation search
         i32 score = INT32_MIN;
         const i32 new_depth = depth - 1 + extension;
-        if (depth >= LMR_DEPTH && move_searched > LMR_FROMMOVE) {
+        if (depth >= LMR_MIN_DEPTH && move_searched > LMR_FROMMOVE) {
             // late move reduction
             i32 red_factor = LMR_TABLE[is_quiet][depth][move_searched];
             red_factor += !is_PV * LMR_NONPV;
             red_factor += cutnode * LMR_CUTNODE;
             red_factor -= improving * LMR_IMPROVING;
             red_factor -= gives_check * LMR_CHECK;
-            red_factor
-                -= history * 128 / ((is_quiet) ? LMR_QUIET_HIST_DIVISOR : LMR_NOISY_HIST_DIVISOR);
+            red_factor -= history * 128 / ((is_quiet) ? LMR_QUIET_HIST_DIV : LMR_NOISY_HIST_DIV);
 
             const i32 red_depth = min(max(new_depth - red_factor / 128, 1), new_depth);
             score = -negamax<false>(
@@ -612,7 +613,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
     chess::Move bestmove = chess::Move::NO_MOVE;
     auto ttflag = tt_.UPPER;
 
-    const i32 futility = bestscore + QS_FUTILITY_MARGIN;
+    const i32 futility = bestscore + QS_FP_MARGIN;
 
     i32 move_searched = 0;
     while (const auto move = generator.next()) {

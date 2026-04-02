@@ -182,124 +182,124 @@ void init_tunables();
 
 
 // time management
-Tunable(TIME_FACTOR, 6, 2, 10, true);    // percentage of remaining time to use as base time
-Tunable(INC_FACTOR, 80, 50, 100, true);  // percentage of increment to use use as base time
+Tunable(TIME_FACTOR, 6, 1, 15, false);
+Tunable(INC_FACTOR, 80, 50, 100, false);
 
-Tunable(HARD_TIME_FACTOR, 200, 150, 250, true);  // percentage of base time to use as hard time
-Tunable(SOFT_TIME_FACTOR, 70, 50, 100, true);    // percentage of base time to use as soft time
+Tunable(HARD_TIME_FACTOR, 200, 150, 250, false);
+Tunable(SOFT_TIME_FACTOR, 70, 50, 100, false);
 
-Tunable(MOVE_STABILITY_TM_DEPTH, 5, 3, 10, true);      // min depth for move stability tm
-Tunable(MOVE_STABILITY_TM_BASE, 120, 100, 300, true);  // base soft limit for move stability tm
-Tunable(MOVE_STABILITY_TM_SCALE, 5, 0, 50, true);      // soft limit scale for move stability tm
-Tunable(MOVE_STABILITY_TM_MIN, 80, 50, 100, true);     // min soft limit for move stability tm
+Tunable(MV_STAB_TM_MIN_DEPTH, 5, 3, 10, false);
+Tunable(MV_STAB_TM_BASE, 120, 100, 300, false);
+Tunable(MV_STAB_TM_MUL, 5, 0, 50, false);
+Tunable(MV_STAB_TM_MIN, 80, 50, 100, false);
 
-Tunable(SCORE_STABILITY_MARGIN, 10, 1, 50, true);       // distance to last score to raise stability
-Tunable(SCORE_STABILITY_TM_DEPTH, 5, 3, 10, true);      // min depth for score stability tm
-Tunable(SCORE_STABILITY_TM_BASE, 120, 100, 300, true);  // base soft limit for score stability tm
-Tunable(SCORE_STABILITY_TM_SCALE, 5, 0, 50, true);      // soft limit scale for score stability tm
-Tunable(SCORE_STABILITY_TM_MIN, 80, 50, 100, true);     // min soft limit for score stability tm
+Tunable(SCORE_STAB_MARGIN, 10, 1, 50, false);
+Tunable(SCORE_STAB_TM_MIN_DEPTH, 5, 3, 10, false);
+Tunable(SCORE_STAB_TM_BASE, 120, 100, 300, false);
+Tunable(SCORE_STAB_TM_MUL, 5, 0, 50, false);
+Tunable(SCORE_STAB_TM_MIN, 80, 50, 100, false);
 
-Tunable(NODE_TM_DEPTH, 5, 3, 10, true);       // min depth for node tm
-Tunable(NODE_TM_BASE, 200, 100, 300, true);   // base soft limit for node tm
-Tunable(NODE_TM_SCALE, 150, 100, 200, true);  // soft limit scale for node tm
+Tunable(NODE_TM_MIN_DEPTH, 5, 3, 10, false);
+Tunable(NODE_TM_BASE, 200, 100, 300, false);
+Tunable(NODE_TM_MUL, 150, 100, 200, false);
 
 // search
-Tunable(ASPIRATION_DEPTH, 3, 2, 5, true);              // min depth to apply aspiration windows
-Tunable(ASPIRATION_INIT_SIZE, 50, 5, 100, true);       // initial window size
-Tunable(ASPIRATION_WIDENING_FACTOR, 12, 2, 24, true);  // window scale factor (1 + k/16)
+Tunable(ASP_MIN_DEPTH, 3, 2, 5, false);
+Tunable(ASP_INIT_SIZE, 50, 5, 100, true);
+Tunable(ASP_WIDENING_FACTOR, 12, 2, 24, true);
 
-Tunable(TT_REPLACEMENT_DEPTH_OFFSET, 4, 0, 8, true);  // offset to replace tt from
-Tunable(TT_VALUE_DEPTH_WEIGHT, 1, 0, 4, false);       // eviction depth weight
-Tunable(TT_VALUE_AGE_WEIGHT, 1, 0, 4, false);         // eviction age weight
+Tunable(TT_REPL_DEPTH_MARGIN, 4, 0, 8, false);
+Tunable(TT_VALUE_DEPTH_WEIGHT, 1, 0, 4, false);
+Tunable(TT_VALUE_AGE_WEIGHT, 1, 0, 4, false);
 
 // negamax
-Tunable(IIR_DEPTH, 3, 3, 6, true);  // min depth to apply iir from
+Tunable(IIR_MIN_DEPTH, 3, 3, 6, false);
 
-Tunable(RFP_DEPTH, 6, 1, 10, true);           // max depth to apply rfp from
-Tunable(RFP_DEPTH_SCALE, 77, 25, 150, true);  // margin depth scale for rfp
-Tunable(RFP_IMPROV_SCALE, 40, 0, 100, true);  // margin improving scale for rfp
+Tunable(RFP_MAX_DEPTH, 6, 1, 10, false);
+Tunable(RFP_MARGIN_DEPTH_MUL, 77, 25, 150, true);
+Tunable(RFP_MARGIN_IMPROV_MUL, 40, 0, 100, true);
 
-Tunable(RAZORING_DEPTH, 4, 1, 10, true);             // max depth to apply razoring from
-Tunable(RAZORING_DEPTH_SCALE, 250, 100, 350, true);  // margin depth scale for razoring
-Tunable(RAZORING_MARGIN_BASE, 300, 0, 400, true);    // base margin for razoring
+Tunable(RAZOR_MAX_DEPTH, 4, 1, 10, false);
+Tunable(RAZOR_MARGIN_DEPTH_MUL, 250, 100, 350, true);
+Tunable(RAZOR_MARGIN_BASE, 300, 0, 400, true);
 
-Tunable(NMP_DEPTH, 3, 1, 10, true);           // depth to apply nmp from
-Tunable(NMP_REDUCTION, 512, 32, 1024, true);  // depth reduction for nmp
-Tunable(NMP_DEPTH_SCALE, 25, 1, 128, true);   // depth scale for nmp reduction
-Tunable(NMP_EVAL_SCALE, 82, 1, 128, true);    // eval minus beta scale for nmp reduction
-Tunable(NMP_EVAL_MAX, 384, 32, 1024, true);   // max eval minus beta nmp reduction
+Tunable(NMP_MIN_DEPTH, 3, 1, 10, false);
+Tunable(NMP_RED_BASE, 512, 32, 1024, true);
+Tunable(NMP_RED_DEPTH_MUL, 25, 1, 128, true);
+Tunable(NMP_RED_EVAL_MUL, 82, 1, 128, true);
+Tunable(NMP_RED_EVAL_MAX, 384, 32, 1024, true);
 
-inline MultiArray<i32, 2, 256> LMP_TABLE;  // lmp threshold[improving][depth]
+inline MultiArray<i32, 2, 256> LMP_TABLE;  // lmp moves threshold[improving][depth]
 TunableCallback(LMP_THRESH_BASE, 3, 1, 12, update_lmp_table, true);
 
-Tunable(FP_DEPTH, 7, 4, 12, true);           // max depth to apply fp from
-Tunable(FP_DEPTH_SCALE, 80, 40, 200, true);  // margin depth scale for fp
-Tunable(FP_MARGIN_BASE, 100, 0, 400, true);  // base margin for fp
+Tunable(FP_MAX_DEPTH, 7, 4, 12, false);
+Tunable(FP_MARGIN_DEPTH_MUL, 80, 40, 200, true);
+Tunable(FP_MARGIN_BASE, 100, 0, 400, true);
 
-Tunable(SEE_QUIET_DEPTH_SCALE, -30, -128, -1, true);   // depth scale for quiet SEE pruning
-Tunable(SEE_NOISY_DEPTH_SCALE, -90, -128, -30, true);  // depth scale for noisy SEE pruning
+Tunable(SEE_QUIET_DEPTH_MUL, -30, -128, -1, true);
+Tunable(SEE_NOISY_DEPTH_MUL, -90, -128, -30, true);
 
-Tunable(SE_DEPTH, 8, 6, 12, true);          // min depth to apply singular extensions from
-Tunable(SE_TT_DEPTH, 3, 3, 6, true);        // min tt depth margin for singular extensions
-Tunable(SE_DEPTH_MARGIN, 16, 4, 64, true);  // depth margin for singular extension beta
-Tunable(DE_MARGIN, 30, 4, 64, true);        // score margin for double extensions
+Tunable(SE_MIN_DEPTH, 8, 6, 12, false);
+Tunable(SE_MIN_TT_DEPTH, 3, 3, 6, false);
+Tunable(SE_MARGIN_DEPTH_MUL, 16, 4, 64, true);
+Tunable(DE_MARGIN, 30, 4, 64, true);
 
-Tunable(LMR_DEPTH, 3, 1, 5, true);              // depth to apply lmr from
-Tunable(LMR_FROMMOVE, 5, 2, 8, true);           // movei to apply lmr from
+Tunable(LMR_MIN_DEPTH, 3, 1, 5, false);
+Tunable(LMR_FROMMOVE, 5, 2, 8, false);
 inline MultiArray<i32, 2, 256, 256> LMR_TABLE;  // lmr reduction[quiet][ply][move_searched]
 TunableCallback(LMR_QUIET_BASE, 182, 32, 384, update_lmr_table, true);
 TunableCallback(LMR_NOISY_BASE, -30, -192, 192, update_lmr_table, true);
-TunableCallback(LMR_QUIET_DIVISOR, 354, 32, 512, update_lmr_table, true);
-TunableCallback(LMR_NOISY_DIVISOR, 414, 32, 512, update_lmr_table, true);
+TunableCallback(LMR_QUIET_DIV, 354, 32, 512, update_lmr_table, true);
+TunableCallback(LMR_NOISY_DIV, 414, 32, 512, update_lmr_table, true);
 Tunable(LMR_NONPV, 130, 32, 384, true);
 Tunable(LMR_CUTNODE, 128, 32, 384, true);
 Tunable(LMR_IMPROVING, 128, 32, 384, true);
 Tunable(LMR_CHECK, 128, 32, 384, true);
-Tunable(LMR_QUIET_HIST_DIVISOR, 12000, 4096, 16384, true);
-Tunable(LMR_NOISY_HIST_DIVISOR, 12000, 4096, 16384, true);
+Tunable(LMR_QUIET_HIST_DIV, 12000, 4096, 16384, true);
+Tunable(LMR_NOISY_HIST_DIV, 12000, 4096, 16384, true);
 
 // quiescence
-Tunable(QS_MAX_MOVES, 3, 1, 5, true);             // max moves to search in qsearch
-Tunable(QS_FUTILITY_MARGIN, 150, 50, 400, true);  // margin for qs futility pruning
-Tunable(QS_SEE_THRESH, -100, -500, 200, true);    // SEE threshold for qs SEE pruning
+Tunable(QS_MAX_MOVES, 3, 1, 5, false);
+Tunable(QS_FP_MARGIN, 150, 50, 400, true);
+Tunable(QS_SEE_THRESH, -100, -400, 200, true);
 
 // SEE
 inline MultiArray<i32, 13> SEE_TABLE;
 TunableCallback(SEE_PAWN_VAL, 100, 100, 100, update_see_table, false);
 TunableCallback(SEE_KNIGHT_VAL, 422, 200, 600, update_see_table, true);
 TunableCallback(SEE_BISHOP_VAL, 437, 200, 600, update_see_table, true);
-TunableCallback(SEE_ROOK_VAL, 694, 300, 800, update_see_table, true);
-TunableCallback(SEE_QUEEN_VAL, 1313, 600, 1800, update_see_table, true);
+TunableCallback(SEE_ROOK_VAL, 694, 400, 900, update_see_table, true);
+TunableCallback(SEE_QUEEN_VAL, 1313, 800, 1600, update_see_table, true);
 
 // move ordering
 static constexpr i32 HISTORY_MAX = 16384;
-static constexpr i32 CAPTHIST_DIVISOR = 8;
+static constexpr i32 CAPTHIST_DIV = 8;
 
-Tunable(GOOD_NOISY_SEE_BASE, -15, -200, 200, true);  // SEE threshold for good tacticals
-Tunable(GOOD_NOISY_SEE_SCALE, 16, 0, 128, true);     // SEE score scale for good tacticals
+Tunable(GOOD_NOISY_SEE_BASE, -15, -200, 200, true);
+Tunable(GOOD_NOISY_SEE_MUL, 16, 0, 128, true);
 
-Tunable(HISTORY_BONUS_DEPTH_SCALE, 100, 32, 512, true);
-Tunable(HISTORY_BONUS_OFFSET, 100, 32, 768, true);
+Tunable(HISTORY_BONUS_DEPTH_MUL, 100, 32, 512, true);
+Tunable(HISTORY_BONUS_BASE, 100, 32, 768, true);
 Tunable(HISTORY_BONUS_MAX, 2000, 1024, 4096, true);
-Tunable(HISTORY_PENALTY_DEPTH_SCALE, 100, 32, 512, true);
-Tunable(HISTORY_PENALTY_OFFSET, 100, 32, 768, true);
+Tunable(HISTORY_PENALTY_DEPTH_MUL, 100, 32, 512, true);
+Tunable(HISTORY_PENALTY_BASE, 100, 32, 768, true);
 Tunable(HISTORY_PENALTY_MAX, 2000, 1024, 4096, true);
 
 Tunable(CONTHIST1_WEIGHT, 128, 16, 256, true);
 Tunable(CONTHIST2_WEIGHT, 128, 16, 256, true);
 Tunable(CONTHIST4_WEIGHT, 64, 16, 256, true);
 
-Tunable(CAPTHIST_BONUS_DEPTH_SCALE, 100, 32, 512, true);
-Tunable(CAPTHIST_BONUS_OFFSET, 100, 32, 768, true);
+Tunable(CAPTHIST_BONUS_DEPTH_MUL, 100, 32, 512, true);
+Tunable(CAPTHIST_BONUS_BASE, 100, 32, 768, true);
 Tunable(CAPTHIST_BONUS_MAX, 2000, 1024, 4096, true);
-Tunable(CAPTHIST_PENALTY_DEPTH_SCALE, 100, 32, 512, true);
-Tunable(CAPTHIST_PENALTY_OFFSET, 100, 32, 768, true);
+Tunable(CAPTHIST_PENALTY_DEPTH_MUL, 100, 32, 512, true);
+Tunable(CAPTHIST_PENALTY_BASE, 100, 32, 768, true);
 Tunable(CAPTHIST_PENALTY_MAX, 2000, 1024, 4096, true);
 
 // corrections
 static constexpr i32 CORRHIST_SIZE = 16384;
 static constexpr i32 CORRHIST_MAX = 1024;
-static constexpr i32 CORRHIST_BONUS_DEPTH_DIVISOR = 8;
+static constexpr i32 CORRHIST_BONUS_DEPTH_DIV = 8;
 static constexpr i32 CORRHIST_BONUS_MAX = 256;
 
 Tunable(PAWN_CORRHIST_WEIGHT, 64, 32, 384, true);

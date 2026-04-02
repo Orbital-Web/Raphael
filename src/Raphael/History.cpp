@@ -46,22 +46,20 @@ History::History()
 
 
 i32 History::quiet_bonus(i32 depth) const {
-    return min<i32>(HISTORY_BONUS_DEPTH_SCALE * depth + HISTORY_BONUS_OFFSET, HISTORY_BONUS_MAX);
+    return min<i32>(HISTORY_BONUS_DEPTH_MUL * depth + HISTORY_BONUS_BASE, HISTORY_BONUS_MAX);
 }
 
 i32 History::noisy_bonus(i32 depth) const {
-    return min<i32>(CAPTHIST_BONUS_DEPTH_SCALE * depth + CAPTHIST_BONUS_OFFSET, CAPTHIST_BONUS_MAX);
+    return min<i32>(CAPTHIST_BONUS_DEPTH_MUL * depth + CAPTHIST_BONUS_BASE, CAPTHIST_BONUS_MAX);
 }
 
 i32 History::quiet_penalty(i32 depth) const {
-    return -min<i32>(
-        HISTORY_PENALTY_DEPTH_SCALE * depth + HISTORY_PENALTY_OFFSET, HISTORY_PENALTY_MAX
-    );
+    return -min<i32>(HISTORY_PENALTY_DEPTH_MUL * depth + HISTORY_PENALTY_BASE, HISTORY_PENALTY_MAX);
 }
 
 i32 History::noisy_penalty(i32 depth) const {
     return -min<i32>(
-        CAPTHIST_PENALTY_DEPTH_SCALE * depth + CAPTHIST_PENALTY_OFFSET, CAPTHIST_PENALTY_MAX
+        CAPTHIST_PENALTY_DEPTH_MUL * depth + CAPTHIST_PENALTY_BASE, CAPTHIST_PENALTY_MAX
     );
 }
 
@@ -127,7 +125,7 @@ i32 History::get_noisyscore(chess::Move move, chess::Piece captured) const {
 
 void History::update_corrections(const chess::Board& board, i32 depth, i32 score, i32 static_eval) {
     const auto bonus = clamp(
-        (score - static_eval) * depth / CORRHIST_BONUS_DEPTH_DIVISOR,
+        (score - static_eval) * depth / CORRHIST_BONUS_DEPTH_DIV,
         -CORRHIST_BONUS_MAX,
         CORRHIST_BONUS_MAX
     );

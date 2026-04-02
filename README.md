@@ -267,5 +267,6 @@ Furthermore, the following individuals have inspired me or have helped me tremen
 - [Ciekce](https://github.com/Ciekce), author of [Stormphrax](https://github.com/Ciekce/Stormphrax)
 - [Sp00ph](https://github.com/Sp00ph), author of [Icarus](https://github.com/Sp00ph/icarus)
 - [Dan](https://github.com/kelseyde), author of [Hobbes](https://github.com/kelseyde/hobbes-chess-engine)
+- [Tecci](https://github.com/Teccii), author of [Cherry](https://github.com/Teccii/cherry)
 - [Zahrizhal Ali](https://github.com/ZahrizhalAli) for providing me with kaggle compute for running tests, datagen, etc.
 - and many others on the Stockfish and AlphaBeta Discord servers

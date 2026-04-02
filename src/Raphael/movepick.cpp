@@ -68,7 +68,7 @@ chess::Move MoveGenerator::next() {
 
                 if (smove.move == ttmove_) continue;
 
-                const auto thresh = GOOD_NOISY_SEE_BASE - (smove.score * GOOD_NOISY_SEE_SCALE / 64);
+                const auto thresh = GOOD_NOISY_SEE_BASE - (smove.score * GOOD_NOISY_SEE_MUL / 64);
                 if (SEE::see(smove.move, board, thresh))
                     return smove.move;
                 else
@@ -241,7 +241,7 @@ void MoveGenerator::score_noisies() {
         const auto victim = board.get_captured(smove.move);
 
         i32 score = 0;
-        score += history_->get_noisyscore(smove.move, victim) / CAPTHIST_DIVISOR;
+        score += history_->get_noisyscore(smove.move, victim) / CAPTHIST_DIV;
         score += SEE_TABLE[victim];
         if (smove.move.type() == chess::Move::PROMOTION)
             score += SEE_TABLE[smove.move.promotion_type()] - SEE_TABLE[chess::PieceType::PAWN];

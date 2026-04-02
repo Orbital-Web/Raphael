@@ -153,31 +153,29 @@ i64 TimeManager::adjust_soft_time(chess::Move bestmove, i32 score, i32 depth) {
         bestmove_stability_ = 0;
     prev_bestmove_ = bestmove;
 
-    if (depth >= MOVE_STABILITY_TM_DEPTH)
+    if (depth >= MV_STAB_TM_MIN_DEPTH)
         factor *= max(
-            (MOVE_STABILITY_TM_BASE / 100.0)
-                - (MOVE_STABILITY_TM_SCALE * bestmove_stability_ / 100.0),
-            (MOVE_STABILITY_TM_MIN / 100.0)
+            (MV_STAB_TM_BASE / 100.0) - (MV_STAB_TM_MUL * bestmove_stability_ / 100.0),
+            (MV_STAB_TM_MIN / 100.0)
         );
 
     // score stability tm
-    if (abs(score - prev_score_) <= SCORE_STABILITY_MARGIN)
+    if (abs(score - prev_score_) <= SCORE_STAB_MARGIN)
         score_stability_++;
     else
         score_stability_ = 0;
     prev_score_ = score;
 
-    if (depth >= SCORE_STABILITY_TM_DEPTH)
+    if (depth >= SCORE_STAB_TM_MIN_DEPTH)
         factor *= max(
-            (SCORE_STABILITY_TM_BASE / 100.0)
-                - (SCORE_STABILITY_TM_SCALE * score_stability_ / 100.0),
-            (SCORE_STABILITY_TM_MIN / 100.0)
+            (SCORE_STAB_TM_BASE / 100.0) - (SCORE_STAB_TM_MUL * score_stability_ / 100.0),
+            (SCORE_STAB_TM_MIN / 100.0)
         );
 
     // node tm
-    if (depth >= NODE_TM_DEPTH) {
+    if (depth >= NODE_TM_MIN_DEPTH) {
         const auto ratio = f64(get_nodes(bestmove)) / f64(get_nodes());
-        factor *= (NODE_TM_BASE / 100.0) - (NODE_TM_SCALE * ratio / 100.0);
+        factor *= (NODE_TM_BASE / 100.0) - (NODE_TM_MUL * ratio / 100.0);
     }
 
     return i64(*soft_t_ * factor);

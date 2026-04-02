@@ -116,7 +116,7 @@ void TranspositionTable::set(
     assert(entry != nullptr);
 
     if (!(flag == Flag::EXACT || packed_key != entry->key || entry->age() != age_
-          || depth + TT_REPLACEMENT_DEPTH_OFFSET > entry->depth))
+          || depth + TT_REPL_DEPTH_MARGIN > entry->depth))
         return;
 
     if (move || entry->key != packed_key) entry->move = static_cast<u16>(move);

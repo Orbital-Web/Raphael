@@ -23,8 +23,8 @@ void update_lmr_table() {
 
                 const double scale = 128 * 128 * log(depth) * log(move_searched);
                 LMR_TABLE[is_quiet][depth][move_searched]
-                    = (is_quiet) ? LMR_QUIET_BASE + scale / LMR_QUIET_DIVISOR
-                                 : LMR_NOISY_BASE + scale / LMR_NOISY_DIVISOR;
+                    = (is_quiet) ? LMR_QUIET_BASE + scale / LMR_QUIET_DIV
+                                 : LMR_NOISY_BASE + scale / LMR_NOISY_DIV;
             }
         }
     }

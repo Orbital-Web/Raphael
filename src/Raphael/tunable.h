@@ -241,8 +241,8 @@ Tunable(SEE_NOISY_DEPTH_MUL, -90, -256, -32, true);
 
 Tunable(SE_MIN_DEPTH, 8, 6, 12, false);
 Tunable(SE_MIN_TT_DEPTH, 3, 3, 6, false);
-Tunable(SE_MARGIN_DEPTH_MUL, 16, 8, 64, true);
-Tunable(DE_MARGIN, 30, 8, 64, true);
+Tunable(SE_MARGIN_DEPTH_MUL, 16, 8, 64, false);
+Tunable(DE_MARGIN, 30, 8, 64, false);
 
 Tunable(LMR_MIN_DEPTH, 3, 1, 5, false);
 Tunable(LMR_FROMMOVE, 5, 2, 8, false);

@@ -4,12 +4,10 @@
 
 #include <climits>
 #include <cstring>
-#include <fstream>
 #include <iostream>
 #include <optional>
 
 using std::cout;
-using std::ifstream;
 using std::nullopt;
 using std::optional;
 using std::string;
@@ -50,9 +48,7 @@ optional<cge::GameEngine::Player> player_factory(char* playertype, char* name) {
 void print_usage() {
     cout << "Usage: main.exe <p1type> <p1name> <p2type> <p2name> [mode] [options]\n\n"
          << "Modes:\n"
-         << "  [int]  Number of matches (defaults to 1 if not specified)\n"
-         << "  -c     Comparison mode (options will be ignored)\n"  // comparing 2 engines
-         << "  -r     Results mode (options will be ignored)\n\n"   // records fen + wdl
+         << "  [int]  Number of matches (defaults to 1 if not specified)\n\n"
          << "Options:\n"
          << "  -t <int> <int>  Time (sec) for white and black (defaults to 10min each)\n"
          << "  -i <int>        Time increment (sec) (defaults to 0sec)\n"
@@ -77,9 +73,6 @@ main.exe Raphael "Raphael" Human "Bob" 3 -f "8/8/2q5/2k5/8/5K2/8/8 w - - 0 1"
 
 main.exe Raphael "Raph1" Raphael "Raph2" 3 -f "8/8/2q5/2k5/8/5K2/8/8 w - - 0 1" -t 120 120 -i 1
     3 2|1 blitz matches with set starting position, both Raphael\
-
-main.exe Raphael "new" Raphaelv1.0 "old" -c
-    400 comparison matches between the newest version of Raphael and Raphaelv1.0
 */
 int main(int argc, char** argv) {
     // invalid
@@ -98,61 +91,17 @@ int main(int argc, char** argv) {
     vector<cge::GameEngine::GameOptions> gameoptions;
     i32 i = 5;
     if (argc >= 6) {
-        // comparison mode
-        if (!strcmp(argv[i], "-c")) {
-            ifstream pgns("src/Games/randomGames.txt");
-            string pgn;
+        // create n matches with alternating color
+        i32 n_matches = atoi(argv[i]);
+        if (n_matches) {
             bool p1_is_white = true;
-            // create 400 matches with alterating color
-            while (getline(pgns, pgn)) {
-                gameoptions.push_back({
-                    .p1_is_white = p1_is_white,
-                    .interactive = false,
-                    .t_inc = 0,
-                    .t_remain = {20000, 20000},
-                    .start_fen = pgn,
-                    .pgn_file = "./logs/compare.pgn"
-                });
+            for (i32 n = 0; n < n_matches; n++) {
+                gameoptions.push_back({.p1_is_white = p1_is_white});
                 p1_is_white = !p1_is_white;
             }
-            pgns.close();
-            i = INT_MAX;  // ignore all options
-        }
-
-        else if (!strcmp(argv[i], "-r")) {
-            ifstream pgns("src/Games/randomGamesBig.txt");
-            string pgn;
-            bool p1_is_white = true;
-            // create 400 matches with alterating color
-            while (getline(pgns, pgn)) {
-                gameoptions.push_back({
-                    .p1_is_white = p1_is_white,
-                    .interactive = false,
-                    .t_inc = 20,
-                    .t_remain = {1000, 1000},
-                    .start_fen = pgn,
-                    .pgn_file = "./logs/results.pgn"
-                });
-                p1_is_white = !p1_is_white;
-            }
-            pgns.close();
-            i = INT_MAX;  // ignore all options
-        }
-
-        // number of games
-        else {
-            // create n matches with alternating color
-            i32 n_matches = atoi(argv[i]);
-            if (n_matches) {
-                bool p1_is_white = true;
-                for (i32 n = 0; n < n_matches; n++) {
-                    gameoptions.push_back({.p1_is_white = p1_is_white});
-                    p1_is_white = !p1_is_white;
-                }
-                i++;
-            } else
-                gameoptions.push_back({});  // defaults to 1 match
-        }
+            i++;
+        } else
+            gameoptions.push_back({});  // defaults to 1 match
     } else
         gameoptions.push_back({});  // defaults to 1 match
 

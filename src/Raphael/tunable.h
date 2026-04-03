@@ -225,12 +225,12 @@ Tunable(RAZOR_MARGIN_BASE, 300, 32, 384, true);
 
 Tunable(NMP_MIN_DEPTH, 3, 1, 10, false);
 Tunable(NMP_RED_BASE, 512, 256, 1024, true);
-Tunable(NMP_RED_DEPTH_MUL, 25, 8, 64, true);
-Tunable(NMP_RED_EVAL_MUL, 82, 16, 128, true);
-Tunable(NMP_RED_EVAL_MAX, 384, 128, 512, true);
+Tunable(NMP_RED_DEPTH_MUL, 25, 8, 64, false);
+Tunable(NMP_RED_EVAL_MUL, 82, 16, 128, false);
+Tunable(NMP_RED_EVAL_MAX, 384, 128, 512, false);
 
 inline MultiArray<i32, 2, 256> LMP_TABLE;  // lmp moves threshold[improving][depth]
-TunableCallback(LMP_THRESH_BASE, 3, 1, 12, update_lmp_table, true);
+TunableCallback(LMP_THRESH_BASE, 3, 1, 12, update_lmp_table, false);
 
 Tunable(FP_MAX_DEPTH, 7, 4, 12, false);
 Tunable(FP_MARGIN_DEPTH_MUL, 80, 32, 384, true);
@@ -266,17 +266,17 @@ Tunable(QS_SEE_THRESH, -100, -384, 32, true);
 // SEE
 inline MultiArray<i32, 13> SEE_TABLE;
 TunableCallback(SEE_PAWN_VAL, 100, 100, 100, update_see_table, false);
-TunableCallback(SEE_KNIGHT_VAL, 422, 200, 600, update_see_table, true);
-TunableCallback(SEE_BISHOP_VAL, 437, 200, 600, update_see_table, true);
-TunableCallback(SEE_ROOK_VAL, 694, 500, 900, update_see_table, true);
-TunableCallback(SEE_QUEEN_VAL, 1313, 900, 1600, update_see_table, true);
+TunableCallback(SEE_KNIGHT_VAL, 422, 300, 600, update_see_table, true);
+TunableCallback(SEE_BISHOP_VAL, 437, 300, 600, update_see_table, true);
+TunableCallback(SEE_ROOK_VAL, 694, 500, 800, update_see_table, true);
+TunableCallback(SEE_QUEEN_VAL, 1313, 900, 1500, update_see_table, true);
 
 // move ordering
 static constexpr i32 HISTORY_MAX = 16384;
 static constexpr i32 CAPTHIST_DIV = 8;
 
 Tunable(GOOD_NOISY_SEE_BASE, -15, -128, 128, true);
-Tunable(GOOD_NOISY_SEE_MUL, 16, 16, 128, true);
+Tunable(GOOD_NOISY_SEE_MUL, 16, 16, 128, false);
 
 Tunable(HISTORY_BONUS_DEPTH_MUL, 100, 32, 384, true);
 Tunable(HISTORY_BONUS_BASE, 100, 32, 384, true);

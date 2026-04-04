@@ -2,6 +2,7 @@
 #include <Raphael/nnue.h>
 #include <Raphael/tunable.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <type_traits>
 

@@ -40,24 +40,25 @@ def load_network(filename: str) -> dict[str, np.ndarray]:
 
 
 def merge_king_planes(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-    # since the buckets are at most 2 squares in any direction,
-    # any time our king is in the bucket squares, the enemy king must be outside the
-    # bucket squares
+    # since the buckets are at most 2 squares in any direction, any time our king is in
+    # the bucket squares, the enemy king must be outside the bucket squares
     # thus, we can copy over the enemy king features to the same plane as our king
     # features, thus reducing the network size by 64 * NUM_INPUT_BUCKET parameters
     ft = net["ft"]
     merged_ft = ft[:, :11, :, :].copy()
 
+    full_buckets = np.full((8, 8), -1, dtype=np.int16)
+    full_buckets[:, :4] = np.array(BUCKETS).reshape((8, 4))
+
     OUR_KING = 5
     THEIR_KING = 11
 
     for bucket in range(NUM_INPUT_BUCKET):
+        bucket_mask = (full_buckets == bucket).flatten()
         merged_ft[bucket, OUR_KING, :, :] = ft[bucket, THEIR_KING, :, :]
-        for rank in range(8):
-            for file in range(4):
-                sq = rank * 8 + file
-                if BUCKETS[rank * 4 + file] == bucket:
-                    merged_ft[bucket, OUR_KING, sq, :] = ft[bucket, OUR_KING, sq, :]
+        merged_ft[bucket, OUR_KING, bucket_mask, :] = ft[
+            bucket, OUR_KING, bucket_mask, :
+        ]
 
     return {"ft": merged_ft, "rest": net["rest"]}
 

@@ -1,6 +1,8 @@
 #pragma once
 #include <Raphael/nnue.h>
+#include <Raphael/tunable.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <type_traits>
 
@@ -94,12 +96,23 @@ public:
 
     /** Evaluates the current board from the current side to move
      *
+     * \param do_scaling whether to apply material scaling
      * \returns the NNUE evaluation of the board in centipawns
      */
-    i32 evaluate()
+    i32 evaluate(bool do_scaling)
         requires(include_net)
     {
-        return net_.evaluate(current_);
+        i32 static_eval = net_.evaluate(current_);
+        if (do_scaling) {
+            const i32 material_scale
+                = MAT_SCALE_BASE + current_.occ(chess::PieceType::PAWN).count() * MAT_SCALE_PAWN
+                  + current_.occ(chess::PieceType::KNIGHT).count() * MAT_SCALE_KNIGHT
+                  + current_.occ(chess::PieceType::BISHOP).count() * MAT_SCALE_BISHOP
+                  + current_.occ(chess::PieceType::ROOK).count() * MAT_SCALE_ROOK
+                  + current_.occ(chess::PieceType::QUEEN).count() * MAT_SCALE_QUEEN;
+            static_eval = static_eval * material_scale / 32768;
+        }
+        return std::clamp(static_eval, -MATE_SCORE + 1, MATE_SCORE - 1);
     }
 
 

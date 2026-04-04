@@ -3,7 +3,6 @@
 #include <Raphael/Transposition.h>
 #include <Raphael/position.h>
 #include <Raphael/tm.h>
-#include <Raphael/tunable.h>
 
 #include <atomic>
 #include <string>

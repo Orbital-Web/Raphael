@@ -217,7 +217,7 @@ Tunable(IIR_MIN_DEPTH, 3, 3, 6, false);
 
 Tunable(RFP_MAX_DEPTH, 6, 1, 10, false);
 Tunable(RFP_MARGIN_DEPTH_MUL, 65, 16, 128, true);
-Tunable(RFP_MARGIN_IMPROV_MUL, 40, 16, 128, true);
+Tunable(RFP_MARGIN_IMPROVING, 40, 16, 128, true);
 
 Tunable(RAZOR_MAX_DEPTH, 4, 1, 10, false);
 Tunable(RAZOR_MARGIN_DEPTH_MUL, 249, 32, 384, true);

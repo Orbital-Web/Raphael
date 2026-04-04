@@ -115,14 +115,15 @@ To see all supported commands, run `uci.exe help`
     - [x] Late move pruning                 (`v2.3+`)
     - [x] Futility pruning                  (`v2.3+`)
     - [x] SEE pruning                       (`v2.3+`)
-    - [ ] History pruning
-    - [ ] Multi-cut
+    - [ ] Quiet history pruning
+    - [ ] Noisy history pruning
+    - [x] Multi-cut                         (`v3.3+`)
     - [x] Improving heuristics              (`v3.2+`)
   - [x] Transposition table                 (`v1.1+`)
     - [x] Prefetching                       (`v2.2+`)
     - [x] Aging                             (`v3.0+`)
-    - [ ] Clusters
-    - [ ] Storing static evaluations
+    - [x] Clusters                          (`v3.3+`)
+    - [x] Storing static evaluations        (`v3.3+`)
   - [x] Principle variation search          (`v2.1+`)
   - [x] Extensions                          (`v1.4+`)
     - ~~Check extensions~~                  (`v1.4+`)
@@ -198,7 +199,7 @@ To see all supported commands, run `uci.exe help`
   - [x] Linux huge pages                    (`v2.2+`)
   - [x] Staged movegen                      (`v3.0+`)
 - [ ] Lazy SMP
-- [ ] SPSA tuning
+- [x] SPSA tuning                           (`v3.3+`)
 
 </details>
 

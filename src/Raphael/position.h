@@ -104,6 +104,7 @@ public:
     {
         i32 static_eval = net_.evaluate(current_);
         if (do_scaling) {
+            // material scaling
             const i32 material_scale
                 = MAT_SCALE_BASE + current_.occ(chess::PieceType::PAWN).count() * MAT_SCALE_PAWN
                   + current_.occ(chess::PieceType::KNIGHT).count() * MAT_SCALE_KNIGHT
@@ -111,6 +112,9 @@ public:
                   + current_.occ(chess::PieceType::ROOK).count() * MAT_SCALE_ROOK
                   + current_.occ(chess::PieceType::QUEEN).count() * MAT_SCALE_QUEEN;
             static_eval = static_eval * material_scale / 32768;
+
+            // halfmove scaling
+            static_eval = static_eval * (200 - current_.halfmoves()) / 200;
         }
         return std::clamp(static_eval, -MATE_SCORE + 1, MATE_SCORE - 1);
     }

@@ -205,7 +205,7 @@ void Raphael::ponder(atomic<bool>& halt) {
 
 
 i32 Raphael::static_eval(bool corrected) {
-    const auto raw_score = position_.evaluate();
+    const auto raw_score = position_.evaluate(!params_.datagen);
     return (corrected) ? history_.correct(position_.board(), raw_score) : raw_score;
 }
 
@@ -312,7 +312,7 @@ i32 Raphael::negamax(
             if (tthit && ttentry.static_eval != NONE_SCORE)
                 raw_static_eval = ttentry.static_eval;
             else
-                raw_static_eval = position_.evaluate();
+                raw_static_eval = position_.evaluate(!params_.datagen);
 
             ss->static_eval = history_.correct(board, raw_static_eval);
         }
@@ -565,7 +565,8 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
 
     // max ply
     const bool in_check = board.in_check();
-    if (ply >= MAX_DEPTH - 1) return (in_check) ? 0 : history_.correct(board, position_.evaluate());
+    if (ply >= MAX_DEPTH - 1)
+        return (in_check) ? 0 : history_.correct(board, position_.evaluate(!params_.datagen));
 
     // probe transposition table
     const auto ttkey = board.hash();
@@ -592,7 +593,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
         if (tthit && ttentry.static_eval != NONE_SCORE)
             raw_static_eval = ttentry.static_eval;
         else
-            raw_static_eval = position_.evaluate();
+            raw_static_eval = position_.evaluate(!params_.datagen);
 
         static_eval = history_.correct(board, raw_static_eval);
 

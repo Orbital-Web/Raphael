@@ -26,7 +26,7 @@ public:
 
         for (const auto& smove : moves) {
             position_.make_move(smove.move);
-            const auto eval = position_.evaluate();
+            const auto eval = position_.evaluate(false);
 
             const auto& newboard = position_.board();
             refnet_.set_board(newboard);
@@ -48,7 +48,7 @@ public:
 
         // check nullmove
         position_.make_nullmove();
-        const auto eval = position_.evaluate();
+        const auto eval = position_.evaluate(false);
 
         const auto& newboard = position_.board();
         refnet_.set_board(newboard);

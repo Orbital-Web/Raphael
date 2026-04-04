@@ -306,6 +306,13 @@ Tunable(PAWN_CORRHIST_WEIGHT, 56, 32, 384, true);
 Tunable(MAJOR_CORRHIST_WEIGHT, 48, 32, 384, true);
 Tunable(NONPAWN_CORRHIST_WEIGHT, 48, 32, 384, true);
 
+// eval scaling
+Tunable(MAT_SCALE_BASE, 25100, 20000, 30000, true);
+Tunable(MAT_SCALE_KNIGHT, 340, 200, 600, true);
+Tunable(MAT_SCALE_BISHOP, 340, 200, 600, true);
+Tunable(MAT_SCALE_ROOK, 590, 400, 900, true);
+Tunable(MAT_SCALE_QUEEN, 970, 800, 1600, true);
+
 // commands
 static constexpr i32 BENCH_DEPTH = 14;
 

@@ -308,6 +308,7 @@ Tunable(NONPAWN_CORRHIST_WEIGHT, 48, 32, 384, true);
 
 // eval scaling
 Tunable(MAT_SCALE_BASE, 25100, 20000, 30000, true);
+Tunable(MAT_SCALE_PAWN, 110, 0, 200, true);
 Tunable(MAT_SCALE_KNIGHT, 340, 200, 600, true);
 Tunable(MAT_SCALE_BISHOP, 340, 200, 600, true);
 Tunable(MAT_SCALE_ROOK, 590, 400, 900, true);

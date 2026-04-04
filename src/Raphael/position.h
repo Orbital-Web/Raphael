@@ -105,7 +105,8 @@ public:
         i32 static_eval = net_.evaluate(current_);
         if (do_scaling) {
             const i32 material_scale
-                = MAT_SCALE_BASE + current_.occ(chess::PieceType::KNIGHT).count() * MAT_SCALE_KNIGHT
+                = MAT_SCALE_BASE + current_.occ(chess::PieceType::PAWN).count() * MAT_SCALE_PAWN
+                  + current_.occ(chess::PieceType::KNIGHT).count() * MAT_SCALE_KNIGHT
                   + current_.occ(chess::PieceType::BISHOP).count() * MAT_SCALE_BISHOP
                   + current_.occ(chess::PieceType::ROOK).count() * MAT_SCALE_ROOK
                   + current_.occ(chess::PieceType::QUEEN).count() * MAT_SCALE_QUEEN;

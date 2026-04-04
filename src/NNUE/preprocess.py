@@ -1,3 +1,4 @@
+# preprocesses the network file from bullet
 import sys
 
 import numpy as np

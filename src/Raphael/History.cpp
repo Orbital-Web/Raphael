@@ -42,7 +42,8 @@ History::History()
       capt_hist_{},
       pawn_correction_{},
       major_correction_{},
-      nonpawn_correction_{} {}
+      nonpawn_correction_{},
+      cont_correction_{} {}
 
 
 i32 History::quiet_bonus(i32 depth) const {
@@ -123,24 +124,40 @@ i32 History::get_noisyscore(chess::Move move, chess::Piece captured) const {
 }
 
 
-void History::update_corrections(const chess::Board& board, i32 depth, i32 score, i32 static_eval) {
+void History::update_corrections(
+    const Position<true>& position, i32 depth, i32 score, i32 static_eval
+) {
     const auto bonus = clamp(
         (score - static_eval) * depth / CORRHIST_BONUS_DEPTH_DIV,
         -CORRHIST_BONUS_MAX,
         CORRHIST_BONUS_MAX
     );
+
+    const auto& board = position.board();
+    const auto curr = position.prev_move(1);
+    const auto prev1 = position.prev_move(2);
+
     pawn_corr_entry(board).update(bonus);
     major_corr_entry(board).update(bonus);
     nonpawn_corr_entry(board, chess::Color::WHITE).update(bonus);
     nonpawn_corr_entry(board, chess::Color::BLACK).update(bonus);
+    if (prev1.moving != chess::Piece::NONE)
+        cont_corr_entry(curr.move, curr.moving, prev1).update(bonus);
 }
 
-i32 History::correct(const chess::Board& board, i32 score) const {
+i32 History::correct(const Position<true>& position, i32 score) const {
+    const auto& board = position.board();
+    const auto curr = position.prev_move(1);
+    const auto prev1 = position.prev_move(2);
+
     i32 correction = 0;
     correction += pawn_corr_entry(board) * PAWN_CORRHIST_WEIGHT;
     correction += major_corr_entry(board) * MAJOR_CORRHIST_WEIGHT;
     correction += nonpawn_corr_entry(board, chess::Color::WHITE) * NONPAWN_CORRHIST_WEIGHT;
     correction += nonpawn_corr_entry(board, chess::Color::BLACK) * NONPAWN_CORRHIST_WEIGHT;
+    correction += (prev1.moving != chess::Piece::NONE)
+                      ? cont_corr_entry(curr.move, curr.moving, prev1) * CONT1_CORRHIST_WEIGHT
+                      : 0;
     correction /= CORRHIST_MAX;
 
     return clamp(score + correction, -MATE_SCORE + 1, MATE_SCORE - 1);
@@ -154,6 +171,7 @@ void History::clear() {
     memset(pawn_correction_, 0, sizeof(pawn_correction_));
     memset(major_correction_, 0, sizeof(major_correction_));
     memset(nonpawn_correction_, 0, sizeof(nonpawn_correction_));
+    memset(cont_correction_, 0, sizeof(cont_correction_));
 }
 
 
@@ -214,4 +232,21 @@ const CorrectionEntry& History::nonpawn_corr_entry(
 }
 CorrectionEntry& History::nonpawn_corr_entry(const chess::Board& board, chess::Color color) {
     return nonpawn_correction_[board.stm()][color][board.nonpawn_hash(color) % CORRHIST_SIZE];
+}
+
+const CorrectionEntry& History::cont_corr_entry(
+    chess::Move move, chess::Piece moving, chess::PieceMove prev_move
+) const {
+    assert(prev_move.move != chess::Move::NO_MOVE);
+    assert(prev_move.move != chess::Move::NULL_MOVE);
+    assert(prev_move.moving != chess::Piece::NONE);
+    return cont_correction_[prev_move.moving][prev_move.move.to()][moving][move.to()];
+}
+CorrectionEntry& History::cont_corr_entry(
+    chess::Move move, chess::Piece moving, chess::PieceMove prev_move
+) {
+    assert(prev_move.move != chess::Move::NO_MOVE);
+    assert(prev_move.move != chess::Move::NULL_MOVE);
+    assert(prev_move.moving != chess::Piece::NONE);
+    return cont_correction_[prev_move.moving][prev_move.move.to()][moving][move.to()];
 }

@@ -46,6 +46,7 @@ private:
     CorrectionEntry pawn_correction_[2][CORRHIST_SIZE];        // [stm][pawn_hash idx]
     CorrectionEntry major_correction_[2][CORRHIST_SIZE];       // [stm][major_hash idx]
     CorrectionEntry nonpawn_correction_[2][2][CORRHIST_SIZE];  // [stm][color][nonpawn_hash idx]
+    CorrectionEntry cont_correction_[12][64][12][64];          // [prev from][prev to][from][to]
 
 public:
     /** Initializes all the history tables with zeros */
@@ -125,20 +126,20 @@ public:
 
     /** Updates the correction histories
      *
-     * \param board current board
+     * \param position current position
      * \param depth current depth
      * \param score current score
      * \param static_eval current static eval
      */
-    void update_corrections(const chess::Board& board, i32 depth, i32 score, i32 static_eval);
+    void update_corrections(const Position<true>& position, i32 depth, i32 score, i32 static_eval);
 
     /** Returns the corrected score
      *
-     * \param board current board
+     * \param position current position
      * \param score score to correct
      * \returns the corrected score
      */
-    i32 correct(const chess::Board& board, i32 score) const;
+    i32 correct(const Position<true>& position, i32 score) const;
 
 
     /** Zeros out all the histories */
@@ -199,5 +200,19 @@ private:
      */
     const CorrectionEntry& nonpawn_corr_entry(const chess::Board& board, chess::Color color) const;
     CorrectionEntry& nonpawn_corr_entry(const chess::Board& board, chess::Color color);
+
+    /** Returns a reference to the continuation correction history entry
+     *
+     * \param move current move
+     * \param moving current moving piece
+     * \param prev_move previous move and moving piece
+     * \returns continuation history entry
+     */
+    const CorrectionEntry& cont_corr_entry(
+        chess::Move move, chess::Piece moving, chess::PieceMove prev_move
+    ) const;
+    CorrectionEntry& cont_corr_entry(
+        chess::Move move, chess::Piece moving, chess::PieceMove prev_move
+    );
 };
 }  // namespace raphael

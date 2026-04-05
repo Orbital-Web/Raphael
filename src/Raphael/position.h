@@ -2,7 +2,6 @@
 #include <Raphael/nnue.h>
 #include <Raphael/tunable.h>
 
-#include <algorithm>
 #include <cstddef>
 #include <type_traits>
 
@@ -104,6 +103,7 @@ public:
     {
         i32 static_eval = net_.evaluate(current_);
         if (do_scaling) {
+            // material scaling
             const i32 material_scale
                 = MAT_SCALE_BASE + current_.occ(chess::PieceType::PAWN).count() * MAT_SCALE_PAWN
                   + current_.occ(chess::PieceType::KNIGHT).count() * MAT_SCALE_KNIGHT
@@ -112,7 +112,7 @@ public:
                   + current_.occ(chess::PieceType::QUEEN).count() * MAT_SCALE_QUEEN;
             static_eval = static_eval * material_scale / 32768;
         }
-        return std::clamp(static_eval, -MATE_SCORE + 1, MATE_SCORE - 1);
+        return static_eval;
     }
 
 

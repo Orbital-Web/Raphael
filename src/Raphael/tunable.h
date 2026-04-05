@@ -234,7 +234,7 @@ TunableCallback(LMP_THRESH_BASE, 3, 1, 12, update_lmp_table, false);
 
 Tunable(QUIET_HP_MAX_DEPTH, 4, 1, 10, true);
 Tunable(QUIET_HP_DEPTH_MUL, -2500, -4000, -1000, true);
-Tunable(QUIET_HP_BASE, -2000, -4000, 4000, true);
+Tunable(QUIET_HP_BASE, -1000, -4000, 4000, true);
 
 Tunable(FP_MAX_DEPTH, 7, 4, 12, false);
 Tunable(FP_MARGIN_DEPTH_MUL, 85, 32, 384, true);

@@ -5,6 +5,7 @@
 #include <Raphael/movepick.h>
 #include <Raphael/utils.h>
 
+#include <algorithm>
 #include <climits>
 #include <cmath>
 #include <future>
@@ -12,6 +13,7 @@
 
 using namespace raphael;
 using std::atomic;
+using std::clamp;
 using std::copy;
 using std::cout;
 using std::flush;
@@ -206,7 +208,7 @@ void Raphael::ponder(atomic<bool>& halt) {
 
 i32 Raphael::static_eval(bool corrected) {
     const auto raw_score = position_.evaluate(!params_.datagen);
-    return (corrected) ? history_.correct(position_, raw_score) : raw_score;
+    return (corrected) ? adjust_score(raw_score) : raw_score;
 }
 
 
@@ -240,6 +242,19 @@ string Raphael::get_pv_line(const PVList& pv) const {
     for (i32 i = 0; i < pv.length; i++)
         pvline += chess::uci::from_move(pv.moves[i], chess960) + " ";
     return pvline;
+}
+
+
+i32 Raphael::adjust_score(i32 raw_static_eval) const {
+    const auto& board = position_.board();
+
+    // halfmove scaling
+    if (!params_.datagen) raw_static_eval = raw_static_eval * (200 - board.halfmoves()) / 200;
+
+    // corrhist
+    raw_static_eval = history_.correct(position_, raw_static_eval);
+
+    return clamp(raw_static_eval, -MATE_SCORE + 1, MATE_SCORE - 1);
 }
 
 
@@ -314,7 +329,7 @@ i32 Raphael::negamax(
             else
                 raw_static_eval = position_.evaluate(!params_.datagen);
 
-            ss->static_eval = history_.correct(position_, raw_static_eval);
+            ss->static_eval = adjust_score(raw_static_eval);
         }
     }
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
@@ -566,7 +581,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
     // max ply
     const bool in_check = board.in_check();
     if (ply >= MAX_DEPTH - 1)
-        return (in_check) ? 0 : history_.correct(position_, position_.evaluate(!params_.datagen));
+        return (in_check) ? 0 : adjust_score(position_.evaluate(!params_.datagen));
 
     // probe transposition table
     const auto ttkey = board.hash();
@@ -595,7 +610,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
         else
             raw_static_eval = position_.evaluate(!params_.datagen);
 
-        static_eval = history_.correct(position_, raw_static_eval);
+        static_eval = adjust_score(raw_static_eval);
 
         if (static_eval >= beta) return static_eval;
 

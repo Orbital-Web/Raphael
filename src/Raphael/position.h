@@ -2,7 +2,6 @@
 #include <Raphael/nnue.h>
 #include <Raphael/tunable.h>
 
-#include <algorithm>
 #include <cstddef>
 #include <type_traits>
 
@@ -112,11 +111,8 @@ public:
                   + current_.occ(chess::PieceType::ROOK).count() * MAT_SCALE_ROOK
                   + current_.occ(chess::PieceType::QUEEN).count() * MAT_SCALE_QUEEN;
             static_eval = static_eval * material_scale / 32768;
-
-            // halfmove scaling
-            static_eval = static_eval * (200 - current_.halfmoves()) / 200;
         }
-        return std::clamp(static_eval, -MATE_SCORE + 1, MATE_SCORE - 1);
+        return static_eval;
     }
 
 

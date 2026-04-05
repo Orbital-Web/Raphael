@@ -173,6 +173,14 @@ private:
     std::string get_pv_line(const PVList& pv) const;
 
 
+    /** Adjusts the raw static eval using scaling and corrhists
+     *
+     * \param raw_static_eval raw eval to adjust
+     * \returns the adjusted eval
+     */
+    i32 adjust_score(i32 raw_static_eval) const;
+
+
     /** Recursively searches for the best move and score of the current position assuming optimal
      * play by both us and the opponent
      *

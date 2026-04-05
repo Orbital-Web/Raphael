@@ -206,7 +206,7 @@ void Raphael::ponder(atomic<bool>& halt) {
 
 i32 Raphael::static_eval(bool corrected) {
     const auto raw_score = position_.evaluate(!params_.datagen);
-    return (corrected) ? history_.correct(position_.board(), raw_score) : raw_score;
+    return (corrected) ? history_.correct(position_, raw_score) : raw_score;
 }
 
 
@@ -314,7 +314,7 @@ i32 Raphael::negamax(
             else
                 raw_static_eval = position_.evaluate(!params_.datagen);
 
-            ss->static_eval = history_.correct(board, raw_static_eval);
+            ss->static_eval = history_.correct(position_, raw_static_eval);
         }
     }
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
@@ -547,7 +547,7 @@ i32 Raphael::negamax(
         if (!in_check && (bestmove == chess::Move::NO_MOVE || board.is_quiet(bestmove))
             && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
                 || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
-            history_.update_corrections(board, depth, bestscore, ss->static_eval);
+            history_.update_corrections(position_, depth, bestscore, ss->static_eval);
         tt_.set(ttkey, bestscore, raw_static_eval, bestmove, depth, ttflag, ply);
     }
 
@@ -566,7 +566,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
     // max ply
     const bool in_check = board.in_check();
     if (ply >= MAX_DEPTH - 1)
-        return (in_check) ? 0 : history_.correct(board, position_.evaluate(!params_.datagen));
+        return (in_check) ? 0 : history_.correct(position_, position_.evaluate(!params_.datagen));
 
     // probe transposition table
     const auto ttkey = board.hash();
@@ -595,7 +595,7 @@ i32 Raphael::quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, ato
         else
             raw_static_eval = position_.evaluate(!params_.datagen);
 
-        static_eval = history_.correct(board, raw_static_eval);
+        static_eval = history_.correct(position_, raw_static_eval);
 
         if (static_eval >= beta) return static_eval;
 

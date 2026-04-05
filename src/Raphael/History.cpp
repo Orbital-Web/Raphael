@@ -160,7 +160,7 @@ i32 History::correct(const Position<true>& position, i32 score) const {
                       : 0;
     correction /= CORRHIST_MAX;
 
-    return clamp(score + correction, -MATE_SCORE + 1, MATE_SCORE - 1);
+    return score + correction;
 }
 
 

@@ -141,7 +141,7 @@ void History::update_corrections(
     major_corr_entry(board).update(bonus);
     nonpawn_corr_entry(board, chess::Color::WHITE).update(bonus);
     nonpawn_corr_entry(board, chess::Color::BLACK).update(bonus);
-    if (prev1.moving != chess::Piece::NONE)
+    if (curr.moving != chess::Piece::NONE && prev1.moving != chess::Piece::NONE)
         cont_corr_entry(curr.move, curr.moving, prev1).update(bonus);
 }
 
@@ -155,7 +155,7 @@ i32 History::correct(const Position<true>& position, i32 score) const {
     correction += major_corr_entry(board) * MAJOR_CORRHIST_WEIGHT;
     correction += nonpawn_corr_entry(board, chess::Color::WHITE) * NONPAWN_CORRHIST_WEIGHT;
     correction += nonpawn_corr_entry(board, chess::Color::BLACK) * NONPAWN_CORRHIST_WEIGHT;
-    correction += (prev1.moving != chess::Piece::NONE)
+    correction += (curr.moving != chess::Piece::NONE && prev1.moving != chess::Piece::NONE)
                       ? cont_corr_entry(curr.move, curr.moving, prev1) * CONT1_CORRHIST_WEIGHT
                       : 0;
     correction /= CORRHIST_MAX;
@@ -190,6 +190,9 @@ HistoryEntry& History::butterfly_entry(chess::Move move, chess::BitBoard threats
 const HistoryEntry& History::cont_entry(
     chess::Move move, chess::Piece moving, chess::PieceMove prev_move
 ) const {
+    assert(move != chess::Move::NO_MOVE);
+    assert(move != chess::Move::NULL_MOVE);
+    assert(moving != chess::Piece::NONE);
     assert(prev_move.move != chess::Move::NO_MOVE);
     assert(prev_move.move != chess::Move::NULL_MOVE);
     assert(prev_move.moving != chess::Piece::NONE);
@@ -198,6 +201,9 @@ const HistoryEntry& History::cont_entry(
 HistoryEntry& History::cont_entry(
     chess::Move move, chess::Piece moving, chess::PieceMove prev_move
 ) {
+    assert(move != chess::Move::NO_MOVE);
+    assert(move != chess::Move::NULL_MOVE);
+    assert(moving != chess::Piece::NONE);
     assert(prev_move.move != chess::Move::NO_MOVE);
     assert(prev_move.move != chess::Move::NULL_MOVE);
     assert(prev_move.moving != chess::Piece::NONE);
@@ -237,6 +243,9 @@ CorrectionEntry& History::nonpawn_corr_entry(const chess::Board& board, chess::C
 const CorrectionEntry& History::cont_corr_entry(
     chess::Move move, chess::Piece moving, chess::PieceMove prev_move
 ) const {
+    assert(move != chess::Move::NO_MOVE);
+    assert(move != chess::Move::NULL_MOVE);
+    assert(moving != chess::Piece::NONE);
     assert(prev_move.move != chess::Move::NO_MOVE);
     assert(prev_move.move != chess::Move::NULL_MOVE);
     assert(prev_move.moving != chess::Piece::NONE);
@@ -245,6 +254,9 @@ const CorrectionEntry& History::cont_corr_entry(
 CorrectionEntry& History::cont_corr_entry(
     chess::Move move, chess::Piece moving, chess::PieceMove prev_move
 ) {
+    assert(move != chess::Move::NO_MOVE);
+    assert(move != chess::Move::NULL_MOVE);
+    assert(moving != chess::Piece::NONE);
     assert(prev_move.move != chess::Move::NO_MOVE);
     assert(prev_move.move != chess::Move::NULL_MOVE);
     assert(prev_move.moving != chess::Piece::NONE);

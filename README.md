@@ -152,7 +152,7 @@ To see all supported commands, run `uci.exe help`
     - [x] Pawn correction history           (`v3.3+`)
     - [x] Major piece correction history    (`v3.3+`)
     - [x] Nonpawn correction history        (`v3.3+`)
-    - [ ] Continuation correction history
+    - [x] Continuation correction history   (`v3.3+`)
 - [x] Quiescence search                     (`v1.0+`)
   - ~~Delta pruning~~                       (`v2.1+`)
   - [x] Futility pruning                    (`v2.3+`)
@@ -182,6 +182,8 @@ To see all supported commands, run `uci.exe help`
     - [x] Output buckets                    (`v3.1+`)
     - [x] King buckets                      (`v3.2+`)
     - [x] Finny tables                      (`v3.2+`)
+    - [x] Finetuning                        (`v3.3+`)
+    - [ ] Relabeling/distillation
     - [ ] Pairwise multiplication
     - [ ] Dual activations
     - [ ] Multilayer network

@@ -14,13 +14,42 @@ use bullet_lib::{
     },
     value::{ValueTrainerBuilder, loader::ViriBinpackLoader},
 };
-
 use viriformat::dataformat::Filter;
+
+// fn piece_count_acceptance(board: &Board) -> f64 {
+//     #[rustfmt::skip]
+//     const DESIRED_DISTRIBUTION: [f64; 33] = [
+//         0.018411966423, 0.020641545085, 0.022727271053,
+//         0.024669162740, 0.026467201733, 0.028121406444,
+//         0.029631758462, 0.030998276198, 0.032220941240,
+//         0.033299772000, 0.034234750067, 0.035025893853,
+//         0.035673184944, 0.036176641754, 0.036536245870,
+//         0.036752015705, 0.036823932846, 0.036752015705,
+//         0.036536245870, 0.036176641754, 0.035673184944,
+//         0.035025893853, 0.034234750067, 0.033299772000,
+//         0.032220941240, 0.030998276198, 0.029631758462,
+//         0.028121406444, 0.026467201733, 0.024669162740,
+//         0.022727271053, 0.020641545085, 0.018411966423,
+//     ];
+
+//     static PIECE_COUNT_STATS: [AtomicU64; 33] = zeroed();
+//     static PIECE_COUNT_TOTAL: AtomicU64 = AtomicU64::new(0);
+
+//     let pc = board.pieces.occupied().count() as usize;
+//     let count = PIECE_COUNT_STATS[pc].fetch_add(1, Ordering::Relaxed) + 1;
+//     let total = PIECE_COUNT_TOTAL.fetch_add(1, Ordering::Relaxed) + 1;
+//     let frequency = count as f64 / total as f64;
+
+//     // Calculate the acceptance probability for this piece count
+//     let acceptance = 0.5 * DESIRED_DISTRIBUTION[pc] / frequency;
+//     acceptance.clamp(0., 1.)
+// }
 
 fn main() {
     // model params
-    const NET_ID: &str = "hydra_v9";
+    const NET_ID: &str = "hydra_v11";
     const HIDDEN_SIZE: usize = 1024;
+    const NUM_INPUT_BUCKETS: usize = 16;
     const NUM_OUTPUT_BUCKETS: usize = 8;
     const SCALE: f32 = 400.0;
     const QA: i16 = 255;
@@ -36,21 +65,14 @@ fn main() {
         14, 14, 15, 15,
         14, 14, 15, 15
     ];
-    const NUM_INPUT_BUCKETS: usize = get_num_buckets(&BUCKET_LAYOUT);
-    const _: () = assert!(NUM_INPUT_BUCKETS == 16);
+    const _: () = assert!(get_num_buckets(&BUCKET_LAYOUT) == NUM_INPUT_BUCKETS);
 
     // hyperparams
-    let dataset_path = "data/combined.vf";
-    let superbatches = 600;
-    let wdl_scheduler = wdl::LinearWDL { start: 0.2, end: 0.4 };
-    let lr_scheduler = lr::Warmup {
-        inner: lr::CosineDecayLR {
-            initial_lr: 0.001,
-            final_lr: 0.001 * 0.3f32.powi(5),
-            final_superbatch: superbatches,
-        },
-        warmup_batches: 1600,
-    };
+    const SUPERBATCHES_STAGE0: usize = 600;
+    const SUPERBATCHES_STAGE1: usize = 100;
+    const DATASET_STAGE0: &str = "data/combined.vf";
+    const DATASET_STAGE1: &str = "data/combined_ft.vf";
+    const BATCH_GLOM: usize = 8;
 
     let mut trainer = ValueTrainerBuilder::default()
         .dual_perspective()
@@ -72,8 +94,7 @@ fn main() {
         .loss_fn(|output, target| output.sigmoid().squared_error(target))
         .build(|builder, stm_inputs, ntm_inputs, output_buckets| {
             // input layer factorizer
-            let l0f =
-                builder.new_weights("l0f", Shape::new(HIDDEN_SIZE, 768), InitSettings::Zeroed);
+            let l0f = builder.new_weights("l0f", Shape::new(HIDDEN_SIZE, 768), InitSettings::Zeroed);
             let expanded_factorizer = l0f.repeat(NUM_INPUT_BUCKETS);
 
             // input layer weights
@@ -91,40 +112,69 @@ fn main() {
         });
 
     // ensure abs(factorizer + weights) <= 1.98
-    let stricter_clipping =
-        AdamWParams { max_weight: 0.99, min_weight: -0.99, ..Default::default() };
-    trainer.optimiser.set_params_for_weight("l0w", stricter_clipping);
-    trainer.optimiser.set_params_for_weight("l0f", stricter_clipping);
+    let l0_clip = AdamWParams { max_weight: 0.99, min_weight: -0.99, ..Default::default() };
+    trainer.optimiser.set_params_for_weight("l0w", l0_clip);
+    trainer.optimiser.set_params_for_weight("l0f", l0_clip);
 
-    const BATCH_GLOM: usize = 8;
-    let schedule = TrainingSchedule {
-        net_id: NET_ID.to_string(),
+    let filter =
+        Filter { min_pieces: 4, random_fen_skipping: true, random_fen_skip_probability: 0.5, ..Filter::default() };
+
+    let schedule_stage0 = TrainingSchedule {
+        net_id: NET_ID.to_string() + "_stage0",
         eval_scale: SCALE,
         steps: TrainingSteps {
             batch_size: 16_384 * BATCH_GLOM,
             batches_per_superbatch: 6104 / BATCH_GLOM,
             start_superbatch: 1,
-            end_superbatch: superbatches,
+            end_superbatch: SUPERBATCHES_STAGE0,
         },
-        wdl_scheduler: wdl_scheduler,
-        lr_scheduler: lr_scheduler,
-        save_rate: 10,
+        wdl_scheduler: wdl::LinearWDL { start: 0.2, end: 0.4 },
+        lr_scheduler: lr::Warmup {
+            inner: lr::CosineDecayLR {
+                initial_lr: 0.001,
+                final_lr: 0.001 * 0.3f32.powi(5),
+                final_superbatch: SUPERBATCHES_STAGE0,
+            },
+            warmup_batches: 1600,
+        },
+        save_rate: 100,
+    };
+    let schedule_stage1 = TrainingSchedule {
+        net_id: NET_ID.to_string() + "_stage1",
+        eval_scale: SCALE,
+        steps: TrainingSteps {
+            batch_size: 16_384 * BATCH_GLOM,
+            batches_per_superbatch: 6104 / BATCH_GLOM,
+            start_superbatch: 1,
+            end_superbatch: SUPERBATCHES_STAGE1,
+        },
+        wdl_scheduler: wdl::ConstantWDL { value: 0.6 },
+        lr_scheduler: lr::ConstantLR { value: 0.001 * 0.3f32.powi(5) / 2.0 },
+        save_rate: 100,
     };
 
-    let settings = LocalSettings {
-        threads: 2,
-        test_set: None,
-        output_directory: "checkpoints",
-        batch_queue_size: 32,
-    };
+    let settings = LocalSettings { threads: 2, test_set: None, output_directory: "checkpoints", batch_queue_size: 32 };
 
-    let filter = Filter {
-        min_pieces: 4,
-        random_fen_skipping: true,
-        random_fen_skip_probability: 0.5,
-        ..Filter::default()
-    };
-    let dataloader = ViriBinpackLoader::new(&dataset_path, 4096, 6, filter);
+    trainer.run(
+        &schedule_stage0,
+        &settings,
+        &ViriBinpackLoader::new(&DATASET_STAGE0.to_string(), 4096, 6, filter.clone()),
+    );
+    trainer.run(
+        &schedule_stage1,
+        &settings,
+        &ViriBinpackLoader::new(&DATASET_STAGE1.to_string(), 4096, 6, filter.clone()),
+    );
 
-    trainer.run(&schedule, &settings, &dataloader);
+    for fen in [
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+        "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
+        "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
+        "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+    ] {
+        let eval = trainer.eval(fen);
+        println!("FEN: {fen}");
+        println!("EVAL: {}", SCALE * eval);
+    }
 }

@@ -278,6 +278,8 @@ static constexpr i32 CAPTHIST_DIV = 8;
 Tunable(GOOD_NOISY_SEE_BASE, -22, -128, 128, true);
 Tunable(GOOD_NOISY_SEE_MUL, 16, 16, 128, false);
 
+Tunable(DIRECT_CHECK_BONUS, 4096, 1024, 8192, true);
+
 Tunable(HISTORY_BONUS_DEPTH_MUL, 103, 32, 384, true);
 Tunable(HISTORY_BONUS_BASE, 96, 32, 384, true);
 Tunable(HISTORY_BONUS_MAX, 1909, 1024, 4096, true);

@@ -250,9 +250,12 @@ void MoveGenerator::score_noisies() {
 }
 
 void MoveGenerator::score_quiets() {
+    const auto& board = position_->board();
+
     for (usize i = idx_; i < end_; i++) {
         auto& smove = (*movelist_)[i];
         smove.score = history_->get_quietscore(smove.move, *position_);
+        if (board.gives_direct_check(smove.move)) smove.score += DIRECT_CHECK_BONUS;
     }
 }
 

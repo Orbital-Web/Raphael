@@ -5,7 +5,7 @@
     #include <immintrin.h>
     #define USE_SIMD 512
     #define ALIGNMENT 64
-    #define SIMD_UNROLL 32;
+    #define SIMD_UNROLL 32
 using VecI16 = __m512i;  // a list of 32x i16
 using VecI32 = __m512i;  // a list of 16x i32
 

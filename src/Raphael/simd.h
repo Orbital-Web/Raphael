@@ -5,6 +5,7 @@
     #include <immintrin.h>
     #define USE_SIMD 512
     #define ALIGNMENT 64
+    #define SIMD_UNROLL 32;
 using VecI16 = __m512i;  // a list of 32x i16
 using VecI32 = __m512i;  // a list of 16x i32
 
@@ -125,6 +126,7 @@ inline i32 hadd_i32(VecI32 reg) {
     #include <immintrin.h>
     #define USE_SIMD 256
     #define ALIGNMENT 32
+    #define SIMD_UNROLL 16
 using VecI16 = __m256i;  // a list of 16x i16
 using VecI32 = __m256i;  // a list of 8x i32
 

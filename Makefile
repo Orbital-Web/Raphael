@@ -95,6 +95,7 @@ endif
 #---------------------------------------------------------------------------------------------------
 
 CCFLAGS_NATIVE    := -march=native
+CCFLAGS_AVX512    := -march=skylake-avx512 -mbmi2 -DCHESS_USE_PEXT
 CCFLAGS_AVX2_BMI2 := -march=haswell -DCHESS_USE_PEXT
 CCFLAGS_AVX2      := -march=haswell -mno-bmi2
 CCFLAGS_GENERIC   := -march=x86-64
@@ -102,6 +103,8 @@ CCFLAGS_TUNABLE   := -march=native -DTUNE
 
 ifeq ($(ARCH),native)
     ARCH_FLAGS := $(CCFLAGS_NATIVE)
+else ifeq ($(ARCH),avx512)
+    ARCH_FLAGS := $(CCFLAGS_AVX512)
 else ifeq ($(ARCH),avx2_bmi2)
     ARCH_FLAGS := $(CCFLAGS_AVX2_BMI2)
 else ifeq ($(ARCH),avx2)

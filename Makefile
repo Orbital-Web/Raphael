@@ -13,7 +13,7 @@ TEST_EXE := test
 EVALFILE := default
 
 # Architecture configuration
-ARCH ?= avx512
+ARCH ?= native
 
 # Debug option
 DEBUG ?= off

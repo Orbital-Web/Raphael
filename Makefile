@@ -133,6 +133,9 @@ ifeq ($(DEBUG),on)
     $(info Debug enabled)
     DEBUG_FLAGS := $(CCFLAGS_DEBUG)
 else ifeq ($(DEBUG),off)
+    $(info Debug disabled)
+    DEBUG_FLAGS := $(CCFLAGS_RELEASE)
+else ifeq ($(DEBUG),release)
     $(info Building for release)
     DEBUG_FLAGS := $(CCFLAGS_RELEASE)
 	override LDFLAGS_UCI += -static
@@ -191,6 +194,21 @@ test: $(TEST_OBJS) $(EVALFILE)
 # compile .cpp -> .o
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+#---------------------------------------------------------------------------------------------------
+# Release
+#---------------------------------------------------------------------------------------------------
+
+.PHONY: release_all
+release_all:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "VERSION is required (make release_all VERSION=x.y.z)"; \
+		exit 1; \
+	fi
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx512 ARCH=avx512 DEBUG=release -j uci
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2-bmi2 ARCH=avx2_bmi2 DEBUG=release -j uci
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2 ARCH=avx2 DEBUG=release -j uci
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-generic ARCH=generic DEBUG=release -j uci
 
 #---------------------------------------------------------------------------------------------------
 # Packages

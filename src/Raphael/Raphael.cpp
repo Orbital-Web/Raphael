@@ -235,8 +235,8 @@ void Raphael::print_uci_info(i32 depth, i32 score, const SearchStack* ss) const 
     else
         cout << " score cp " << wdl::normalize_score(score, board);
 
-    const auto wdl = wdl::get_wdl(score, board);
-    cout << " wdl " << wdl.win << " " << wdl.draw << " " << wdl.loss;
+    const auto wdl_res = wdl::get_wdl(score, board);
+    cout << " wdl " << wdl_res.win << " " << wdl_res.draw << " " << wdl_res.loss;
 
     cout << " hashfull " << tt_.hashfull() << " pv " << get_pv_line(ss->pv) << "\n" << flush;
 }

@@ -10,7 +10,7 @@
 namespace raphael {
 class Nnue {
 public:
-    static constexpr i32 OUTPUT_SCALE = 248;
+    static constexpr i32 OUTPUT_SCALE = 250;
 
 private:
     static constexpr i32 N_INPUTS = 11 * 64;
@@ -147,8 +147,8 @@ private:
         // accumulator: N_INPUTS -> N_HIDDEN
         alignas(ALIGNMENT) i16 W0[N_INBUCKETS][N_INPUTS][N_HIDDEN];
         alignas(ALIGNMENT) i16 b0[N_HIDDEN];
-        // layer1: N_HIDDEN * 2 -> 1
-        alignas(ALIGNMENT) i16 W1[N_OUTBUCKETS][2 * N_HIDDEN];
+        // layer1: N_HIDDEN -> 1
+        alignas(ALIGNMENT) i16 W1[N_OUTBUCKETS][N_HIDDEN];
         alignas(ALIGNMENT) i16 b1[N_OUTBUCKETS];
     };
     const NnueParams* params;  // network weights and biases

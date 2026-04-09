@@ -25,7 +25,7 @@ def load_network(filename: str) -> dict[str, np.ndarray]:
 
     W0_SIZE = 12 * 64 * NUM_INPUT_BUCKET * HIDDEN_SIZE
     B0_SIZE = HIDDEN_SIZE
-    W1_SIZE = NUM_OUTPUT_BUCKET * 2 * HIDDEN_SIZE
+    W1_SIZE = NUM_OUTPUT_BUCKET * HIDDEN_SIZE
     B1_SIZE = NUM_OUTPUT_BUCKET
 
     NET_SIZE = W0_SIZE + B0_SIZE + W1_SIZE + B1_SIZE

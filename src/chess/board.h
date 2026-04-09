@@ -354,8 +354,6 @@ public:
         plies_++;
         stm_ = ~stm_;
         threats_ = compute_threats();
-        pinmask_[Color::WHITE] = compute_pinmask(Color::WHITE);
-        pinmask_[Color::BLACK] = compute_pinmask(Color::BLACK);
         update_checkzones();
     }
 

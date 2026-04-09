@@ -108,7 +108,7 @@ void Nnue::NnueFinnyEntry::update(
                 accs[r] = subs_i16(accs[r], load_i16(&weights[fidx][(i + r) * regw]));
         }
 
-        // store into self
+    // store into self
         #pragma GCC unroll 32  // fmt: skip
         for (i32 r = 0; r < SIMD_UNROLL; r++) store_i16(&values[(i + r) * regw], accs[r]);
     }
@@ -246,36 +246,38 @@ i32 Nnue::evaluate(const chess::Board& board) {
     lazy_update(board, chess::Color::BLACK);
 
     // get address to accumulators
-    const auto us_acc = accumulators[idx_][board.stm()];
-    const auto them_acc = accumulators[idx_][~board.stm()];
-    assert(!us_acc.dirty());
-    assert(!them_acc.dirty());
+    const auto stm_acc = accumulators[idx_][board.stm()];
+    const auto ntm_acc = accumulators[idx_][~board.stm()];
+    assert(!stm_acc.dirty());
+    assert(!ntm_acc.dirty());
 
     // get address to weights and biases
     constexpr i32 bucket_div = (32 + N_OUTBUCKETS - 1) / N_OUTBUCKETS;
     const i32 bucket_idx = (board.occ().count() - 2) / bucket_div;
-    const auto us_w_base = params->W1[bucket_idx];
-    const auto them_w_base = us_w_base + N_HIDDEN;
+    const auto stm_w_base = params->W1[bucket_idx];
+    const auto ntm_w_base = stm_w_base + N_HIDDEN;
     const auto bias = params->b1[bucket_idx];
 
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
     constexpr i32 n_chunks = N_HIDDEN / regw;
+    static_assert(N_HIDDEN % regw == 0);
+
+    const VecI16 zs = zero_i16();
+    const VecI16 qa = full_i16(QA);
 
     VecI32 sum = zero_i16();
     for (i32 i = 0; i < n_chunks; i++) {
-        const VecI16 us = load_i16(&us_acc.values[i * regw]);
-        const VecI16 them = load_i16(&them_acc.values[i * regw]);
-        const VecI16 us_w = load_i16(&us_w_base[i * regw]);
-        const VecI16 them_w = load_i16(&them_w_base[i * regw]);
+        const VecI16 stm_v = clamp_i16(load_i16(&stm_acc.values[i * regw]), zs, qa);
+        const VecI16 ntm_v = clamp_i16(load_i16(&ntm_acc.values[i * regw]), zs, qa);
 
-        const VecI16 us_clamped = clamp_i16(us, zero_i16(), full_i16(QA));
-        const VecI16 them_clamped = clamp_i16(them, zero_i16(), full_i16(QA));
+        const VecI16 stm_w = load_i16(&stm_w_base[i * regw]);
+        const VecI16 ntm_w = load_i16(&ntm_w_base[i * regw]);
 
-        const VecI32 us_screlu = madd_i16(mul_i16(us_w, us_clamped), us_clamped);
-        const VecI32 them_screlu = madd_i16(mul_i16(them_w, them_clamped), them_clamped);
+        const VecI32 stm_scrleu = madd_i16(mul_i16(stm_w, stm_v), stm_v);
+        const VecI32 ntm_scrleu = madd_i16(mul_i16(ntm_w, ntm_v), ntm_v);
 
-        sum = add_i32(sum, add_i32(us_screlu, them_screlu));
+        sum = add_i32(sum, add_i32(stm_scrleu, ntm_scrleu));
     }
 
     i32 eval = QA * bias + hadd_i32(sum);
@@ -284,11 +286,11 @@ i32 Nnue::evaluate(const chess::Board& board) {
 
     // compute W1 dot SCReLU(acc)
     for (i32 i = 0; i < N_HIDDEN; i++) {
-        const i32 us_clamped = min(max((i32)us_acc.values[i], 0), QA);
-        const i32 them_clamped = min(max((i32)them_acc.values[i], 0), QA);
+        const i32 stm_v = min(max((i32)stm_acc.values[i], 0), QA);
+        const i32 ntm_v = min(max((i32)ntm_acc.values[i], 0), QA);
 
-        eval += us_w_base[i] * us_clamped * us_clamped;
-        eval += them_w_base[i] * them_clamped * them_clamped;
+        eval += stm_w_base[i] * stm_v * stm_v;
+        eval += ntm_w_base[i] * ntm_v * ntm_v;
     }
 #endif
 

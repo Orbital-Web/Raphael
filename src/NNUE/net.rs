@@ -47,7 +47,7 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "hydra_v11";
+    const NET_ID: &str = "hydra_v12";
     const HIDDEN_SIZE: usize = 1024;
     const NUM_INPUT_BUCKETS: usize = 16;
     const NUM_OUTPUT_BUCKETS: usize = 8;
@@ -69,7 +69,7 @@ fn main() {
 
     // hyperparams
     const SUPERBATCHES_STAGE0: usize = 600;
-    const SUPERBATCHES_STAGE1: usize = 100;
+    const SUPERBATCHES_STAGE1: usize = 200;
     const DATASET_STAGE0: &str = "data/combined.vf";
     const DATASET_STAGE1: &str = "data/combined_ft.vf";
     const BATCH_GLOM: usize = 8;
@@ -160,6 +160,7 @@ fn main() {
         &settings,
         &ViriBinpackLoader::new(&DATASET_STAGE0.to_string(), 4096, 6, filter.clone()),
     );
+    // trainer.load_from_checkpoint("checkpoints/hydra_v11_stage1-100");
     trainer.run(
         &schedule_stage1,
         &settings,

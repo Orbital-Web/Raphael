@@ -2,6 +2,7 @@
 #include <Raphael/commands.h>
 #include <Raphael/datagen.h>
 #include <Raphael/tunable.h>
+#include <Raphael/wdl.h>
 
 #include <condition_variable>
 #include <cstring>
@@ -267,8 +268,14 @@ inline void handle_eval(bool corrected) {
         pending_request.position_ready = true;
     }
 
+    const auto raw_eval = engine.static_eval(corrected);
+    const auto norm_eval
+        = raphael::wdl::normalize_score(raw_eval, pending_request.position.board());
+
     lock_guard<mutex> lock(cout_mutex);
-    cout << "info string eval: " << engine.static_eval(corrected) << "\n" << flush;
+    cout << "info string eval: " << raw_eval << "\n"
+         << "info string normalized eval: " << norm_eval << "\n"
+         << flush;
 }
 
 /** Handles the isready command */

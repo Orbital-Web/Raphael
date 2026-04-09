@@ -230,6 +230,7 @@ texel-tuner
 weather-factory
 enginetest
 bullet
+WDL_model
 
 # Chess Games
 src/Games/stockfish/

@@ -4,6 +4,7 @@
 #include <Raphael/consts.h>
 #include <Raphael/movepick.h>
 #include <Raphael/utils.h>
+#include <Raphael/wdl.h>
 
 #include <algorithm>
 #include <climits>
@@ -223,6 +224,7 @@ void Raphael::reset() {
 void Raphael::print_uci_info(i32 depth, i32 score, const SearchStack* ss) const {
     const auto dtime = tm_.get_time();
     const auto nps = (dtime) ? tm_.get_nodes() * 1000 / dtime : 0;
+    const auto& board = position_.board();
 
     lock_guard<mutex> lock(cout_mutex);
     cout << "info depth " << depth << " seldepth " << seldepth_ << " time " << dtime << " nodes "
@@ -231,7 +233,10 @@ void Raphael::print_uci_info(i32 depth, i32 score, const SearchStack* ss) const 
     if (utils::is_mate(score))
         cout << " score mate " << utils::mate_distance(score);
     else
-        cout << " score cp " << score;
+        cout << " score cp " << wdl::normalize_score(score, board);
+
+    const auto wdl_res = wdl::get_wdl(score, board);
+    cout << " wdl " << wdl_res.win << " " << wdl_res.draw << " " << wdl_res.loss;
 
     cout << " hashfull " << tt_.hashfull() << " pv " << get_pv_line(ss->pv) << "\n" << flush;
 }

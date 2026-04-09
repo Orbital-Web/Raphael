@@ -135,6 +135,13 @@ public:
     }
 
 
+    [[nodiscard]] i32 material() const {
+        return occ(PieceType::PAWN).count() + 3 * occ(PieceType::KNIGHT).count()
+               + 3 * occ(PieceType::BISHOP).count() + 5 * occ(PieceType::ROOK).count()
+               + 9 * occ(PieceType::QUEEN).count();
+    }
+
+
     [[nodiscard]] bool in_check() const { return is_attacked(king_square(stm_), ~stm_); }
 
     [[nodiscard]] bool is_halfmovedraw() const { return halfmoves_ >= 100; }

@@ -452,11 +452,10 @@ i32 Raphael::negamax(
                     extension = 1;  // singular extensions
             } else if (s_beta >= beta)
                 return s_beta;  // multicut
-            else if (ttentry.score >= beta) {
+            else if (cutnode)
+                extension = -2;  // cutnode negative extensions
+            else if (ttentry.score >= beta)
                 extension = -1;  // negative extensions
-            } else if (cutnode) {
-                extension = -1;  // cutnode negative extensions
-            }
         }
 
         const u64 old_nodes = tm_.get_nodes();

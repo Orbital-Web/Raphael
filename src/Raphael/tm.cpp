@@ -1,14 +1,11 @@
 #include <Raphael/tm.h>
 #include <Raphael/tunable.h>
 
-#include <cstring>
-
 using namespace raphael;
 using std::abs;
 using std::atomic;
 using std::max;
 using std::memory_order_relaxed;
-using std::memset;
 using std::min;
 namespace ch = std::chrono;
 
@@ -16,9 +13,9 @@ namespace ch = std::chrono;
 
 TimeManager::TimeManager() { reset(); }
 
-void TimeManager::start_timer(
-    const SearchOptions& searchopt, i32 t_remain, i32 t_inc, i32 t_overhead, i32 softhardmult
-) {
+void TimeManager::set_threads(i32 num_searchers) { thread_tm_.assign(num_searchers, ThreadTM{}); }
+
+void TimeManager::start_timer(const SearchOptions& searchopt, i32 t_overhead, i32 softhardmult) {
     reset();
 
     // non-standard limits
@@ -51,6 +48,9 @@ void TimeManager::start_timer(
         return;
     }
 
+    auto t_remain = searchopt.t_remain;
+    auto t_inc = searchopt.t_inc;
+
     // some guis send negative time, scary...
     if (t_remain < 0) t_remain = 1;
     if (t_inc < 0) t_inc = 0;
@@ -70,111 +70,133 @@ i64 TimeManager::get_time() const {
 }
 
 
-void TimeManager::inc_nodes() { nodes_++; }
-
-void TimeManager::inc_nodes(chess::Move move, u64 count) {
-    nodes_per_move_[move.from()][move.to()] += count;
+void TimeManager::inc_nodes(i32 thread_id) {
+    thread_tm_[thread_id].nodes.fetch_add(1, memory_order_relaxed);
 }
 
-u64 TimeManager::get_nodes() const { return nodes_; }
+void TimeManager::inc_nodes(i32 thread_id, chess::Move move, u64 count) {
+    thread_tm_[thread_id].nodes_per_move[move.from()][move.to()] += count;
+}
 
-u64 TimeManager::get_nodes(chess::Move move) const {
-    return nodes_per_move_[move.from()][move.to()];
+u64 TimeManager::get_nodes() const {
+    u64 total = 0;
+    for (const auto& tdata : thread_tm_) total += tdata.nodes.load(memory_order_relaxed);
+    return total;
+}
+
+u64 TimeManager::get_nodes(i32 thread_id) const {
+    return thread_tm_[thread_id].nodes.load(memory_order_relaxed);
+}
+
+u64 TimeManager::get_nodes(i32 thread_id, chess::Move move) const {
+    return thread_tm_[thread_id].nodes_per_move[move.from()][move.to()];
 }
 
 
-bool TimeManager::is_hard_limit_reached(atomic<bool>& halt) const {
+void TimeManager::update_seldepth(i32 thread_id, i32 depth) {
+    // only one thread will write, so we can get away with this
+    thread_tm_[thread_id].seldepth.store(
+        max(thread_tm_[thread_id].seldepth.load(memory_order_relaxed), depth), memory_order_relaxed
+    );
+}
+
+i32 TimeManager::get_seldepth() const {
+    i32 seldepth = 0;
+    for (const auto& tdata : thread_tm_)
+        seldepth = max(seldepth, tdata.seldepth.load(memory_order_relaxed));
+    return seldepth;
+}
+
+
+bool TimeManager::is_hard_limit_reached(i32 thread_id, atomic<bool>& stop) const {
     // if hard nodes is specified, check node count
-    if (hard_nodes_.has_value() && nodes_ >= *hard_nodes_) {
-        halt.store(true, memory_order_relaxed);
+    if (hard_nodes_.has_value() && get_nodes(thread_id) >= *hard_nodes_) {
+        stop.store(true, memory_order_relaxed);
         return true;
     }
 
     // if hard time is specified, check timeover every 2048 nodes
-    if (hard_t_.has_value() && !(nodes_ & 2047) && get_time() >= hard_t_) {
-        halt.store(true, memory_order_relaxed);
+    if (hard_t_.has_value() && !(get_nodes(thread_id) & 2047) && get_time() >= hard_t_) {
+        stop.store(true, memory_order_relaxed);
         return true;
     }
 
-    return halt.load(memory_order_relaxed);
+    return stop.load(memory_order_relaxed);
 }
 
 bool TimeManager::is_soft_limit_reached(
-    atomic<bool>& halt, chess::Move bestmove, i32 score, i32 depth
+    i32 thread_id, atomic<bool>& stop, chess::Move bestmove, i32 score, i32 depth
 ) {
     // if soft nodes is specified, check node count
-    if (soft_nodes_.has_value() && nodes_ >= *soft_nodes_) {
-        halt.store(true, memory_order_relaxed);
+    if (soft_nodes_.has_value() && get_nodes(thread_id) >= *soft_nodes_) {
+        stop.store(true, memory_order_relaxed);
         return true;
     }
 
     // if max depth is specified, check depth (we already finished searching at `depth`)
     if (max_depth_.has_value() && depth >= *max_depth_) {
-        halt.store(true, memory_order_relaxed);
+        stop.store(true, memory_order_relaxed);
         return true;
     }
 
     // if soft time is specified, check against the adjusted time
     if (soft_t_.has_value()) {
-        const auto soft_t_adj = adjust_soft_time(bestmove, score, depth);
+        const auto soft_t_adj = adjust_soft_time(thread_id, bestmove, score, depth);
         if (get_time() >= soft_t_adj) {
-            halt.store(true, memory_order_relaxed);
+            stop.store(true, memory_order_relaxed);
             return true;
         }
     }
 
-    return halt.load(memory_order_relaxed);
+    return stop.load(memory_order_relaxed);
 }
 
 
 void TimeManager::reset() {
-    nodes_ = 0;
-    memset(nodes_per_move_, 0, sizeof(nodes_per_move_));
+    thread_tm_.assign(thread_tm_.size(), ThreadTM{});
     hard_t_.reset();
     soft_t_.reset();
     hard_nodes_.reset();
     soft_nodes_.reset();
     max_depth_.reset();
-    prev_bestmove_ = chess::Move::NO_MOVE;
-    bestmove_stability_ = 0;
-    prev_score_ = 0;
-    score_stability_ = 0;
 }
 
 
-i64 TimeManager::adjust_soft_time(chess::Move bestmove, i32 score, i32 depth) {
+i64 TimeManager::adjust_soft_time(i32 thread_id, chess::Move bestmove, i32 score, i32 depth) {
     assert(soft_t_.has_value());
     f64 factor = 1.0;
 
     // move stability tm
-    if (bestmove == prev_bestmove_)
-        bestmove_stability_++;
+    if (bestmove == thread_tm_[thread_id].prev_bestmove)
+        thread_tm_[thread_id].bestmove_stability++;
     else
-        bestmove_stability_ = 0;
-    prev_bestmove_ = bestmove;
+        thread_tm_[thread_id].bestmove_stability = 0;
+    thread_tm_[thread_id].prev_bestmove = bestmove;
 
     if (depth >= MV_STAB_TM_MIN_DEPTH)
         factor *= max(
-            (MV_STAB_TM_BASE / 100.0) - (MV_STAB_TM_MUL * bestmove_stability_ / 100.0),
+            (MV_STAB_TM_BASE / 100.0)
+                - (MV_STAB_TM_MUL * thread_tm_[thread_id].bestmove_stability / 100.0),
             (MV_STAB_TM_MIN / 100.0)
         );
 
     // score stability tm
-    if (abs(score - prev_score_) <= SCORE_STAB_MARGIN)
-        score_stability_++;
+    if (abs(score - thread_tm_[thread_id].prev_score) <= SCORE_STAB_MARGIN)
+        thread_tm_[thread_id].score_stability++;
     else
-        score_stability_ = 0;
-    prev_score_ = score;
+        thread_tm_[thread_id].score_stability = 0;
+    thread_tm_[thread_id].prev_score = score;
 
     if (depth >= SCORE_STAB_TM_MIN_DEPTH)
         factor *= max(
-            (SCORE_STAB_TM_BASE / 100.0) - (SCORE_STAB_TM_MUL * score_stability_ / 100.0),
+            (SCORE_STAB_TM_BASE / 100.0)
+                - (SCORE_STAB_TM_MUL * thread_tm_[thread_id].score_stability / 100.0),
             (SCORE_STAB_TM_MIN / 100.0)
         );
 
     // node tm
     if (depth >= NODE_TM_MIN_DEPTH) {
-        const auto ratio = f64(get_nodes(bestmove)) / f64(get_nodes());
+        const auto ratio = f64(get_nodes(thread_id, bestmove)) / f64(get_nodes(thread_id));
         factor *= (NODE_TM_BASE / 100.0) - (NODE_TM_MUL * ratio / 100.0);
     }
 

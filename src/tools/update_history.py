@@ -66,7 +66,6 @@ def extend() -> None:
 
     started = False
     new_history: str = ""
-
     for line in history:
         if line.startswith("NET/DATA"):
             started = True
@@ -89,16 +88,32 @@ def insert() -> None:
     history = _read_history()
     (r0, c0, r1, c1) = _find_at(history)
 
-    content: list[str] = []
+    raw_content = ""
     print("Enter content to insert:")
     while cont := input():
-        if not cont.strip():
+        if not cont:
             break
-        content.append(cont.rstrip())
+        raw_content += cont + "\n"
+
+    max_width = c1 - c0
+    content: list[str] = []
+    for cont in raw_content.split("\n"):
+        buffer, *words = cont.split(" ")
+        width = len(buffer)
+
+        for word in words:
+            if width + len(word) + 1 > max_width:
+                content.append(buffer)
+                width = len(word)
+                buffer = word
+                continue
+            width += len(word) + 1
+            buffer += " " + word
+
+        if buffer:
+            content.append(buffer)
 
     new_history: str = "".join(history[:r0])
-
-    # TODO: auto line break free-form text
     for row, (line, cont) in enumerate(zip(history[r0:], content), r0):
         if row > r1:
             break

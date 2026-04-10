@@ -184,11 +184,11 @@ To see all supported commands, run `uci.exe help`
     - [x] King buckets                      (`v3.2+`)
     - [x] Finny tables                      (`v3.2+`)
     - [x] Finetuning                        (`v3.3+`)
-    - [ ] Relabeling/distillation
-    - [ ] Pairwise multiplication
-    - [ ] Dual activations
+    - [x] Pairwise multiplication           (`v4.0+`)
     - [ ] Multilayer network
+    - [ ] Dual activations
     - [ ] Threat Inputs
+    - [ ] Relabeling/distillation
 - [x] Time management                       (`v1.0+`)
   - [x] Hard/soft limit                     (`v3.0+`)
   - [x] Node-based scaling                  (`v3.2+`)

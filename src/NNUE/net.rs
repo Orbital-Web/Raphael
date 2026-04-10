@@ -47,7 +47,7 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "hydra_v12";
+    const NET_ID: &str = "orthrus_v1";
     const HIDDEN_SIZE: usize = 1024;
     const NUM_INPUT_BUCKETS: usize = 16;
     const NUM_OUTPUT_BUCKETS: usize = 8;
@@ -102,11 +102,11 @@ fn main() {
             l0.weights = l0.weights + expanded_factorizer;
 
             // output layer weights
-            let l1 = builder.new_affine("l1", 2 * HIDDEN_SIZE, NUM_OUTPUT_BUCKETS);
+            let l1 = builder.new_affine("l1", HIDDEN_SIZE, NUM_OUTPUT_BUCKETS);
 
             // inference
-            let stm_hidden = l0.forward(stm_inputs).screlu();
-            let ntm_hidden = l0.forward(ntm_inputs).screlu();
+            let stm_hidden = l0.forward(stm_inputs).crelu().pairwise_mul();
+            let ntm_hidden = l0.forward(ntm_inputs).crelu().pairwise_mul();
             let hidden_layer = stm_hidden.concat(ntm_hidden);
             l1.forward(hidden_layer).select(output_buckets)
         });

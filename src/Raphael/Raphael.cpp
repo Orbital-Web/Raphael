@@ -151,8 +151,8 @@ void Raphael::set_threads(i32 num_searchers) {
     stop.store(false, memory_order_relaxed);
     quit.store(false, memory_order_relaxed);
 
-    start_sync = make_unique<barrier<>>(num_searchers + 1);
-    end_sync = make_unique<barrier<>>(num_searchers + 1);
+    idle_barrier = make_unique<barrier<>>(num_searchers + 1);
+    search_end_barrier = make_unique<barrier<>>(num_searchers);
 
     thread_data.assign(num_searchers, ThreadData{});
     searchers.reserve(num_searchers);
@@ -165,12 +165,9 @@ void Raphael::start_search(const TimeManager::SearchOptions& options) {
     assert(!is_searching.load(memory_order_acquire));
     is_searching.store(true, memory_order_release);
 
-    end_sync->arrive_and_wait();
-
-    // setup
     tm_.start_timer(options, params_.moveoverhead, (params_.softnodes) ? params_.softhardmult : 0);
 
-    start_sync->arrive_and_wait();
+    idle_barrier->arrive_and_wait();
 }
 
 bool Raphael::is_search_complete() { return !is_searching.load(memory_order_acquire); }
@@ -209,8 +206,8 @@ void Raphael::kill_search() {
     stop.store(true, memory_order_relaxed);
     quit.store(true, memory_order_relaxed);
 
-    // wait for threads to finish current search
-    if (end_sync) end_sync->arrive_and_wait();
+    // let threads proceed so it can quit
+    if (idle_barrier) idle_barrier->arrive_and_wait();
 
     for (auto& t : searchers)
         if (t.joinable()) t.join();
@@ -223,21 +220,21 @@ void Raphael::t_search_function(i32 thread_id) {
     auto& my_data = thread_data[thread_id];
 
     while (true) {
-        // wait until last search finishes
-        end_sync->arrive_and_wait();
+        // wait for new search request to arrive
+        idle_barrier->arrive_and_wait();
         if (quit.load(memory_order_relaxed)) break;
 
-        // wait until uci thread sets up search
-        start_sync->arrive_and_wait();
-
         const auto result = iterative_deepen(thread_id);
+
+        // wait until all threads finish
+        if (thread_id == 0) stop.store(true, memory_order_relaxed);
+        search_end_barrier->arrive_and_wait();
 
         if (thread_id == 0) {
             lock_guard<mutex> lock(cout_mutex);  // FIXME: remove cout mutex
             cout << "bestmove " << chess::uci::from_move(result.move, params_.chess960) << "\n"
                  << flush;
             search_result = result;
-            stop.store(true, memory_order_relaxed);
             is_searching.store(false, memory_order_release);
             is_searching.notify_one();
         }

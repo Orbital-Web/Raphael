@@ -96,8 +96,8 @@ private:
     std::atomic<bool> stop{false};
     std::atomic<bool> quit{false};
 
-    std::unique_ptr<std::barrier<>> start_sync;
-    std::unique_ptr<std::barrier<>> end_sync;
+    std::unique_ptr<std::barrier<>> idle_barrier;
+    std::unique_ptr<std::barrier<>> search_end_barrier;
 
     std::vector<std::thread> searchers;
     std::vector<ThreadData> thread_data;

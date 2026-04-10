@@ -13,6 +13,7 @@
 #include <iostream>
 
 using namespace raphael;
+using std::abs;
 using std::atomic;
 using std::clamp;
 using std::copy;
@@ -232,8 +233,12 @@ void Raphael::print_uci_info(i32 depth, i32 score, const SearchStack* ss) const 
 
     if (utils::is_mate(score))
         cout << " score mate " << utils::mate_distance(score);
-    else
+    else {
+        // adjust draw randomization
+        if (abs(score) < 2) score = 0;
+
         cout << " score cp " << wdl::normalize_score(score, board);
+    }
 
     const auto wdl_res = wdl::get_wdl(score, board);
     cout << " wdl " << wdl_res.win << " " << wdl_res.draw << " " << wdl_res.loss;
@@ -289,7 +294,8 @@ i32 Raphael::negamax(
     if (!is_root) {
         // prevent draw in winning positions
         // technically this ignores checkmate on the 50th move
-        if (position_.is_repetition(1) || board.is_halfmovedraw()) return 0;
+        if (position_.is_repetition(1) || board.is_halfmovedraw())
+            return (tm_.get_nodes() & 0x2) - 1;
 
         // mate distance pruning
         alpha = max(alpha, -MATE_SCORE + ply);
@@ -377,7 +383,7 @@ i32 Raphael::negamax(
     }
 
     // draw analysis
-    if (board.is_insufficientmaterial()) return 0;
+    if (board.is_insufficientmaterial()) return (tm_.get_nodes() & 0x2) - 1;
 
     // initialize move generator
     assert(mvidx < 2 * MAX_DEPTH);

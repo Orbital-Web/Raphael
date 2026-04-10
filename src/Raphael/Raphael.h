@@ -84,7 +84,6 @@ private:
 
     // shared data
     EngineOptions params_;
-    TimeManager::SearchOptions searchopt_;
     UciInfoLevel ucilevel_ = UciInfoLevel::NONE;
 
     TranspositionTable tt_;
@@ -155,7 +154,7 @@ public:
      *
      * \param options search options
      */
-    void start_search(TimeManager::SearchOptions options);
+    void start_search(const TimeManager::SearchOptions& options);
 
     /** Returns whether the search is complete (or isn't running)
      *
@@ -176,7 +175,7 @@ public:
      * \param options search options
      * \returns the completed search result
      */
-    MoveScore search(TimeManager::SearchOptions options);
+    MoveScore search(const TimeManager::SearchOptions& options);
 
     /** Stops any ongoing search */
     void stop_search();
@@ -209,9 +208,12 @@ private:
      *
      * \param depth current depth
      * \param score score to print
-     * \param search stack at current ply
+     * \param board current board
+     * \param ss search stack at root
      */
-    void print_uci_info(i32 depth, i32 score, const SearchStack* ss) const;
+    void print_uci_info(
+        i32 depth, i32 score, const chess::Board& board, const SearchStack* ss
+    ) const;
 
     /** Returns the stringified PV line
      *
@@ -223,10 +225,11 @@ private:
 
     /** Adjusts the raw static eval using scaling and corrhists
      *
+     * \param thread_id thread id
      * \param raw_static_eval raw eval to adjust
      * \returns the adjusted eval
      */
-    i32 adjust_score(i32 raw_static_eval) const;
+    i32 adjust_score(i32 thread_id, i32 raw_static_eval) const;
 
 
     /** Does the actual search logic, calling negamax with increasing depth.
@@ -241,39 +244,39 @@ private:
      * play by both us and the opponent
      *
      * \tparam is_PV whether the current position is a PV node
+     * \param thread_id thread id
      * \param depth depth to search for
      * \param ply current distance from root
-     * \param mvidx movestack index
      * \param alpha lower bound score of current position
      * \param beta upper bound score of current position
      * \param cutnode whether the current position is a cutnode
      * \param ss search stack at current ply
-     * \param halt bool reference which will turn false to indicate search should stop
+     * \param mv move stack at current node
      * \returns score of current position
      */
     template <bool is_PV>
     i32 negamax(
+        const i32 thread_id,
         i32 depth,
         const i32 ply,
-        const i32 mvidx,
         i32 alpha,
         i32 beta,
         bool cutnode,
         SearchStack* ss,
-        std::atomic<bool>& halt
+        MoveStack* mv
     );
 
     /** Evaluates the board after all noisy moves are played out
      *
      * \tparam is_PV whether the current position is a PV node
+     * \param thread_id thread id
      * \param ply current distance from root
-     * \param mvidx movestack index
      * \param alpha lower bound score of current position
      * \param beta upper bound score of current position
-     * \param halt bool reference which will turn false to indicate search should stop
+     * \param mv move stack at current node
      * \returns score of current board
      */
     template <bool is_PV>
-    i32 quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, std::atomic<bool>& halt);
+    i32 quiescence(const i32 thread_id, const i32 ply, i32 alpha, i32 beta, MoveStack* mv);
 };
 }  // namespace raphael

@@ -132,14 +132,15 @@ To see all supported commands, run `uci.exe help`
     - ~~One reply extensions~~              (`v1.7+`)
     - [x] Singular extensions               (`v3.0+`)
     - [x] Double extensions                 (`v3.0+`)
-    - [ ] Triple extensions
+    - [x] Triple extensions                 (`v4.0+`)
     - [x] Negative extensions               (`v3.0+`)
     - [x] Cutnode negative extensions       (`v3.1+`)
     - [ ] Low depth singular extensions
+    - [ ] Hindsight extensions
   - [x] Reductions                          (`v1.5+`)
     - [x] Late move reductions              (`v1.5+`)
     - [x] Internal iterative reduction      (`v3.0+`)
-  - [x] Move ordering                       (`v1.0+`)
+  - [x] Move ordering & History             (`v1.0+`)
     - [x] MVV-LVA                           (`v1.0+`)
     - [x] Promotions                        (`v1.0+`)
     - [x] Hash move                         (`v1.6+`)

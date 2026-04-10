@@ -447,7 +447,7 @@ i32 Raphael::negamax(
 
             if (score < s_beta) {
                 if (!is_PV && score + DE_MARGIN < s_beta)
-                    extension = 2;  // double extensions
+                    extension = 2 + (is_quiet && score + TE_MARGIN < s_beta);  // double/triple
                 else
                     extension = 1;  // singular extensions
             } else if (s_beta >= beta)

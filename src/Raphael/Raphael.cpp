@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <climits>
 #include <cmath>
+#include <cstring>
 #include <future>
 #include <iostream>
 
@@ -26,6 +27,7 @@ using std::max;
 using std::memory_order_acquire;
 using std::memory_order_relaxed;
 using std::memory_order_release;
+using std::memset;
 using std::min;
 using std::mutex;
 using std::string;
@@ -222,11 +224,14 @@ void Raphael::kill_search() {
 
 
 void Raphael::t_search_function(i32 thread_id) {
+    auto& my_data = thread_data[thread_id];
+
     while (true) {
         // wait for new search request to arrive
         idle_barrier->arrive_and_wait();
         if (quit.load(memory_order_relaxed)) break;
 
+        memset(&my_data.search_stack, 0, sizeof(my_data.search_stack));
         const auto result = iterative_deepen(thread_id);
 
         // wait until all threads finish

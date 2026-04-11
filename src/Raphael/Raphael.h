@@ -91,6 +91,7 @@ private:
 
     // thread helpers
     std::atomic<bool> is_searching{false};
+    TimeManager::SearchOptions search_opt;
     MoveScore search_result;
 
     std::atomic<bool> stop{false};

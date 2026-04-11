@@ -23,13 +23,13 @@ public:
     };
 
 private:
-    std::chrono::time_point<std::chrono::steady_clock> start_t_;  // search start time
-
     struct alignas(CACHE_SIZE) ThreadTM {
         std::atomic<u64> nodes{0};
         std::atomic<i32> seldepth{0};
     };
     std::vector<ThreadTM> thread_tm_;
+
+    // rest should only be accessed by main thread
 
     // limits
     std::optional<i64> hard_t_;  // hard time limit, checked every few nodes
@@ -38,9 +38,11 @@ private:
     std::optional<u64> hard_nodes_;  // hard node limit, checked every few nodes
     std::optional<u64> soft_nodes_;  // soft node limit, checked after each iterative deepening
 
-    std::optional<i32> max_depth_;  // max depth
+    std::optional<i32> max_depth_;
 
-    // heuristics (should only be accessed by main thread)
+    // timings and heuristics
+    std::chrono::time_point<std::chrono::steady_clock> start_t_;
+
     u64 nodes_per_move_[64][64] = {};
 
     chess::Move prev_bestmove_ = chess::Move::NO_MOVE;
@@ -64,12 +66,17 @@ public:
     /** Sets the limits and starts the search timer
      *
      * \param searchopt options such as movetime and maxnodes
+     * \param thread_id thread id
      * \param t_overhead overhead in ms
      * \param softhardmult ratio between hard and soft nodes, or 0 if not using softnodes
      */
-    void start_timer(const SearchOptions& searchopt, i32 t_overhead, i32 softhardmult);
+    void start_timer(
+        const SearchOptions& searchopt, i32 thread_id, i32 t_overhead, i32 softhardmult
+    );
 
-    /** Returns the time elapsed (in ms) since the start of search */
+    /** Returns the time elapsed (in ms) since the start of search.
+     * Should only be called from the main thread
+     * */
     i64 get_time() const;
 
 
@@ -146,10 +153,6 @@ public:
     );
 
 private:
-    /** Resets the time manager */
-    void reset();
-
-
     /** Computes the adjusted soft time limit for this thread
      *
      * \param thread_id thread id

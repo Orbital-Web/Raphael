@@ -15,24 +15,35 @@ namespace ch = std::chrono;
 
 
 
-TimeManager::TimeManager() { reset(); }
+TimeManager::TimeManager() {}
 
 void TimeManager::set_threads(i32 num_searchers) { thread_tm_ = vector<ThreadTM>(num_searchers); }
 
-void TimeManager::start_timer(const SearchOptions& searchopt, i32 t_overhead, i32 softhardmult) {
-    reset();
+void TimeManager::start_timer(
+    const SearchOptions& searchopt, i32 thread_id, i32 t_overhead, i32 softhardmult
+) {
+    // reset
+    thread_tm_[thread_id].nodes.store(0, memory_order_relaxed);
+    thread_tm_[thread_id].seldepth.store(0, memory_order_relaxed);
+    if (thread_id != 0) return;
+
+    hard_t_.reset();
+    soft_t_.reset();
+    hard_nodes_.reset();
+    soft_nodes_.reset();
+    max_depth_.reset();
+
+    memset(nodes_per_move_, 0, sizeof(nodes_per_move_));
+    prev_bestmove_ = chess::Move::NO_MOVE;
+    bestmove_stability_ = 0;
+    prev_score_ = 0;
+    score_stability_ = 0;
 
     // non-standard limits
     if (searchopt.movetime.has_value() || searchopt.maxdepth.has_value()
         || searchopt.maxnodes.has_value() || searchopt.infinite) {
         // either use movetime or don't use tm
-        if (searchopt.movetime.has_value()) {
-            hard_t_ = *searchopt.movetime;
-            soft_t_.reset();
-        } else {
-            hard_t_.reset();
-            soft_t_.reset();
-        }
+        if (searchopt.movetime.has_value()) hard_t_ = *searchopt.movetime;
 
         // set max depth
         if (searchopt.maxdepth.has_value()) max_depth_ = *searchopt.maxdepth;
@@ -42,10 +53,8 @@ void TimeManager::start_timer(const SearchOptions& searchopt, i32 t_overhead, i3
             if (softhardmult > 0) {
                 soft_nodes_ = *searchopt.maxnodes;
                 hard_nodes_ = *searchopt.maxnodes * softhardmult;
-            } else {
-                soft_nodes_.reset();
+            } else
                 hard_nodes_ = *searchopt.maxnodes;
-            }
         }
 
         start_t_ = ch::steady_clock::now();
@@ -76,9 +85,8 @@ i64 TimeManager::get_time() const {
 
 void TimeManager::inc_nodes(i32 thread_id) {
     // only one thread will write, so this is faster
-    thread_tm_[thread_id].nodes.store(
-        thread_tm_[thread_id].nodes.load(memory_order_relaxed) + 1, memory_order_relaxed
-    );
+    auto& nodes = thread_tm_[thread_id].nodes;
+    nodes.store(nodes.load(memory_order_relaxed) + 1, memory_order_relaxed);
 }
 
 void TimeManager::inc_nodes(i32 thread_id, chess::Move move, u64 count) {
@@ -104,9 +112,8 @@ u64 TimeManager::get_nodes(i32 thread_id, chess::Move move) const {
 
 void TimeManager::update_seldepth(i32 thread_id, i32 depth) {
     // only one thread will write, so we can get away with this
-    thread_tm_[thread_id].seldepth.store(
-        max(thread_tm_[thread_id].seldepth.load(memory_order_relaxed), depth), memory_order_relaxed
-    );
+    auto& seldepth = thread_tm_[thread_id].seldepth;
+    seldepth.store(max(seldepth.load(memory_order_relaxed), depth), memory_order_relaxed);
 }
 
 i32 TimeManager::get_seldepth() const {
@@ -164,23 +171,6 @@ bool TimeManager::is_soft_limit_reached(
     }
 
     return stop.load(memory_order_relaxed);
-}
-
-
-void TimeManager::reset() {
-    set_threads(thread_tm_.size());
-
-    hard_t_.reset();
-    soft_t_.reset();
-    hard_nodes_.reset();
-    soft_nodes_.reset();
-    max_depth_.reset();
-
-    memset(nodes_per_move_, 0, sizeof(nodes_per_move_));
-    prev_bestmove_ = chess::Move::NO_MOVE;
-    bestmove_stability_ = 0;
-    prev_score_ = 0;
-    score_stability_ = 0;
 }
 
 

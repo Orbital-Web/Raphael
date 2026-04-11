@@ -25,7 +25,6 @@ using std::max;
 using std::memory_order_acquire;
 using std::memory_order_relaxed;
 using std::memory_order_release;
-using std::memory_order_seq_cst;
 using std::memset;
 using std::min;
 using std::string;
@@ -158,10 +157,9 @@ void Raphael::set_threads(i32 num_searchers) {
 void Raphael::start_search(const TimeManager::SearchOptions& options) {
     // no need to do compare exchange as all public functions should get called from a single thread
     assert(!is_searching.load(memory_order_acquire));
+    search_opt = options;
     stop.store(false, memory_order_relaxed);
     is_searching.store(true, memory_order_release);
-
-    tm_.start_timer(options, params_.moveoverhead, (params_.softnodes) ? params_.softhardmult : 0);
 
     idle_barrier->arrive_and_wait();
 }
@@ -223,6 +221,12 @@ void Raphael::t_search_function(i32 thread_id) {
         idle_barrier->arrive_and_wait();
         if (quit.load(memory_order_relaxed)) break;
 
+        tm_.start_timer(
+            search_opt,
+            thread_id,
+            params_.moveoverhead,
+            (params_.softnodes) ? params_.softhardmult : 0
+        );
         memset(&my_data.search_stack, 0, sizeof(my_data.search_stack));
         const auto result = iterative_deepen(thread_id);
 
@@ -232,7 +236,7 @@ void Raphael::t_search_function(i32 thread_id) {
 
         if (thread_id == 0) {
             search_result = result;
-            is_searching.store(false, memory_order_seq_cst);
+            is_searching.store(false, memory_order_release);
             is_searching.notify_one();
 
             if (ucilevel_ != UciInfoLevel::NONE)
@@ -356,9 +360,9 @@ Raphael::MoveScore Raphael::iterative_deepen(i32 thread_id) {
     tt_.do_age();
 
     // return result
-    if (utils::is_mate(score))
-        return {bestmove, utils::mate_distance(score), true, tm_.get_nodes()};
-    return {bestmove, score, false, tm_.get_nodes()};
+    const auto nodes = tm_.get_nodes(thread_id);
+    if (utils::is_mate(score)) return {bestmove, utils::mate_distance(score), true, nodes};
+    return {bestmove, score, false, nodes};
 }
 
 template <bool is_PV>

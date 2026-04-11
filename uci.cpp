@@ -256,8 +256,6 @@ inline void handle_bench() {
         return;
     }
 
-    engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::MINIMAL);
-    engine.reset();
     raphael::commands::bench(engine);
 
     quit = true;

@@ -77,6 +77,9 @@ void bench(Raphael& engine) {
         "2r2b2/5p2/5k2/p1r1pP2/P2pB3/1P3P2/K1P3R1/7R w - - 23 93",
     };
 
+    engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::MINIMAL);
+    engine.reset();
+
     {
         lock_guard<mutex> lock(cout_mutex);
         cout << "bench: starting\n" << flush;

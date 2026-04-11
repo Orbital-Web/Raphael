@@ -239,9 +239,11 @@ void Raphael::t_search_function(i32 thread_id) {
         search_end_barrier->arrive_and_wait();
 
         if (thread_id == 0) {
-            lock_guard<mutex> lock(cout_mutex);  // FIXME: remove cout mutex
-            cout << "bestmove " << chess::uci::from_move(result.move, params_.chess960) << "\n"
-                 << flush;
+            if (ucilevel_ != UciInfoLevel::NONE) {
+                lock_guard<mutex> lock(cout_mutex);  // FIXME: remove cout mutex
+                cout << "bestmove " << chess::uci::from_move(result.move, params_.chess960) << "\n"
+                     << flush;
+            }
             search_result = result;
             is_searching.store(false, memory_order_release);
             is_searching.notify_one();

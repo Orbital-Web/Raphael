@@ -1,4 +1,3 @@
-#include <GameEngine/consts.h>
 #include <Raphael/commands.h>
 
 #include <fstream>
@@ -10,9 +9,7 @@ using std::cout;
 using std::fixed;
 using std::flush;
 using std::ifstream;
-using std::lock_guard;
 using std::mt19937_64;
-using std::mutex;
 using std::setprecision;
 using std::string;
 using std::uniform_int_distribution;
@@ -80,10 +77,7 @@ void bench(Raphael& engine) {
     engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::MINIMAL);
     engine.reset();
 
-    {
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "bench: starting\n" << flush;
-    }
+    cout << "bench: starting\n" << flush;
 
     i64 runtime = 0;
     u64 nodes = 0;
@@ -91,10 +85,7 @@ void bench(Raphael& engine) {
         const chess::Board board(fen);
         engine.set_board(board);
 
-        {
-            lock_guard<mutex> lock(cout_mutex);
-            cout << "\ninfo string fen: " << fen << "\n" << flush;
-        }
+        cout << "\ninfo string fen: " << fen << "\n" << flush;
 
         const auto start_t = ch::steady_clock::now();
         const auto res = engine.search({.maxdepth = BENCH_DEPTH});
@@ -105,7 +96,6 @@ void bench(Raphael& engine) {
     }
 
     const i64 nps = 1000.0f * nodes / runtime;
-    lock_guard<mutex> lock(cout_mutex);
     cout << "\nbench: completed in " << runtime << "ms:\n"
          << nodes << " nodes " << nps << " nps\n"
          << flush;
@@ -131,7 +121,6 @@ void genfens(
     else {
         ifstream file(book);
         if (!file) {
-            lock_guard<mutex> lock(cout_mutex);
             cout << "info string could not open book: " << book << "\n" << flush;
             return;
         }
@@ -141,7 +130,6 @@ void genfens(
             if (!seed_fen.empty()) seed_fens.push_back(seed_fen);
 
         if (seed_fens.empty()) {
-            lock_guard<mutex> lock(cout_mutex);
             cout << "info string book file is empty\n" << flush;
             return;
         }
@@ -173,7 +161,6 @@ void genfens(
         if (res.move == chess::Move::NO_MOVE || res.is_mate || abs(res.score) > GENFENS_MAX_SCORE)
             continue;
 
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string genfens " << board.get_fen() << "\n" << flush;
         generated++;
     }
@@ -184,7 +171,6 @@ void evalstats(Raphael& engine, const std::string& book) {
     // based on https://github.com/cosmobobak/viridithas/blob/master/src/evaluation.rs
     ifstream file(book);
     if (!file) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string could not open book: " << book << "\n" << flush;
         return;
     }
@@ -224,7 +210,6 @@ void evalstats(Raphael& engine, const std::string& book) {
 
         const i32 newscale = f64(Nnue::OUTPUT_SCALE) * DEF_TARGET_ABS_MEAN / abs_mean;
 
-        lock_guard<mutex> lock(cout_mutex);
         cout << fixed << setprecision(4) << "mean:     " << mean << "\n"
              << "abs mean: " << abs_mean << "\n"
              << "stddev:   " << stddev << "\n"

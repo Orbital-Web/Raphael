@@ -1,4 +1,3 @@
-#include <GameEngine/consts.h>
 #include <Raphael/Raphael.h>
 #include <Raphael/SEE.h>
 #include <Raphael/consts.h>
@@ -21,7 +20,6 @@ using std::clamp;
 using std::copy;
 using std::cout;
 using std::flush;
-using std::lock_guard;
 using std::make_unique;
 using std::max;
 using std::memory_order_acquire;
@@ -29,10 +27,8 @@ using std::memory_order_relaxed;
 using std::memory_order_release;
 using std::memset;
 using std::min;
-using std::mutex;
 using std::string;
 using std::swap;
-using std::unique_lock;
 
 
 
@@ -85,7 +81,6 @@ void Raphael::set_option(const std::string& name, i32 value) {
 
         // error checking
         if (value < p->min_val || value > p->max_val) {
-            lock_guard<mutex> lock(cout_mutex);
             cout << "info string error: option '" << p->name << "' value must be within min "
                  << p->min_val << " max " << p->max_val << "\n"
                  << flush;
@@ -95,14 +90,11 @@ void Raphael::set_option(const std::string& name, i32 value) {
         // set value
         p->set(value);
 
-        if (ucilevel_ != UciInfoLevel::NONE) {
-            lock_guard<mutex> lock(cout_mutex);
+        if (ucilevel_ != UciInfoLevel::NONE)
             cout << "info string set " << p->name << " to " << value << "\n" << flush;
-        }
         return;
     }
 
-    lock_guard<mutex> lock(cout_mutex);
     cout << "info string error: unknown spin option '" << name << "'\n" << flush;
 }
 void Raphael::set_option(const std::string& name, bool value) {
@@ -115,7 +107,6 @@ void Raphael::set_option(const std::string& name, bool value) {
         p->set(value);
 
         if (ucilevel_ != UciInfoLevel::NONE) {
-            lock_guard<mutex> lock(cout_mutex);
             if (value)
                 cout << "info string enabled " << p->name << "\n" << flush;
             else
@@ -124,7 +115,6 @@ void Raphael::set_option(const std::string& name, bool value) {
         return;
     }
 
-    lock_guard<mutex> lock(cout_mutex);
     cout << "info string error: unknown check option '" << name << "'\n" << flush;
 }
 
@@ -239,11 +229,9 @@ void Raphael::t_search_function(i32 thread_id) {
         search_end_barrier->arrive_and_wait();
 
         if (thread_id == 0) {
-            if (ucilevel_ != UciInfoLevel::NONE) {
-                lock_guard<mutex> lock(cout_mutex);  // FIXME: remove cout mutex
+            if (ucilevel_ != UciInfoLevel::NONE)
                 cout << "bestmove " << chess::uci::from_move(result.move, params_.chess960) << "\n"
                      << flush;
-            }
             search_result = result;
             is_searching.store(false, memory_order_release);
             is_searching.notify_one();
@@ -259,7 +247,6 @@ void Raphael::print_uci_info(
     const auto nodes = tm_.get_nodes();
     const auto nps = (dtime) ? nodes * 1000 / dtime : 0;
 
-    lock_guard<mutex> lock(cout_mutex);
     cout << "info depth " << depth << " seldepth " << tm_.get_seldepth() << " time " << dtime
          << " nodes " << nodes << " nps " << nps;
 

@@ -1,5 +1,4 @@
 #include <GameEngine/GameEngine.h>
-#include <GameEngine/consts.h>
 
 #include <fstream>
 #include <future>
@@ -16,9 +15,7 @@ using std::future_status;
 using std::get;
 using std::ios_base;
 using std::launch;
-using std::lock_guard;
 using std::min;
-using std::mutex;
 using std::ofstream;
 using std::setprecision;
 using std::string;
@@ -153,12 +150,10 @@ void GameEngine::run_match(const GameOptions& options) {
         // play move
         if (!to_play || !movelist.contains(to_play)) {
             if (!to_play) {
-                lock_guard<mutex> lock(cout_mutex);
                 cout << "Warning, no move returned. Remaining time of player: " << fixed
                      << setprecision(2) << cur_t_remain / 1000.0f << "\n"
                      << flush;
             } else {
-                lock_guard<mutex> lock(cout_mutex);
                 cout << "Warning, illegal move " << chess::uci::from_move(to_play)
                      << " played. Remaining time of player: " << fixed << setprecision(2)
                      << cur_t_remain / 1000.0f << "\n"
@@ -224,7 +219,6 @@ void GameEngine::print_report() const {
     const auto& p2_name = visit([](auto player) { return player->name; }, players[1].player);
     i32 total_matches = results[0] + results[1] + results[2];
 
-    lock_guard<mutex> lock(cout_mutex);
     cout << "Out of " << total_matches << " total matches:\n";
     cout << "   " << p1_name << "\t\x1b[32m" << results[0] << " (white: " << whitewins[0]
          << ", black: " << results[0] - whitewins[0] - timeoutwins[0]
@@ -242,11 +236,9 @@ future<chess::Move> GameEngine::get_move_async(
 ) {
     return async(launch::async, [&, this]() {
         const auto& recv = engine->get_move(t_remain, t_inc, halt);
-        if (recv.is_mate) {
-            lock_guard<mutex> lock(cout_mutex);
+        if (recv.is_mate)
             cout << "Score: #" << ((whiteturn) ? 1 : -1) * recv.score << "\n" << flush;
-        } else {
-            lock_guard<mutex> lock(cout_mutex);
+        else {
             cout << "Score: " << fixed << setprecision(2)
                  << ((whiteturn) ? 1 : -1) * recv.score / 100.0f << "\n"
                  << flush;
@@ -276,10 +268,7 @@ void GameEngine::generate_assets() {
     // timer and player names
     bool font_loaded = true;
     font_loaded &= font.openFromFile("src/assets/fonts/Roboto-Regular.ttf");
-    if (!font_loaded) {
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "Warning, could not load font\n" << flush;
-    }
+    if (!font_loaded) cout << "Warning, could not load font\n" << flush;
     timers.reserve(2);
     names.reserve(2);
     for (i32 i = 0; i < 2; i++) {
@@ -294,10 +283,7 @@ void GameEngine::generate_assets() {
     sound_loaded &= soundbuffers[0].loadFromFile("src/assets/sounds/Move.ogg");
     sound_loaded &= soundbuffers[1].loadFromFile("src/assets/sounds/Capture.ogg");
     sound_loaded &= soundbuffers[2].loadFromFile("src/assets/sounds/GenericNotify.ogg");
-    if (!sound_loaded) {
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "Warning, could not load 1 or more sound files\n" << flush;
-    }
+    if (!sound_loaded) cout << "Warning, could not load 1 or more sound files\n" << flush;
     sounds.reserve(3);
     for (i32 i = 0; i < 3; i++) sounds.emplace_back(soundbuffers[i]);
 }

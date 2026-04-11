@@ -1,4 +1,3 @@
-#include <GameEngine/consts.h>
 #include <Raphael/Raphael.h>
 #include <Raphael/commands.h>
 #include <Raphael/datagen.h>
@@ -15,14 +14,11 @@ using std::cin;
 using std::cout;
 using std::exception;
 using std::flush;
-using std::lock_guard;
-using std::mutex;
 using std::stoi;
 using std::stoll;
 using std::stoull;
 using std::string;
 using std::stringstream;
-using std::unique_lock;
 using std::vector;
 
 
@@ -45,13 +41,11 @@ raphael::Raphael engine("Raphael");
  */
 inline void handle_setoption(const vector<string>& tokens) {
     if (!engine.is_search_complete()) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string still searching\n" << flush;
         return;
     }
 
     if (tokens.size() != 5 || tokens[1] != "name" || tokens[3] != "value") {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string usage: setoption name <NAME> value <VALUE>\n" << flush;
         return;
     }
@@ -72,14 +66,12 @@ inline void handle_setoption(const vector<string>& tokens) {
     try {
         value = stoi(tokens[4]);
     } catch (const exception& e) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string value must either be a bool or an int\n" << flush;
         return;
     }
 
 #ifdef TUNE
     if (raphael::set_tunable(tokens[2], value)) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string set " << tokens[2] << " to " << value << "\n" << flush;
         return;
     }
@@ -94,7 +86,6 @@ inline void handle_setoption(const vector<string>& tokens) {
  */
 inline void handle_position(const vector<string>& tokens) {
     if (!engine.is_search_complete()) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string still searching\n" << flush;
         return;
     }
@@ -135,7 +126,6 @@ inline void handle_position(const vector<string>& tokens) {
  */
 inline void handle_go(const vector<string>& tokens) {
     if (!engine.is_search_complete()) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string already searching\n" << flush;
         return;
     }
@@ -171,7 +161,6 @@ inline void handle_go(const vector<string>& tokens) {
         engine.set_position(position);
         position_ready = true;
 
-        unique_lock<mutex> lock(cout_mutex);
         cout << "info string warning: to avoid overhead, call isready or ucinewgame after "
                 "setting position\n"
              << flush;
@@ -186,7 +175,6 @@ inline void handle_go(const vector<string>& tokens) {
  */
 inline void handle_eval(bool corrected) {
     if (!engine.is_search_complete()) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string still searching\n" << flush;
         return;
     }
@@ -199,7 +187,6 @@ inline void handle_eval(bool corrected) {
     const auto raw_eval = engine.static_eval(corrected);
     const auto norm_eval = raphael::wdl::normalize_score(raw_eval, position.board());
 
-    lock_guard<mutex> lock(cout_mutex);
     cout << "info string eval: " << raw_eval << "\n"
          << "info string normalized eval: " << norm_eval << "\n"
          << flush;
@@ -209,7 +196,6 @@ inline void handle_eval(bool corrected) {
 inline void handle_isready() {
     if (!engine.is_search_complete()) {
         // if we are still searching, simply return readyok to indicate we are alive
-        lock_guard<mutex> lock(cout_mutex);
         cout << "readyok\n" << flush;
         return;
     }
@@ -220,14 +206,12 @@ inline void handle_isready() {
         position_ready = true;
     }
 
-    lock_guard<mutex> lock(cout_mutex);
     cout << "readyok\n" << flush;
 }
 
 /** Handles the ucinewgame command */
 inline void handle_ucinewgame() {
     if (!engine.is_search_complete()) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string still searching\n" << flush;
         return;
     }
@@ -244,14 +228,12 @@ inline void handle_ucinewgame() {
 inline void handle_wait() {
     engine.wait_search();
 
-    lock_guard<mutex> lock(cout_mutex);
     cout << "info string search finished\n" << flush;
 }
 
 /** Handles the bench command */
 inline void handle_bench() {
     if (!engine.is_search_complete()) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string still searching\n" << flush;
         return;
     }
@@ -267,7 +249,6 @@ inline void handle_bench() {
  */
 inline void handle_genfens(const vector<string>& tokens) {
     if (!engine.is_search_complete()) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string still searching\n" << flush;
         return;
     }
@@ -297,13 +278,11 @@ inline void handle_genfens(const vector<string>& tokens) {
     }
 
     if (count <= 0) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string count must be positive\n" << flush;
         return;
     }
 
     if (randmoves < 0) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string randmoves must be non-negative\n" << flush;
         return;
     }
@@ -319,7 +298,6 @@ inline void handle_genfens(const vector<string>& tokens) {
  */
 inline void handle_datagen(const vector<string>& tokens) {
     if (!engine.is_search_complete()) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string still searching\n" << flush;
         return;
     }
@@ -351,25 +329,21 @@ inline void handle_datagen(const vector<string>& tokens) {
     }
 
     if (softnodes <= 0) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string softnodes must be positive\n" << flush;
         return;
     }
 
     if (games <= 0) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string count must be positive\n" << flush;
         return;
     }
 
     if (randmoves < 0) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string randmoves must be non-negative\n" << flush;
         return;
     }
 
     if (concurrency <= 0) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string threads must be positive\n" << flush;
         return;
     }
@@ -385,7 +359,6 @@ inline void handle_datagen(const vector<string>& tokens) {
  */
 inline void handle_evalstats(const vector<string>& tokens) {
     if (!engine.is_search_complete()) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string still searching\n" << flush;
         return;
     }
@@ -403,7 +376,6 @@ inline void handle_evalstats(const vector<string>& tokens) {
 /** Shows the help message */
 inline void show_help() {
     // help message style from pawnocchio
-    lock_guard<mutex> lock(cout_mutex);
     cout << engine.name << " " << engine.version << "\n\n"
          << "TOOLS:\n"
          << "  bench\n"
@@ -458,7 +430,6 @@ inline void show_help() {
 inline void handle_command(const string& uci_command) {
     if (uci_command == "uci") {
         const auto params = engine.default_params();
-        lock_guard<mutex> lock(cout_mutex);
         cout << "id name " << engine.name << " " << engine.version << "\n"
              << "id author Rei Meguro\n"
              << params.hash.uci() << params.threads.uci()
@@ -489,7 +460,6 @@ inline void handle_command(const string& uci_command) {
         show_help();
 
     else if (uci_command == "obspsa") {
-        lock_guard<mutex> lock(cout_mutex);
 #ifdef TUNE
         for (const auto tunable : raphael::tunables) cout << tunable->ob();
         cout << flush;
@@ -507,11 +477,9 @@ inline void handle_command(const string& uci_command) {
         handle_eval(true);
 
     else if (uci_command == "fen") {
-        lock_guard<mutex> lock(cout_mutex);
         cout << position.board().get_fen() << "\n" << flush;
 
     } else if (uci_command == "board") {
-        lock_guard<mutex> lock(cout_mutex);
         cout << position.board().pretty_print() << flush;
 
     } else {
@@ -541,10 +509,8 @@ inline void handle_command(const string& uci_command) {
         else if (keyword == "evalstats")
             handle_evalstats(tokens);
 
-        else {
-            lock_guard<mutex> lock(cout_mutex);
+        else
             cout << "info string unknown command: '" << keyword << "'\n" << flush;
-        }
     }
 }
 

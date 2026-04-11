@@ -25,6 +25,7 @@ using std::max;
 using std::memory_order_acquire;
 using std::memory_order_relaxed;
 using std::memory_order_release;
+using std::memory_order_seq_cst;
 using std::memset;
 using std::min;
 using std::string;
@@ -177,7 +178,10 @@ Raphael::MoveScore Raphael::search(const TimeManager::SearchOptions& options) {
     return wait_search();
 }
 
-void Raphael::stop_search() { stop.store(true, memory_order_relaxed); }
+void Raphael::stop_search() {
+    stop.store(true, memory_order_relaxed);
+    is_searching.wait(true, memory_order_acquire);
+}
 
 
 
@@ -198,9 +202,7 @@ void Raphael::reset() {
 
 
 void Raphael::kill_search() {
-    stop.store(true, memory_order_relaxed);
-    is_searching.wait(true, memory_order_acquire);
-
+    stop_search();
     quit.store(true, memory_order_relaxed);
 
     // let threads proceed so it can quit
@@ -229,12 +231,13 @@ void Raphael::t_search_function(i32 thread_id) {
         search_end_barrier->arrive_and_wait();
 
         if (thread_id == 0) {
+            search_result = result;
+            is_searching.store(false, memory_order_seq_cst);
+            is_searching.notify_one();
+
             if (ucilevel_ != UciInfoLevel::NONE)
                 cout << "bestmove " << chess::uci::from_move(result.move, params_.chess960) << "\n"
                      << flush;
-            search_result = result;
-            is_searching.store(false, memory_order_release);
-            is_searching.notify_one();
         }
     }
 }

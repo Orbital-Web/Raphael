@@ -80,6 +80,7 @@ private:
 
         Position<true> position_;
         History history;
+        i32 thread_id;
     };
 
     // shared data
@@ -226,26 +227,26 @@ private:
 
     /** Adjusts the raw static eval using scaling and corrhists
      *
-     * \param thread_id thread id
+     * \param tdata this thread's data
      * \param raw_static_eval raw eval to adjust
      * \returns the adjusted eval
      */
-    i32 adjust_score(i32 thread_id, i32 raw_static_eval) const;
+    i32 adjust_score(const ThreadData& tdata, i32 raw_static_eval) const;
 
 
     /** Does the actual search logic, calling negamax with increasing depth.
      * May set stop to true
      *
-     * \param thread_id this thread's id
+     * \param tdata this thread's data
      * \returns the bestmove and score of this thread
      */
-    MoveScore iterative_deepen(i32 thread_id);
+    MoveScore iterative_deepen(ThreadData& tdata);
 
     /** Recursively searches for the best move and score of the current position assuming optimal
      * play by both us and the opponent
      *
      * \tparam is_PV whether the current position is a PV node
-     * \param thread_id thread id
+     * \param tdata this thread's data
      * \param depth depth to search for
      * \param ply current distance from root
      * \param alpha lower bound score of current position
@@ -257,7 +258,7 @@ private:
      */
     template <bool is_PV>
     i32 negamax(
-        const i32 thread_id,
+        ThreadData& tdata,
         i32 depth,
         const i32 ply,
         i32 alpha,
@@ -270,7 +271,7 @@ private:
     /** Evaluates the board after all noisy moves are played out
      *
      * \tparam is_PV whether the current position is a PV node
-     * \param thread_id thread id
+     * \param tdata this thread's data
      * \param ply current distance from root
      * \param alpha lower bound score of current position
      * \param beta upper bound score of current position
@@ -278,6 +279,6 @@ private:
      * \returns score of current board
      */
     template <bool is_PV>
-    i32 quiescence(const i32 thread_id, const i32 ply, i32 alpha, i32 beta, MoveStack* mv);
+    i32 quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, MoveStack* mv);
 };
 }  // namespace raphael

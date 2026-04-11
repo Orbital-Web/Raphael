@@ -1,4 +1,3 @@
-#include <GameEngine/consts.h>
 #include <Raphael/commands.h>
 
 #include <fstream>
@@ -6,15 +5,11 @@
 #include <iostream>
 #include <random>
 
-using std::atomic;
 using std::cout;
 using std::fixed;
 using std::flush;
 using std::ifstream;
-using std::lock_guard;
-using std::memory_order_relaxed;
 using std::mt19937_64;
-using std::mutex;
 using std::setprecision;
 using std::string;
 using std::uniform_int_distribution;
@@ -79,29 +74,21 @@ void bench(Raphael& engine) {
         "2r2b2/5p2/5k2/p1r1pP2/P2pB3/1P3P2/K1P3R1/7R w - - 23 93",
     };
 
-    raphael::TimeManager::SearchOptions options{.maxdepth = BENCH_DEPTH};
-    engine.set_searchoptions(options);
-    atomic<bool> halt{false};
+    engine.set_uciinfolevel(raphael::Raphael::UciInfoLevel::MINIMAL);
+    engine.reset();
 
-    {
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "bench: starting\n" << flush;
-    }
+    cout << "bench: starting\n" << flush;
 
     i64 runtime = 0;
     u64 nodes = 0;
     for (auto fen : bench_data) {
-        halt.store(false, memory_order_relaxed);
         const chess::Board board(fen);
         engine.set_board(board);
 
-        {
-            lock_guard<mutex> lock(cout_mutex);
-            cout << "\ninfo string fen: " << fen << "\n" << flush;
-        }
+        cout << "\ninfo string fen: " << fen << "\n" << flush;
 
         const auto start_t = ch::steady_clock::now();
-        const auto res = engine.get_move(0, 0, halt);
+        const auto res = engine.search({.maxdepth = BENCH_DEPTH});
         const auto now = ch::steady_clock::now();
 
         runtime += ch::duration_cast<ch::milliseconds>(now - start_t).count();
@@ -109,7 +96,6 @@ void bench(Raphael& engine) {
     }
 
     const i64 nps = 1000.0f * nodes / runtime;
-    lock_guard<mutex> lock(cout_mutex);
     cout << "\nbench: completed in " << runtime << "ms:\n"
          << nodes << " nodes " << nps << " nps\n"
          << flush;
@@ -135,7 +121,6 @@ void genfens(
     else {
         ifstream file(book);
         if (!file) {
-            lock_guard<mutex> lock(cout_mutex);
             cout << "info string could not open book: " << book << "\n" << flush;
             return;
         }
@@ -145,7 +130,6 @@ void genfens(
             if (!seed_fen.empty()) seed_fens.push_back(seed_fen);
 
         if (seed_fens.empty()) {
-            lock_guard<mutex> lock(cout_mutex);
             cout << "info string book file is empty\n" << flush;
             return;
         }
@@ -171,15 +155,12 @@ void genfens(
         }
 
         // filter unbalanced/illegal positions
-        atomic<bool> halt{false};
         engine.reset();
-        engine.set_searchoptions({.maxnodes = GENFENS_MAX_NODES});
         engine.set_board(board);
-        const auto res = engine.get_move(0, 0, halt);
+        const auto res = engine.search({.maxnodes = GENFENS_MAX_NODES});
         if (res.move == chess::Move::NO_MOVE || res.is_mate || abs(res.score) > GENFENS_MAX_SCORE)
             continue;
 
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string genfens " << board.get_fen() << "\n" << flush;
         generated++;
     }
@@ -190,7 +171,6 @@ void evalstats(Raphael& engine, const std::string& book) {
     // based on https://github.com/cosmobobak/viridithas/blob/master/src/evaluation.rs
     ifstream file(book);
     if (!file) {
-        lock_guard<mutex> lock(cout_mutex);
         cout << "info string could not open book: " << book << "\n" << flush;
         return;
     }
@@ -230,7 +210,6 @@ void evalstats(Raphael& engine, const std::string& book) {
 
         const i32 newscale = f64(Nnue::OUTPUT_SCALE) * DEF_TARGET_ABS_MEAN / abs_mean;
 
-        lock_guard<mutex> lock(cout_mutex);
         cout << fixed << setprecision(4) << "mean:     " << mean << "\n"
              << "abs mean: " << abs_mean << "\n"
              << "stddev:   " << stddev << "\n"

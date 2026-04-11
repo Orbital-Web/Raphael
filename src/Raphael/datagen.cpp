@@ -131,7 +131,6 @@ void generation_thread(
     board.set960(dfrc);
     chess::MoveList<chess::ScoredMove> movelist;
     Position<false> position;
-    atomic<bool> halt{false};
 
 
     // keep generating upon wakeup
@@ -161,20 +160,15 @@ void generation_thread(
             }
 
             // filter unbalanced/illegal positions
-            halt.store(false, memory_order_relaxed);
             engines[0]->reset();
-            engines[0]->set_searchoptions({.maxnodes = GENFENS_MAX_NODES});
             engines[0]->set_board(board);
-            const auto res = engines[0]->get_move(0, 0, halt);
+            const auto res = engines[0]->search({.maxnodes = GENFENS_MAX_NODES});
             if (res.move == chess::Move::NO_MOVE || res.is_mate
                 || abs(res.score) > GENFENS_MAX_SCORE)
                 continue;
 
             // play from here
-            for (i32 i = 0; i < 2; i++) {
-                engines[i]->reset();
-                engines[i]->set_searchoptions({.maxnodes = softnodes});
-            }
+            for (i32 i = 0; i < 2; i++) engines[i]->reset();
             position.set_board(board);
 
             auto packed = PackedBoard::pack(board, 0);
@@ -189,9 +183,8 @@ void generation_thread(
                 const auto& curr_board = position.board();
                 const auto stm = curr_board.stm();
 
-                halt.store(false, memory_order_relaxed);
                 engines[stm]->set_position(position);
-                const auto res = engines[stm]->get_move(0, 0, halt);
+                const auto res = engines[stm]->search({.maxnodes = softnodes});
                 auto abs_score = (stm == chess::Color::WHITE) ? res.score : -res.score;
 
                 // handle terminal state

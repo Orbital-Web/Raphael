@@ -27,8 +27,8 @@ private:
 
     struct alignas(CACHE_SIZE) ThreadTM {
         u64 nodes_per_move[64][64] = {};
-        atomic<u64> nodes = 0;
-        atomic<i32> seldepth = 0;
+        std::atomic<u64> nodes{0};
+        std::atomic<i32> seldepth{0};
 
         // heuristics
         chess::Move prev_bestmove = chess::Move::NO_MOVE;

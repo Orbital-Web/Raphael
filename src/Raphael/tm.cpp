@@ -7,13 +7,14 @@ using std::atomic;
 using std::max;
 using std::memory_order_relaxed;
 using std::min;
+using std::vector;
 namespace ch = std::chrono;
 
 
 
 TimeManager::TimeManager() { reset(); }
 
-void TimeManager::set_threads(i32 num_searchers) { thread_tm_.assign(num_searchers, ThreadTM{}); }
+void TimeManager::set_threads(i32 num_searchers) { thread_tm_ = vector<ThreadTM>(num_searchers); }
 
 void TimeManager::start_timer(const SearchOptions& searchopt, i32 t_overhead, i32 softhardmult) {
     reset();
@@ -153,7 +154,7 @@ bool TimeManager::is_soft_limit_reached(
 
 
 void TimeManager::reset() {
-    thread_tm_.assign(thread_tm_.size(), ThreadTM{});
+    set_threads(thread_tm_.size());
     hard_t_.reset();
     soft_t_.reset();
     hard_nodes_.reset();

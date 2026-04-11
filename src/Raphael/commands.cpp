@@ -6,13 +6,11 @@
 #include <iostream>
 #include <random>
 
-using std::atomic;
 using std::cout;
 using std::fixed;
 using std::flush;
 using std::ifstream;
 using std::lock_guard;
-using std::memory_order_relaxed;
 using std::mt19937_64;
 using std::mutex;
 using std::setprecision;
@@ -79,10 +77,6 @@ void bench(Raphael& engine) {
         "2r2b2/5p2/5k2/p1r1pP2/P2pB3/1P3P2/K1P3R1/7R w - - 23 93",
     };
 
-    raphael::TimeManager::SearchOptions options{.maxdepth = BENCH_DEPTH};
-    engine.set_searchoptions(options);
-    atomic<bool> halt{false};
-
     {
         lock_guard<mutex> lock(cout_mutex);
         cout << "bench: starting\n" << flush;
@@ -91,7 +85,6 @@ void bench(Raphael& engine) {
     i64 runtime = 0;
     u64 nodes = 0;
     for (auto fen : bench_data) {
-        halt.store(false, memory_order_relaxed);
         const chess::Board board(fen);
         engine.set_board(board);
 
@@ -101,7 +94,7 @@ void bench(Raphael& engine) {
         }
 
         const auto start_t = ch::steady_clock::now();
-        const auto res = engine.get_move(0, 0, halt);
+        const auto res = engine.search({.maxdepth = BENCH_DEPTH});
         const auto now = ch::steady_clock::now();
 
         runtime += ch::duration_cast<ch::milliseconds>(now - start_t).count();
@@ -171,11 +164,9 @@ void genfens(
         }
 
         // filter unbalanced/illegal positions
-        atomic<bool> halt{false};
         engine.reset();
-        engine.set_searchoptions({.maxnodes = GENFENS_MAX_NODES});
         engine.set_board(board);
-        const auto res = engine.get_move(0, 0, halt);
+        const auto res = engine.search({.maxnodes = GENFENS_MAX_NODES});
         if (res.move == chess::Move::NO_MOVE || res.is_mate || abs(res.score) > GENFENS_MAX_SCORE)
             continue;
 

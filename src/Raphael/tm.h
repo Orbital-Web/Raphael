@@ -26,16 +26,8 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> start_t_;  // search start time
 
     struct alignas(CACHE_SIZE) ThreadTM {
-        u64 nodes_per_move[64][64] = {};
         std::atomic<u64> nodes{0};
         std::atomic<i32> seldepth{0};
-
-        // heuristics
-        chess::Move prev_bestmove = chess::Move::NO_MOVE;
-        i32 bestmove_stability = 0;
-
-        i32 prev_score = 0;
-        i32 score_stability = 0;
     };
     std::vector<ThreadTM> thread_tm_;
 
@@ -47,6 +39,15 @@ private:
     std::optional<u64> soft_nodes_;  // soft node limit, checked after each iterative deepening
 
     std::optional<i32> max_depth_;  // max depth
+
+    // heuristics (should only be accessed by main thread)
+    u64 nodes_per_move_[64][64] = {};
+
+    chess::Move prev_bestmove_ = chess::Move::NO_MOVE;
+    i32 bestmove_stability_ = 0;
+
+    i32 prev_score_ = 0;
+    i32 score_stability_ = 0;
 
 
 public:

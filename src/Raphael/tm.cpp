@@ -1,11 +1,14 @@
 #include <Raphael/tm.h>
 #include <Raphael/tunable.h>
 
+#include <cstring>
+
 using namespace raphael;
 using std::abs;
 using std::atomic;
 using std::max;
 using std::memory_order_relaxed;
+using std::memset;
 using std::min;
 using std::vector;
 namespace ch = std::chrono;
@@ -72,11 +75,15 @@ i64 TimeManager::get_time() const {
 
 
 void TimeManager::inc_nodes(i32 thread_id) {
-    thread_tm_[thread_id].nodes.fetch_add(1, memory_order_relaxed);
+    // only one thread will write, so this is faster
+    thread_tm_[thread_id].nodes.store(
+        thread_tm_[thread_id].nodes.load(memory_order_relaxed) + 1, memory_order_relaxed
+    );
 }
 
 void TimeManager::inc_nodes(i32 thread_id, chess::Move move, u64 count) {
-    thread_tm_[thread_id].nodes_per_move[move.from()][move.to()] += count;
+    if (thread_id != 0) return;
+    nodes_per_move_[move.from()][move.to()] += count;
 }
 
 u64 TimeManager::get_nodes() const {
@@ -90,7 +97,8 @@ u64 TimeManager::get_nodes(i32 thread_id) const {
 }
 
 u64 TimeManager::get_nodes(i32 thread_id, chess::Move move) const {
-    return thread_tm_[thread_id].nodes_per_move[move.from()][move.to()];
+    if (thread_id != 0) return 0;
+    return nodes_per_move_[move.from()][move.to()];
 }
 
 
@@ -110,6 +118,9 @@ i32 TimeManager::get_seldepth() const {
 
 
 bool TimeManager::is_hard_limit_reached(i32 thread_id, atomic<bool>& stop) const {
+    // only main thread tracks tm (for now)
+    if (thread_id != 0) return stop.load(memory_order_relaxed);
+
     // if hard nodes is specified, check node count
     if (hard_nodes_.has_value() && get_nodes(thread_id) >= *hard_nodes_) {
         stop.store(true, memory_order_relaxed);
@@ -128,6 +139,9 @@ bool TimeManager::is_hard_limit_reached(i32 thread_id, atomic<bool>& stop) const
 bool TimeManager::is_soft_limit_reached(
     i32 thread_id, atomic<bool>& stop, chess::Move bestmove, i32 score, i32 depth
 ) {
+    // only main thread tracks tm (for now)
+    if (thread_id != 0) return stop.load(memory_order_relaxed);
+
     // if soft nodes is specified, check node count
     if (soft_nodes_.has_value() && get_nodes(thread_id) >= *soft_nodes_) {
         stop.store(true, memory_order_relaxed);
@@ -155,43 +169,49 @@ bool TimeManager::is_soft_limit_reached(
 
 void TimeManager::reset() {
     set_threads(thread_tm_.size());
+
     hard_t_.reset();
     soft_t_.reset();
     hard_nodes_.reset();
     soft_nodes_.reset();
     max_depth_.reset();
+
+    memset(nodes_per_move_, 0, sizeof(nodes_per_move_));
+    prev_bestmove_ = chess::Move::NO_MOVE;
+    bestmove_stability_ = 0;
+    prev_score_ = 0;
+    score_stability_ = 0;
 }
 
 
 i64 TimeManager::adjust_soft_time(i32 thread_id, chess::Move bestmove, i32 score, i32 depth) {
+    assert(thread_id == 0);
     assert(soft_t_.has_value());
     f64 factor = 1.0;
 
     // move stability tm
-    if (bestmove == thread_tm_[thread_id].prev_bestmove)
-        thread_tm_[thread_id].bestmove_stability++;
+    if (bestmove == prev_bestmove_)
+        bestmove_stability_++;
     else
-        thread_tm_[thread_id].bestmove_stability = 0;
-    thread_tm_[thread_id].prev_bestmove = bestmove;
+        bestmove_stability_ = 0;
+    prev_bestmove_ = bestmove;
 
     if (depth >= MV_STAB_TM_MIN_DEPTH)
         factor *= max(
-            (MV_STAB_TM_BASE / 100.0)
-                - (MV_STAB_TM_MUL * thread_tm_[thread_id].bestmove_stability / 100.0),
+            (MV_STAB_TM_BASE / 100.0) - (MV_STAB_TM_MUL * bestmove_stability_ / 100.0),
             (MV_STAB_TM_MIN / 100.0)
         );
 
     // score stability tm
-    if (abs(score - thread_tm_[thread_id].prev_score) <= SCORE_STAB_MARGIN)
-        thread_tm_[thread_id].score_stability++;
+    if (abs(score - prev_score_) <= SCORE_STAB_MARGIN)
+        score_stability_++;
     else
-        thread_tm_[thread_id].score_stability = 0;
-    thread_tm_[thread_id].prev_score = score;
+        score_stability_ = 0;
+    prev_score_ = score;
 
     if (depth >= SCORE_STAB_TM_MIN_DEPTH)
         factor *= max(
-            (SCORE_STAB_TM_BASE / 100.0)
-                - (SCORE_STAB_TM_MUL * thread_tm_[thread_id].score_stability / 100.0),
+            (SCORE_STAB_TM_BASE / 100.0) - (SCORE_STAB_TM_MUL * score_stability_ / 100.0),
             (SCORE_STAB_TM_MIN / 100.0)
         );
 

@@ -47,7 +47,7 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "orthrus_v1";
+    const NET_ID: &str = "orthrus_v2";
     const HIDDEN_SIZE: usize = 1024;
     const NUM_INPUT_BUCKETS: usize = 16;
     const NUM_OUTPUT_BUCKETS: usize = 8;
@@ -149,7 +149,7 @@ fn main() {
             end_superbatch: SUPERBATCHES_STAGE1,
         },
         wdl_scheduler: wdl::ConstantWDL { value: 0.6 },
-        lr_scheduler: lr::ConstantLR { value: 0.001 * 0.3f32.powi(5) / 2.0 },
+        lr_scheduler: lr::LinearDecayLR { initial_lr: 1.0e-5, final_lr: 1.0e-7, final_superbatch: SUPERBATCHES_STAGE1 },
         save_rate: 100,
     };
 
@@ -160,7 +160,7 @@ fn main() {
         &settings,
         &ViriBinpackLoader::new(&DATASET_STAGE0.to_string(), 4096, 6, filter.clone()),
     );
-    // trainer.load_from_checkpoint("checkpoints/hydra_v11_stage1-100");
+    // trainer.load_from_checkpoint("checkpoints/orthrus_v1_stage0-600");
     trainer.run(
         &schedule_stage1,
         &settings,

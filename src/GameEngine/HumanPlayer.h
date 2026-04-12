@@ -13,9 +13,6 @@ struct MouseInfo {
 
 
 class HumanPlayer {
-public:
-    std::string name;
-
 private:
     chess::Board board_;
     chess::MoveList<chess::ScoredMove> movelist_;
@@ -26,11 +23,8 @@ private:
 
 
 public:
-    /** Initializes a HumanPlayer
-     *
-     * \param name_in name of player
-     */
-    HumanPlayer(const std::string& name_in);
+    /** Initializes a HumanPlayer */
+    HumanPlayer();
 
 
     /** Sets the position to play from

@@ -1,4 +1,3 @@
-#include <GameEngine/consts.h>
 #include <Raphael/datagen.h>
 
 #include <csignal>
@@ -111,10 +110,10 @@ void generation_thread(
     Raphael* engines[2] = {engine, nullptr};
     bool created_engine = false;
     if (engine == nullptr) {
-        engines[0] = new Raphael("Raphael");
+        engines[0] = new Raphael();
         created_engine = true;
     }
-    engines[1] = new Raphael("Raphael");
+    engines[1] = new Raphael();
 
     // initialize engines
     for (i32 i = 0; i < 2; i++) {
@@ -131,7 +130,6 @@ void generation_thread(
     board.set960(dfrc);
     chess::MoveList<chess::ScoredMove> movelist;
     Position<false> position;
-    atomic<bool> halt{false};
 
 
     // keep generating upon wakeup
@@ -161,20 +159,15 @@ void generation_thread(
             }
 
             // filter unbalanced/illegal positions
-            halt.store(false, memory_order_relaxed);
             engines[0]->reset();
-            engines[0]->set_searchoptions({.maxnodes = GENFENS_MAX_NODES});
             engines[0]->set_board(board);
-            const auto res = engines[0]->get_move(0, 0, halt);
+            const auto res = engines[0]->search({.maxnodes = GENFENS_MAX_NODES});
             if (res.move == chess::Move::NO_MOVE || res.is_mate
                 || abs(res.score) > GENFENS_MAX_SCORE)
                 continue;
 
             // play from here
-            for (i32 i = 0; i < 2; i++) {
-                engines[i]->reset();
-                engines[i]->set_searchoptions({.maxnodes = softnodes});
-            }
+            for (i32 i = 0; i < 2; i++) engines[i]->reset();
             position.set_board(board);
 
             auto packed = PackedBoard::pack(board, 0);
@@ -189,9 +182,8 @@ void generation_thread(
                 const auto& curr_board = position.board();
                 const auto stm = curr_board.stm();
 
-                halt.store(false, memory_order_relaxed);
                 engines[stm]->set_position(position);
-                const auto res = engines[stm]->get_move(0, 0, halt);
+                const auto res = engines[stm]->search({.maxnodes = softnodes});
                 auto abs_score = (stm == chess::Color::WHITE) ? res.score : -res.score;
 
                 // handle terminal state
@@ -265,15 +257,13 @@ void generation_thread(
             generated++;
         }
 
-        {
-            lock_guard<mutex> lock(cout_mutex);
-            num_games_generated += generated;
-            const auto delta
-                = ch::duration_cast<ch::milliseconds>(ch::system_clock::now() - start_time).count();
-            const auto games_persec = f64(num_games_generated) * 1000.0 / delta;
-            cout << "\rgenerated: " + to_string(num_games_generated) + " games (" << games_persec
-                 << " games/sec)" << flush;
-        }
+        i32 n_games = num_games_generated.fetch_add(generated);
+        n_games += generated;
+        const auto delta
+            = ch::duration_cast<ch::milliseconds>(ch::system_clock::now() - start_time).count();
+        const auto games_persec = f64(n_games) * 1000.0 / delta;
+        cout << "\rgenerated: " + to_string(n_games) + " games (" << games_persec << " games/sec)"
+             << flush;
     }
 
     outfile.close();
@@ -308,7 +298,6 @@ void generate_games(
     else {
         ifstream file(book);
         if (!file) {
-            lock_guard<mutex> lock(cout_mutex);
             cout << "info string could not open book: " << book << "\n" << flush;
             return;
         }
@@ -318,7 +307,6 @@ void generate_games(
             if (!seed_fen.empty()) seed_fens.push_back(seed_fen);
 
         if (seed_fens.empty()) {
-            lock_guard<mutex> lock(cout_mutex);
             cout << "info string book file is empty\n" << flush;
             return;
         }
@@ -335,12 +323,9 @@ void generate_games(
 
     // set total number of batches to run
     internal::num_batch_remaining = (games + DATAGEN_BATCH_SIZE - 1) / DATAGEN_BATCH_SIZE;
-    {
-        lock_guard<mutex> lock(cout_mutex);
-        cout << "starting generation of " + to_string(games) + " games with "
-             << to_string(softnodes) << " softnodes, " << to_string(concurrency) << " threads\n"
-             << "generated: 0 games (0.0000 games/sec)" << flush;
-    }
+    cout << "starting generation of " + to_string(games) + " games with " << to_string(softnodes)
+         << " softnodes, " << to_string(concurrency) << " threads\n"
+         << "generated: 0 games (0.0000 games/sec)" << flush;
 
     // start generation threads
     thread threads[concurrency];
@@ -359,7 +344,6 @@ void generate_games(
     // wait for completion
     for (int i = 0; i < concurrency; i++) threads[i].join();
 
-    lock_guard<mutex> lock(cout_mutex);
     cout << "\nfinished generation of " + to_string(internal::num_games_generated) + " games\n"
          << std::flush;
 }

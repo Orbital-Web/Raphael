@@ -2,11 +2,10 @@
 #include <GameEngine/utils.h>
 
 using namespace cge;
-using std::string;
 
 
 
-HumanPlayer::HumanPlayer(const string& name_in): name(name_in) {}
+HumanPlayer::HumanPlayer() {}
 
 
 void HumanPlayer::set_board(const chess::Board& board) {

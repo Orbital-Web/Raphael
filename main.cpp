@@ -1,166 +1,102 @@
 #include <GameEngine/GameEngine.h>
-#include <GameEngine/HumanPlayer.h>
-#include <Raphael/Raphael.h>
 
-#include <climits>
 #include <cstring>
 #include <iostream>
-#include <optional>
 
 using std::cout;
-using std::nullopt;
-using std::optional;
+using std::flush;
 using std::string;
-using std::vector;
-using std::visit;
-
-
-
-/** Creates a specified GamePlayer
- *
- * \param playertype player type as a null-terminated cstring
- * \param name name of player as a null-terminated cstring
- * \returns a dynamically allocated player
- */
-optional<cge::GameEngine::Player> player_factory(char* playertype, char* name) {
-    if (!strcmp(playertype, "human") || !strcmp(playertype, "Human")) {
-        auto player = new cge::HumanPlayer(name);
-        return cge::GameEngine::Player{
-            .player = player, .type = cge::GameEngine::PlayerType::HUMAN
-        };
-    } else if (!strcmp(playertype, "Raphael")) {
-        auto player = new raphael::Raphael(name);
-        return cge::GameEngine::Player{
-            .player = player, .type = cge::GameEngine::PlayerType::ENGINE
-        };
-    }
-
-    // invalid
-    printf("Invalid player type: %s\n", playertype);
-    printf("Valid player types are:\n");
-    printf("   human:         Human-controlled player\n");
-    printf("   Raphael:       Raphael %s\n", raphael::Raphael::version.c_str());
-    return nullopt;
-}
 
 
 /* Prints help/usage text */
 void print_usage() {
-    cout << "Usage: main.exe <p1type> <p1name> <p2type> <p2name> [mode] [options]\n\n"
-         << "Modes:\n"
-         << "  [int]  Number of matches (defaults to 1 if not specified)\n\n"
-         << "Options:\n"
-         << "  -t <int> <int>  Time (sec) for white and black (defaults to 10min each)\n"
-         << "  -i <int>        Time increment (sec) (defaults to 0sec)\n"
-         << "  -f <FENstring>  Starting position FEN (defaults to standard chess board)\n"
-         << "  -s <filename>   Filename for saving as pgn (saves inside /logs folder)\n\n";
+    cout << "Usage: main.exe [MODE] [GAMES] [OPTIONS]\n\n"
+         << "  Starts a match against Raphael or between two Raphael instances\n\n"
+         << "  MODE: w or b to play against Raphael as white/black, e for engine vs engine match. "
+         << "default w\n"
+         << "  GAMES: number of matches. default 1\n"
+         << "  OPTIONS:\n"
+         << "    -t <float> <float>  Time (sec) for white and black. defaults to 10min each\n"
+         << "    -i <float>          Time increment (sec). defaults to 1s\n"
+         << "    -f <FEN>            Starting position FEN. defaults to startpos\n"
+         << "    -s <filename>       Filename for saving as pgn (saves inside /logs)\n"
+         << "    -h                  Show this message and exit\n"
+         << flush;
 }
 
 
-/*
-Example
-main.exe human "Adam" Raphael "Raphael"
-    1 rapid match, human (white) vs Raphael (black)
-
-main.exe human "Adam" Raphael "Raphael" 5
-    5 rapid matches, human vs Raphael (human plays white 3 times)
-
-main.exe human "Adam" human "Bob" -t 60 60
-    1 bullet match, both human players
-
-main.exe Raphael "Raphael" Human "Bob" 3 -f "8/8/2q5/2k5/8/5K2/8/8 w - - 0 1"
-    3 rapid matches with set starting position, Raphael vs human (human plays white 1 time)
-
-main.exe Raphael "Raph1" Raphael "Raph2" 3 -f "8/8/2q5/2k5/8/5K2/8/8 w - - 0 1" -t 120 120 -i 1
-    3 2|1 blitz matches with set starting position, both Raphael\
-*/
 int main(int argc, char** argv) {
-    // invalid
-    if (argc < 5) {
-        print_usage();
-        return -1;
+    // parse positional args
+    cge::GameEngine::GameOptions gameoption{};
+    i32 num_games = 1;
+    bool engine_v_engine = false;
+
+    i32 i = 1;
+    if (argc > 1 && argv[1][0] != '-') {
+        if (!strcmp(argv[1], "b")) {
+            gameoption.w_is_engine = true;
+            gameoption.b_is_engine = false;
+        } else if (!strcmp(argv[1], "e")) {
+            gameoption.w_is_engine = true;
+            gameoption.b_is_engine = true;
+            engine_v_engine = true;
+        } else if (strcmp(argv[1], "w")) {
+            cout << "error: MODE must be one of: 'w' 'b' 'e'\n" << flush;
+            return 1;
+        }
+        i++;
+
+        if (argc > 2 && argv[2][0] != '-') {
+            num_games = atoi(argv[2]);
+            i++;
+        }
     }
 
-    // create players
-    auto p1 = player_factory(argv[1], argv[2]);
-    auto p2 = player_factory(argv[3], argv[4]);
-    if (!p1.has_value() || !p2.has_value()) return -1;
-    vector<cge::GameEngine::Player> players = {*p1, *p2};
-
-    // parse mode
-    vector<cge::GameEngine::GameOptions> gameoptions;
-    i32 i = 5;
-    if (argc >= 6) {
-        // create n matches with alternating color
-        i32 n_matches = atoi(argv[i]);
-        if (n_matches) {
-            bool p1_is_white = true;
-            for (i32 n = 0; n < n_matches; n++) {
-                gameoptions.push_back({.p1_is_white = p1_is_white});
-                p1_is_white = !p1_is_white;
-            }
-            i++;
-        } else
-            gameoptions.push_back({});  // defaults to 1 match
-    } else
-        gameoptions.push_back({});  // defaults to 1 match
-
-
-    // parse arguments
+    // parse remaining arguments
     while (i < argc) {
         // time
         if (!strcmp(argv[i], "-t")) {
-            // set the time for every match
-            float t_white = (float)atof(argv[++i]);
-            float t_black = (float)atof(argv[++i]);
-            for (auto& gopt : gameoptions) {
-                gopt.t_remain[0] = t_white * 1000;
-                gopt.t_remain[1] = t_black * 1000;
-            }
+            gameoption.w_time = static_cast<i32>(1000.0 * atof(argv[++i]));
+            gameoption.b_time = static_cast<i32>(1000.0 * atof(argv[++i]));
         }
 
         // time increment
-        else if (!strcmp(argv[i], "-i")) {
-            float t_inc = (float)atof(argv[++i]);
-            for (auto& gopt : gameoptions) gopt.t_inc = t_inc * 1000;
-        }
+        else if (!strcmp(argv[i], "-i"))
+            gameoption.inc_time = static_cast<i32>(1000.0 * atof(argv[++i]));
 
         // fen
-        else if (!strcmp(argv[i], "-f") || !strcmp(argv[i], "-fen")) {
-            i++;
-            for (auto& gopt : gameoptions) gopt.start_fen = argv[i];
-        }
+        else if (!strcmp(argv[i], "-f") || !strcmp(argv[i], "-fen"))
+            gameoption.start_fen = argv[++i];
 
         // pgn save
-        else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "-save")) {
-            string pgn_file = "./logs/" + (string)argv[++i];
-            for (auto& gopt : gameoptions) gopt.pgn_file = pgn_file;
-        }
+        else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "-save"))
+            gameoption.pgn_file = "./logs/" + string(argv[++i]);
 
         else {
             print_usage();
-            return -1;
+            return 1;
         }
-
         i++;
     }
 
 
     // Initialize GameEngine
-    cge::GameEngine ge(players);
+    cge::GameEngine gameengine;
 
-    // Play Matches
-    i32 matchn = 1;
-    i32 n_matches = gameoptions.size();
+    for (i32 m = 0; m < num_games; m++) {
+        cout << "Starting match " << m + 1 << " of " << num_games << "\n" << flush;
+        gameengine.run_match(gameoption);
 
-    for (auto gopt : gameoptions) {
-        printf("Starting match %i of %i\n", matchn, n_matches);
-        ge.run_match(gopt);
-        matchn++;
+        // swap colors and time
+        if (!engine_v_engine) {
+            const auto temp = gameoption.w_is_engine;
+            gameoption.w_is_engine = gameoption.b_is_engine;
+            gameoption.b_is_engine = temp;
+        }
+        const auto temp = gameoption.w_time;
+        gameoption.w_time = gameoption.b_time;
+        gameoption.b_time = temp;
     }
 
-    ge.print_report();
-    visit([](auto player) { delete player; }, players[0].player);
-    visit([](auto player) { delete player; }, players[1].player);
     return 0;
 }

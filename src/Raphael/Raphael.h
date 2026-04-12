@@ -5,7 +5,11 @@
 #include <Raphael/tm.h>
 
 #include <atomic>
+#include <barrier>
+#include <memory>
 #include <string>
+#include <thread>
+#include <vector>
 
 
 
@@ -13,13 +17,13 @@ namespace raphael {
 class Raphael {
 public:
     static const std::string version;
-    std::string name;
 
     struct EngineOptions {
         // uci options
         SpinOption<false> hash;
         SpinOption<false> threads;
         SpinOption<false> moveoverhead;
+        CheckOption chess960;
 
         // other options
         CheckOption datagen;
@@ -43,19 +47,6 @@ public:
 
 
 private:
-    // search
-    EngineOptions params_;
-    TimeManager::SearchOptions searchopt_;
-    // storage
-    TranspositionTable tt_;
-    History history_;
-    // position
-    Position<true> position_;
-    // info
-    UciInfoLevel ucilevel_ = UciInfoLevel::NONE;
-    i32 seldepth_;  // maximum search depth reached in PV nodes
-    TimeManager tm_;
-
     struct PVList {
         chess::Move moves[MAX_DEPTH] = {chess::Move::NO_MOVE};
         i32 length = 0;
@@ -81,16 +72,45 @@ private:
         chess::MoveList<chess::Move> quietlist;
         chess::MoveList<chess::Move> noisylist;
     };
-    MoveStack movestack_[2 * MAX_DEPTH];
+
+    struct alignas(CACHE_SIZE) ThreadData {
+        SearchStack search_stack[MAX_DEPTH + 3];
+        MoveStack move_stack[MAX_DEPTH * 2];
+
+        Position<true> position_;
+        History history;
+        i32 thread_id;
+    };
+
+    // shared data
+    EngineOptions params_;
+    UciInfoLevel ucilevel_ = UciInfoLevel::NONE;
+
+    TranspositionTable tt_;
+    TimeManager tm_;
+
+    // thread helpers
+    std::atomic<bool> is_searching{false};
+    TimeManager::SearchOptions search_opt;
+    MoveScore search_result;
+
+    std::atomic<bool> stop{false};
+    std::atomic<bool> quit{false};
+
+    std::unique_ptr<std::barrier<>> idle_barrier;
+    std::unique_ptr<std::barrier<>> search_end_barrier;
+
+    std::vector<std::thread> searchers;
+    std::vector<ThreadData> thread_data;
 
 
 
 public:
-    /** Initializes Raphael
-     *
-     * \param name_in player name
-     */
-    Raphael(const std::string& name_in);
+    /** Initializes Raphael */
+    Raphael();
+
+    /** Quits any ongoing search and cleans up */
+    ~Raphael();
 
 
     /** Sets Raphael's engine options
@@ -100,12 +120,6 @@ public:
      */
     void set_option(const std::string& name, i32 value);
     void set_option(const std::string& name, bool value);
-
-    /** Sets Raphael's search options
-     *
-     * \param options options to set to
-     */
-    void set_searchoptions(TimeManager::SearchOptions options);
 
     /** Sets Raphael's UCI info level
      *
@@ -127,22 +141,42 @@ public:
     void set_board(const chess::Board& board);
 
 
-    /** Returns the best move found by Raphael from the set position. Returns immediately if halt
-     * becomes true. Will print out bestmove and search statistics if UCI is true.
+    /** Kills existing threads (if any) and spawns num_searcher threads
      *
-     * \param t_remain time remaining in ms
-     * \param t_inc increment after move in ms
-     * \param mouse unused
-     * \param halt bool reference which will turn false to indicate search should stop
-     * \returns the best move and its score
+     * \param num_searchers number of threads to spawn
      */
-    MoveScore get_move(const i32 t_remain, const i32 t_inc, std::atomic<bool>& halt);
+    void set_threads(i32 num_searchers);
 
-    /** Ponders for best move during opponent's turn. Returns immediately if halt becomes true
+
+    /** Starts a search without blocking, does nothing if there is an ongoing search
      *
-     * \param halt bool reference which will turn false to indicate search should stop
+     * \param options search options
      */
-    void ponder(std::atomic<bool>& halt);
+    void start_search(const TimeManager::SearchOptions& options);
+
+    /** Returns whether the search is complete (or isn't running)
+     *
+     * \returns whether the search completed
+     */
+    bool is_search_complete();
+
+    /** Blocks until the current search finishes and returns its search result.
+     * The search result is only valid if start_search has been called previously.
+     * You can call this to retrieve the search result after is_search_complete returns true.
+     *
+     * \returns the completed search result
+     */
+    MoveScore wait_search();
+
+    /** Starts search and blocks until it completes
+     *
+     * \param options search options
+     * \returns the completed search result
+     */
+    MoveScore search(const TimeManager::SearchOptions& options);
+
+    /** Stops any ongoing search and waits */
+    void stop_search();
 
 
     /** Returns the static eval of the set position
@@ -157,13 +191,27 @@ public:
     void reset();
 
 private:
+    /** Stops and kills all threads */
+    void kill_search();
+
+
+    /** Persistent search thread to handle search commands
+     *
+     * \param thread_id this thread's id (0 == main thread)
+     */
+    void t_search_function(i32 thread_id);
+
+
     /** Prints out the uci info
      *
      * \param depth current depth
      * \param score score to print
-     * \param search stack at current ply
+     * \param board current board
+     * \param ss search stack at root
      */
-    void print_uci_info(i32 depth, i32 score, const SearchStack* ss) const;
+    void print_uci_info(
+        i32 depth, i32 score, const chess::Board& board, const SearchStack* ss
+    ) const;
 
     /** Returns the stringified PV line
      *
@@ -175,49 +223,58 @@ private:
 
     /** Adjusts the raw static eval using scaling and corrhists
      *
+     * \param tdata this thread's data
      * \param raw_static_eval raw eval to adjust
      * \returns the adjusted eval
      */
-    i32 adjust_score(i32 raw_static_eval) const;
+    i32 adjust_score(const ThreadData& tdata, i32 raw_static_eval) const;
 
+
+    /** Does the actual search logic, calling negamax with increasing depth.
+     * May set stop to true
+     *
+     * \param tdata this thread's data
+     * \returns the bestmove and score of this thread
+     */
+    MoveScore iterative_deepen(ThreadData& tdata);
 
     /** Recursively searches for the best move and score of the current position assuming optimal
      * play by both us and the opponent
      *
      * \tparam is_PV whether the current position is a PV node
+     * \param tdata this thread's data
      * \param depth depth to search for
      * \param ply current distance from root
-     * \param mvidx movestack index
      * \param alpha lower bound score of current position
      * \param beta upper bound score of current position
      * \param cutnode whether the current position is a cutnode
      * \param ss search stack at current ply
-     * \param halt bool reference which will turn false to indicate search should stop
+     * \param mv move stack at current node
      * \returns score of current position
      */
     template <bool is_PV>
     i32 negamax(
+        ThreadData& tdata,
         i32 depth,
         const i32 ply,
-        const i32 mvidx,
         i32 alpha,
         i32 beta,
         bool cutnode,
         SearchStack* ss,
-        std::atomic<bool>& halt
+        MoveStack* mv
     );
 
     /** Evaluates the board after all noisy moves are played out
      *
      * \tparam is_PV whether the current position is a PV node
+     * \param tdata this thread's data
      * \param ply current distance from root
-     * \param mvidx movestack index
      * \param alpha lower bound score of current position
      * \param beta upper bound score of current position
-     * \param halt bool reference which will turn false to indicate search should stop
+     * \param mv move stack at current node
      * \returns score of current board
      */
     template <bool is_PV>
-    i32 quiescence(const i32 ply, const i32 mvidx, i32 alpha, i32 beta, std::atomic<bool>& halt);
+    i32 quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, MoveStack* mv);
 };
 }  // namespace raphael

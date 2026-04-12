@@ -28,12 +28,10 @@ MAIN_SOURCES := \
     main.cpp
 
 UCI_SOURCES := \
-    src/GameEngine/consts.cpp \
     $(wildcard src/Raphael/*.cpp) \
     uci.cpp
 
 TEST_SOURCES := \
-	src/GameEngine/consts.cpp \
     $(wildcard src/Raphael/*.cpp) \
 	$(wildcard src/tests/*.cpp)
 
@@ -73,7 +71,7 @@ CXX := $(COMPILER)
 # Compiler and Linker Flags
 #---------------------------------------------------------------------------------------------------
 
-WARN_FLAGS := -Wall -Wextra
+WARN_FLAGS := -Wall -Wextra -Wno-interference-size
 
 CXXFLAGS := -std=c++20 -O3 -flto=auto $(WARN_FLAGS) \
     -Isrc -ISFML-3.0.2/include

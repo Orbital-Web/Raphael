@@ -17,7 +17,6 @@ namespace raphael {
 class Raphael {
 public:
     static const std::string version;
-    std::string name;
 
     struct EngineOptions {
         // uci options
@@ -107,11 +106,8 @@ private:
 
 
 public:
-    /** Initializes Raphael
-     *
-     * \param name_in player name
-     */
-    Raphael(const std::string& name_in);
+    /** Initializes Raphael */
+    Raphael();
 
     /** Quits any ongoing search and cleans up */
     ~Raphael();
@@ -179,7 +175,7 @@ public:
      */
     MoveScore search(const TimeManager::SearchOptions& options);
 
-    /** Stops any ongoing search */
+    /** Stops any ongoing search and waits */
     void stop_search();
 
 

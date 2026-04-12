@@ -30,7 +30,7 @@ bool position_ready = false;
 
 bool quit = false;
 
-raphael::Raphael engine("Raphael");
+raphael::Raphael engine;
 
 
 
@@ -376,7 +376,7 @@ inline void handle_evalstats(const vector<string>& tokens) {
 /** Shows the help message */
 inline void show_help() {
     // help message style from pawnocchio
-    cout << engine.name << " " << engine.version << "\n\n"
+    cout << "Raphael " << engine.version << "\n\n"
          << "TOOLS:\n"
          << "  bench\n"
          << "      run benchmark\n\n"
@@ -430,7 +430,7 @@ inline void show_help() {
 inline void handle_command(const string& uci_command) {
     if (uci_command == "uci") {
         const auto params = engine.default_params();
-        cout << "id name " << engine.name << " " << engine.version << "\n"
+        cout << "id name Raphael " << engine.version << "\n"
              << "id author Rei Meguro\n"
              << params.hash.uci() << params.threads.uci()
              << "option name UCI_Chess960 type check default false\n"

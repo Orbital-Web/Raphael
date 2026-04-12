@@ -1,34 +1,22 @@
 #include <GameEngine/GameEngine.h>
 
 #include <fstream>
-#include <future>
 #include <iostream>
 
 using namespace cge;
-using std::async;
-using std::atomic;
 using std::cout;
 using std::fixed;
 using std::flush;
-using std::future;
-using std::future_status;
-using std::get;
 using std::ios_base;
-using std::launch;
 using std::min;
 using std::ofstream;
 using std::setprecision;
 using std::string;
 using std::stringstream;
-using std::vector;
-using std::visit;
-
-#define whiteturn (position.board().stm() == chess::Color::WHITE)
 
 
 
-GameEngine::GameEngine(const vector<Player>& players_in)
-    : tiles(66, sf::RectangleShape({100, 100})), soundbuffers(3), players(players_in) {
+GameEngine::GameEngine(): tiles(66, sf::RectangleShape({100, 100})), soundbuffers(3), players(2) {
     generate_assets();
 }
 
@@ -38,23 +26,16 @@ void GameEngine::run_match(const GameOptions& options) {
     window.create(sf::VideoMode({880, 940}), "Chess");
     window.setFramerateLimit(FRAMERATE);
 
-    // initialize position
-    chess::Board board(options.start_fen);
-    chess::Movegen::generate_legals(movelist, board);
-    position.set_board(board);
+    // initialize
+    t_remain[0] = options.w_time;
+    t_remain[1] = options.b_time;
+    t_inc = options.inc_time;
+    position.set_board(chess::Board(options.start_fen));
+    chess::Movegen::generate_legals(movelist, position.board());
     GameResult game_result = GameResult::NONE;
-    turn = !whiteturn;
-
-    // reset players if engine
-    if (players[0].type == PlayerType::ENGINE) get<raphael::Raphael*>(players[0].player)->reset();
-    if (players[1].type == PlayerType::ENGINE) get<raphael::Raphael*>(players[1].player)->reset();
-    bool p1_is_white = options.p1_is_white;
-    const auto& white_name
-        = visit([](auto player) { return player->name; }, players[!p1_is_white].player);
-    const auto& black_name
-        = visit([](auto player) { return player->name; }, players[p1_is_white].player);
-    names[0].setString(white_name);
-    names[1].setString(black_name);
+    turn = position.board().stm() != chess::Color::WHITE;
+    names[0].setString((options.w_is_engine) ? "Raphael" : "Player");
+    names[1].setString((options.b_is_engine) ? "Raphael" : "Player");
 
     // initialize pgn
     bool savepgn = (options.pgn_file != "");
@@ -64,115 +45,83 @@ void GameEngine::run_match(const GameOptions& options) {
         string fen = options.start_fen;
         fen = fen.substr(0, min(fen.find('\r'), fen.find('\n')) - 1);
         pgn.open(options.pgn_file, ios_base::app);
-        pgn << "[White \"" << white_name << "\"]\n"
-            << "[Black \"" << black_name << "\"]\n"
+        pgn << "[White \"" << ((options.w_is_engine) ? "Raphael" : "Player") << "\"]\n"
+            << "[Black \"" << ((options.b_is_engine) ? "Raphael" : "Player") << "\"]\n"
             << "[FEN \"" << fen << "\"]\n";
     }
+
+    // start game
     i32 nmoves = 1;
-
-    // set time
     bool timeout = false;
-    t_remain = options.t_remain;
-    i32 t_inc = options.t_inc;
-
-    interactive = options.interactive;
-    if (interactive) sounds[2].play();
+    players[0].reset();
+    players[1].reset();
+    sounds[2].play();
 
     // until game ends or time runs out
     while (game_result == GameResult::NONE && t_remain[0] > 0 && t_remain[1] > 0) {
-        const auto& cur_player = players[turn == p1_is_white];
-        const auto& oth_player = players[turn != p1_is_white];
-        const bool cur_engine = (cur_player.type == PlayerType::ENGINE);
-        const bool oth_engine = (oth_player.type == PlayerType::ENGINE);
-        i64& cur_t_remain = t_remain[turn];
+        const bool cur_is_engine = (turn) ? options.b_is_engine : options.w_is_engine;
 
-        if (cur_engine)
-            get<raphael::Raphael*>(cur_player.player)->set_position(position);
-        else
-            get<HumanPlayer*>(cur_player.player)->set_board(position.board());
+        if (cur_is_engine) {
+            players[turn].set_position(position);
+            players[turn].start_search({.t_remain = t_remain[turn], .t_inc = t_inc});
+        } else
+            human.set_board(position.board());
 
-        if (oth_engine)
-            get<raphael::Raphael*>(oth_player.player)->set_position(position);
-        else
-            get<HumanPlayer*>(oth_player.player)->set_board(position.board());
-
-        // if current player is an engine, get its move async
-        atomic<bool> halt{false};
-        future<chess::Move> movereceiver;
-        if (cur_engine)
-            movereceiver = get_move_async(
-                get<raphael::Raphael*>(cur_player.player), cur_t_remain, t_inc, halt
-            );
-        auto status = future_status::timeout;
-
-        // if current player is a human and the opponent is an engine, ponder async
-        std::future<void> _;
-        if (!cur_engine && oth_engine)
-            _ = ponder_async(get<raphael::Raphael*>(oth_player.player), halt);
-
-        // timings
-        std::chrono::time_point<std::chrono::steady_clock> start, stop;
-
-        // update visuals and get move
+        // get move while updating visuals
         chess::Move to_play = chess::Move::NO_MOVE;
-        while (status != future_status::ready) {
-            start = std::chrono::steady_clock::now();
+        while (!to_play) {
+            const auto start = std::chrono::steady_clock::now();
 
-            // try getting move
-            if (cur_engine) {
-                status = movereceiver.wait_for(std::chrono::milliseconds(5));
-                if (status == future_status::ready) to_play = movereceiver.get();
-            } else {
-                to_play = get<cge::HumanPlayer*>(cur_player.player)->try_get_move(mouse);
-                if (to_play != chess::Move::NO_MOVE) status = future_status::ready;
-            }
+            if (cur_is_engine) {
+                if (players[turn].is_search_complete()) {
+                    const auto res = players[turn].wait_search();
+                    to_play = res.move;
+                    if (!to_play) {
+                        cout << "error: no move returned. Remaining time of player: " << fixed
+                             << setprecision(2) << t_remain[turn] / 1000.0f << "\n"
+                             << flush;
+                        timeout = true;
+                        game_result = GameResult::LOSE;
+                        break;
+                    }
 
-            // game loop
+                    if (res.is_mate)
+                        cout << "Score: #" << ((turn) ? -1 : 1) * res.score << "\n" << flush;
+                    else
+                        cout << "Score: " << fixed << setprecision(2)
+                             << ((turn) ? -1 : 1) * res.score / 100.0f << "\n"
+                             << flush;
+                }
+            } else
+                to_play = human.try_get_move(mouse);
+
             update_window();
 
             // count down timer (only after first white moves)
             if (nmoves != 1) {
-                stop = std::chrono::steady_clock::now();
-                cur_t_remain
+                const auto stop = std::chrono::steady_clock::now();
+                t_remain[turn]
                     -= std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
             }
 
             // timeout
-            if (cur_t_remain <= 0 || !window.isOpen()) {
-                halt = true;
+            if (t_remain[turn] <= 0 || !window.isOpen()) {
+                players[turn].stop_search();
                 timeout = true;
-                timeoutwins[(p1_is_white != turn)]++;
                 game_result = GameResult::LOSE;
-                goto game_end;
+                break;
             }
         }
 
-        // play move
-        if (!to_play || !movelist.contains(to_play)) {
-            if (!to_play) {
-                cout << "Warning, no move returned. Remaining time of player: " << fixed
-                     << setprecision(2) << cur_t_remain / 1000.0f << "\n"
-                     << flush;
-            } else {
-                cout << "Warning, illegal move " << chess::uci::from_move(to_play)
-                     << " played. Remaining time of player: " << fixed << setprecision(2)
-                     << cur_t_remain / 1000.0f << "\n"
-                     << flush;
-            }
-            timeout = true;
-            timeoutwins[(p1_is_white != turn)]++;
-            game_result = GameResult::LOSE;
-            goto game_end;
-        }
-        halt = true;  // force stop pondering
+        if (timeout) break;
 
         // pgn saving FIXME: output san
         if (savepgn) pgn_moves << nmoves << ". " << chess::uci::from_move(to_play) << " ";
 
         // play move and update everything
         move(to_play);
+        if (nmoves != 1) t_remain[turn] += t_inc;
         turn = !turn;
-        if (nmoves != 1) cur_t_remain += t_inc;
         nmoves++;
 
         // get game result (if any)
@@ -184,71 +133,29 @@ void GameEngine::run_match(const GameOptions& options) {
             game_result = (position.board().in_check()) ? GameResult::LOSE : GameResult::DRAW;
     }
 
-game_end:
-    // score tracking
+    // print result
     if (game_result == GameResult::DRAW)
-        results[1]++;
-    else {
-        results[(p1_is_white == turn) ? 0 : 2]++;
-        if (!timeout && ((p1_is_white == turn) == p1_is_white)) whitewins[(p1_is_white != turn)]++;
+        cout << "Result: 1/2-1/2\n" << flush;
+    else
+        cout << "Result: " << ((turn) ? "1-0\n" : "0-1\n") << flush;
+
+    // wait until window closed
+    sounds[2].play();
+    while (window.isOpen()) {
+        while (const auto event = window.pollEvent())
+            if (event->is<sf::Event::Closed>()) window.close();
+        update_window();
     }
 
-    // wait until window closed if interactive
-    if (interactive) {
-        sounds[2].play();
-        while (window.isOpen()) {
-            while (const auto event = window.pollEvent())
-                if (event->is<sf::Event::Closed>()) window.close();
-            update_window();
-        }
-    }
     sq_from = chess::Square::NONE;
     sq_to = chess::Square::NONE;
     movelist.clear();
     if (savepgn) {
         string pgn_result = "1/2-1/2";
-        if (game_result != GameResult::DRAW) pgn_result = (!whiteturn) ? "1-0" : "0-1";
+        if (game_result != GameResult::DRAW) pgn_result = (turn) ? "1-0" : "0-1";
         pgn << "[Result \"" << pgn_result << "\"]\n\n" << pgn_moves.str() << "\n\n";
     };
     pgn.close();
-}
-
-
-void GameEngine::print_report() const {
-    const auto& p1_name = visit([](auto player) { return player->name; }, players[0].player);
-    const auto& p2_name = visit([](auto player) { return player->name; }, players[1].player);
-    i32 total_matches = results[0] + results[1] + results[2];
-
-    cout << "Out of " << total_matches << " total matches:\n";
-    cout << "   " << p1_name << "\t\x1b[32m" << results[0] << " (white: " << whitewins[0]
-         << ", black: " << results[0] - whitewins[0] - timeoutwins[0]
-         << ", timeout: " << timeoutwins[0] << ")\x1b[0m\n";
-    cout << "   Draw: \t\x1b[90m" << results[1] << "\x1b[0m\n";
-    cout << "   " << p2_name << "\t\x1b[31m" << results[2] << " (white: " << whitewins[1]
-         << ", black: " << results[2] - whitewins[1] - timeoutwins[1]
-         << ", timeout: " << timeoutwins[1] << ")\x1b[0m\n"
-         << flush;
-}
-
-
-future<chess::Move> GameEngine::get_move_async(
-    raphael::Raphael* engine, i32 t_remain, i32 t_inc, atomic<bool>& halt
-) {
-    return async(launch::async, [&, this]() {
-        const auto& recv = engine->get_move(t_remain, t_inc, halt);
-        if (recv.is_mate)
-            cout << "Score: #" << ((whiteturn) ? 1 : -1) * recv.score << "\n" << flush;
-        else {
-            cout << "Score: " << fixed << setprecision(2)
-                 << ((whiteturn) ? 1 : -1) * recv.score / 100.0f << "\n"
-                 << flush;
-        }
-        return recv.move;
-    });
-}
-
-future<void> GameEngine::ponder_async(raphael::Raphael* engine, atomic<bool>& halt) {
-    return async(launch::async, [&, this]() { engine->ponder(halt); });
 }
 
 
@@ -381,9 +288,11 @@ void GameEngine::update_arrows() {
 void GameEngine::update_window() {
     // event handling
     while (const auto event = window.pollEvent()) {
-        if (event->is<sf::Event::Closed>())
+        if (event->is<sf::Event::Closed>()) {
+            players[0].stop_search();
+            players[1].stop_search();
             window.close();
-        else if (const auto* mouseevent = event->getIf<sf::Event::MouseButtonPressed>()) {
+        } else if (const auto* mouseevent = event->getIf<sf::Event::MouseButtonPressed>()) {
             mouse.event = (mouseevent->button == sf::Mouse::Button::Right) ? MouseEvent::RMBDOWN
                                                                            : MouseEvent::LMBDOWN;
             mouse.x = mouseevent->position.x;
@@ -431,7 +340,7 @@ void GameEngine::update_window() {
     // draw pieces
     auto pieces = position.board().occ();
     i32 check = 0;
-    if (position.board().in_check()) check = (whiteturn) ? 1 : -1;
+    if (position.board().in_check()) check = (turn) ? -1 : 1;
     while (pieces) {
         const auto sq = static_cast<chess::Square>(pieces.poplsb());
         const auto file = sq.file();
@@ -461,12 +370,10 @@ void GameEngine::move(chess::Move move_in) {
     selectedtiles.clear();
 
     // play sound
-    if (interactive) {
-        if (position.board().is_capture(move_in))
-            sounds[1].play();  // capture
-        else
-            sounds[0].play();  // move
-    }
+    if (position.board().is_capture(move_in))
+        sounds[1].play();  // capture
+    else
+        sounds[0].play();  // move
 
     position.make_move(move_in);
     movelist.clear();

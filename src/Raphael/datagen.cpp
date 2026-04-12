@@ -110,10 +110,10 @@ void generation_thread(
     Raphael* engines[2] = {engine, nullptr};
     bool created_engine = false;
     if (engine == nullptr) {
-        engines[0] = new Raphael("Raphael");
+        engines[0] = new Raphael();
         created_engine = true;
     }
-    engines[1] = new Raphael("Raphael");
+    engines[1] = new Raphael();
 
     // initialize engines
     for (i32 i = 0; i < 2; i++) {

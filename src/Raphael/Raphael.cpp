@@ -57,8 +57,7 @@ void Raphael::PVList::update(const chess::Move move, const PVList& child) {
 }
 
 
-Raphael::Raphael(const string& name_in)
-    : name(name_in), params_(default_params()), tt_(params_.hash) {
+Raphael::Raphael(): params_(default_params()), tt_(params_.hash) {
     params_.hash.set_callback([this]() { tt_.resize(params_.hash); });
     params_.threads.set_callback([this]() { set_threads(params_.threads); });
     set_threads(params_.threads);

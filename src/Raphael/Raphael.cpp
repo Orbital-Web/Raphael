@@ -583,7 +583,7 @@ i32 Raphael::negamax(
 
         // principle variation search
         i32 score = INT32_MIN;
-        const i32 new_depth = depth - 1 + extension;
+        i32 new_depth = depth - 1 + extension;
         if (depth >= LMR_MIN_DEPTH && move_searched > LMR_FROMMOVE) {
             // late move reduction
             i32 red_factor = LMR_TABLE[is_quiet][depth][move_searched];
@@ -601,10 +601,17 @@ i32 Raphael::negamax(
             );
             ss->reductions = 0;
 
-            if (score > alpha && red_depth < new_depth)
+            if (score > alpha && red_depth < new_depth) {
+                const bool do_deeper
+                    = score > bestscore + DO_DEEPER_BASE + DO_DEEPER_DEPTH_MUL * new_depth;
+                const bool do_shallower
+                    = score < bestscore + DO_SHALLOWER_BASE + DO_SHALLOWER_DEPTH_MUL * new_depth;
+                new_depth += do_deeper - do_shallower;
+
                 score = -negamax<false>(
                     tdata, new_depth, ply + 1, -alpha - 1, -alpha, !cutnode, ss + 1, mv + 1
                 );
+            }
         } else if (!is_PV || move_searched > 1)
             score = -negamax<false>(
                 tdata, new_depth, ply + 1, -alpha - 1, -alpha, !cutnode, ss + 1, mv + 1

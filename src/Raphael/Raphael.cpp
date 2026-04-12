@@ -68,7 +68,7 @@ Raphael::~Raphael() { kill_search(); }
 
 
 void Raphael::set_option(const std::string& name, i32 value) {
-    assert(!is_searching.load(memory_order_acquire));
+    assert(!is_searching_.load(memory_order_acquire));
 
     for (const auto p : {
              &params_.hash,
@@ -97,7 +97,7 @@ void Raphael::set_option(const std::string& name, i32 value) {
     cout << "info string error: unknown spin option '" << name << "'\n" << flush;
 }
 void Raphael::set_option(const std::string& name, bool value) {
-    assert(!is_searching.load(memory_order_acquire));
+    assert(!is_searching_.load(memory_order_acquire));
 
     for (CheckOption* p : {&params_.chess960, &params_.datagen, &params_.softnodes}) {
         if (!utils::is_case_insensitive_equals(p->name, name)) continue;
@@ -118,19 +118,19 @@ void Raphael::set_option(const std::string& name, bool value) {
 }
 
 void Raphael::set_uciinfolevel(UciInfoLevel level) {
-    assert(!is_searching.load(memory_order_acquire));
+    assert(!is_searching_.load(memory_order_acquire));
     ucilevel_ = level;
 }
 
 
 void Raphael::set_position(const Position<false>& position) {
-    assert(!is_searching.load(memory_order_acquire));
-    for (auto& tdata : thread_data) tdata.position_.set_position(position);
+    assert(!is_searching_.load(memory_order_acquire));
+    for (auto& tdata : thread_data_) tdata.position_.set_position(position);
 }
 
 void Raphael::set_board(const chess::Board& board) {
-    assert(!is_searching.load(memory_order_acquire));
-    for (auto& tdata : thread_data) tdata.position_.set_board(board);
+    assert(!is_searching_.load(memory_order_acquire));
+    for (auto& tdata : thread_data_) tdata.position_.set_board(board);
 }
 
 
@@ -138,38 +138,39 @@ void Raphael::set_threads(i32 num_searchers) {
     assert(num_searchers >= 1);
     kill_search();
 
-    assert(!is_searching.load(memory_order_acquire));
-    stop.store(false, memory_order_relaxed);
-    quit.store(false, memory_order_relaxed);
+    assert(!is_searching_.load(memory_order_acquire));
+    stop_.store(false, memory_order_relaxed);
+    quit_.store(false, memory_order_relaxed);
 
-    idle_barrier = make_unique<barrier<>>(num_searchers + 1);
-    search_end_barrier = make_unique<barrier<>>(num_searchers);
+    idle_barrier_ = make_unique<barrier<>>(num_searchers + 1);
+    search_end_barrier_ = make_unique<barrier<>>(num_searchers);
 
     tm_.set_threads(num_searchers);
-    thread_data.assign(num_searchers, ThreadData{});
-    searchers.reserve(num_searchers);
+    thread_data_.clear();
+    thread_data_.resize(num_searchers);
+    searchers_.reserve(num_searchers);
     for (i32 t = 0; t < num_searchers; t++) {
-        thread_data[t].thread_id = t;
-        searchers.emplace_back(&Raphael::t_search_function, this, t);
+        thread_data_[t].thread_id = t;
+        searchers_.emplace_back(&Raphael::t_search_function, this, t);
     }
 }
 
 
 void Raphael::start_search(const TimeManager::SearchOptions& options) {
     // no need to do compare exchange as all public functions should get called from a single thread
-    assert(!is_searching.load(memory_order_acquire));
-    search_opt = options;
-    stop.store(false, memory_order_relaxed);
-    is_searching.store(true, memory_order_release);
+    assert(!is_searching_.load(memory_order_acquire));
+    search_opt_ = options;
+    stop_.store(false, memory_order_relaxed);
+    is_searching_.store(true, memory_order_release);
 
-    idle_barrier->arrive_and_wait();
+    idle_barrier_->arrive_and_wait();
 }
 
-bool Raphael::is_search_complete() { return !is_searching.load(memory_order_acquire); }
+bool Raphael::is_search_complete() { return !is_searching_.load(memory_order_acquire); }
 
 Raphael::MoveScore Raphael::wait_search() {
-    is_searching.wait(true, memory_order_acquire);
-    return search_result;
+    is_searching_.wait(true, memory_order_acquire);
+    return search_result_;
 }
 
 Raphael::MoveScore Raphael::search(const TimeManager::SearchOptions& options) {
@@ -178,53 +179,53 @@ Raphael::MoveScore Raphael::search(const TimeManager::SearchOptions& options) {
 }
 
 void Raphael::stop_search() {
-    stop.store(true, memory_order_relaxed);
-    is_searching.wait(true, memory_order_acquire);
+    stop_.store(true, memory_order_relaxed);
+    is_searching_.wait(true, memory_order_acquire);
 }
 
 
 
 i32 Raphael::static_eval(bool corrected) {
-    assert(!is_searching.load(memory_order_acquire));
-    assert(thread_data.size() >= 1);
+    assert(!is_searching_.load(memory_order_acquire));
+    assert(thread_data_.size() >= 1);
 
-    auto& tdata = thread_data[0];
+    auto& tdata = thread_data_[0];
     const auto raw_score = tdata.position_.evaluate(!params_.datagen);
     return (corrected) ? adjust_score(tdata, raw_score) : raw_score;
 }
 
 
 void Raphael::reset() {
-    assert(!is_searching.load(memory_order_acquire));
+    assert(!is_searching_.load(memory_order_acquire));
     tt_.clear();  // TODO: multithreaded clearing
-    for (auto& tdata : thread_data) tdata.history.clear();
+    for (auto& tdata : thread_data_) tdata.history.clear();
 }
 
 
 void Raphael::kill_search() {
     stop_search();
-    quit.store(true, memory_order_relaxed);
+    quit_.store(true, memory_order_relaxed);
 
     // let threads proceed so it can quit
-    if (idle_barrier) idle_barrier->arrive_and_wait();
+    if (idle_barrier_) idle_barrier_->arrive_and_wait();
 
-    for (auto& t : searchers)
+    for (auto& t : searchers_)
         if (t.joinable()) t.join();
 
-    searchers.clear();
+    searchers_.clear();
 }
 
 
 void Raphael::t_search_function(i32 thread_id) {
-    auto& tdata = thread_data[thread_id];
+    auto& tdata = thread_data_[thread_id];
 
     while (true) {
         // wait for new search request to arrive
-        idle_barrier->arrive_and_wait();
-        if (quit.load(memory_order_relaxed)) break;
+        idle_barrier_->arrive_and_wait();
+        if (quit_.load(memory_order_relaxed)) break;
 
         tm_.start_timer(
-            search_opt,
+            search_opt_,
             thread_id,
             params_.moveoverhead,
             (params_.softnodes) ? params_.softhardmult : 0
@@ -233,13 +234,13 @@ void Raphael::t_search_function(i32 thread_id) {
         const auto result = iterative_deepen(tdata);
 
         // wait until all threads finish
-        if (thread_id == 0) stop.store(true, memory_order_relaxed);
-        search_end_barrier->arrive_and_wait();
+        if (thread_id == 0) stop_.store(true, memory_order_relaxed);
+        search_end_barrier_->arrive_and_wait();
 
         if (thread_id == 0) {
-            search_result = result;
-            is_searching.store(false, memory_order_release);
-            is_searching.notify_one();
+            search_result_ = result;
+            is_searching_.store(false, memory_order_release);
+            is_searching_.notify_one();
 
             if (ucilevel_ != UciInfoLevel::NONE)
                 cout << "bestmove " << chess::uci::from_move(result.move, params_.chess960) << "\n"
@@ -310,7 +311,7 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
     i32 depth = 1;
     for (; depth <= MAX_DEPTH; depth++) {
         // stop if search stopped
-        if (stop.load(memory_order_relaxed)) break;
+        if (stop_.load(memory_order_relaxed)) break;
 
         // initialize aspiration window
         i32 delta = ASP_INIT_SIZE;
@@ -324,7 +325,7 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
 
         // search until score lies between alpha and beta
         i32 iterscore;
-        while (!stop.load(memory_order_relaxed)) {
+        while (!stop_.load(memory_order_relaxed)) {
             iterscore = negamax<true>(tdata, depth, 0, alpha, beta, false, ss, mv);
 
             if (iterscore <= alpha) {
@@ -338,7 +339,7 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
             delta += delta * ASP_WIDENING_FACTOR / 16;
         }
 
-        if (stop.load(memory_order_relaxed)) break;  // don't use results if timeout
+        if (stop_.load(memory_order_relaxed)) break;  // don't use results if timeout
 
         score = iterscore;
         bestmove = ss->pv.moves[0];
@@ -348,7 +349,7 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
             print_uci_info(depth, score, board, ss);
 
         // soft limit
-        if (tm_.is_soft_limit_reached(thread_id, stop, bestmove, score, depth)) break;
+        if (tm_.is_soft_limit_reached(thread_id, stop_, bestmove, score, depth)) break;
     }
 
     // last attempt to get bestmove
@@ -389,7 +390,7 @@ i32 Raphael::negamax(
     assert(!is_root || !ss->excluded);
 
     // timeout
-    if (tm_.is_hard_limit_reached(thread_id, stop)) return 0;
+    if (tm_.is_hard_limit_reached(thread_id, stop_)) return 0;
 
     if constexpr (is_PV) ss->pv.length = 0;
 
@@ -666,7 +667,7 @@ i32 Raphael::negamax(
     if (move_searched == 0) return (in_check) ? -MATE_SCORE + ply : 0;  // reward faster mate
 
     // update transposition table
-    if (!ss->excluded && !stop.load(memory_order_relaxed)) {
+    if (!ss->excluded && !stop_.load(memory_order_relaxed)) {
         // update corrhist
         if (!in_check && (bestmove == chess::Move::NO_MOVE || board.is_quiet(bestmove))
             && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
@@ -686,7 +687,7 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
     const auto& board = position.board();
 
     // timeout
-    if (tm_.is_hard_limit_reached(thread_id, stop)) return 0;
+    if (tm_.is_hard_limit_reached(thread_id, stop_)) return 0;
 
     if constexpr (is_PV) tm_.update_seldepth(thread_id, ply);
 
@@ -788,7 +789,7 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
     if (in_check && move_searched == 0) return -MATE_SCORE + ply;
 
     // update transposition table
-    if (!stop.load(memory_order_relaxed))
+    if (!stop_.load(memory_order_relaxed))
         tt_.set(ttkey, bestscore, raw_static_eval, bestmove, 0, ttflag, ply);
 
     return bestscore;

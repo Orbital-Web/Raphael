@@ -90,18 +90,18 @@ private:
     TimeManager tm_;
 
     // thread helpers
-    std::atomic<bool> is_searching{false};
-    TimeManager::SearchOptions search_opt;
-    MoveScore search_result;
+    std::atomic<bool> is_searching_{false};
+    TimeManager::SearchOptions search_opt_;
+    MoveScore search_result_;
 
-    std::atomic<bool> stop{false};
-    std::atomic<bool> quit{false};
+    std::atomic<bool> stop_{false};
+    std::atomic<bool> quit_{false};
 
-    std::unique_ptr<std::barrier<>> idle_barrier;
-    std::unique_ptr<std::barrier<>> search_end_barrier;
+    std::unique_ptr<std::barrier<>> idle_barrier_;
+    std::unique_ptr<std::barrier<>> search_end_barrier_;
 
-    std::vector<std::thread> searchers;
-    std::vector<ThreadData> thread_data;
+    std::vector<std::thread> searchers_;
+    std::vector<ThreadData> thread_data_;
 
 
 

@@ -450,6 +450,11 @@ i32 Raphael::negamax(
 
     // pre-moveloop pruning
     if (!is_PV && !in_check && !ss->excluded) {
+        // hindsight extension
+        if ((ss - 1)->reductions >= HINDSIGHT_MIN_RED && (ss - 1)->static_eval != NONE_SCORE
+            && ss->static_eval <= -(ss - 1)->static_eval)
+            depth++;
+
         // reverse futility pruning
         const i32 rfp_margin = RFP_MARGIN_DEPTH_MUL * depth - RFP_MARGIN_IMPROVING * improving;
         if (depth <= RFP_MAX_DEPTH && ss->static_eval - rfp_margin >= beta) return ss->static_eval;
@@ -587,11 +592,14 @@ i32 Raphael::negamax(
             red_factor -= improving * LMR_IMPROVING;
             red_factor -= gives_check * LMR_CHECK;
             red_factor -= hist * 128 / ((is_quiet) ? LMR_QUIET_HIST_DIV : LMR_NOISY_HIST_DIV);
+            red_factor /= 128;
 
-            const i32 red_depth = min(max(new_depth - red_factor / 128, 1), new_depth);
+            ss->reductions = red_factor;
+            const i32 red_depth = min(max(new_depth - red_factor, 1), new_depth);
             score = -negamax<false>(
                 tdata, red_depth, ply + 1, -alpha - 1, -alpha, true, ss + 1, mv + 1
             );
+            ss->reductions = 0;
 
             if (score > alpha && red_depth < new_depth)
                 score = -negamax<false>(

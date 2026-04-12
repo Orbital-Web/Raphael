@@ -214,6 +214,7 @@ Tunable(TT_VALUE_AGE_WEIGHT, 1, 0, 4, false);
 
 // negamax
 Tunable(IIR_MIN_DEPTH, 3, 3, 6, false);
+Tunable(HINDSIGHT_MIN_RED, 3, 3, 6, false);
 
 Tunable(RFP_MAX_DEPTH, 6, 1, 10, false);
 Tunable(RFP_MARGIN_DEPTH_MUL, 65, 16, 128, true);

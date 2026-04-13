@@ -467,8 +467,9 @@ i32 Raphael::negamax(
         }
 
         // null move pruning
-        if (depth >= NMP_MIN_DEPTH && ply >= tdata.min_nmp_ply && ss->static_eval >= beta
-            && (ss - 1)->move != chess::Move::NULL_MOVE
+        const i32 nmp_margin = max(NMP_MARGIN_BASE - NMP_MARGIN_DEPTH_MUL * depth / 128, 0);
+        if (depth >= NMP_MIN_DEPTH && ply >= tdata.min_nmp_ply
+            && ss->static_eval >= beta + nmp_margin && (ss - 1)->move != chess::Move::NULL_MOVE
             && !(ttentry.flag == tt_.UPPER && ttentry.score < beta)
             && !board.is_kingpawn(board.stm())) {
             tt_.prefetch(board.hash_after<true>(chess::Move::NULL_MOVE));

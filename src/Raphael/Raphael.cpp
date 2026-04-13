@@ -467,7 +467,7 @@ i32 Raphael::negamax(
         }
 
         // null move pruning
-        if (depth >= NMP_MIN_DEPTH && ss->static_eval >= beta
+        if (depth >= NMP_MIN_DEPTH && ply >= tdata.min_nmp_ply && ss->static_eval >= beta
             && (ss - 1)->move != chess::Move::NULL_MOVE
             && !(ttentry.flag == tt_.UPPER && ttentry.score < beta)
             && !board.is_kingpawn(board.stm())) {
@@ -478,15 +478,27 @@ i32 Raphael::negamax(
             i32 red_factor = NMP_RED_BASE;
             red_factor += depth * NMP_RED_DEPTH_MUL;
             red_factor += min<i32>((ss->static_eval - beta) * NMP_RED_EVAL_MUL, NMP_RED_EVAL_MAX);
+            red_factor /= 128;
 
-            const i32 red_depth = depth - red_factor / 128;
+            const i32 red_depth = depth - red_factor;
             const i32 score = -negamax<false>(
                 tdata, red_depth, ply + 1, -beta, -beta + 1, !cutnode, ss + 1, mv
             );
 
             position.unmake_nullmove();
 
-            if (score >= beta) return (utils::is_win(score)) ? beta : score;
+            if (score >= beta) {
+                if (depth < NMP_VERIF_MIN_DEPTH || tdata.min_nmp_ply > 0)
+                    return (utils::is_win(score)) ? beta : score;
+
+                // verification search (disable nmp for a fraction of the depths)
+                tdata.min_nmp_ply = ply + red_depth * NMP_VERIF_DEPTH_FACTOR / 128;
+                const i32 verif_score
+                    = negamax<false>(tdata, red_depth, ply, beta - 1, beta, true, ss, mv + 1);
+                tdata.min_nmp_ply = 0;
+
+                if (verif_score >= beta) return verif_score;
+            }
         }
     }
 

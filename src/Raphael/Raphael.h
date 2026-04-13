@@ -80,6 +80,7 @@ private:
 
         Position<true> position_;
         History history;
+        i32 min_nmp_ply;
         i32 thread_id;
     };
 

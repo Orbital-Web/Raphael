@@ -226,7 +226,7 @@ Tunable(RAZOR_MARGIN_BASE, 304, 32, 384, true);
 
 Tunable(NMP_MIN_DEPTH, 3, 1, 10, false);
 Tunable(NMP_MARGIN_DEPTH_MUL, 1280, 1024, 4096, false);
-Tunable(NMP_MARGIN_BASE, 160, 128, 512, false);
+Tunable(NMP_MARGIN_BASE, 100, 32, 384, false);
 Tunable(NMP_RED_BASE, 531, 256, 1024, true);
 Tunable(NMP_RED_DEPTH_MUL, 25, 8, 64, false);
 Tunable(NMP_RED_EVAL_MUL, 82, 16, 128, false);

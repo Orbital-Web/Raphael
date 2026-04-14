@@ -189,9 +189,10 @@ i32 Raphael::static_eval(bool corrected) {
     assert(!is_searching_.load(memory_order_acquire));
     assert(thread_data_.size() >= 1);
 
+    i32 corrplexity;
     auto& tdata = thread_data_[0];
     const auto raw_score = tdata.position_.evaluate(!params_.datagen);
-    return (corrected) ? adjust_score(tdata, raw_score) : raw_score;
+    return (corrected) ? adjust_score(tdata, raw_score, corrplexity) : raw_score;
 }
 
 
@@ -283,7 +284,7 @@ string Raphael::get_pv_line(const PVList& pv) const {
 }
 
 
-i32 Raphael::adjust_score(const ThreadData& tdata, i32 raw_static_eval) const {
+i32 Raphael::adjust_score(const ThreadData& tdata, i32 raw_static_eval, i32& corrplexity) const {
     const auto& position = tdata.position_;
     const auto& history = tdata.history;
     const auto& board = position.board();
@@ -292,7 +293,9 @@ i32 Raphael::adjust_score(const ThreadData& tdata, i32 raw_static_eval) const {
     if (!params_.datagen) raw_static_eval = raw_static_eval * (200 - board.halfmoves()) / 200;
 
     // corrhist
-    raw_static_eval = history.correct(position, raw_static_eval);
+    const i32 correction = history.get_correction(position);
+    raw_static_eval = raw_static_eval + correction;
+    corrplexity = abs(correction);
 
     return clamp(raw_static_eval, -MATE_SCORE + 1, MATE_SCORE - 1);
 }
@@ -444,8 +447,7 @@ i32 Raphael::negamax(
             else
                 raw_static_eval = position.evaluate(!params_.datagen);
 
-            ss->static_eval = adjust_score(tdata, raw_static_eval);
-            corrplexity = history.get_squared_error(position);
+            ss->static_eval = adjust_score(tdata, raw_static_eval, corrplexity);
         }
     }
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
@@ -607,7 +609,7 @@ i32 Raphael::negamax(
             red_factor -= improving * LMR_IMPROVING;
             red_factor -= gives_check * LMR_CHECK;
             red_factor -= hist * 128 / ((is_quiet) ? LMR_QUIET_HIST_DIV : LMR_NOISY_HIST_DIV);
-            red_factor -= corrplexity / LMR_CORRPLEXITY_DIV;
+            red_factor -= corrplexity * LMR_CORRPLEXITY_MUL;
             red_factor /= 128;
 
             ss->reductions = red_factor;
@@ -724,8 +726,10 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
 
     // max ply
     const bool in_check = board.in_check();
+    i32 corrplexity = 0;
     if (ply >= MAX_DEPTH - 1)
-        return (in_check) ? 0 : adjust_score(tdata, position.evaluate(!params_.datagen));
+        return (in_check) ? 0
+                          : adjust_score(tdata, position.evaluate(!params_.datagen), corrplexity);
 
     // probe transposition table
     const auto ttkey = board.hash();
@@ -754,7 +758,7 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
         else
             raw_static_eval = position.evaluate(!params_.datagen);
 
-        static_eval = adjust_score(tdata, raw_static_eval);
+        static_eval = adjust_score(tdata, raw_static_eval, corrplexity);
 
         if (static_eval >= beta) return static_eval;
 

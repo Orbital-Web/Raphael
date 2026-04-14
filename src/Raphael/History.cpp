@@ -145,7 +145,7 @@ void History::update_corrections(
         cont_corr_entry(curr.move, curr.moving, prev1).update(bonus);
 }
 
-i32 History::correct(const Position<true>& position, i32 score) const {
+i32 History::get_correction(const Position<true>& position) const {
     const auto& board = position.board();
     const auto curr = position.prev_move(1);
     const auto prev1 = position.prev_move(2);
@@ -160,23 +160,7 @@ i32 History::correct(const Position<true>& position, i32 score) const {
                       : 0;
     correction /= CORRHIST_MAX;
 
-    return score + correction;
-}
-
-i32 History::get_squared_error(const Position<true>& position) const {
-    const auto& board = position.board();
-    const auto curr = position.prev_move(1);
-    const auto prev1 = position.prev_move(2);
-
-    const i32 pawn = pawn_corr_entry(board);
-    const i32 major = major_corr_entry(board);
-    const i32 white_np = nonpawn_corr_entry(board, chess::Color::WHITE);
-    const i32 black_np = nonpawn_corr_entry(board, chess::Color::BLACK);
-    const i32 cont1 = (curr.moving != chess::Piece::NONE && prev1.moving != chess::Piece::NONE)
-                          ? cont_corr_entry(curr.move, curr.moving, prev1)
-                          : 0;
-
-    return pawn * pawn + major * major + white_np * white_np + black_np * black_np + cont1 * cont1;
+    return correction;
 }
 
 

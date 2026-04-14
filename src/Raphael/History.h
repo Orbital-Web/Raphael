@@ -133,15 +133,13 @@ public:
      */
     void update_corrections(const Position<true>& position, i32 depth, i32 score, i32 static_eval);
 
-    /** Returns the corrected score
+    /** Returns the score correction term
      *
      * \param position current position
      * \param score score to correct
      * \returns the corrected score
      */
-    i32 correct(const Position<true>& position, i32 score) const;
-
-    i32 get_squared_error(const Position<true>& position) const;
+    i32 get_correction(const Position<true>& position) const;
 
 
     /** Zeros out all the histories */

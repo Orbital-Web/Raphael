@@ -21,10 +21,10 @@ The following are the historic elo for Raphael.
     <th><a href="https://www.computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?family=Raphael">CCRL Blitz</a></th>
     <th><a href="https://www.computerchess.org.uk/ccrl/4040/cgi/compare_engines.cgi?family=Raphael">CCRL 40/15</a></th>
   </tr>
-  <tr align="center"><td>3.3.0</td> <td>Apr 06, 2026</td> <td>3687*</td> <td>3554*</td></tr>
-  <tr align="center"><td>3.2.0</td> <td>Mar 19, 2026</td> <td>3612*</td> <td>3483 </td></tr>
-  <tr align="center"><td>3.1.0</td> <td>Mar 01, 2026</td> <td>3506 </td> <td>3416 </td></tr>
-  <tr align="center"><td>3.0.0</td> <td>Feb 12, 2026</td> <td>3321*</td> <td>3206 </td></tr>
+  <tr align="center"><td>3.3.0</td> <td>Apr 06, 2026</td> <td>3663 </td> <td>3554*</td></tr>
+  <tr align="center"><td>3.2.0</td> <td>Mar 19, 2026</td> <td>3612*</td> <td>3484 </td></tr>
+  <tr align="center"><td>3.1.0</td> <td>Mar 01, 2026</td> <td>3510 </td> <td>3416 </td></tr>
+  <tr align="center"><td>3.0.0</td> <td>Feb 12, 2026</td> <td>3252 </td> <td>3206 </td></tr>
   <tr align="center"><td>2.3.0</td> <td>Jan 25, 2026</td> <td>3146*</td> <td>3061 </td></tr>
   <tr align="center"><td>2.2.0</td> <td>Jan 08, 2026</td> <td>3035*</td> <td>2953 </td></tr>
   <tr align="center"><td>2.1.0</td> <td>Dec 31, 2025</td> <td>2739*</td> <td>2689 </td></tr>
@@ -136,7 +136,7 @@ To see all supported commands, run `uci.exe help`
     - [x] Negative extensions               (`v3.0+`)
     - [x] Cutnode negative extensions       (`v3.1+`)
     - [ ] Low depth singular extensions
-    - [ ] Hindsight extensions
+    - [x] Hindsight extensions              (`v4.0+`)
   - [x] Reductions                          (`v1.5+`)
     - [x] Late move reductions              (`v1.5+`)
     - [x] Internal iterative reduction      (`v3.0+`)

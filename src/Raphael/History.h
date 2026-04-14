@@ -141,6 +141,8 @@ public:
      */
     i32 correct(const Position<true>& position, i32 score) const;
 
+    i32 get_squared_error(const Position<true>& position) const;
+
 
     /** Zeros out all the histories */
     void clear();

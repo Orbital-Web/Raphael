@@ -432,6 +432,7 @@ i32 Raphael::negamax(
 
     const bool in_check = board.in_check();
     i32 raw_static_eval;
+    i32 corrplexity = 0;
 
     if (!ss->excluded) {
         if (in_check) {
@@ -444,6 +445,7 @@ i32 Raphael::negamax(
                 raw_static_eval = position.evaluate(!params_.datagen);
 
             ss->static_eval = adjust_score(tdata, raw_static_eval);
+            corrplexity = history.get_squared_error(position);
         }
     }
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
@@ -605,6 +607,7 @@ i32 Raphael::negamax(
             red_factor -= improving * LMR_IMPROVING;
             red_factor -= gives_check * LMR_CHECK;
             red_factor -= hist * 128 / ((is_quiet) ? LMR_QUIET_HIST_DIV : LMR_NOISY_HIST_DIV);
+            red_factor -= corrplexity / LMR_CORRPLEXITY_DIV;
             red_factor /= 128;
 
             ss->reductions = red_factor;

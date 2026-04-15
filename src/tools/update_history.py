@@ -1,13 +1,40 @@
 # script to help edit NNUE/history.txt
 from pathlib import Path
+from typing import TypedDict
 
 HISTORY_PATH = Path(__file__).parents[1] / "NNUE" / "history.txt"
+START_KEYWORD = "NET/DATA ID"
 
 
-def _read_history() -> list[str]:
+class History(TypedDict):
+    lines: list[str]
+    rows: list[int]
+    cols: list[int]
+
+
+def _read_history() -> History:
     with HISTORY_PATH.open("r", encoding="utf-8") as f:
-        data = f.readlines()
-    return data
+        lines = f.readlines()
+
+    started = False
+    rows: list[int] = []
+    cols: list[int] = [0]
+
+    for row, line in enumerate(lines):
+        if line.startswith(START_KEYWORD):
+            started = True
+            for col, c in enumerate(line):
+                if c == "|":
+                    cols.append(col)
+
+        if started and line.startswith("-"):
+            rows.append(row)
+
+    return {
+        "lines": lines,
+        "rows": rows,
+        "cols": cols,
+    }
 
 
 def _write_history(new_history: str) -> None:
@@ -15,7 +42,7 @@ def _write_history(new_history: str) -> None:
         f.write(new_history)
 
 
-def _find_at(history: list[str]) -> tuple[int, int, int, int]:
+def _find_at(history: History) -> tuple[int, int, int, int]:
     """Finds the bounds of the @ symbol cell
 
     Args:
@@ -25,32 +52,25 @@ def _find_at(history: list[str]) -> tuple[int, int, int, int]:
         [r0, c0, r1, c1]: a tuple with (r0, c0) being the coordinate of the '@' symbol,
         and (r1, c1) being the bottom right corner of the cell the symbol resides in
     """
-    region = 0  # 0 - before @, 1 - after @ in the cell, 2 - after @ out the cell
+    found = False
     r0, c0, r1, c1 = (0, 0, 0, 0)
 
-    for row, line in enumerate(history):
+    for row, line in enumerate(history["lines"]):
         split = line.split("@")
-
         if len(split) == 1:
-            if region == 1:
-                if line[c0].startswith("-"):
-                    region = 2
-                else:
-                    r1 = row
             continue
-
-        if len(split) != 2 or region != 0:
-            print(split)
+        if len(split) != 2 or found:
             raise ValueError(f"Found multiple '@' in line {row + 1}")
-        before, after = split
-        cell, *_ = after.split("|", 1)
-        region = 1
 
+        found = True
         r0 = row
-        c0 = len(before)
-        c1 = c0 + len(cell)
+        c0 = len(split[0])
+        r1 = next((r for r in history["rows"] if r > r0), -1)
+        c1 = next((c for c in history["cols"] if c > c0), -1)
+        assert r1 != -1
+        assert c1 != -1
 
-    if region == 0:
+    if not found:
         raise ValueError("Could not find '@'")
 
     return (r0, c0, r1, c1)
@@ -66,8 +86,8 @@ def extend() -> None:
 
     started = False
     new_history: str = ""
-    for line in history:
-        if line.startswith("NET/DATA"):
+    for line in history["lines"]:
+        if line.startswith(START_KEYWORD):
             started = True
         if not started:
             new_history += line
@@ -95,7 +115,7 @@ def insert() -> None:
             break
         raw_content += cont + "\n"
 
-    max_width = c1 - c0
+    max_width = c1 - c0 - 1
     content: list[str] = []
     for cont in raw_content.split("\n"):
         buffer, *words = cont.split(" ")
@@ -113,15 +133,16 @@ def insert() -> None:
         if buffer:
             content.append(buffer)
 
-    new_history: str = "".join(history[:r0])
-    for row, (line, cont) in enumerate(zip(history[r0:], content), r0):
+    print(r0, r1, max_width)
+    new_history: str = "".join(history["lines"][:r0])
+    for row, (line, cont) in enumerate(zip(history["lines"][r0:], content), r0):
         if row > r1:
             break
 
-        before, after = line[:c0], line[c1 + 1 :]
-        new_history += before + cont.ljust(c1 - c0 + 1) + after
+        before, after = line[:c0], line[c1:]
+        new_history += before + cont.ljust(c1 - c0) + after
 
-    new_history += "".join(history[row + 1 :])
+    new_history += "".join(history["lines"][row + 1 :])
 
     _write_history(new_history)
 

@@ -251,11 +251,15 @@ void MoveGenerator::score_noisies() {
 
 void MoveGenerator::score_quiets() {
     const auto& board = position_->board();
+    const auto threats = board.threats();
 
     for (usize i = idx_; i < end_; i++) {
         auto& smove = (*movelist_)[i];
+        const auto& moving = board.at(smove.move.from());
+
         smove.score = history_->get_quietscore(smove.move, *position_);
-        if (board.gives_direct_check(smove.move)) smove.score += DIRECT_CHECK_BONUS;
+        smove.score += board.gives_direct_check(smove.move) * DIRECT_CHECK_BONUS;
+        smove.score += threats.is_set(smove.move.from()) * ESCAPE_TABLE[moving];
     }
 }
 

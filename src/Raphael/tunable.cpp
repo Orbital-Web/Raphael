@@ -31,24 +31,34 @@ void update_lmr_table() {
 }
 
 void update_see_table() {
-    SEE_TABLE[0] = SEE_PAWN_VAL;
-    SEE_TABLE[1] = SEE_KNIGHT_VAL;
-    SEE_TABLE[2] = SEE_BISHOP_VAL;
-    SEE_TABLE[3] = SEE_ROOK_VAL;
-    SEE_TABLE[4] = SEE_QUEEN_VAL;
-    SEE_TABLE[5] = 0;
-    SEE_TABLE[6] = SEE_PAWN_VAL;
-    SEE_TABLE[7] = SEE_KNIGHT_VAL;
-    SEE_TABLE[8] = SEE_BISHOP_VAL;
-    SEE_TABLE[9] = SEE_ROOK_VAL;
-    SEE_TABLE[10] = SEE_QUEEN_VAL;
-    SEE_TABLE[11] = 0;
-    SEE_TABLE[12] = 0;
+    SEE_TABLE[chess::Piece::WHITEPAWN] = SEE_PAWN_VAL;
+    SEE_TABLE[chess::Piece::WHITEKNIGHT] = SEE_KNIGHT_VAL;
+    SEE_TABLE[chess::Piece::WHITEBISHOP] = SEE_BISHOP_VAL;
+    SEE_TABLE[chess::Piece::WHITEROOK] = SEE_ROOK_VAL;
+    SEE_TABLE[chess::Piece::WHITEQUEEN] = SEE_QUEEN_VAL;
+    SEE_TABLE[chess::Piece::WHITEKING] = 0;
+    SEE_TABLE[chess::Piece::BLACKPAWN] = SEE_PAWN_VAL;
+    SEE_TABLE[chess::Piece::BLACKKNIGHT] = SEE_KNIGHT_VAL;
+    SEE_TABLE[chess::Piece::BLACKBISHOP] = SEE_BISHOP_VAL;
+    SEE_TABLE[chess::Piece::BLACKROOK] = SEE_ROOK_VAL;
+    SEE_TABLE[chess::Piece::BLACKQUEEN] = SEE_QUEEN_VAL;
+    SEE_TABLE[chess::Piece::BLACKKING] = 0;
+    SEE_TABLE[chess::Piece::NONE] = 0;
+}
+
+void update_escape_table() {
+    ESCAPE_TABLE[chess::PieceType::PAWN] = 0;
+    ESCAPE_TABLE[chess::PieceType::KNIGHT] = CE_KNIGHT_VAL;
+    ESCAPE_TABLE[chess::PieceType::BISHOP] = CE_BISHOP_VAL;
+    ESCAPE_TABLE[chess::PieceType::ROOK] = CE_ROOK_VAL;
+    ESCAPE_TABLE[chess::PieceType::QUEEN] = CE_QUEEN_VAL;
+    ESCAPE_TABLE[chess::PieceType::KING] = 0;
 }
 
 void init_tunables() {
     update_lmp_table();
     update_lmr_table();
     update_see_table();
+    update_escape_table();
 }
 }  // namespace raphael

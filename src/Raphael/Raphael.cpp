@@ -554,9 +554,11 @@ i32 Raphael::negamax(
             }
 
             // SEE pruning
-            const i32 see_thresh = (is_quiet) ? SEE_QUIET_DEPTH_MUL * lmr_fdepth / DEPTH_SCALE
-                                                    * lmr_fdepth / DEPTH_SCALE
-                                              : SEE_NOISY_DEPTH_MUL * fdepth / DEPTH_SCALE;
+            const i32 see_thresh
+                = (is_quiet)
+                      ? SEE_QUIET_DEPTH_MUL * lmr_fdepth / DEPTH_SCALE * lmr_fdepth / DEPTH_SCALE
+                      : min(SEE_NOISY_DEPTH_MUL * fdepth / DEPTH_SCALE - hist / SEE_NOISY_HIST_DIV,
+                            0);
             if (!SEE::see(move, board, see_thresh)) continue;
         }
 

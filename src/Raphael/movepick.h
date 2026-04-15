@@ -74,6 +74,10 @@ public:
     );
 
 
+    /** Returns the current stage of the movepicker */
+    Stage stage() const;
+
+
     /** Returns the next move
      *
      * \returns the next move in the generator

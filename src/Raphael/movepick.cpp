@@ -35,6 +35,9 @@ MoveGenerator MoveGenerator::quiescence(
 }
 
 
+MoveGenerator::Stage MoveGenerator::stage() const { return stage_; }
+
+
 chess::Move MoveGenerator::next() {
     const auto& board = position_->board();
 

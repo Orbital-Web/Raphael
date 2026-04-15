@@ -554,12 +554,13 @@ i32 Raphael::negamax(
             }
 
             // SEE pruning
+            const bool skip_see_prune = generator.stage() == MoveGenerator::Stage::GOOD_NOISY;
             const i32 see_thresh
                 = (is_quiet)
                       ? SEE_QUIET_DEPTH_MUL * lmr_fdepth / DEPTH_SCALE * lmr_fdepth / DEPTH_SCALE
                       : min(SEE_NOISY_DEPTH_MUL * fdepth / DEPTH_SCALE - hist / SEE_NOISY_HIST_DIV,
                             0);
-            if (!SEE::see(move, board, see_thresh)) continue;
+            if (!skip_see_prune && !SEE::see(move, board, see_thresh)) continue;
         }
 
         // extensions

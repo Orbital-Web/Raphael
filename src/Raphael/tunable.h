@@ -306,10 +306,10 @@ Tunable(GOOD_NOISY_SEE_MUL, 16, 16, 128, false);
 Tunable(DIRECT_CHECK_BONUS, 4947, 1024, 8192, true);
 
 inline MultiArray<i32, 13> ESCAPE_TABLE;
-TunableCallback(CE_KNIGHT_VAL, 2048, 0, 4096, update_escape_table, true);
-TunableCallback(CE_BISHOP_VAL, 2048, 0, 4096, update_escape_table, true);
-TunableCallback(CE_ROOK_VAL, 3072, 2048, 6144, update_escape_table, true);
-TunableCallback(CE_QUEEN_VAL, 5120, 3072, 8192, update_escape_table, true);
+TunableCallback(ESC_KNIGHT_VAL, 3400, 1024, 4096, update_escape_table, true);
+TunableCallback(ESC_BISHOP_VAL, 3400, 1024, 4096, update_escape_table, true);
+TunableCallback(ESC_ROOK_VAL, 6000, 2048, 8192, update_escape_table, true);
+TunableCallback(ESC_QUEEN_VAL, 8192, 4096, 16384, update_escape_table, true);
 
 Tunable(HISTORY_BONUS_DEPTH_MUL, 172, 32, 384, true);
 Tunable(HISTORY_BONUS_BASE, 129, 32, 384, true);

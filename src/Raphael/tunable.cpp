@@ -48,10 +48,10 @@ void update_see_table() {
 
 void update_escape_table() {
     ESCAPE_TABLE[chess::PieceType::PAWN] = 0;
-    ESCAPE_TABLE[chess::PieceType::KNIGHT] = CE_KNIGHT_VAL;
-    ESCAPE_TABLE[chess::PieceType::BISHOP] = CE_BISHOP_VAL;
-    ESCAPE_TABLE[chess::PieceType::ROOK] = CE_ROOK_VAL;
-    ESCAPE_TABLE[chess::PieceType::QUEEN] = CE_QUEEN_VAL;
+    ESCAPE_TABLE[chess::PieceType::KNIGHT] = ESC_KNIGHT_VAL;
+    ESCAPE_TABLE[chess::PieceType::BISHOP] = ESC_BISHOP_VAL;
+    ESCAPE_TABLE[chess::PieceType::ROOK] = ESC_ROOK_VAL;
+    ESCAPE_TABLE[chess::PieceType::QUEEN] = ESC_QUEEN_VAL;
     ESCAPE_TABLE[chess::PieceType::KING] = 0;
 }
 

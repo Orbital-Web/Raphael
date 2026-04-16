@@ -211,8 +211,9 @@ Tunable(ASP_INIT_SIZE, 36, 5, 100, true);
 Tunable(ASP_WIDENING_FACTOR, 96, 16, 192, true);
 
 Tunable(TT_REPL_DEPTH_MARGIN, 512, 0, 1024, false);
+Tunable(TT_REPL_PV_MARGIN, 256, 0, 768, false);
 Tunable(TT_VALUE_DEPTH_WEIGHT, 128, 0, 512, false);
-Tunable(TT_VALUE_AGE_WEIGHT, 128, 0, 512, false);
+Tunable(TT_VALUE_AGE_WEIGHT, 256, 0, 512, false);
 
 // negamax
 Tunable(IIR_MIN_DEPTH, 426, 384, 768, true);
@@ -268,6 +269,7 @@ TunableCallback(LMR_QUIET_DIV, 354, 128, 512, update_lmr_table, true);
 TunableCallback(LMR_NOISY_DIV, 434, 128, 512, update_lmr_table, true);
 Tunable(LMR_NONPV, 98, 32, 384, true);
 Tunable(LMR_CUTNODE, 152, 32, 384, true);
+Tunable(LMR_TTPV, 128, 32, 384, true);
 Tunable(LMR_IMPROVING, 86, 32, 384, true);
 Tunable(LMR_CHECK, 152, 32, 384, true);
 Tunable(LMR_QUIET_HIST_DIV, 11524, 4096, 16384, true);

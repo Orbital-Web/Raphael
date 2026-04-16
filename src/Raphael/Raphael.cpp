@@ -426,6 +426,7 @@ i32 Raphael::negamax(
             return ttentry.score;
     }
     const auto ttmove = ttentry.move;
+    const bool ttpv = is_PV || ttentry.was_pv;
 
     // internal iterative reduction
     if (fdepth >= IIR_MIN_DEPTH && !ss->excluded && (is_PV || cutnode) && !ttmove)
@@ -609,6 +610,7 @@ i32 Raphael::negamax(
             i32 fred = LMR_TABLE[is_quiet][fdepth / DEPTH_SCALE][move_searched];
             fred += !is_PV * LMR_NONPV;
             fred += cutnode * LMR_CUTNODE;
+            fred -= ttpv * LMR_TTPV;
             fred -= improving * LMR_IMPROVING;
             fred -= gives_check * LMR_CHECK;
             fred -= hist * DEPTH_SCALE / ((is_quiet) ? LMR_QUIET_HIST_DIV : LMR_NOISY_HIST_DIV);
@@ -711,7 +713,7 @@ i32 Raphael::negamax(
             && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
                 || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
             history.update_corrections(position, fdepth, bestscore, ss->static_eval);
-        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth, ttflag, ply);
+        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth, ttpv, ttflag, ply);
     }
 
     return bestscore;
@@ -739,6 +741,7 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
     auto ttentry = TranspositionTable::ProbedEntry();
     const bool tthit = tt_.get(ttentry, ttkey, ply);
     const auto ttmove = ttentry.move;
+    const bool ttpv = is_PV || ttentry.was_pv;
 
     // tt cutoff
     if (!is_PV && tthit
@@ -830,7 +833,7 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
 
     // update transposition table
     if (!stop_.load(memory_order_relaxed))
-        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, 0, ttflag, ply);
+        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, 0, ttpv, ttflag, ply);
 
     return bestscore;
 }

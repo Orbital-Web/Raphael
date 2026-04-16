@@ -215,22 +215,22 @@ Tunable(TT_VALUE_DEPTH_WEIGHT, 1, 0, 4, false);
 Tunable(TT_VALUE_AGE_WEIGHT, 1, 0, 4, false);
 
 // negamax
-Tunable(IIR_MIN_DEPTH, 384, 384, 768, false);
-Tunable(IIR_RED, 128, 64, 256, false);
-Tunable(HINDSIGHT_MIN_RED, 384, 384, 768, false);
-Tunable(HINDSIGHT_EXT, 128, 64, 256, false);
+Tunable(IIR_MIN_DEPTH, 384, 384, 768, true);
+Tunable(IIR_RED, 128, 64, 256, true);
+Tunable(HINDSIGHT_MIN_RED, 384, 384, 768, true);
+Tunable(HINDSIGHT_EXT, 128, 64, 256, true);
 
-Tunable(RFP_MAX_DEPTH, 768, 128, 1280, false);
+Tunable(RFP_MAX_DEPTH, 768, 128, 1280, true);
 Tunable(RFP_MARGIN_DEPTH_MUL, 65, 16, 128, true);
 Tunable(RFP_MARGIN_IMPROVING, 40, 16, 128, true);
 
-Tunable(RAZOR_MAX_DEPTH, 512, 128, 1280, false);
+Tunable(RAZOR_MAX_DEPTH, 512, 128, 1280, true);
 Tunable(RAZOR_MARGIN_DEPTH_MUL, 249, 32, 384, true);
 Tunable(RAZOR_MARGIN_BASE, 304, 32, 384, true);
 
-Tunable(NMP_MIN_DEPTH, 384, 128, 1280, false);
-Tunable(NMP_MARGIN_DEPTH_MUL, 1280, 1024, 4096, false);
-Tunable(NMP_MARGIN_BASE, 100, 32, 384, false);
+Tunable(NMP_MIN_DEPTH, 384, 128, 1280, true);
+Tunable(NMP_MARGIN_DEPTH_MUL, 1280, 1024, 4096, true);
+Tunable(NMP_MARGIN_BASE, 100, 32, 384, true);
 Tunable(NMP_RED_BASE, 531, 256, 1024, true);
 Tunable(NMP_RED_DEPTH_MUL, 25, 8, 64, false);
 Tunable(NMP_RED_EVAL_MUL, 82, 16, 128, false);
@@ -241,25 +241,25 @@ Tunable(NMP_VERIF_DEPTH_FACTOR, 96, 32, 128, false);
 inline MultiArray<i32, 2, 256> LMP_TABLE;  // lmp moves threshold[improving][depth]
 TunableCallback(LMP_THRESH_BASE, 3, 1, 12, update_lmp_table, false);
 
-Tunable(FP_MAX_DEPTH, 896, 512, 1536, false);
+Tunable(FP_MAX_DEPTH, 896, 512, 1536, true);
 Tunable(FP_MARGIN_DEPTH_MUL, 85, 32, 384, true);
 Tunable(FP_MARGIN_BASE, 106, 32, 384, true);
 
 Tunable(SEE_QUIET_DEPTH_MUL, -27, -128, -16, true);
 Tunable(SEE_NOISY_DEPTH_MUL, -104, -256, -32, true);
 
-Tunable(SE_MIN_DEPTH, 1024, 768, 1536, false);
+Tunable(SE_MIN_DEPTH, 1024, 768, 1536, true);
 Tunable(SE_MIN_TT_DEPTH, 384, 384, 768, false);
 Tunable(SE_MARGIN_DEPTH_MUL, 128, 64, 512, false);
 Tunable(DE_MARGIN, 30, 8, 64, false);
 Tunable(TE_MARGIN, 100, 32, 128, false);
-Tunable(SE_EXT, 128, 64, 256, false);
-Tunable(DE_EXT, 128, 64, 256, false);
-Tunable(TE_EXT, 128, 64, 256, false);
-Tunable(NE_RED, 128, 64, 256, false);
-Tunable(CUTNODE_NE_RED, 128, 64, 256, false);
+Tunable(SE_EXT, 128, 64, 256, true);
+Tunable(DE_EXT, 128, 64, 256, true);
+Tunable(TE_EXT, 128, 64, 256, true);
+Tunable(NE_RED, 128, 64, 256, true);
+Tunable(CUTNODE_NE_RED, 128, 64, 256, true);
 
-Tunable(LMR_MIN_DEPTH, 384, 128, 640, false);
+Tunable(LMR_MIN_DEPTH, 384, 128, 640, true);
 Tunable(LMR_FROMMOVE, 5, 2, 8, false);
 inline MultiArray<i32, 2, 256, 256> LMR_TABLE;  // lmr reduction[quiet][ply][move_searched]
 TunableCallback(LMR_QUIET_BASE, 177, 32, 384, update_lmr_table, true);
@@ -277,8 +277,8 @@ Tunable(DO_DEEPER_BASE, 40, 0, 128, false);
 Tunable(DO_DEEPER_DEPTH_MUL, 6, 1, 12, false);
 Tunable(DO_SHALLOWER_BASE, 0, 0, 128, false);
 Tunable(DO_SHALLOWER_DEPTH_MUL, 1, 1, 12, false);
-Tunable(DO_DEEPER_EXT, 128, 64, 256, false);
-Tunable(DO_SHALLOWER_RED, 128, 64, 256, false);
+Tunable(DO_DEEPER_EXT, 128, 64, 256, true);
+Tunable(DO_SHALLOWER_RED, 128, 64, 256, true);
 
 // quiescence
 Tunable(QS_MAX_MOVES, 3, 1, 5, false);
@@ -332,12 +332,12 @@ Tunable(NONPAWN_CORRHIST_WEIGHT, 48, 32, 384, true);
 Tunable(CONT1_CORRHIST_WEIGHT, 64, 32, 384, true);
 
 // eval scaling
-Tunable(MAT_SCALE_BASE, 25100, 20000, 30000, true);
-Tunable(MAT_SCALE_PAWN, 110, 0, 200, true);
-Tunable(MAT_SCALE_KNIGHT, 340, 200, 600, true);
-Tunable(MAT_SCALE_BISHOP, 340, 200, 600, true);
-Tunable(MAT_SCALE_ROOK, 590, 400, 900, true);
-Tunable(MAT_SCALE_QUEEN, 970, 800, 1600, true);
+Tunable(MAT_SCALE_BASE, 25100, 20000, 30000, false);
+Tunable(MAT_SCALE_PAWN, 110, 0, 200, false);
+Tunable(MAT_SCALE_KNIGHT, 340, 200, 600, false);
+Tunable(MAT_SCALE_BISHOP, 340, 200, 600, false);
+Tunable(MAT_SCALE_ROOK, 590, 400, 900, false);
+Tunable(MAT_SCALE_QUEEN, 970, 800, 1600, false);
 
 // commands
 static constexpr i32 BENCH_DEPTH = 14;

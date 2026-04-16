@@ -418,7 +418,7 @@ i32 Raphael::negamax(
         tthit = tt_.get(ttentry, ttkey, ply);
 
         // tt cutoff
-        if (!is_PV && tthit && ttentry.depth * DEPTH_SCALE >= fdepth
+        if (!is_PV && tthit && ttentry.fdepth >= fdepth
             && (ttentry.flag == tt_.EXACT                                 // exact
                 || (ttentry.flag == tt_.LOWER && ttentry.score >= beta)   // lower
                 || (ttentry.flag == tt_.UPPER && ttentry.score <= alpha)  // upper
@@ -484,7 +484,6 @@ i32 Raphael::negamax(
             i32 fred = NMP_RED_BASE;
             fred += fdepth * NMP_RED_DEPTH_MUL / 128;
             fred += min<i32>((ss->static_eval - beta) * NMP_RED_EVAL_MUL, NMP_RED_EVAL_MAX);
-            fred = fred / DEPTH_SCALE * DEPTH_SCALE;
 
             const i32 red_fdepth = fdepth - fred;
             const i32 score = -negamax<false>(
@@ -533,7 +532,7 @@ i32 Raphael::negamax(
 
         // moveloop pruning
         if (!is_root && !utils::is_loss(bestscore) && (!params_.datagen || !is_PV)) {
-            const auto lmr_fdepth = max(fdepth - (base_lmr / DEPTH_SCALE * DEPTH_SCALE), 0);
+            const auto lmr_fdepth = max(fdepth - base_lmr, 0);
 
             if (is_quiet) {
                 // late move pruning
@@ -562,15 +561,14 @@ i32 Raphael::negamax(
         // extensions
         i32 fext = 0;
         if (!is_root && fdepth >= SE_MIN_DEPTH && move == ttmove && !ss->excluded
-            && ttentry.depth * DEPTH_SCALE >= fdepth - SE_MIN_TT_DEPTH
-            && ttentry.flag != tt_.UPPER) {
+            && ttentry.fdepth >= fdepth - SE_MIN_TT_DEPTH && ttentry.flag != tt_.UPPER) {
             const i32 s_beta = max(
                 ttentry.score
                     - SE_MARGIN_DEPTH_MUL * ((ttentry.flag == tt_.EXACT) ? 1 : 2) * fdepth
                           / (DEPTH_SCALE * 128),
                 -MATE_SCORE + 1
             );
-            const i32 s_fdepth = ((fdepth - DEPTH_SCALE) / 2) / DEPTH_SCALE * DEPTH_SCALE;
+            const i32 s_fdepth = (fdepth - DEPTH_SCALE) / 2;
 
             ss->excluded = move;
             const i32 score
@@ -612,7 +610,6 @@ i32 Raphael::negamax(
             fred -= improving * LMR_IMPROVING;
             fred -= gives_check * LMR_CHECK;
             fred -= hist * DEPTH_SCALE / ((is_quiet) ? LMR_QUIET_HIST_DIV : LMR_NOISY_HIST_DIV);
-            fred = fred / DEPTH_SCALE * DEPTH_SCALE;
 
             ss->freductions = fred;
             const i32 red_fdepth = min(max(new_fdepth - fred, DEPTH_SCALE), new_fdepth);
@@ -712,7 +709,7 @@ i32 Raphael::negamax(
             && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
                 || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
             history.update_corrections(position, fdepth / DEPTH_SCALE, bestscore, ss->static_eval);
-        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth / DEPTH_SCALE, ttflag, ply);
+        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth, ttflag, ply);
     }
 
     return bestscore;
@@ -829,7 +826,7 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
 
     // update transposition table
     if (!stop_.load(memory_order_relaxed))
-        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, 0, ttflag, ply);
+        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, 0 * DEPTH_SCALE, ttflag, ply);
 
     return bestscore;
 }

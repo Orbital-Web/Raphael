@@ -210,7 +210,7 @@ Tunable(ASP_MIN_DEPTH, 3, 2, 5, false);
 Tunable(ASP_INIT_SIZE, 49, 5, 100, true);
 Tunable(ASP_WIDENING_FACTOR, 13, 2, 24, true);
 
-Tunable(TT_REPL_DEPTH_MARGIN, 4, 0, 8, false);
+Tunable(TT_REPL_DEPTH_MARGIN, 512, 0, 1024, false);
 Tunable(TT_VALUE_DEPTH_WEIGHT, 1, 0, 4, false);
 Tunable(TT_VALUE_AGE_WEIGHT, 1, 0, 4, false);
 

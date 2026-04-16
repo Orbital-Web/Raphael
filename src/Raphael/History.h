@@ -127,11 +127,11 @@ public:
     /** Updates the correction histories
      *
      * \param position current position
-     * \param fdepth current fractionl depth
+     * \param depth current depth
      * \param score current score
      * \param static_eval current static eval
      */
-    void update_corrections(const Position<true>& position, i32 fdepth, i32 score, i32 static_eval);
+    void update_corrections(const Position<true>& position, i32 depth, i32 score, i32 static_eval);
 
     /** Returns the corrected score
      *

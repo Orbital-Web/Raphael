@@ -709,7 +709,7 @@ i32 Raphael::negamax(
         if (!in_check && (bestmove == chess::Move::NO_MOVE || board.is_quiet(bestmove))
             && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
                 || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
-            history.update_corrections(position, fdepth, bestscore, ss->static_eval);
+            history.update_corrections(position, fdepth / DEPTH_SCALE, bestscore, ss->static_eval);
         tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth / DEPTH_SCALE, ttflag, ply);
     }
 

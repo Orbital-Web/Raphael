@@ -20,18 +20,20 @@ public:
         i16 static_eval;  // static eval of the position
         u16 move;         // bestmove
         u16 fdepth;       // max MAX_DEPTH * DEPTH_SCALE
-        u8 age_flag;      // 6 bits age, 2 bits flag
+        u8 age_pv_flag;   // 5 bits age, 1 bit pv, 2 bits flag
         u8 pad;           // find a use, I guess
 
         u32 age() const;
+        bool pv() const;
         Flag flag() const;
 
         /** Sets the age and flag of the entry
          *
          * \param age age to set
+         * \param pv pv flag to set
          * \param flag flag to set
          */
-        void set_age_flag(u32 age, Flag flag);
+        void set_age_pv_flag(u32 age, bool pv, Flag flag);
 
         /** Returns how valuable this entry is
          *
@@ -55,6 +57,7 @@ public:
         i32 static_eval;
         i32 fdepth;
         chess::Move move;
+        bool was_pv;
         Flag flag;
     };
 
@@ -64,7 +67,7 @@ private:
     Cluster* table_;
 
     u32 age_ = 0;
-    static constexpr u32 AGE_BITS = 6;
+    static constexpr u32 AGE_BITS = 5;
     static constexpr u32 MAX_AGE = (1 << AGE_BITS) - 1;
 
 
@@ -109,10 +112,20 @@ public:
      * \param static_eval static eval of the position
      * \param move bestmove
      * \param fdepth fractional depth of the entry
+     * \param pv whether this entry belongs to a pv
      * \param flag invalid, lower, exact, or upper
      * \param ply current distance from root
      */
-    void set(u64 key, i32 score, i32 static_eval, chess::Move move, i32 fdepth, Flag flag, i32 ply);
+    void set(
+        u64 key,
+        i32 score,
+        i32 static_eval,
+        chess::Move move,
+        i32 fdepth,
+        bool pv,
+        Flag flag,
+        i32 ply
+    );
 
     /** Retrieves the static eval for a given key
      *

@@ -228,7 +228,7 @@ Tunable(RAZOR_MAX_DEPTH, 4096, 1024, 10240, false);
 Tunable(RAZOR_MARGIN_DEPTH_MUL, 249, 32, 384, true);
 Tunable(RAZOR_MARGIN_BASE, 304, 32, 384, true);
 
-Tunable(NMP_MIN_DEPTH, 3024, 1024, 10240, false);
+Tunable(NMP_MIN_DEPTH, 3072, 1024, 10240, false);
 Tunable(NMP_MARGIN_DEPTH_MUL, 1280, 1024, 4096, false);
 Tunable(NMP_MARGIN_BASE, 100, 32, 384, false);
 Tunable(NMP_RED_BASE, 4248, 2048, 8192, true);

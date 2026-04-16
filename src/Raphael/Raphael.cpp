@@ -418,7 +418,7 @@ i32 Raphael::negamax(
         tthit = tt_.get(ttentry, ttkey, ply);
 
         // tt cutoff
-        if (!is_PV && tthit && ttentry.fdepth - TT_CUTOFF_MARGIN >= fdepth
+        if (!is_PV && tthit && ttentry.fdepth >= fdepth
             && (ttentry.flag == tt_.EXACT                                 // exact
                 || (ttentry.flag == tt_.LOWER && ttentry.score >= beta)   // lower
                 || (ttentry.flag == tt_.UPPER && ttentry.score <= alpha)  // upper
@@ -708,7 +708,7 @@ i32 Raphael::negamax(
         if (!in_check && (bestmove == chess::Move::NO_MOVE || board.is_quiet(bestmove))
             && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
                 || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
-            history.update_corrections(position, fdepth / DEPTH_SCALE, bestscore, ss->static_eval);
+            history.update_corrections(position, fdepth, bestscore, ss->static_eval);
         tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth, ttflag, ply);
     }
 

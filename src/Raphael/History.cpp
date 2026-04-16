@@ -132,10 +132,10 @@ i32 History::get_noisyscore(chess::Move move, chess::Piece captured) const {
 
 
 void History::update_corrections(
-    const Position<true>& position, i32 depth, i32 score, i32 static_eval
+    const Position<true>& position, i32 fdepth, i32 score, i32 static_eval
 ) {
     const auto bonus = clamp(
-        (score - static_eval) * depth / CORRHIST_BONUS_DEPTH_DIV,
+        (score - static_eval) * fdepth / (DEPTH_SCALE * CORRHIST_BONUS_DEPTH_DIV),
         -CORRHIST_BONUS_MAX,
         CORRHIST_BONUS_MAX
     );

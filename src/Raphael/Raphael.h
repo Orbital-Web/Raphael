@@ -65,7 +65,7 @@ private:
         chess::Move move = chess::Move::NO_MOVE;
         chess::Move killer = chess::Move::NO_MOVE;
         chess::Move excluded = chess::Move::NO_MOVE;
-        i32 freductions = 0;
+        i16 freductions = 0;
     };
 
     struct MoveStack {

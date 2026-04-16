@@ -215,6 +215,8 @@ Tunable(TT_VALUE_DEPTH_WEIGHT, 1, 0, 4, false);
 Tunable(TT_VALUE_AGE_WEIGHT, 1, 0, 4, false);
 
 // negamax
+Tunable(TT_CUTOFF_MARGIN, 512, 0, 1024, false);
+
 Tunable(IIR_MIN_DEPTH, 3072, 3072, 6144, false);
 Tunable(IIR_RED, 1024, 512, 2048, false);
 Tunable(HINDSIGHT_MIN_RED, 3072, 3072, 6144, false);

@@ -53,33 +53,33 @@ public:
     History();
 
 
-    /** Computes the quiet history bonus score at a given depth
+    /** Computes the quiet history bonus score at a given fdepth
      *
-     * \param depth current depth
+     * \param fdepth current fractional depth
      * \returns the bonus score
      */
-    i32 quiet_bonus(i32 depth) const;
+    i32 quiet_bonus(i32 fdepth) const;
 
-    /** Computes the noisy history bonus score at a given depth
+    /** Computes the noisy history bonus score at a given fdepth
      *
-     * \param depth current depth
+     * \param fdepth current fractional depth
      * \returns the bonus score
      */
-    i32 noisy_bonus(i32 depth) const;
+    i32 noisy_bonus(i32 fdepth) const;
 
-    /** Computes the quiet history penalty score at a given depth
+    /** Computes the quiet history penalty score at a given fdepth
      *
-     * \param depth current depth
+     * \param fdepth current fractional depth
      * \returns the penalty score (already negative)
      */
-    i32 quiet_penalty(i32 depth) const;
+    i32 quiet_penalty(i32 fdepth) const;
 
-    /** Computes the noisy history penalty score at a given depth
+    /** Computes the noisy history penalty score at a given fdepth
      *
-     * \param depth current depth
+     * \param fdepth current fractional depth
      * \returns the penalty score (already negative)
      */
-    i32 noisy_penalty(i32 depth) const;
+    i32 noisy_penalty(i32 fdepth) const;
 
 
     /** Applies a bonus to the quiet history score
@@ -127,11 +127,11 @@ public:
     /** Updates the correction histories
      *
      * \param position current position
-     * \param depth current depth
+     * \param fdepth current fractionl depth
      * \param score current score
      * \param static_eval current static eval
      */
-    void update_corrections(const Position<true>& position, i32 depth, i32 score, i32 static_eval);
+    void update_corrections(const Position<true>& position, i32 fdepth, i32 score, i32 static_eval);
 
     /** Returns the corrected score
      *

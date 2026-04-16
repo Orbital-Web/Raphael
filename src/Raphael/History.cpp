@@ -46,21 +46,28 @@ History::History()
       cont_correction_{} {}
 
 
-i32 History::quiet_bonus(i32 depth) const {
-    return min<i32>(HISTORY_BONUS_DEPTH_MUL * depth + HISTORY_BONUS_BASE, HISTORY_BONUS_MAX);
+i32 History::quiet_bonus(i32 fdepth) const {
+    return min<i32>(
+        HISTORY_BONUS_DEPTH_MUL * fdepth / DEPTH_SCALE + HISTORY_BONUS_BASE, HISTORY_BONUS_MAX
+    );
 }
 
-i32 History::noisy_bonus(i32 depth) const {
-    return min<i32>(CAPTHIST_BONUS_DEPTH_MUL * depth + CAPTHIST_BONUS_BASE, CAPTHIST_BONUS_MAX);
+i32 History::noisy_bonus(i32 fdepth) const {
+    return min<i32>(
+        CAPTHIST_BONUS_DEPTH_MUL * fdepth / DEPTH_SCALE + CAPTHIST_BONUS_BASE, CAPTHIST_BONUS_MAX
+    );
 }
 
-i32 History::quiet_penalty(i32 depth) const {
-    return -min<i32>(HISTORY_PENALTY_DEPTH_MUL * depth + HISTORY_PENALTY_BASE, HISTORY_PENALTY_MAX);
-}
-
-i32 History::noisy_penalty(i32 depth) const {
+i32 History::quiet_penalty(i32 fdepth) const {
     return -min<i32>(
-        CAPTHIST_PENALTY_DEPTH_MUL * depth + CAPTHIST_PENALTY_BASE, CAPTHIST_PENALTY_MAX
+        HISTORY_PENALTY_DEPTH_MUL * fdepth / DEPTH_SCALE + HISTORY_PENALTY_BASE, HISTORY_PENALTY_MAX
+    );
+}
+
+i32 History::noisy_penalty(i32 fdepth) const {
+    return -min<i32>(
+        CAPTHIST_PENALTY_DEPTH_MUL * fdepth / DEPTH_SCALE + CAPTHIST_PENALTY_BASE,
+        CAPTHIST_PENALTY_MAX
     );
 }
 
@@ -125,10 +132,10 @@ i32 History::get_noisyscore(chess::Move move, chess::Piece captured) const {
 
 
 void History::update_corrections(
-    const Position<true>& position, i32 depth, i32 score, i32 static_eval
+    const Position<true>& position, i32 fdepth, i32 score, i32 static_eval
 ) {
     const auto bonus = clamp(
-        (score - static_eval) * depth / CORRHIST_BONUS_DEPTH_DIV,
+        (score - static_eval) * fdepth / (CORRHIST_BONUS_DEPTH_DIV * DEPTH_SCALE),
         -CORRHIST_BONUS_MAX,
         CORRHIST_BONUS_MAX
     );

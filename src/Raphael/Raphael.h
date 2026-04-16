@@ -65,7 +65,7 @@ private:
         chess::Move move = chess::Move::NO_MOVE;
         chess::Move killer = chess::Move::NO_MOVE;
         chess::Move excluded = chess::Move::NO_MOVE;
-        i16 reductions = 0;
+        i32 freductions = 0;
     };
 
     struct MoveStack {
@@ -245,7 +245,7 @@ private:
      *
      * \tparam is_PV whether the current position is a PV node
      * \param tdata this thread's data
-     * \param depth depth to search for
+     * \param fdepth fractional depth to search for
      * \param ply current distance from root
      * \param alpha lower bound score of current position
      * \param beta upper bound score of current position
@@ -257,7 +257,7 @@ private:
     template <bool is_PV>
     i32 negamax(
         ThreadData& tdata,
-        i32 depth,
+        i32 fdepth,
         const i32 ply,
         i32 alpha,
         i32 beta,

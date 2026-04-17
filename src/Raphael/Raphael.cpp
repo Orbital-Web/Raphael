@@ -336,7 +336,7 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
             else
                 break;
 
-            delta += delta * ASP_WIDENING_FACTOR / 16;
+            delta += delta * ASP_WIDENING_FACTOR / 128;
         }
 
         if (stop_.load(memory_order_relaxed)) break;  // don't use results if timeout
@@ -482,7 +482,7 @@ i32 Raphael::negamax(
             ss->move = chess::Move::NULL_MOVE;
 
             i32 fred = NMP_RED_BASE;
-            fred += fdepth * NMP_RED_DEPTH_MUL / 128;
+            fred += fdepth * NMP_RED_DEPTH_MUL / 1024;
             fred += min<i32>((ss->static_eval - beta) * NMP_RED_EVAL_MUL, NMP_RED_EVAL_MAX);
 
             const i32 red_fdepth = fdepth - fred;

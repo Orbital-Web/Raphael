@@ -208,11 +208,11 @@ Tunable(NODE_TM_MUL, 150, 100, 200, false);
 // search
 Tunable(ASP_MIN_DEPTH, 3, 2, 5, false);
 Tunable(ASP_INIT_SIZE, 36, 5, 100, true);
-Tunable(ASP_WIDENING_FACTOR, 12, 2, 24, true);
+Tunable(ASP_WIDENING_FACTOR, 96, 16, 192, true);
 
 Tunable(TT_REPL_DEPTH_MARGIN, 512, 0, 1024, false);
-Tunable(TT_VALUE_DEPTH_WEIGHT, 1, 0, 4, false);
-Tunable(TT_VALUE_AGE_WEIGHT, 1, 0, 4, false);
+Tunable(TT_VALUE_DEPTH_WEIGHT, 128, 0, 512, false);
+Tunable(TT_VALUE_AGE_WEIGHT, 128, 0, 512, false);
 
 // negamax
 Tunable(IIR_MIN_DEPTH, 426, 384, 768, true);
@@ -232,7 +232,7 @@ Tunable(NMP_MIN_DEPTH, 171, 128, 1280, true);
 Tunable(NMP_MARGIN_DEPTH_MUL, 1094, 1024, 4096, true);
 Tunable(NMP_MARGIN_BASE, 101, 32, 384, true);
 Tunable(NMP_RED_BASE, 450, 256, 1024, true);
-Tunable(NMP_RED_DEPTH_MUL, 25, 8, 64, false);
+Tunable(NMP_RED_DEPTH_MUL, 200, 64, 512, false);
 Tunable(NMP_RED_EVAL_MUL, 82, 16, 128, false);
 Tunable(NMP_RED_EVAL_MAX, 384, 128, 512, false);
 Tunable(NMP_VERIF_MIN_DEPTH, 1920, 1280, 2560, false);

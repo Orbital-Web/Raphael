@@ -3,7 +3,9 @@ import re
 from pathlib import Path
 
 TUNABLE_PATH = Path(__file__).parents[1] / "Raphael" / "tunable.h"
-TUNABLE_PATTERN = re.compile(r"(Tunable(?:Callback)?)\(([A-Z0-9_]+), (-?\d+), (.*)\);")
+TUNABLE_PATTERN = re.compile(
+    r"(Tunable(?:Callback)?)\(([A-Z0-9_]+), (-?\d+), (-?\d+), (-?\d+), (.*)\);"
+)
 
 
 if __name__ == "__main__":
@@ -22,14 +24,17 @@ if __name__ == "__main__":
         tunable_type = match.group(1)
         name = match.group(2)
         old_value = float(match.group(3))
-        rest = match.group(4)
+        min_value = int(match.group(4))
+        max_value = int(match.group(5))
+        rest = match.group(6)
 
         if name in name_value_pairs:
             new_value = name_value_pairs[name]
-            delta = (float(new_value) - old_value) / abs(old_value)
+            val_range = max_value - min_value
+            delta = (float(new_value) - old_value) / val_range
             deltas[name] = delta
 
-            return f"{tunable_type}({name}, {new_value}, {rest});"
+            return f"{tunable_type}({name}, {new_value}, {min_value}, {max_value}, {rest});"
         else:
             return match.group(0)
 

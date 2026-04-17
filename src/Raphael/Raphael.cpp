@@ -826,7 +826,7 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
 
     // update transposition table
     if (!stop_.load(memory_order_relaxed))
-        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, 0 * DEPTH_SCALE, ttflag, ply);
+        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, 0, ttflag, ply);
 
     return bestscore;
 }

@@ -207,7 +207,9 @@ To see all supported commands, run `uci.exe help`
   - [ ] Shared corrhist
   - [ ] Thread voting
   - [ ] NUMA awareness
-- [x] SPSA tuning                           (`v3.3+`)
+- [x] Tuning                                (`v3.3+`)
+  - [x] SPSA                                (`v3.3+`)
+  - [x] Fractional depth                    (`v4.0+`)
 
 </details>
 

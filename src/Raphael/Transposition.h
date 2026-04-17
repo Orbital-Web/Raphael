@@ -10,7 +10,7 @@ class TranspositionTable {
 public:
     static constexpr i32 MAX_TABLE_SIZE_MB = 65536;  // 64GB
     static constexpr i32 DEF_TABLE_SIZE_MB = 64;
-    static constexpr usize ENTRIES_PER_CLUSTER = 3;
+    static constexpr usize ENTRIES_PER_CLUSTER = 5;
 
     enum Flag : u8 { INVALID = 0, LOWER, EXACT, UPPER };
 
@@ -19,8 +19,9 @@ public:
         i16 score;        // score of the position
         i16 static_eval;  // static eval of the position
         u16 move;         // bestmove
-        u8 depth;         // max 255
+        u16 fdepth;       // max MAX_DEPTH * DEPTH_SCALE
         u8 age_flag;      // 6 bits age, 2 bits flag
+        u8 pad;           // find a use, I guess
 
         u32 age() const;
         Flag flag() const;
@@ -39,19 +40,19 @@ public:
          */
         i32 value(u32 tt_age) const;
     };
-    static_assert(sizeof(Entry) == 10);
+    static_assert(sizeof(Entry) == 12);
 
-    struct alignas(32) Cluster {
+    struct alignas(64) Cluster {
         Entry entries[ENTRIES_PER_CLUSTER];
-        u16 pad;
+        u32 pad;
     };
     static constexpr usize CLUSTER_SIZE = sizeof(Cluster);
-    static_assert(CLUSTER_SIZE == 32);
+    static_assert(CLUSTER_SIZE == 64);
 
     struct ProbedEntry {
         i32 score;
         i32 static_eval;
-        i32 depth;
+        i32 fdepth;
         chess::Move move;
         Flag flag;
     };
@@ -106,11 +107,11 @@ public:
      * \param score score of the position
      * \param static_eval static eval of the position
      * \param move bestmove
-     * \param depth max 255
+     * \param fdepth fractional depth of the entry
      * \param flag invalid, lower, exact, or upper
      * \param ply current distance from root
      */
-    void set(u64 key, i32 score, i32 static_eval, chess::Move move, i32 depth, Flag flag, i32 ply);
+    void set(u64 key, i32 score, i32 static_eval, chess::Move move, i32 fdepth, Flag flag, i32 ply);
 
     /** Clears the table */
     void clear();

@@ -28,7 +28,7 @@ void TranspositionTable::Entry::set_age_flag(u32 age, Flag flag) {
 
 i32 TranspositionTable::Entry::value(u32 tt_age) const {
     const i32 relative_age = (MAX_AGE + 1 + tt_age - age()) & MAX_AGE;
-    return TT_VALUE_DEPTH_WEIGHT * depth - TT_VALUE_AGE_WEIGHT * relative_age;
+    return TT_VALUE_DEPTH_WEIGHT * fdepth / DEPTH_SCALE - TT_VALUE_AGE_WEIGHT * relative_age;
 }
 
 
@@ -69,7 +69,7 @@ bool TranspositionTable::get(ProbedEntry& ttentry, u64 key, i32 ply) const {
             ttentry.score = score;
             ttentry.static_eval = static_cast<i32>(entry.static_eval);
             ttentry.move = static_cast<chess::Move>(entry.move);
-            ttentry.depth = static_cast<i32>(entry.depth);
+            ttentry.fdepth = static_cast<i32>(entry.fdepth);
             ttentry.flag = entry.flag();
 
             return true;
@@ -81,10 +81,10 @@ bool TranspositionTable::get(ProbedEntry& ttentry, u64 key, i32 ply) const {
 void TranspositionTable::prefetch(u64 key) const { __builtin_prefetch(&table_[index(key)]); }
 
 void TranspositionTable::set(
-    u64 key, i32 score, i32 static_eval, chess::Move move, i32 depth, Flag flag, i32 ply
+    u64 key, i32 score, i32 static_eval, chess::Move move, i32 fdepth, Flag flag, i32 ply
 ) {
-    assert(depth >= 0);
-    assert(depth < 256);
+    assert(fdepth >= 0);
+    assert(fdepth <= UINT16_MAX);
     assert(score >= INT16_MIN);
     assert(score <= INT16_MAX);
     assert(static_eval >= INT16_MIN);
@@ -116,7 +116,7 @@ void TranspositionTable::set(
     assert(entry != nullptr);
 
     if (!(flag == Flag::EXACT || packed_key != entry->key || entry->age() != age_
-          || depth + TT_REPL_DEPTH_MARGIN > entry->depth))
+          || fdepth + TT_REPL_DEPTH_MARGIN > entry->fdepth))
         return;
 
     if (move || entry->key != packed_key) entry->move = static_cast<u16>(move);
@@ -131,7 +131,7 @@ void TranspositionTable::set(
     entry->key = packed_key;
     entry->score = static_cast<i16>(score);
     entry->static_eval = static_cast<i16>(static_eval);
-    entry->depth = static_cast<u8>(depth);
+    entry->fdepth = static_cast<u16>(fdepth);
     entry->set_age_flag(age_, flag);
 }
 

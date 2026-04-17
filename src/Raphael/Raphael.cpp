@@ -326,7 +326,7 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
         // search until score lies between alpha and beta
         i32 iterscore;
         while (!stop_.load(memory_order_relaxed)) {
-            iterscore = negamax<true>(tdata, depth, 0, alpha, beta, false, ss, mv);
+            iterscore = negamax<true>(tdata, depth * DEPTH_SCALE, 0, alpha, beta, false, ss, mv);
 
             if (iterscore <= alpha) {
                 beta = (alpha + beta) / 2;
@@ -336,7 +336,7 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
             else
                 break;
 
-            delta += delta * ASP_WIDENING_FACTOR / 16;
+            delta += delta * ASP_WIDENING_FACTOR / 128;
         }
 
         if (stop_.load(memory_order_relaxed)) break;  // don't use results if timeout
@@ -371,7 +371,7 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
 template <bool is_PV>
 i32 Raphael::negamax(
     ThreadData& tdata,
-    i32 depth,
+    i32 fdepth,
     const i32 ply,
     i32 alpha,
     i32 beta,
@@ -407,7 +407,7 @@ i32 Raphael::negamax(
     }
 
     // terminal depth or max ply
-    if (depth <= 0 || ply >= MAX_DEPTH - 1) return quiescence<is_PV>(tdata, ply, alpha, beta, mv);
+    if (fdepth <= 0 || ply >= MAX_DEPTH - 1) return quiescence<is_PV>(tdata, ply, alpha, beta, mv);
 
     // probe transposition table
     const auto ttkey = board.hash();
@@ -418,7 +418,7 @@ i32 Raphael::negamax(
         tthit = tt_.get(ttentry, ttkey, ply);
 
         // tt cutoff
-        if (!is_PV && tthit && ttentry.depth >= depth
+        if (!is_PV && tthit && ttentry.fdepth >= fdepth
             && (ttentry.flag == tt_.EXACT                                 // exact
                 || (ttentry.flag == tt_.LOWER && ttentry.score >= beta)   // lower
                 || (ttentry.flag == tt_.UPPER && ttentry.score <= alpha)  // upper
@@ -428,7 +428,8 @@ i32 Raphael::negamax(
     const auto ttmove = ttentry.move;
 
     // internal iterative reduction
-    if (depth >= IIR_MIN_DEPTH && !ss->excluded && (is_PV || cutnode) && !ttmove) depth--;
+    if (fdepth >= IIR_MIN_DEPTH && !ss->excluded && (is_PV || cutnode) && !ttmove)
+        fdepth -= IIR_RED;
 
     const bool in_check = board.in_check();
     i32 raw_static_eval;
@@ -451,24 +452,28 @@ i32 Raphael::negamax(
     // pre-moveloop pruning
     if (!is_PV && !in_check && !ss->excluded) {
         // hindsight extension
-        if ((ss - 1)->reductions >= HINDSIGHT_MIN_RED && (ss - 1)->static_eval != NONE_SCORE
+        if ((ss - 1)->freductions >= HINDSIGHT_MIN_RED && (ss - 1)->static_eval != NONE_SCORE
             && ss->static_eval <= -(ss - 1)->static_eval)
-            depth++;
+            fdepth += HINDSIGHT_EXT;
 
         // reverse futility pruning
-        const i32 rfp_margin = RFP_MARGIN_DEPTH_MUL * depth - RFP_MARGIN_IMPROVING * improving;
-        if (depth <= RFP_MAX_DEPTH && ss->static_eval - rfp_margin >= beta) return ss->static_eval;
+        const i32 rfp_margin
+            = RFP_MARGIN_DEPTH_MUL * fdepth / DEPTH_SCALE - RFP_MARGIN_IMPROVING * improving;
+        if (fdepth <= RFP_MAX_DEPTH && ss->static_eval - rfp_margin >= beta) return ss->static_eval;
 
         // razoring
-        const i32 razor_margin = RAZOR_MARGIN_BASE + RAZOR_MARGIN_DEPTH_MUL * depth * depth;
-        if (depth <= RAZOR_MAX_DEPTH && alpha <= 2048 && ss->static_eval + razor_margin <= alpha) {
+        const i32 razor_margin
+            = RAZOR_MARGIN_BASE
+              + RAZOR_MARGIN_DEPTH_MUL * fdepth / DEPTH_SCALE * fdepth / DEPTH_SCALE;
+        if (fdepth <= RAZOR_MAX_DEPTH && alpha <= 2048 && ss->static_eval + razor_margin <= alpha) {
             const i32 score = quiescence<false>(tdata, ply, alpha, alpha + 1, mv);
             if (score <= alpha) return score;
         }
 
         // null move pruning
-        const i32 nmp_margin = max(NMP_MARGIN_BASE - NMP_MARGIN_DEPTH_MUL * depth / 128, 0);
-        if (depth >= NMP_MIN_DEPTH && ply >= tdata.min_nmp_ply
+        const i32 nmp_margin
+            = max(NMP_MARGIN_BASE - NMP_MARGIN_DEPTH_MUL * fdepth / (DEPTH_SCALE * 128), 0);
+        if (fdepth >= NMP_MIN_DEPTH && ply >= tdata.min_nmp_ply
             && ss->static_eval >= beta + nmp_margin && (ss - 1)->move != chess::Move::NULL_MOVE
             && !(ttentry.flag == tt_.UPPER && ttentry.score < beta)
             && !board.is_kingpawn(board.stm())) {
@@ -476,26 +481,25 @@ i32 Raphael::negamax(
             position.make_nullmove();
             ss->move = chess::Move::NULL_MOVE;
 
-            i32 red_factor = NMP_RED_BASE;
-            red_factor += depth * NMP_RED_DEPTH_MUL;
-            red_factor += min<i32>((ss->static_eval - beta) * NMP_RED_EVAL_MUL, NMP_RED_EVAL_MAX);
-            red_factor /= 128;
+            i32 fred = NMP_RED_BASE;
+            fred += fdepth * NMP_RED_DEPTH_MUL / 1024;
+            fred += min<i32>((ss->static_eval - beta) * NMP_RED_EVAL_MUL, NMP_RED_EVAL_MAX);
 
-            const i32 red_depth = depth - red_factor;
+            const i32 red_fdepth = fdepth - fred;
             const i32 score = -negamax<false>(
-                tdata, red_depth, ply + 1, -beta, -beta + 1, !cutnode, ss + 1, mv
+                tdata, red_fdepth, ply + 1, -beta, -beta + 1, !cutnode, ss + 1, mv
             );
 
             position.unmake_nullmove();
 
             if (score >= beta) {
-                if (depth < NMP_VERIF_MIN_DEPTH || tdata.min_nmp_ply > 0)
+                if (fdepth < NMP_VERIF_MIN_DEPTH || tdata.min_nmp_ply > 0)
                     return (utils::is_win(score)) ? beta : score;
 
                 // verification search (disable nmp for a fraction of the depths)
-                tdata.min_nmp_ply = ply + red_depth * NMP_VERIF_DEPTH_FACTOR / 128;
+                tdata.min_nmp_ply = ply + NMP_VERIF_DEPTH_FACTOR * red_fdepth / (DEPTH_SCALE * 128);
                 const i32 verif_score
-                    = negamax<false>(tdata, red_depth, ply, beta - 1, beta, true, ss, mv + 1);
+                    = negamax<false>(tdata, red_fdepth, ply, beta - 1, beta, true, ss, mv + 1);
                 tdata.min_nmp_ply = 0;
 
                 if (verif_score >= beta) return verif_score;
@@ -522,25 +526,25 @@ i32 Raphael::negamax(
         if (move == ss->excluded) continue;
 
         const bool is_quiet = board.is_quiet(move);
-        const auto base_lmr = LMR_TABLE[is_quiet][depth][move_searched + 1];
+        const auto base_lmr = LMR_TABLE[is_quiet][fdepth / DEPTH_SCALE][move_searched + 1];
         const auto hist = (is_quiet) ? history.get_quietscore(move, position)
                                      : history.get_noisyscore(move, board.get_captured(move));
 
         // moveloop pruning
         if (!is_root && !utils::is_loss(bestscore) && (!params_.datagen || !is_PV)) {
-            const auto lmr_depth = max(depth - base_lmr / 128, 0);
+            const auto lmr_fdepth = max(fdepth - base_lmr, 0);
 
             if (is_quiet) {
                 // late move pruning
-                if (move_searched >= LMP_TABLE[improving][depth]) {
+                if (move_searched >= LMP_TABLE[improving][fdepth / DEPTH_SCALE]) {
                     generator.skip_quiets();
                     continue;
                 }
 
                 // futility pruning
-                const i32 futility
-                    = ss->static_eval + FP_MARGIN_BASE + FP_MARGIN_DEPTH_MUL * lmr_depth;
-                if (!in_check && lmr_depth <= FP_MAX_DEPTH && futility <= alpha
+                const i32 futility = ss->static_eval + FP_MARGIN_BASE
+                                     + FP_MARGIN_DEPTH_MUL * lmr_fdepth / DEPTH_SCALE;
+                if (!in_check && lmr_fdepth <= FP_MAX_DEPTH && futility <= alpha
                     && !board.gives_direct_check(move)) {
                     generator.skip_quiets();
                     continue;
@@ -548,39 +552,40 @@ i32 Raphael::negamax(
             }
 
             // SEE pruning
-            const i32 see_thresh = (is_quiet) ? SEE_QUIET_DEPTH_MUL * lmr_depth * lmr_depth
-                                              : SEE_NOISY_DEPTH_MUL * depth;
+            const i32 see_thresh = (is_quiet) ? SEE_QUIET_DEPTH_MUL * lmr_fdepth / DEPTH_SCALE
+                                                    * lmr_fdepth / DEPTH_SCALE
+                                              : SEE_NOISY_DEPTH_MUL * fdepth / DEPTH_SCALE;
             if (!SEE::see(move, board, see_thresh)) continue;
         }
 
         // extensions
-        i32 extension = 0;
-        if (!is_root && depth >= SE_MIN_DEPTH && move == ttmove && !ss->excluded
-            && ttentry.depth >= depth - SE_MIN_TT_DEPTH && ttentry.flag != tt_.UPPER) {
+        i32 fext = 0;
+        if (!is_root && fdepth >= SE_MIN_DEPTH && move == ttmove && !ss->excluded
+            && ttentry.fdepth >= fdepth - SE_MIN_TT_DEPTH && ttentry.flag != tt_.UPPER) {
             const i32 s_beta = max(
-                -MATE_SCORE + 1,
                 ttentry.score
-                    - depth * SE_MARGIN_DEPTH_MUL * ((ttentry.flag == tt_.EXACT) ? 1 : 2) / 16
+                    - SE_MARGIN_DEPTH_MUL * ((ttentry.flag == tt_.EXACT) ? 1 : 2) * fdepth
+                          / (DEPTH_SCALE * 128),
+                -MATE_SCORE + 1
             );
-            const i32 s_depth = (depth - 1) / 2;
+            const i32 s_fdepth = (fdepth - DEPTH_SCALE) / 2;
 
             ss->excluded = move;
             const i32 score
-                = negamax<false>(tdata, s_depth, ply, s_beta - 1, s_beta, cutnode, ss, mv + 1);
+                = negamax<false>(tdata, s_fdepth, ply, s_beta - 1, s_beta, cutnode, ss, mv + 1);
             ss->excluded = chess::Move::NO_MOVE;
 
             if (score < s_beta) {
                 if (!is_PV && score + DE_MARGIN < s_beta)
-                    extension = 2 + (is_quiet && score + TE_MARGIN < s_beta);  // double/triple
+                    fext = SE_EXT + DE_EXT + TE_EXT * (is_quiet && score + TE_MARGIN < s_beta);
                 else
-                    extension = 1;  // singular extensions
+                    fext = SE_EXT;  // singular extensions
             } else if (s_beta >= beta)
                 return s_beta;  // multicut
-            else if (ttentry.score >= beta) {
-                extension = -1;  // negative extensions
-            } else if (cutnode) {
-                extension = -1;  // cutnode negative extensions
-            }
+            else if (cutnode)
+                fext = -CUTNODE_NE_RED;  // cutnode negative extensions
+            else if (ttentry.score >= beta)
+                fext = -NE_RED;  // negative extensions
         }
 
         const u64 old_nodes = tm_.get_nodes(thread_id);
@@ -596,43 +601,45 @@ i32 Raphael::negamax(
 
         // principle variation search
         i32 score = INT32_MIN;
-        i32 new_depth = depth - 1 + extension;
-        if (depth >= LMR_MIN_DEPTH && move_searched > LMR_FROMMOVE) {
+        i32 new_fdepth = fdepth - DEPTH_SCALE + fext;
+        if (fdepth >= LMR_MIN_DEPTH && move_searched > LMR_FROMMOVE) {
             // late move reduction
-            i32 red_factor = LMR_TABLE[is_quiet][depth][move_searched];
-            red_factor += !is_PV * LMR_NONPV;
-            red_factor += cutnode * LMR_CUTNODE;
-            red_factor -= improving * LMR_IMPROVING;
-            red_factor -= gives_check * LMR_CHECK;
-            red_factor -= hist * 128 / ((is_quiet) ? LMR_QUIET_HIST_DIV : LMR_NOISY_HIST_DIV);
-            red_factor /= 128;
+            i32 fred = LMR_TABLE[is_quiet][fdepth / DEPTH_SCALE][move_searched];
+            fred += !is_PV * LMR_NONPV;
+            fred += cutnode * LMR_CUTNODE;
+            fred -= improving * LMR_IMPROVING;
+            fred -= gives_check * LMR_CHECK;
+            fred -= hist * DEPTH_SCALE / ((is_quiet) ? LMR_QUIET_HIST_DIV : LMR_NOISY_HIST_DIV);
 
-            ss->reductions = red_factor;
-            const i32 red_depth = min(max(new_depth - red_factor, 1), new_depth);
+            ss->freductions = fred;
+            const i32 red_fdepth = min(max(new_fdepth - fred, DEPTH_SCALE), new_fdepth);
             score = -negamax<false>(
-                tdata, red_depth, ply + 1, -alpha - 1, -alpha, true, ss + 1, mv + 1
+                tdata, red_fdepth, ply + 1, -alpha - 1, -alpha, true, ss + 1, mv + 1
             );
-            ss->reductions = 0;
+            ss->freductions = 0;
 
-            if (score > alpha && red_depth < new_depth) {
-                const bool do_deeper
-                    = score > bestscore + DO_DEEPER_BASE + DO_DEEPER_DEPTH_MUL * new_depth;
+            if (score > alpha && red_fdepth < new_fdepth) {
+                const bool do_deeper = score > bestscore + DO_DEEPER_BASE
+                                                   + DO_DEEPER_DEPTH_MUL * new_fdepth / DEPTH_SCALE;
                 const bool do_shallower
-                    = score < bestscore + DO_SHALLOWER_BASE + DO_SHALLOWER_DEPTH_MUL * new_depth;
-                new_depth += do_deeper - do_shallower;
+                    = score < bestscore + DO_SHALLOWER_BASE
+                                  + DO_SHALLOWER_DEPTH_MUL * new_fdepth / DEPTH_SCALE;
+                new_fdepth += do_deeper * DO_DEEPER_EXT;
+                new_fdepth -= do_shallower * DO_SHALLOWER_RED;
 
                 score = -negamax<false>(
-                    tdata, new_depth, ply + 1, -alpha - 1, -alpha, !cutnode, ss + 1, mv + 1
+                    tdata, new_fdepth, ply + 1, -alpha - 1, -alpha, !cutnode, ss + 1, mv + 1
                 );
             }
         } else if (!is_PV || move_searched > 1)
             score = -negamax<false>(
-                tdata, new_depth, ply + 1, -alpha - 1, -alpha, !cutnode, ss + 1, mv + 1
+                tdata, new_fdepth, ply + 1, -alpha - 1, -alpha, !cutnode, ss + 1, mv + 1
             );
 
         assert(!(is_PV && move_searched != 1 && score == INT32_MIN));
         if (is_PV && (move_searched == 1 || score > alpha))
-            score = -negamax<true>(tdata, new_depth, ply + 1, -beta, -alpha, false, ss + 1, mv + 1);
+            score
+                = -negamax<true>(tdata, new_fdepth, ply + 1, -beta, -alpha, false, ss + 1, mv + 1);
         assert(score != INT32_MIN);
 
         position.unmake_move();
@@ -653,26 +660,27 @@ i32 Raphael::negamax(
                 if (score >= beta) {
                     ttflag = tt_.LOWER;
 
-                    const auto history_depth = depth + (!in_check && ss->static_eval <= alpha);
+                    const auto history_fdepth
+                        = fdepth + (!in_check && ss->static_eval <= alpha) * DEPTH_SCALE;
 
                     if (is_quiet) {
                         // store killer moves and update quiet history
                         ss->killer = move;
 
-                        const auto quiet_bonus = history.quiet_bonus(history_depth);
-                        const auto quiet_penalty = history.quiet_penalty(history_depth);
+                        const auto quiet_bonus = history.quiet_bonus(history_fdepth);
+                        const auto quiet_penalty = history.quiet_penalty(history_fdepth);
 
                         history.update_quiet(bestmove, position, quiet_bonus);
                         for (const auto quietmove : mv->quietlist)
                             history.update_quiet(quietmove, position, quiet_penalty);
                     } else {
                         // apply capthist bonus
-                        const auto noisy_bonus = history.noisy_bonus(history_depth);
+                        const auto noisy_bonus = history.noisy_bonus(history_fdepth);
                         history.update_noisy(bestmove, board.get_captured(bestmove), noisy_bonus);
                     }
 
                     // always apply capthist penalty
-                    const auto noisy_penalty = history.noisy_penalty(history_depth);
+                    const auto noisy_penalty = history.noisy_penalty(history_fdepth);
                     for (const auto noisymove : mv->noisylist)
                         history.update_noisy(
                             noisymove, board.get_captured(noisymove), noisy_penalty
@@ -700,8 +708,8 @@ i32 Raphael::negamax(
         if (!in_check && (bestmove == chess::Move::NO_MOVE || board.is_quiet(bestmove))
             && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
                 || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
-            history.update_corrections(position, depth, bestscore, ss->static_eval);
-        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, depth, ttflag, ply);
+            history.update_corrections(position, fdepth, bestscore, ss->static_eval);
+        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth, ttflag, ply);
     }
 
     return bestscore;

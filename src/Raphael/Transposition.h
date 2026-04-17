@@ -44,7 +44,8 @@ public:
 
     struct alignas(64) Cluster {
         Entry entries[ENTRIES_PER_CLUSTER];
-        u32 pad;
+        u16 key;
+        i16 static_eval;
     };
     static constexpr usize CLUSTER_SIZE = sizeof(Cluster);
     static_assert(CLUSTER_SIZE == 64);
@@ -112,6 +113,21 @@ public:
      * \param ply current distance from root
      */
     void set(u64 key, i32 score, i32 static_eval, chess::Move move, i32 fdepth, Flag flag, i32 ply);
+
+    /** Retrieves the static eval for a given key
+     *
+     * \param key zobrist hash of position
+     * \param static_eval variable to put static eval into
+     * \returns whether the static eval for this key was found
+     */
+    bool get_static_eval(u64 key, i32& static_eval) const;
+
+    /**  Stores the static eval for a given key
+     *
+     * \param key zobrist hash of position
+     * \param static_eval static eval of position
+     */
+    void set_static_eval(u64 key, i32 static_eval);
 
     /** Clears the table */
     void clear();

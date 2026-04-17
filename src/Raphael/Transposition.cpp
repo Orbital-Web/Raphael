@@ -53,7 +53,6 @@ void TranspositionTable::resize(i32 size_mb) {
 }
 
 bool TranspositionTable::get(ProbedEntry& ttentry, u64 key, i32 ply) const {
-    // get
     const auto& cluster = table_[index(key)];
     const auto packed_key = static_cast<u16>(key);
 
@@ -133,6 +132,25 @@ void TranspositionTable::set(
     entry->static_eval = static_cast<i16>(static_eval);
     entry->fdepth = static_cast<u16>(fdepth);
     entry->set_age_flag(age_, flag);
+}
+
+bool TranspositionTable::get_static_eval(u64 key, i32& static_eval) const {
+    const auto& cluster = table_[index(key)];
+    const auto packed_key = static_cast<u16>(key);
+
+    if (cluster.key == packed_key) {
+        static_eval = cluster.static_eval;
+        return true;
+    }
+    return false;
+}
+
+void TranspositionTable::set_static_eval(u64 key, i32 static_eval) {
+    auto& cluster = table_[index(key)];
+    const auto packed_key = static_cast<u16>(key);
+
+    cluster.key = packed_key;
+    cluster.static_eval = static_eval;
 }
 
 void TranspositionTable::clear() {

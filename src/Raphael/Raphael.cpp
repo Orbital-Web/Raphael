@@ -441,8 +441,10 @@ i32 Raphael::negamax(
         } else {
             if (tthit && ttentry.static_eval != NONE_SCORE)
                 raw_static_eval = ttentry.static_eval;
-            else
+            else if (!tt_.get_static_eval(ttkey, raw_static_eval)) {
                 raw_static_eval = position.evaluate(!params_.datagen);
+                tt_.set_static_eval(ttkey, raw_static_eval);
+            }
 
             ss->static_eval = adjust_score(tdata, raw_static_eval);
         }
@@ -756,8 +758,10 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
     } else {
         if (tthit && ttentry.static_eval != NONE_SCORE)
             raw_static_eval = ttentry.static_eval;
-        else
+        else if (!tt_.get_static_eval(ttkey, raw_static_eval)) {
             raw_static_eval = position.evaluate(!params_.datagen);
+            tt_.set_static_eval(ttkey, raw_static_eval);
+        }
 
         static_eval = adjust_score(tdata, raw_static_eval);
 

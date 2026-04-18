@@ -330,6 +330,7 @@ Tunable(PAWN_CORRHIST_WEIGHT, 32, 32, 384, true);
 Tunable(MAJOR_CORRHIST_WEIGHT, 33, 32, 384, true);
 Tunable(NONPAWN_CORRHIST_WEIGHT, 52, 32, 384, true);
 Tunable(CONT1_CORRHIST_WEIGHT, 57, 32, 384, true);
+Tunable(CONT2_CORRHIST_WEIGHT, 40, 32, 384, true);
 
 // eval scaling
 Tunable(MAT_SCALE_BASE, 25100, 20000, 30000, false);

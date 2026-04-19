@@ -68,7 +68,7 @@ chess::Move MoveGenerator::next() {
 
                 if (smove.move == ttmove_) continue;
 
-                const auto thresh = GOOD_NOISY_SEE_BASE - (smove.score * GOOD_NOISY_SEE_MUL / 64);
+                const auto thresh = GOOD_NOISY_SEE_BASE - (smove.score * GOOD_NOISY_SEE_MUL / 1024);
                 if (SEE::see(smove.move, board, thresh))
                     return smove.move;
                 else

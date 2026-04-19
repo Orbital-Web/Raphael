@@ -336,7 +336,7 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
                 asp_fred = 0;
             } else if (iterscore >= beta) {
                 beta = min(score + delta, INF_SCORE);
-                asp_fred = min(asp_fred + ASP_RED, ASP_MAX_RED);
+                asp_fred = min<i32>(asp_fred + ASP_RED, ASP_MAX_RED);
             } else
                 break;
 

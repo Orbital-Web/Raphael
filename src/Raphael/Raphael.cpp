@@ -317,6 +317,7 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
         i32 delta = ASP_INIT_SIZE;
         i32 alpha = -INF_SCORE;
         i32 beta = INF_SCORE;
+        i32 asp_fred = 0;
 
         if (depth >= ASP_MIN_DEPTH) {
             alpha = max(score - delta, -INF_SCORE);
@@ -326,14 +327,17 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
         // search until score lies between alpha and beta
         i32 iterscore;
         while (!stop_.load(memory_order_relaxed)) {
-            iterscore = negamax<true>(tdata, depth * DEPTH_SCALE, 0, alpha, beta, false, ss, mv);
+            const i32 asp_fdepth = max(depth * DEPTH_SCALE - asp_fred, DEPTH_SCALE);
+            iterscore = negamax<true>(tdata, asp_fdepth, 0, alpha, beta, false, ss, mv);
 
             if (iterscore <= alpha) {
                 beta = (alpha + beta) / 2;
                 alpha = max(score - delta, -INF_SCORE);
-            } else if (iterscore >= beta)
+                asp_fred = 0;
+            } else if (iterscore >= beta) {
                 beta = min(score + delta, INF_SCORE);
-            else
+                asp_fred = min(asp_fred + ASP_RED, ASP_MAX_RED);
+            } else
                 break;
 
             delta += delta * ASP_WIDENING_FACTOR / 128;

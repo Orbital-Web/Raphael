@@ -209,6 +209,8 @@ Tunable(NODE_TM_MUL, 150, 100, 200, false);
 Tunable(ASP_MIN_DEPTH, 3, 2, 5, false);
 Tunable(ASP_INIT_SIZE, 36, 5, 100, true);
 Tunable(ASP_WIDENING_FACTOR, 96, 16, 192, true);
+Tunable(ASP_RED, 128, 64, 256, true);
+Tunable(ASP_MAX_RED, 384, 128, 640, true);
 
 Tunable(TT_REPL_DEPTH_MARGIN, 512, 0, 1024, false);
 Tunable(TT_VALUE_DEPTH_WEIGHT, 128, 0, 512, false);

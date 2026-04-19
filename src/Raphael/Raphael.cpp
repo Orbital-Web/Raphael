@@ -769,7 +769,9 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
 
         static_eval = adjust_score(tdata, raw_static_eval);
 
-        if (static_eval >= beta) return static_eval;
+        if (static_eval >= beta)
+            return (!utils::is_win(static_eval) && !utils::is_win(beta)) ? (static_eval + beta) / 2
+                                                                         : static_eval;
 
         alpha = max(alpha, static_eval);
     }

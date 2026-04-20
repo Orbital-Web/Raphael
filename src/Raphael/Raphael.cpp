@@ -428,6 +428,8 @@ i32 Raphael::negamax(
                 || (ttentry.flag == tt_.UPPER && ttentry.score <= alpha)  // upper
         ))
             return ttentry.score;
+
+        ss->ttpv = is_PV || ttentry.was_pv;
     }
     const auto ttmove = ttentry.move;
 
@@ -538,7 +540,8 @@ i32 Raphael::negamax(
 
         // moveloop pruning
         if (!is_root && !utils::is_loss(bestscore) && (!params_.datagen || !is_PV)) {
-            const auto lmr_fdepth = max(fdepth - base_lmr, 0);
+            const i32 fred = base_lmr;
+            const auto lmr_fdepth = max(fdepth - fred, 0);
 
             if (is_quiet) {
                 // late move pruning
@@ -610,7 +613,7 @@ i32 Raphael::negamax(
         i32 new_fdepth = fdepth - DEPTH_SCALE + fext;
         if (fdepth >= LMR_MIN_DEPTH && move_searched > LMR_FROMMOVE) {
             // late move reduction
-            i32 fred = LMR_TABLE[is_quiet][fdepth / DEPTH_SCALE][move_searched];
+            i32 fred = base_lmr;
             fred += !is_PV * LMR_NONPV;
             fred += cutnode * LMR_CUTNODE;
             fred -= improving * LMR_IMPROVING;
@@ -715,7 +718,7 @@ i32 Raphael::negamax(
             && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
                 || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
             history.update_corrections(position, fdepth, bestscore, ss->static_eval);
-        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth, ttflag, ply);
+        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth, ss->ttpv, ttflag, ply);
     }
 
     return bestscore;
@@ -743,6 +746,7 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
     auto ttentry = TranspositionTable::ProbedEntry();
     const bool tthit = tt_.get(ttentry, ttkey, ply);
     const auto ttmove = ttentry.move;
+    const bool ttpv = is_PV || ttentry.was_pv;
 
     // tt cutoff
     if (!is_PV && tthit
@@ -834,7 +838,7 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
 
     // update transposition table
     if (!stop_.load(memory_order_relaxed))
-        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, 0, ttflag, ply);
+        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, 0, ttpv, ttflag, ply);
 
     return bestscore;
 }

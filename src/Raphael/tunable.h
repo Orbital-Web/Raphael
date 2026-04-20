@@ -213,8 +213,9 @@ Tunable(ASP_RED, 128, 64, 256, true);
 Tunable(ASP_MAX_RED, 384, 128, 640, true);
 
 Tunable(TT_REPL_DEPTH_MARGIN, 512, 0, 1024, false);
+Tunable(TT_REPL_PV_MARGIN, 128, 0, 768, false);
 Tunable(TT_VALUE_DEPTH_WEIGHT, 128, 0, 512, false);
-Tunable(TT_VALUE_AGE_WEIGHT, 128, 0, 512, false);
+Tunable(TT_VALUE_AGE_WEIGHT, 256, 0, 512, false);
 
 // negamax
 Tunable(IIR_MIN_DEPTH, 426, 384, 768, true);

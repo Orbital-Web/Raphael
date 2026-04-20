@@ -21,7 +21,7 @@ The following are the historic elo for Raphael.
     <th><a href="https://www.computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?family=Raphael">CCRL Blitz</a></th>
     <th><a href="https://www.computerchess.org.uk/ccrl/4040/cgi/compare_engines.cgi?family=Raphael">CCRL 40/15</a></th>
   </tr>
-  <tr align="center"><td>3.3.0</td> <td>Apr 06, 2026</td> <td>3663 </td> <td>3554*</td></tr>
+  <tr align="center"><td>3.3.0</td> <td>Apr 06, 2026</td> <td>3663 </td> <td>3551 </td></tr>
   <tr align="center"><td>3.2.0</td> <td>Mar 19, 2026</td> <td>3612*</td> <td>3484 </td></tr>
   <tr align="center"><td>3.1.0</td> <td>Mar 01, 2026</td> <td>3510 </td> <td>3416 </td></tr>
   <tr align="center"><td>3.0.0</td> <td>Feb 12, 2026</td> <td>3252 </td> <td>3206 </td></tr>

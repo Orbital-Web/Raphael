@@ -540,7 +540,9 @@ i32 Raphael::negamax(
 
         // moveloop pruning
         if (!is_root && !utils::is_loss(bestscore) && (!params_.datagen || !is_PV)) {
-            const auto lmr_fdepth = max(fdepth - base_lmr, 0);
+            i32 fred = base_lmr;
+            fred += ss->ttpv * LMR_TTPV_BASE;
+            const auto lmr_fdepth = max(fdepth - fred, 0);
 
             if (is_quiet) {
                 // late move pruning
@@ -612,7 +614,7 @@ i32 Raphael::negamax(
         i32 new_fdepth = fdepth - DEPTH_SCALE + fext;
         if (fdepth >= LMR_MIN_DEPTH && move_searched > LMR_FROMMOVE) {
             // late move reduction
-            i32 fred = LMR_TABLE[is_quiet][fdepth / DEPTH_SCALE][move_searched];
+            i32 fred = base_lmr;
             fred += !is_PV * LMR_NONPV;
             fred += cutnode * LMR_CUTNODE;
             fred -= improving * LMR_IMPROVING;

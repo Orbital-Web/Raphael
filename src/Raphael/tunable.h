@@ -269,6 +269,7 @@ TunableCallback(LMR_QUIET_BASE, 193, 32, 384, update_lmr_table, true);
 TunableCallback(LMR_NOISY_BASE, -2, -128, 128, update_lmr_table, true);
 TunableCallback(LMR_QUIET_DIV, 354, 128, 512, update_lmr_table, true);
 TunableCallback(LMR_NOISY_DIV, 434, 128, 512, update_lmr_table, true);
+Tunable(LMR_TTPV_BASE, 100, 32, 384, true);
 Tunable(LMR_NONPV, 98, 32, 384, true);
 Tunable(LMR_CUTNODE, 152, 32, 384, true);
 Tunable(LMR_IMPROVING, 86, 32, 384, true);

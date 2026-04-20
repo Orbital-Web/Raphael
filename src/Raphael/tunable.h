@@ -265,13 +265,13 @@ Tunable(CUTNODE_NE_RED, 136, 64, 256, true);
 Tunable(LMR_MIN_DEPTH, 375, 128, 640, true);
 Tunable(LMR_FROMMOVE, 5, 2, 8, false);
 inline MultiArray<i32, 2, 256, 256> LMR_TABLE;  // lmr reduction[quiet][ply][move_searched]
-TunableCallback(LMR_QUIET_BASE, 273, 32, 384, update_lmr_table, true);
-TunableCallback(LMR_NOISY_BASE, 78, -128, 128, update_lmr_table, true);
+TunableCallback(LMR_QUIET_BASE, 193, 32, 384, update_lmr_table, true);
+TunableCallback(LMR_NOISY_BASE, -2, -128, 128, update_lmr_table, true);
 TunableCallback(LMR_QUIET_DIV, 354, 128, 512, update_lmr_table, true);
 TunableCallback(LMR_NOISY_DIV, 434, 128, 512, update_lmr_table, true);
 Tunable(LMR_NONPV, 98, 32, 384, true);
 Tunable(LMR_CUTNODE, 152, 32, 384, true);
-Tunable(LMR_TTPV, 80, 32, 384, true);
+Tunable(LMR_TTPV, 128, 32, 384, true);
 Tunable(LMR_IMPROVING, 86, 32, 384, true);
 Tunable(LMR_CHECK, 152, 32, 384, true);
 Tunable(LMR_QUIET_HIST_DIV, 11524, 4096, 16384, true);

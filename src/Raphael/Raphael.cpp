@@ -428,9 +428,10 @@ i32 Raphael::negamax(
                 || (ttentry.flag == tt_.UPPER && ttentry.score <= alpha)  // upper
         ))
             return ttentry.score;
+
+        ss->ttpv = is_PV || ttentry.was_pv;
     }
     const auto ttmove = ttentry.move;
-    const bool ttpv = is_PV || ttentry.was_pv;
 
     // internal iterative reduction
     if (fdepth >= IIR_MIN_DEPTH && !ss->excluded && (is_PV || cutnode) && !ttmove)
@@ -614,7 +615,7 @@ i32 Raphael::negamax(
             i32 fred = LMR_TABLE[is_quiet][fdepth / DEPTH_SCALE][move_searched];
             fred += !is_PV * LMR_NONPV;
             fred += cutnode * LMR_CUTNODE;
-            fred -= ttpv * LMR_TTPV;
+            fred -= ss->ttpv * LMR_TTPV;
             fred -= improving * LMR_IMPROVING;
             fred -= gives_check * LMR_CHECK;
             fred -= hist * DEPTH_SCALE / ((is_quiet) ? LMR_QUIET_HIST_DIV : LMR_NOISY_HIST_DIV);
@@ -717,7 +718,7 @@ i32 Raphael::negamax(
             && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
                 || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
             history.update_corrections(position, fdepth, bestscore, ss->static_eval);
-        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth, ttpv, ttflag, ply);
+        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth, ss->ttpv, ttflag, ply);
     }
 
     return bestscore;

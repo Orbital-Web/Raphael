@@ -184,26 +184,26 @@ void init_tunables();
 static constexpr i32 DEPTH_SCALE = 128;
 
 // time management
-Tunable(TIME_FACTOR, 60, 10, 150, true);
-Tunable(INC_FACTOR, 800, 500, 1000, true);
+Tunable(TIME_FACTOR, 60, 35, 85, true);
+Tunable(INC_FACTOR, 800, 750, 850, true);
 
-Tunable(HARD_TIME_FACTOR, 2000, 1500, 2500, true);
+Tunable(HARD_TIME_FACTOR, 2000, 1750, 2250, true);
 Tunable(SOFT_TIME_FACTOR, 700, 500, 1000, true);
 
 Tunable(MV_STAB_TM_MIN_DEPTH, 5, 3, 10, false);
-Tunable(MV_STAB_TM_BASE, 1200, 1000, 3000, true);
-Tunable(MV_STAB_TM_MUL, 50, 0, 500, true);
-Tunable(MV_STAB_TM_MIN, 800, 500, 1000, true);
+Tunable(MV_STAB_TM_BASE, 1200, 1000, 1400, true);
+Tunable(MV_STAB_TM_MUL, 50, 0, 150, true);
+Tunable(MV_STAB_TM_MIN, 800, 600, 1000, true);
 
 Tunable(SCORE_STAB_MARGIN, 10, 1, 50, false);
 Tunable(SCORE_STAB_TM_MIN_DEPTH, 5, 3, 10, false);
-Tunable(SCORE_STAB_TM_BASE, 1200, 1000, 3000, true);
-Tunable(SCORE_STAB_TM_MUL, 50, 0, 500, true);
-Tunable(SCORE_STAB_TM_MIN, 800, 500, 1000, true);
+Tunable(SCORE_STAB_TM_BASE, 1200, 1000, 1400, true);
+Tunable(SCORE_STAB_TM_MUL, 50, 0, 150, true);
+Tunable(SCORE_STAB_TM_MIN, 800, 600, 1000, true);
 
 Tunable(NODE_TM_MIN_DEPTH, 5, 3, 10, false);
-Tunable(NODE_TM_BASE, 2000, 1000, 3000, true);
-Tunable(NODE_TM_MUL, 1500, 1000, 2000, true);
+Tunable(NODE_TM_BASE, 2000, 1750, 2250, true);
+Tunable(NODE_TM_MUL, 1500, 1250, 1750, true);
 
 // search
 Tunable(ASP_MIN_DEPTH, 3, 2, 5, false);

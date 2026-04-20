@@ -213,7 +213,7 @@ Tunable(ASP_RED, 128, 64, 256, true);
 Tunable(ASP_MAX_RED, 384, 128, 640, true);
 
 Tunable(TT_REPL_DEPTH_MARGIN, 512, 0, 1024, false);
-Tunable(TT_REPL_PV_MARGIN, 256, 0, 768, false);
+Tunable(TT_REPL_PV_MARGIN, 128, 0, 768, false);
 Tunable(TT_VALUE_DEPTH_WEIGHT, 128, 0, 512, false);
 Tunable(TT_VALUE_AGE_WEIGHT, 256, 0, 512, false);
 
@@ -269,7 +269,6 @@ TunableCallback(LMR_QUIET_BASE, 193, 32, 384, update_lmr_table, true);
 TunableCallback(LMR_NOISY_BASE, -2, -128, 128, update_lmr_table, true);
 TunableCallback(LMR_QUIET_DIV, 354, 128, 512, update_lmr_table, true);
 TunableCallback(LMR_NOISY_DIV, 434, 128, 512, update_lmr_table, true);
-Tunable(LMR_TTPV_BASE, 100, 32, 384, true);
 Tunable(LMR_NONPV, 98, 32, 384, true);
 Tunable(LMR_CUTNODE, 152, 32, 384, true);
 Tunable(LMR_IMPROVING, 86, 32, 384, true);

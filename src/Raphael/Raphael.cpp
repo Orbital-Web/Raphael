@@ -541,7 +541,6 @@ i32 Raphael::negamax(
         // moveloop pruning
         if (!is_root && !utils::is_loss(bestscore) && (!params_.datagen || !is_PV)) {
             i32 fred = base_lmr;
-            fred += ss->ttpv * LMR_TTPV_BASE;
             const auto lmr_fdepth = max(fdepth - fred, 0);
 
             if (is_quiet) {

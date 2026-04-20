@@ -616,7 +616,6 @@ i32 Raphael::negamax(
             i32 fred = base_lmr;
             fred += !is_PV * LMR_NONPV;
             fred += cutnode * LMR_CUTNODE;
-            fred -= ss->ttpv * LMR_TTPV;
             fred -= improving * LMR_IMPROVING;
             fred -= gives_check * LMR_CHECK;
             fred -= hist * DEPTH_SCALE / ((is_quiet) ? LMR_QUIET_HIST_DIV : LMR_NOISY_HIST_DIV);

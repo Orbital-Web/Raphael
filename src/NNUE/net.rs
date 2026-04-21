@@ -47,7 +47,7 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "orthrus_v2";
+    const NET_ID: &str = "orthrus_v5";
     const HIDDEN_SIZE: usize = 1024;
     const NUM_INPUT_BUCKETS: usize = 16;
     const NUM_OUTPUT_BUCKETS: usize = 8;
@@ -82,7 +82,7 @@ fn main() {
         .save_format(&[
             SavedFormat::id("l0w")
                 .transform(|store, weights| {
-                    let factorizer = store.get("l0f").values.repeat(NUM_INPUT_BUCKETS);
+                    let factorizer = store.get("l0f").values.f32().repeat(NUM_INPUT_BUCKETS);
                     weights.into_iter().zip(factorizer).map(|(a, b)| a + b).collect()
                 })
                 .round()

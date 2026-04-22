@@ -68,9 +68,9 @@ void TimeManager::start_timer(
     if (t_remain < 0) t_remain = 1;
     if (t_inc < 0) t_inc = 0;
 
-    f64 t_base = t_remain * (TIME_FACTOR / 100.0) + t_inc * (INC_FACTOR / 100.0);
-    hard_t_ = max<i64>(min<i64>(i64(t_base * HARD_TIME_FACTOR / 100.0), t_remain) - t_overhead, 1);
-    soft_t_ = i64(t_base * SOFT_TIME_FACTOR / 100.0);
+    f64 t_base = t_remain * (TIME_FACTOR / 1000.0) + t_inc * (INC_FACTOR / 1000.0);
+    hard_t_ = max<i64>(min<i64>(i64(t_base * HARD_TIME_FACTOR / 1000.0), t_remain) - t_overhead, 1);
+    soft_t_ = i64(t_base * SOFT_TIME_FACTOR / 1000.0);
 
     // TODO: do something with searchopt.movestogo
 
@@ -188,8 +188,8 @@ i64 TimeManager::adjust_soft_time(i32 thread_id, chess::Move bestmove, i32 score
 
     if (depth >= MV_STAB_TM_MIN_DEPTH)
         factor *= max(
-            (MV_STAB_TM_BASE / 100.0) - (MV_STAB_TM_MUL * bestmove_stability_ / 100.0),
-            (MV_STAB_TM_MIN / 100.0)
+            (MV_STAB_TM_BASE / 1000.0) - (MV_STAB_TM_MUL * bestmove_stability_ / 1000.0),
+            (MV_STAB_TM_MIN / 1000.0)
         );
 
     // score stability tm
@@ -201,14 +201,14 @@ i64 TimeManager::adjust_soft_time(i32 thread_id, chess::Move bestmove, i32 score
 
     if (depth >= SCORE_STAB_TM_MIN_DEPTH)
         factor *= max(
-            (SCORE_STAB_TM_BASE / 100.0) - (SCORE_STAB_TM_MUL * score_stability_ / 100.0),
-            (SCORE_STAB_TM_MIN / 100.0)
+            (SCORE_STAB_TM_BASE / 1000.0) - (SCORE_STAB_TM_MUL * score_stability_ / 1000.0),
+            (SCORE_STAB_TM_MIN / 1000.0)
         );
 
     // node tm
     if (depth >= NODE_TM_MIN_DEPTH) {
         const auto ratio = f64(get_nodes(thread_id, bestmove)) / f64(get_nodes(thread_id));
-        factor *= (NODE_TM_BASE / 100.0) - (NODE_TM_MUL * ratio / 100.0);
+        factor *= (NODE_TM_BASE / 1000.0) - (NODE_TM_MUL * ratio / 1000.0);
     }
 
     return i64(*soft_t_ * factor);

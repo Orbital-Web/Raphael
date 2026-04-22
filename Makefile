@@ -18,6 +18,9 @@ ARCH ?= native
 # Debug option
 DEBUG ?= off
 
+# PGO
+PGO ?= on
+
 #---------------------------------------------------------------------------------------------------
 # Source Files
 #---------------------------------------------------------------------------------------------------
@@ -33,7 +36,7 @@ UCI_SOURCES := \
 
 TEST_SOURCES := \
     $(wildcard src/Raphael/*.cpp) \
-	$(wildcard src/tests/*.cpp)
+    $(wildcard src/tests/*.cpp)
 
 MAIN_OBJS := $(MAIN_SOURCES:.cpp=.o)
 UCI_OBJS  := $(UCI_SOURCES:.cpp=.o)
@@ -51,11 +54,11 @@ endif
 $(info Detected OS: $(DETECTED_OS))
 
 ifeq ($(DETECTED_OS),Windows)
-	CXX_VERSION := $(shell $(CXX) --version 2>nul)
-	override MAIN_EXE := $(MAIN_EXE).exe
-	override EXE := $(EXE).exe
+    CXX_VERSION := $(shell $(CXX) --version 2>nul)
+    override MAIN_EXE := $(MAIN_EXE).exe
+    override EXE := $(EXE).exe
 else
-	CXX_VERSION := $(shell $(CXX) --version 2>/dev/null)
+    CXX_VERSION := $(shell $(CXX) --version 2>/dev/null)
 endif
 
 ifneq ($(findstring clang,$(CXX_VERSION)),)
@@ -65,18 +68,22 @@ else
 endif
 $(info Detected compiler: $(COMPILER))
 
-CXX := $(COMPILER)
+override CXX := $(COMPILER)
 
 #---------------------------------------------------------------------------------------------------
 # Compiler and Linker Flags
 #---------------------------------------------------------------------------------------------------
 
-WARN_FLAGS := -Wall -Wextra -Wno-interference-size
+WARN_FLAGS := -Wall -Wextra
+
+ifeq ($(COMPILER),g++)
+    override WARN_FLAGS += -Wno-interference-size
+endif
 
 CXXFLAGS := -std=c++20 -O3 -flto=auto $(WARN_FLAGS) \
     -Isrc -ISFML-3.0.2/include
 
-LDFLAGS     :=
+LDFLAGS     := -flto=auto
 LDFLAGS_UCI :=
 
 # SFML dynamic libs
@@ -136,16 +143,44 @@ else ifeq ($(DEBUG),off)
 else ifeq ($(DEBUG),release)
     $(info Building for release)
     DEBUG_FLAGS := $(CCFLAGS_RELEASE)
-	override LDFLAGS_UCI += -static
+    override LDFLAGS_UCI += -static
 else ifeq ($(DEBUG),san)
     $(info Debug and address, ub sanitization enabled)
     DEBUG_FLAGS := $(CCFLAGS_SANITIZE)
-	override LDFLAGS += -fsanitize=address,undefined
+    override LDFLAGS += -fsanitize=address,undefined
 else
     $(error Unknown debug flag '$(DEBUG)')
 endif
 
 override CXXFLAGS += $(DEBUG_FLAGS)
+
+#---------------------------------------------------------------------------------------------------
+# PGO Configurations
+#---------------------------------------------------------------------------------------------------
+
+ifeq ($(findstring clang,$(CXX_VERSION)),clang)
+    PGO_GEN_FLAGS := -fprofile-instr-generate=default.profraw
+    PGO_USE_FLAGS := -fprofile-instr-use=default.profdata
+    PGO_MERGE     := llvm-profdata merge -output=default.profdata default.profraw
+    PGO_CLEAN     := rm -f default.profraw default.profdata
+else
+    PGO_GEN_FLAGS := -fprofile-generate
+    PGO_USE_FLAGS := -fprofile-use -fprofile-correction
+    PGO_MERGE     :=
+    PGO_CLEAN     := rm -rf *.gcda src/Raphael/*.gcda
+endif
+
+PGO_PHASE ?= off
+
+ifeq ($(PGO_PHASE),gen)
+    override CXXFLAGS += $(PGO_GEN_FLAGS)
+    override LDFLAGS  += $(PGO_GEN_FLAGS)
+else ifeq ($(PGO_PHASE),use)
+    override CXXFLAGS += $(PGO_USE_FLAGS)
+    override LDFLAGS  += $(PGO_USE_FLAGS)
+else ifneq ($(PGO_PHASE),off)
+    $(error Unknown PGO phase '$(PGO_PHASE)')
+endif
 
 #---------------------------------------------------------------------------------------------------
 # Networks
@@ -182,12 +217,29 @@ main: $(MAIN_OBJS) $(EVALFILE)
 
 # uci executable
 .PHONY: uci
-uci: $(UCI_OBJS) $(EVALFILE)
-	$(CXX) -o $(EXE) $(UCI_OBJS) $(LDFLAGS) $(LDFLAGS_UCI)
+ifeq ($(PGO),on)
+uci: __pgo
+else ifeq ($(PGO),off)
+uci: __nopgo
+else
+uci:
+	$(error Unknown PGO option '$(PGO)')
+endif
 
 .PHONY: test
 test: $(TEST_OBJS) $(EVALFILE)
 	$(CXX) -o $(TEST_EXE) $(TEST_OBJS) $(LDFLAGS)
+
+.PHONY: __nopgo __pgo
+__nopgo: $(UCI_OBJS) $(EVALFILE)
+	$(CXX) -o $(EXE) $(UCI_OBJS) $(LDFLAGS) $(LDFLAGS_UCI)
+
+__pgo:
+	$(MAKE) clean && $(MAKE) PGO_PHASE=gen -j __nopgo
+	./$(EXE) bench
+	$(PGO_MERGE)
+	$(MAKE) clean && $(MAKE) PGO_PHASE=use -j __nopgo
+	$(PGO_CLEAN)
 
 # compile .cpp -> .o
 %.o: %.cpp

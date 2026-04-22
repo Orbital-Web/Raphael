@@ -19,7 +19,7 @@ ARCH ?= native
 DEBUG ?= off
 
 # PGO
-PGO ?= on
+PGO ?= off
 
 #---------------------------------------------------------------------------------------------------
 # Source Files
@@ -255,9 +255,9 @@ release_all:
 		echo "VERSION is required (make release_all VERSION=x.y.z)"; \
 		exit 1; \
 	fi
-	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx512 ARCH=avx512 DEBUG=release -j uci
-	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2-bmi2 ARCH=avx2_bmi2 DEBUG=release -j uci
-	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2 ARCH=avx2 DEBUG=release -j uci
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx512 ARCH=avx512 DEBUG=release PGO=on -j uci
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2-bmi2 ARCH=avx2_bmi2 DEBUG=release PGO=on -j uci
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2 ARCH=avx2 DEBUG=release PGO=on -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-generic ARCH=generic DEBUG=release -j uci
 
 #---------------------------------------------------------------------------------------------------

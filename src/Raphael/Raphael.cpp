@@ -592,7 +592,9 @@ i32 Raphael::negamax(
             // SEE pruning
             const i32 see_thresh = (is_quiet) ? SEE_QUIET_DEPTH_MUL * lmr_fdepth / DEPTH_SCALE
                                                     * lmr_fdepth / DEPTH_SCALE
-                                              : SEE_NOISY_DEPTH_MUL * fdepth / DEPTH_SCALE;
+                                              : min(SEE_NOISY_DEPTH_MUL * fdepth / DEPTH_SCALE
+                                                        - SEE_NOISY_HIST_MUL * hist / HISTORY_MAX,
+                                                    0);
             if (!SEE::see(move, board, see_thresh)) continue;
         }
 

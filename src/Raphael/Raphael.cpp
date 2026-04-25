@@ -439,11 +439,13 @@ i32 Raphael::negamax(
 
     const bool in_check = board.in_check();
     i32 raw_static_eval;
+    i32 score_estimate;
 
     if (!ss->excluded) {
         if (in_check) {
             raw_static_eval = NONE_SCORE;
             ss->static_eval = NONE_SCORE;
+            score_estimate = ss->static_eval;
         } else {
             if (tthit && ttentry.static_eval != NONE_SCORE)
                 raw_static_eval = ttentry.static_eval;
@@ -453,6 +455,13 @@ i32 Raphael::negamax(
             }
 
             ss->static_eval = adjust_score(tdata, raw_static_eval);
+            score_estimate = ss->static_eval;
+
+            if (tthit
+                && (ttentry.flag == tt_.EXACT
+                    || (ttentry.flag == tt_.LOWER && ttentry.score > ss->static_eval)
+                    || (ttentry.flag == tt_.UPPER && ttentry.score < ss->static_eval)))
+                score_estimate = ttentry.score;
         }
     }
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
@@ -467,7 +476,7 @@ i32 Raphael::negamax(
         // reverse futility pruning
         const i32 rfp_margin
             = RFP_MARGIN_DEPTH_MUL * fdepth / DEPTH_SCALE - RFP_MARGIN_IMPROVING * improving;
-        if (fdepth <= RFP_MAX_DEPTH && ss->static_eval - rfp_margin >= beta) return ss->static_eval;
+        if (fdepth <= RFP_MAX_DEPTH && score_estimate - rfp_margin >= beta) return score_estimate;
 
         // razoring
         const i32 razor_margin

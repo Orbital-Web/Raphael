@@ -578,8 +578,9 @@ i32 Raphael::negamax(
 
         // extensions
         i32 fext = 0;
-        if (!is_root && fdepth >= SE_MIN_DEPTH && move == ttmove && !ss->excluded
-            && ttentry.fdepth >= fdepth - SE_MIN_TT_DEPTH && ttentry.flag != tt_.UPPER) {
+        if (!is_root && fdepth >= SE_MIN_DEPTH + ss->ttpv * SE_MIN_DEPTH_TTPV && move == ttmove
+            && !ss->excluded && ttentry.fdepth >= fdepth - SE_MIN_TT_DEPTH
+            && ttentry.flag != tt_.UPPER) {
             const i32 s_beta = max(
                 ttentry.score
                     - SE_MARGIN_DEPTH_MUL * ((ttentry.flag == tt_.EXACT) ? 1 : 2) * fdepth

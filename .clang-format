@@ -65,7 +65,7 @@ BitFieldColonSpacing: After
 BraceWrapping:
   AfterCaseLabel: false
   AfterClass: false
-  AfterControlStatement: Never
+  AfterControlStatement: MultiLine
   AfterEnum: false
   AfterFunction: false
   AfterNamespace: false
@@ -86,7 +86,7 @@ BreakAfterAttributes: Leave
 BreakAfterJavaFieldAnnotations: false
 BreakArrays: true
 BreakBeforeBinaryOperators: All
-BreakBeforeBraces: Attach
+BreakBeforeBraces: Custom
 BreakBeforeConceptDeclarations: Always
 BreakBeforeInlineASMColon: OnlyMultiline
 BreakBeforeTernaryOperators: true

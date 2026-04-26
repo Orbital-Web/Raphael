@@ -36,8 +36,11 @@ public:
         if (!board.chess960() && pt == PieceType::KING && Square::value_distance(to, from) == 2) {
             to = Square(to > from ? File::H : File::A, from.rank());
             return Move::make<Move::CASTLING>(from, to);
-        } else if (board.chess960() && pt == PieceType::KING
-                   && board.at(to) == Piece(PieceType::ROOK, board.stm())) {
+        } else if (
+            board.chess960() && pt == PieceType::KING
+            && board.at(to) == Piece(PieceType::ROOK, board.stm())
+        )
+        {
             return Move::make<Move::CASTLING>(from, to);
         }
 

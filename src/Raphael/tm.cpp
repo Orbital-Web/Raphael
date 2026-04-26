@@ -41,7 +41,8 @@ void TimeManager::start_timer(
 
     // non-standard limits
     if (searchopt.movetime.has_value() || searchopt.maxdepth.has_value()
-        || searchopt.maxnodes.has_value() || searchopt.infinite) {
+        || searchopt.maxnodes.has_value() || searchopt.infinite)
+    {
         // either use movetime or don't use tm
         if (searchopt.movetime.has_value()) hard_t_ = *searchopt.movetime;
 

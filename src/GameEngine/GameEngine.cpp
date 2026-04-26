@@ -244,16 +244,15 @@ void GameEngine::add_selectedtiles() {
 
 
 void GameEngine::update_arrows() {
-    // from arrow
     if (mouse.event == MouseEvent::RMBDOWN) {
+        // from arrow
         const i32 x = mouse.x;
         const i32 y = mouse.y;
         // board clicked
         if (x > 50 && x < 850 && y > 70 && y < 870) arrow_from = get_square(x, y);
-    }
 
-    // to arrow
-    else if (mouse.event == MouseEvent::RMBUP) {
+    } else if (mouse.event == MouseEvent::RMBUP) {
+        // to arrow
         const i32 x = mouse.x;
         const i32 y = mouse.y;
 

@@ -326,7 +326,8 @@ template <Color::underlying color>
     BitBoard moves = 0;
 
     for (const auto side :
-         {Board::CastlingRights::Side::KING_SIDE, Board::CastlingRights::Side::QUEEN_SIDE}) {
+         {Board::CastlingRights::Side::KING_SIDE, Board::CastlingRights::Side::QUEEN_SIDE})
+    {
         if (!rights.has(static_cast<Color>(color), side)) continue;
 
         // skip if there are pieces on the castling path

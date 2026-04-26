@@ -158,7 +158,8 @@ public:
         }
 
         // same colored bishops
-        else if (count == 4) {
+        else if (count == 4)
+        {
             auto bishops = occ(PieceType::BISHOP);
             if (bishops.count() == 2
                 && Square::same_color(Square(bishops.msb()), Square(bishops.lsb())))
@@ -381,8 +382,8 @@ public:
             newhash ^= Zobrist::piece(captured, move.to());
 
             // remove castling rights if rook is captured
-            if (EXACT && captured.type() == PieceType::ROOK
-                && move.to().rank().is_back_rank(~stm_)) {
+            if (EXACT && captured.type() == PieceType::ROOK && move.to().rank().is_back_rank(~stm_))
+            {
                 const auto king_sq = king_square(~stm_);
                 const auto side = CastlingRights::closest_side(move.to().file(), king_sq.file());
 
@@ -575,7 +576,8 @@ public:
             const auto king_from = king_square(color);
 
             for (const auto side :
-                 {CastlingRights::Side::KING_SIDE, CastlingRights::Side::QUEEN_SIDE}) {
+                 {CastlingRights::Side::KING_SIDE, CastlingRights::Side::QUEEN_SIDE})
+            {
                 if (!castle_rights_.has(color, side)) continue;
 
                 const bool is_king_side = (side == CastlingRights::Side::KING_SIDE);

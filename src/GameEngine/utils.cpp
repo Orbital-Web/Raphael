@@ -84,7 +84,8 @@ void PieceDrawer::draw(sf::RenderWindow& window, chess::Piece piece, f32 x, f32 
 
     // draw check overlay
     if ((piece == chess::Piece::WHITEKING && check == 1)
-        || (piece == chess::Piece::BLACKKING && check == -1)) {
+        || (piece == chess::Piece::BLACKKING && check == -1))
+    {
         sprites[12].setPosition({x, y});
         window.draw(sprites[12]);
     }

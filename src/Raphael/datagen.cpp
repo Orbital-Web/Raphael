@@ -217,7 +217,8 @@ void generation_thread(
                     } else if (
                         curr_board.fullmoves() > DATAGEN_DRAW_ADJ_MVNUM
                         && abs(abs_score) < DATAGEN_DRAW_ADJ_SCORE
-                    ) {
+                    )
+                    {
                         winning_for = 0;
                         losing_for = 0;
                         drawing_for++;

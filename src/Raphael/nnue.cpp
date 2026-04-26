@@ -86,7 +86,7 @@ void Nnue::NnueFinnyEntry::update(
     VecI16 accs[SIMD_UNROLL];
 
     for (i32 i = 0; i < n_chunks; i += SIMD_UNROLL) {
-    // copy bias
+        // copy bias
         #pragma GCC unroll 32  // fmt: skip
         for (i32 r = 0; r < SIMD_UNROLL; r++) accs[r] = load_i16(&values[(i + r) * regw]);
 
@@ -108,7 +108,7 @@ void Nnue::NnueFinnyEntry::update(
                 accs[r] = subs_i16(accs[r], load_i16(&weights[fidx][(i + r) * regw]));
         }
 
-        // store into self
+    // store into self
         #pragma GCC unroll 32  // fmt: skip
         for (i32 r = 0; r < SIMD_UNROLL; r++) store_i16(&values[(i + r) * regw], accs[r]);
     }
@@ -171,7 +171,7 @@ void Nnue::NnueAccumulator::update(
     VecI16 accs[SIMD_UNROLL];
 
     for (i32 i = 0; i < n_chunks; i += SIMD_UNROLL) {
-    // copy old_acc
+        // copy old_acc
         #pragma GCC unroll 32  // fmt: skip
         for (i32 r = 0; r < SIMD_UNROLL; r++) accs[r] = load_i16(&old_acc.values[(i + r) * regw]);
 
@@ -193,7 +193,7 @@ void Nnue::NnueAccumulator::update(
             for (i32 r = 0; r < SIMD_UNROLL; r++)
                 accs[r] = adds_i16(accs[r], load_i16(&weights[add2][(i + r) * regw]));
 
-        // store into self
+    // store into self
         #pragma GCC unroll 32  // fmt: skip
         for (i32 r = 0; r < SIMD_UNROLL; r++) store_i16(&values[(i + r) * regw], accs[r]);
     }

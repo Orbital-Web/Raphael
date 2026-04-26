@@ -70,12 +70,14 @@ Raphael::~Raphael() { kill_search(); }
 void Raphael::set_option(const std::string& name, i32 value) {
     assert(!is_searching_.load(memory_order_acquire));
 
-    for (const auto p : {
+    for (const auto p :
+         {
              &params_.hash,
              &params_.threads,
              &params_.moveoverhead,
              &params_.softhardmult,
-         }) {
+         })
+    {
         if (!utils::is_case_insensitive_equals(p->name, name)) continue;
 
         // error checking
@@ -501,7 +503,8 @@ i32 Raphael::negamax(
         if (fdepth >= NMP_MIN_DEPTH && ply >= tdata.min_nmp_ply
             && ss->static_eval >= beta + nmp_margin && (ss - 1)->move != chess::Move::NULL_MOVE
             && !(ttentry.flag == tt_.UPPER && ttentry.score < beta)
-            && !board.is_kingpawn(board.stm())) {
+            && !board.is_kingpawn(board.stm()))
+        {
             tt_.prefetch(board.hash_after<true>(chess::Move::NULL_MOVE));
             position.make_nullmove();
             ss->move = chess::Move::NULL_MOVE;
@@ -572,7 +575,8 @@ i32 Raphael::negamax(
                                      + FP_MARGIN_DEPTH_MUL * lmr_fdepth / DEPTH_SCALE
                                      + FP_MARGIN_HIST_MUL * hist / HISTORY_MAX;
                 if (!in_check && lmr_fdepth <= FP_MAX_DEPTH && futility <= alpha
-                    && !board.gives_direct_check(move)) {
+                    && !board.gives_direct_check(move))
+                {
                     generator.skip_quiets();
                     continue;
                 }
@@ -589,7 +593,8 @@ i32 Raphael::negamax(
         i32 fext = 0;
         if (!is_root && fdepth >= SE_MIN_DEPTH + ss->ttpv * SE_MIN_DEPTH_TTPV && move == ttmove
             && !ss->excluded && ttentry.fdepth >= fdepth - SE_MIN_TT_DEPTH
-            && ttentry.flag != tt_.UPPER) {
+            && ttentry.flag != tt_.UPPER)
+        {
             const i32 s_beta = max(
                 ttentry.score
                     - SE_MARGIN_DEPTH_MUL * ((ttentry.flag == tt_.EXACT) ? 1 : 2) * fdepth
@@ -817,7 +822,8 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
 
             // qs futility pruning
             if (!in_check && futility <= alpha && !board.gives_direct_check(move)
-                && !SEE::see(move, board, 1)) {
+                && !SEE::see(move, board, 1))
+            {
                 bestscore = max(bestscore, futility);
                 continue;
             }

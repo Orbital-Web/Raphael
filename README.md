@@ -21,7 +21,8 @@ The following are the historic elo for Raphael.
     <th><a href="https://www.computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?family=Raphael">CCRL Blitz</a></th>
     <th><a href="https://www.computerchess.org.uk/ccrl/4040/cgi/compare_engines.cgi?family=Raphael">CCRL 40/15</a></th>
   </tr>
-  <tr align="center"><td>3.3.0</td> <td>Apr 06, 2026</td> <td>3663 </td> <td>3551 </td></tr>
+  <tr align="center"><td>4.0.0</td> <td>Apr 26, 2026</td> <td>3697*</td> <td>3578*</td></tr>
+  <tr align="center"><td>3.3.0</td> <td>Apr 06, 2026</td> <td>3670 </td> <td>3558 </td></tr>
   <tr align="center"><td>3.2.0</td> <td>Mar 19, 2026</td> <td>3612*</td> <td>3484 </td></tr>
   <tr align="center"><td>3.1.0</td> <td>Mar 01, 2026</td> <td>3510 </td> <td>3416 </td></tr>
   <tr align="center"><td>3.0.0</td> <td>Feb 12, 2026</td> <td>3252 </td> <td>3206 </td></tr>
@@ -40,7 +41,6 @@ The following are the historic elo for Raphael.
 ## Getting Started
 
 Prebuilt binaries of the UCI engine for Windows and Linux/WSL are available on the [Releases](https://github.com/Orbital-Web/Raphael/releases) page.
-In general, you should use the `avx2-bmi2` build (on pre-Zen 3 AMD CPUs, the `avx2` build can be significantly faster than the `avx2-bmi2` build).
 
 Please refer to the [following section](#compiling-from-source) to compile the GUI and/or the engine yourself on Windows and Linux.
 The [features section](#features) outline the supported commands and features of the GUI and UCI engine.
@@ -232,7 +232,7 @@ The net files can be found on the [Raphael-Net](https://github.com/Orbital-Web/R
     <td>Memory allocated for transposition table (in MiB)</td>
   </tr>
   <tr>
-    <td>Threads</td> <td>spin</td> <td>1</td> <td>[1, 1]</td>
+    <td>Threads</td> <td>spin</td> <td>1</td> <td>[1, 1024]</td>
     <td>Number of search threads</td>
   </tr>
   <tr>

@@ -127,12 +127,12 @@ void Raphael::set_uciinfolevel(UciInfoLevel level) {
 
 void Raphael::set_position(const Position<false>& position) {
     assert(!is_searching_.load(memory_order_acquire));
-    for (auto& tdata : thread_data_) tdata.position_.set_position(position);
+    for (auto& tdata : thread_data_) tdata->position_.set_position(position);
 }
 
 void Raphael::set_board(const chess::Board& board) {
     assert(!is_searching_.load(memory_order_acquire));
-    for (auto& tdata : thread_data_) tdata.position_.set_board(board);
+    for (auto& tdata : thread_data_) tdata->position_.set_board(board);
 }
 
 
@@ -144,17 +144,18 @@ void Raphael::set_threads(i32 num_searchers) {
     stop_.store(false, memory_order_relaxed);
     quit_.store(false, memory_order_relaxed);
 
+    init_barrier_ = make_unique<barrier<>>(num_searchers + 1);
     idle_barrier_ = make_unique<barrier<>>(num_searchers + 1);
     search_end_barrier_ = make_unique<barrier<>>(num_searchers);
 
     tm_.set_threads(num_searchers);
     thread_data_.clear();
+    thread_data_.shrink_to_fit();
     thread_data_.resize(num_searchers);
     searchers_.reserve(num_searchers);
-    for (i32 t = 0; t < num_searchers; t++) {
-        thread_data_[t].thread_id = t;
+    for (i32 t = 0; t < num_searchers; t++)
         searchers_.emplace_back(&Raphael::t_search_function, this, t);
-    }
+    init_barrier_->arrive_and_wait();
 }
 
 
@@ -191,7 +192,7 @@ i32 Raphael::static_eval(bool corrected) {
     assert(!is_searching_.load(memory_order_acquire));
     assert(thread_data_.size() >= 1);
 
-    auto& tdata = thread_data_[0];
+    auto& tdata = *thread_data_[0];
     const auto raw_score = tdata.position_.evaluate(!params_.datagen);
     return (corrected) ? adjust_score(tdata, raw_score) : raw_score;
 }
@@ -200,7 +201,7 @@ i32 Raphael::static_eval(bool corrected) {
 void Raphael::reset() {
     assert(!is_searching_.load(memory_order_acquire));
     tt_.clear();  // TODO: multithreaded clearing
-    for (auto& tdata : thread_data_) tdata.history.clear();
+    for (auto& tdata : thread_data_) tdata->history.clear();
 }
 
 
@@ -219,7 +220,11 @@ void Raphael::kill_search() {
 
 
 void Raphael::t_search_function(i32 thread_id) {
-    auto& tdata = thread_data_[thread_id];
+    thread_data_[thread_id] = make_unique<ThreadData>();
+    auto& tdata = *thread_data_[thread_id];
+    tdata.thread_id = thread_id;
+
+    init_barrier_->arrive_and_wait();
 
     while (true) {
         // wait for new search request to arrive

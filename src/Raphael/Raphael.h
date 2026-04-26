@@ -106,11 +106,12 @@ private:
     std::atomic<bool> stop_{false};
     std::atomic<bool> quit_{false};
 
+    std::unique_ptr<std::barrier<>> init_barrier_;
     std::unique_ptr<std::barrier<>> idle_barrier_;
     std::unique_ptr<std::barrier<>> search_end_barrier_;
 
     std::vector<std::thread> searchers_;
-    std::vector<ThreadData> thread_data_;
+    std::vector<std::unique_ptr<ThreadData>> thread_data_;
 
 
 

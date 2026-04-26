@@ -251,7 +251,7 @@ void Raphael::t_search_function(i32 thread_id) {
 
 
 void Raphael::print_uci_info(
-    i32 depth, i32 score, const chess::Board& board, const SearchStack* ss
+    i32 depth, i32 score, UCIScoreType score_type, const chess::Board& board, const SearchStack* ss
 ) const {
     const auto dtime = tm_.get_time();
     const auto nodes = tm_.get_nodes();
@@ -267,6 +267,10 @@ void Raphael::print_uci_info(
         if (abs(score) < 2) score = 0;
 
         cout << " score cp " << wdl::normalize_score(score, board);
+        if (score_type == UCIScoreType::LOWER)
+            cout << " lowerbound";
+        else if (score_type == UCIScoreType::UPPER)
+            cout << " upperbound";
     }
 
     const auto wdl_res = wdl::get_wdl(score, board);
@@ -334,9 +338,13 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
                 beta = (alpha + beta) / 2;
                 alpha = max(score - delta, -INF_SCORE);
                 asp_fred = 0;
+                if (thread_id == 0 && ucilevel_ == UciInfoLevel::ALL)
+                    print_uci_info(depth, score, UCIScoreType::UPPER, board, ss);
             } else if (iterscore >= beta) {
                 beta = min(score + delta, INF_SCORE);
                 asp_fred = min<i32>(asp_fred + ASP_RED, ASP_MAX_RED);
+                if (thread_id == 0 && ucilevel_ == UciInfoLevel::ALL)
+                    print_uci_info(depth, score, UCIScoreType::LOWER, board, ss);
             } else
                 break;
 
@@ -350,7 +358,7 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
 
         // print info
         if (thread_id == 0 && ucilevel_ == UciInfoLevel::ALL)
-            print_uci_info(depth, score, board, ss);
+            print_uci_info(depth, score, UCIScoreType::EXACT, board, ss);
 
         // soft limit
         if (tm_.is_soft_limit_reached(thread_id, stop_, bestmove, score, depth)) break;
@@ -361,7 +369,7 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
 
     // print last info
     if (thread_id == 0 && ucilevel_ == UciInfoLevel::MINIMAL)
-        print_uci_info(depth, score, board, ss);
+        print_uci_info(depth, score, UCIScoreType::EXACT, board, ss);
 
     // age tt
     tt_.do_age();

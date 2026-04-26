@@ -47,6 +47,12 @@ public:
 
 
 private:
+    enum class UCIScoreType : u8 {
+        EXACT = 0,
+        LOWER = 1,
+        UPPER = 2,
+    };
+
     struct PVList {
         chess::Move moves[MAX_DEPTH] = {chess::Move::NO_MOVE};
         i32 length = 0;
@@ -209,11 +215,16 @@ private:
      *
      * \param depth current depth
      * \param score score to print
+     * \param score_type score type
      * \param board current board
      * \param ss search stack at root
      */
     void print_uci_info(
-        i32 depth, i32 score, const chess::Board& board, const SearchStack* ss
+        i32 depth,
+        i32 score,
+        UCIScoreType score_type,
+        const chess::Board& board,
+        const SearchStack* ss
     ) const;
 
     /** Returns the stringified PV line

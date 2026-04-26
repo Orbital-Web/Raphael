@@ -283,7 +283,9 @@ void Raphael::print_uci_info(
     const auto wdl_res = wdl::get_wdl(score, board);
     cout << " wdl " << wdl_res.win << " " << wdl_res.draw << " " << wdl_res.loss;
 
-    cout << " hashfull " << tt_.hashfull() << " pv " << get_pv_line(ss->pv) << "\n" << flush;
+    cout << " hashfull " << tt_.hashfull();
+    if (score_type == UCIScoreType::EXACT) cout << " pv " << get_pv_line(ss->pv);
+    cout << "\n" << flush;
 }
 
 string Raphael::get_pv_line(const PVList& pv) const {

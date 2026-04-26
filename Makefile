@@ -162,12 +162,20 @@ ifeq ($(findstring clang,$(CXX_VERSION)),clang)
     PGO_GEN_FLAGS := -fprofile-instr-generate=default.profraw
     PGO_USE_FLAGS := -fprofile-instr-use=default.profdata
     PGO_MERGE     := llvm-profdata merge -output=default.profdata default.profraw
-    PGO_CLEAN     := rm -f default.profraw default.profdata
+    ifeq ($(DETECTED_OS),Windows)
+        PGO_CLEAN := del /Q default.profraw default.profdata 2>nul
+    else
+        PGO_CLEAN := rm -f default.profraw default.profdata
+    endif
 else
     PGO_GEN_FLAGS := -fprofile-generate
     PGO_USE_FLAGS := -fprofile-use -fprofile-correction
     PGO_MERGE     :=
-    PGO_CLEAN     := rm -rf *.gcda src/Raphael/*.gcda
+    ifeq ($(DETECTED_OS),Windows)
+        PGO_CLEAN := del /Q *.gcda src\Raphael\*.gcda 2>nul
+    else
+        PGO_CLEAN := rm -rf *.gcda src/Raphael/*.gcda
+    endif
 endif
 
 PGO_PHASE ?= off
@@ -251,11 +259,18 @@ __pgo:
 
 .PHONY: release_all
 release_all:
+ifeq ($(DETECTED_OS),Windows)
+	@if "$(VERSION)"=="" ( \
+		echo VERSION is required (make release_all VERSION=x.y.z) & \
+		exit /b 1 \
+	)
+else
 	@if [ -z "$(VERSION)" ]; then \
 		echo "VERSION is required (make release_all VERSION=x.y.z)"; \
 		exit 1; \
 	fi
-	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx512 ARCH=avx512 DEBUG=release PGO=on -j uci
+endif
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx512 ARCH=avx512 DEBUG=release -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2-bmi2 ARCH=avx2_bmi2 DEBUG=release PGO=on -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2 ARCH=avx2 DEBUG=release PGO=on -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-generic ARCH=generic DEBUG=release -j uci

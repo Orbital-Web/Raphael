@@ -256,6 +256,7 @@ Tunable(SE_MIN_DEPTH, 739, 512, 1536, true);
 Tunable(SE_MIN_DEPTH_TTPV, 128, 32, 384, true);
 Tunable(SE_MIN_TT_DEPTH, 384, 384, 768, false);
 Tunable(SE_MARGIN_DEPTH_MUL, 128, 64, 512, false);
+Tunable(SE_MARGIN_PREVPV, 128, 64, 512, false);
 Tunable(DE_MARGIN, 30, 8, 64, false);
 Tunable(TE_MARGIN, 100, 32, 128, false);
 Tunable(SE_EXT, 152, 64, 256, true);

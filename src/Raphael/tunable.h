@@ -263,6 +263,9 @@ Tunable(DE_EXT, 138, 64, 256, true);
 Tunable(TE_EXT, 106, 64, 256, true);
 Tunable(NE_RED, 136, 64, 256, true);
 Tunable(CUTNODE_NE_RED, 128, 64, 256, true);
+Tunable(LDSE_MAX_DEPTH, 768, 256, 1024, true);
+Tunable(LDSE_MARGIN, 30, 8, 64, false);
+Tunable(LDSE_EXT, 128, 64, 256, true);
 
 Tunable(LMR_MIN_DEPTH, 372, 128, 640, true);
 Tunable(LMR_FROMMOVE, 5, 2, 8, false);

@@ -591,34 +591,40 @@ i32 Raphael::negamax(
 
         // extensions
         i32 fext = 0;
-        if (!is_root && fdepth >= SE_MIN_DEPTH + ss->ttpv * SE_MIN_DEPTH_TTPV && move == ttmove
-            && !ss->excluded && ttentry.fdepth >= fdepth - SE_MIN_TT_DEPTH
-            && ttentry.flag != tt_.UPPER)
-        {
-            const i32 s_beta = max(
-                ttentry.score
-                    - SE_MARGIN_DEPTH_MUL * ((ttentry.flag == tt_.EXACT) ? 1 : 2) * fdepth
-                          / (DEPTH_SCALE * 128),
-                -MATE_SCORE + 1
-            );
-            const i32 s_fdepth = (fdepth - DEPTH_SCALE) / 2;
+        if (!is_root && move == ttmove && !ss->excluded) {
+            if (fdepth >= SE_MIN_DEPTH + ss->ttpv * SE_MIN_DEPTH_TTPV
+                && ttentry.fdepth >= fdepth - SE_MIN_TT_DEPTH && ttentry.flag != tt_.UPPER)
+            {
+                const i32 s_beta = max(
+                    ttentry.score
+                        - SE_MARGIN_DEPTH_MUL * ((ttentry.flag == tt_.EXACT) ? 1 : 2) * fdepth
+                              / (DEPTH_SCALE * 128),
+                    -MATE_SCORE + 1
+                );
+                const i32 s_fdepth = (fdepth - DEPTH_SCALE) / 2;
 
-            ss->excluded = move;
-            const i32 score
-                = negamax<false>(tdata, s_fdepth, ply, s_beta - 1, s_beta, cutnode, ss, mv + 1);
-            ss->excluded = chess::Move::NO_MOVE;
+                ss->excluded = move;
+                const i32 score
+                    = negamax<false>(tdata, s_fdepth, ply, s_beta - 1, s_beta, cutnode, ss, mv + 1);
+                ss->excluded = chess::Move::NO_MOVE;
 
-            if (score < s_beta) {
-                if (!is_PV && score + DE_MARGIN < s_beta)
-                    fext = SE_EXT + DE_EXT + TE_EXT * (is_quiet && score + TE_MARGIN < s_beta);
-                else
-                    fext = SE_EXT;  // singular extensions
-            } else if (s_beta >= beta)
-                return s_beta;  // multicut
-            else if (cutnode)
-                fext = -CUTNODE_NE_RED;  // cutnode negative extensions
-            else if (ttentry.score >= beta)
-                fext = -NE_RED;  // negative extensions
+                if (score < s_beta) {
+                    if (!is_PV && score + DE_MARGIN < s_beta)
+                        fext = SE_EXT + DE_EXT + TE_EXT * (is_quiet && score + TE_MARGIN < s_beta);
+                    else
+                        fext = SE_EXT;  // singular extensions
+                } else if (s_beta >= beta)
+                    return s_beta;  // multicut
+                else if (cutnode)
+                    fext = -CUTNODE_NE_RED;  // cutnode negative extensions
+                else if (ttentry.score >= beta)
+                    fext = -NE_RED;  // negative extensions
+
+            } else if (
+                fdepth <= LDSE_MAX_DEPTH && !in_check && ss->static_eval <= alpha - LDSE_MARGIN
+                && ttentry.flag == tt_.LOWER
+            )
+                fext = LDSE_EXT;  // low depth singular extensions
         }
 
         const u64 old_nodes = tm_.get_nodes(thread_id);

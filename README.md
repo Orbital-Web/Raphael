@@ -135,7 +135,7 @@ To see all supported commands, run `uci.exe help`
     - [x] Triple extensions                 (`v4.0+`)
     - [x] Negative extensions               (`v3.0+`)
     - [x] Cutnode negative extensions       (`v3.1+`)
-    - [ ] Low depth singular extensions
+    - [x] Low depth singular extensions     (`v4.0+`)
     - [x] Hindsight extensions              (`v4.0+`)
   - [x] Reductions                          (`v1.5+`)
     - [x] Late move reductions              (`v1.5+`)

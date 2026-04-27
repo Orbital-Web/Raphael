@@ -115,7 +115,12 @@ public:
     [[nodiscard]] i32 halfmoves() const { return halfmoves_; }
     [[nodiscard]] i32 fullmoves() const { return 1 + plies_ / 2; }
 
-    [[nodiscard]] u64 hash() const { return hash_; }
+    [[nodiscard]] i32 halfmove_bucket() const { return halfmove_bucket(halfmoves_); }
+    [[nodiscard]] i32 halfmove_bucket(u8 halfmoves) const {
+        return (halfmoves < 8) ? 0 : std::min((halfmoves - 6) / 8, 15);
+    }
+
+    [[nodiscard]] u64 hash() const { return hash_ ^ Zobrist::halfmove_clock(halfmove_bucket()); }
     [[nodiscard]] u64 pawn_hash() const { return pawn_hash_; }
     [[nodiscard]] u64 major_hash() const { return major_hash_; }
     [[nodiscard]] u64 nonpawn_hash(Color color) const { return nonpawn_hash_[color]; }
@@ -368,11 +373,12 @@ public:
     template <bool EXACT = true>
     [[nodiscard]] u64 hash_after(Move move) const {
         u64 newhash = hash_;
+        u8 new_halfmoves = halfmoves_ + 1;
 
         newhash ^= Zobrist::stm();
         if (EXACT && enpassant_ != Square::NONE) newhash ^= Zobrist::enpassant(enpassant_.file());
 
-        if (move == Move::NULL_MOVE) return newhash;
+        if (move == Move::NULL_MOVE) return newhash ^ Zobrist::halfmove_clock(halfmove_bucket());
 
         const auto captured = at(move.to());
         const auto capture = captured != Piece::NONE && move.type() != Move::CASTLING;
@@ -380,6 +386,7 @@ public:
 
         if (capture) {
             newhash ^= Zobrist::piece(captured, move.to());
+            new_halfmoves = 0;
 
             // remove castling rights if rook is captured
             if (EXACT && captured.type() == PieceType::ROOK && move.to().rank().is_back_rank(~stm_))
@@ -410,6 +417,8 @@ public:
                     newhash ^= Zobrist::castle_index(stm_ * 2 + side);
 
             } else if (pt == PieceType::PAWN) {
+                new_halfmoves = 0;
+
                 // double push
                 if (Square::value_distance(move.to(), move.from()) == 16) {
                     // add enpassant hash if enemy pawns are attacking the square
@@ -463,7 +472,7 @@ public:
             newhash ^= Zobrist::piece(piece, move.to().ep_square());
         }
 
-        return newhash;
+        return newhash ^ Zobrist::halfmove_clock(halfmove_bucket(new_halfmoves));
     }
 
 

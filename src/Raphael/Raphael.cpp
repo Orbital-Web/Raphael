@@ -499,7 +499,7 @@ i32 Raphael::negamax(
         const i32 razor_margin
             = RAZOR_MARGIN_BASE
               + RAZOR_MARGIN_DEPTH_MUL * fdepth / DEPTH_SCALE * fdepth / DEPTH_SCALE;
-        if (fdepth <= RAZOR_MAX_DEPTH && alpha <= 2048 && ss->static_eval + razor_margin <= alpha) {
+        if (fdepth <= RAZOR_MAX_DEPTH && alpha <= 2048 && score_estimate + razor_margin <= alpha) {
             const i32 score = quiescence<false>(tdata, ply, alpha, alpha + 1, mv);
             if (score <= alpha) return score;
         }

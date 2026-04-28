@@ -58,7 +58,7 @@ void Raphael::PVList::update(const chess::Move move, const PVList& child) {
 
 
 Raphael::Raphael(): params_(default_params()), tt_(params_.hash) {
-    params_.hash.set_callback([this]() { tt_.resize(params_.hash); });
+    params_.hash.set_callback([this]() { tt_.resize(params_.hash, params_.threads); });
     params_.threads.set_callback([this]() { set_threads(params_.threads); });
     set_threads(params_.threads);
     init_tunables();
@@ -200,7 +200,7 @@ i32 Raphael::static_eval(bool corrected) {
 
 void Raphael::reset() {
     assert(!is_searching_.load(memory_order_acquire));
-    tt_.clear();  // TODO: multithreaded clearing
+    tt_.clear(params_.threads);
     for (auto& tdata : thread_data_) tdata->history.clear();
 }
 

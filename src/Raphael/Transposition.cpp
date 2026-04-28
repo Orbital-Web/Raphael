@@ -3,6 +3,7 @@
 #include <Raphael/utils.h>
 
 #include <cstring>
+#include <thread>
 
 #ifdef _WIN32
     #include <windows.h>
@@ -12,6 +13,9 @@
 
 using namespace raphael;
 using std::memset;
+using std::min;
+using std::thread;
+using std::vector;
 
 
 
@@ -35,12 +39,12 @@ i32 TranspositionTable::Entry::value(u32 tt_age) const {
 
 
 TranspositionTable::TranspositionTable(i32 size_mb): capacity_(0), table_(nullptr) {
-    resize(size_mb);
+    resize(size_mb, 1);
 }
 
 TranspositionTable::~TranspositionTable() { deallocate(); }
 
-void TranspositionTable::resize(i32 size_mb) {
+void TranspositionTable::resize(i32 size_mb, i32 num_threads) {
     assert(size_mb > 0 && size_mb <= MAX_TABLE_SIZE_MB);
     const usize newsize = (usize)size_mb * 1024 * 1024 / CLUSTER_SIZE;
 
@@ -51,7 +55,7 @@ void TranspositionTable::resize(i32 size_mb) {
     }
     size_ = newsize;
 
-    clear();
+    clear(num_threads);
 }
 
 bool TranspositionTable::get(ProbedEntry& ttentry, u64 key, i32 ply) const {
@@ -156,11 +160,24 @@ void TranspositionTable::set_static_eval(u64 key, i32 static_eval) {
     cluster.static_eval = static_eval;
 }
 
-void TranspositionTable::clear() {
+void TranspositionTable::clear(i32 num_threads) {
+    assert(num_threads > 0);
     assert(table_ != nullptr);
     assert(size_ > 0);
 
-    memset(table_, 0, size_ * CLUSTER_SIZE);
+    const usize chunk_size = (size_ + num_threads - 1) / num_threads;
+    vector<thread> threads;
+    threads.reserve(num_threads);
+
+    for (i32 t = 0; t < num_threads; t++) {
+        const usize start = t * chunk_size;
+        const usize end = min(start + chunk_size, size_);
+
+        threads.emplace_back([this, start, end]() {
+            memset(&table_[start], 0, (end - start) * CLUSTER_SIZE);
+        });
+    }
+    for (auto& thread : threads) thread.join();
 
     age_ = 0;
 }

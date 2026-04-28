@@ -87,8 +87,9 @@ public:
     /** Resizes the Transposition Table
      *
      * \param size_mb the size of the table (in MB)
+     * \param num_threads number of threads to use for clearing the resized table
      */
-    void resize(i32 size_mb);
+    void resize(i32 size_mb, i32 num_threads);
 
     /** Retrieves the table entry for a given key
      *
@@ -142,8 +143,11 @@ public:
      */
     void set_static_eval(u64 key, i32 static_eval);
 
-    /** Clears the table */
-    void clear();
+    /** Clears the table
+     *
+     * \param num_threads number of threads to use for clearing the table
+     */
+    void clear(i32 num_threads);
 
     /** Increments the tt age */
     void do_age();

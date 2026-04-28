@@ -86,7 +86,7 @@ public:
 
         u8 c = 0;
         for (i32 i = size - 2; i >= 0 && i >= size - current_.halfmoves() - 1; i -= 2) {
-            if (boards_[i].hash() == current_.hash()) c++;
+            if (boards_[i].key() == current_.key()) c++;
             if (c == count) return true;
         }
         return false;

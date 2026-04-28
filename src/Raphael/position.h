@@ -84,7 +84,7 @@ public:
         ply -= 4;
         i32 c = 1;
         for (i32 i = size - 4; i >= end; i -= 2, ply -= 2) {
-            if (boards_[i].hash() == current_.hash()) c++;
+            if (boards_[i].key() == current_.key()) c++;
             if (c == 2 + (ply < 0)) return true;
         }
         return false;
@@ -121,10 +121,10 @@ public:
         const i32 end = std::min(current_.halfmoves(), size);
         if (end < 3) return false;
 
-        const auto S = [&](i32 d) { return boards_[size - d].hash(); };
+        const auto S = [&](i32 d) { return boards_[size - d].key(); };
 
         const auto occ = current_.occ();
-        const u64 S0 = current_.hash();
+        const u64 S0 = current_.key();
         auto other = S0 ^ S(1);
 
         for (i32 d = 3; d <= end; d += 2) {

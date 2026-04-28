@@ -120,6 +120,7 @@ public:
         return (halfmoves < 8) ? 0 : std::min((halfmoves - 6) / 8, 15);
     }
 
+    [[nodiscard]] u64 key() const { return hash_; }
     [[nodiscard]] u64 hash() const { return hash_ ^ Zobrist::halfmove_clock(halfmove_bucket()); }
     [[nodiscard]] u64 pawn_hash() const { return pawn_hash_; }
     [[nodiscard]] u64 major_hash() const { return major_hash_; }

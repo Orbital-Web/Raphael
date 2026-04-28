@@ -439,7 +439,7 @@ i32 Raphael::negamax(
         tthit = tt_.get(ttentry, ttkey, ply);
 
         // tt cutoff
-        if (!is_PV && tthit && ttentry.fdepth >= fdepth
+        if (!is_PV && tthit && ttentry.fdepth >= fdepth && (ttentry.score <= alpha || cutnode)
             && (ttentry.flag == tt_.EXACT                                 // exact
                 || (ttentry.flag == tt_.LOWER && ttentry.score >= beta)   // lower
                 || (ttentry.flag == tt_.UPPER && ttentry.score <= alpha)  // upper

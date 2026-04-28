@@ -397,7 +397,8 @@ public:
                 if (castle_rights_.get_rook_file(~stm_, side) == move.to().file())
                     newhash ^= Zobrist::castle_index(~stm_ * 2 + side);
             }
-        }
+        } else if (pt == PieceType::PAWN)
+            new_halfmoves = 0;
 
         if constexpr (EXACT) {
             if (pt == PieceType::KING && castle_rights_.has(stm_)) {
@@ -417,8 +418,6 @@ public:
                     newhash ^= Zobrist::castle_index(stm_ * 2 + side);
 
             } else if (pt == PieceType::PAWN) {
-                new_halfmoves = 0;
-
                 // double push
                 if (Square::value_distance(move.to(), move.from()) == 16) {
                     // add enpassant hash if enemy pawns are attacking the square

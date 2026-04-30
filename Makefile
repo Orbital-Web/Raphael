@@ -13,7 +13,7 @@ TEST_EXE := test
 EVALFILE := default
 
 # Architecture configuration
-ARCH ?= native
+ARCH ?= avx2_bmi2
 
 # Debug option
 DEBUG ?= off

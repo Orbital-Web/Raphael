@@ -10,11 +10,13 @@
 namespace raphael {
 class Nnue {
 public:
-    static constexpr i32 OUTPUT_SCALE = 250;
+    static constexpr i32 OUTPUT_SCALE = 272;
 
 private:
     static constexpr i32 N_INPUTS = 11 * 64;
-    static constexpr i32 N_HIDDEN = 1024;
+    static constexpr i32 L1_SIZE = 1024;
+    static constexpr i32 L2_SIZE = 16;
+    static constexpr i32 L3_SIZE = 32;
     static constexpr i32 N_OUTBUCKETS = 8;
     static constexpr i32 QA = 255;
     static constexpr i32 QB = 64;
@@ -45,7 +47,7 @@ private:
 
     class NnueFinnyEntry {
     public:
-        alignas(ALIGNMENT) i16 values[N_HIDDEN];
+        alignas(ALIGNMENT) i16 values[L1_SIZE];
 
     private:
         std::array<chess::BitBoard, 6> pieces_ = {};  // bitboard per piece type
@@ -60,7 +62,7 @@ private:
          *
          * \param biases start of b0
          */
-        void initialize(const i16 biases[N_HIDDEN]);
+        void initialize(const i16 biases[L1_SIZE]);
 
         /** Updates the finny entry incrementally to match the new board state
          *
@@ -70,7 +72,7 @@ private:
          * \param mirror whether to mirror the board, should match this entry's mirroring
          */
         void update(
-            const i16 weights[N_INPUTS][N_HIDDEN],
+            const i16 weights[N_INPUTS][L1_SIZE],
             const chess::Board& board,
             chess::Color perspective,
             bool mirror
@@ -88,7 +90,7 @@ private:
 
     class NnueAccumulator {
     public:
-        alignas(ALIGNMENT) i16 values[N_HIDDEN];
+        alignas(ALIGNMENT) i16 values[L1_SIZE];
         NnueFeature adds[2];
         NnueFeature subs[2];
         u8 n_adds = 0;
@@ -130,7 +132,7 @@ private:
          */
         void update(
             const NnueAccumulator& old_acc,
-            const i16 weights[N_INPUTS][N_HIDDEN],
+            const i16 weights[N_INPUTS][L1_SIZE],
             chess::Color perspective,
             bool mirror
         );
@@ -144,12 +146,18 @@ private:
 
 
     struct NnueParams {
-        // accumulator: N_INPUTS -> N_HIDDEN
-        alignas(ALIGNMENT) i16 W0[N_INBUCKETS][N_INPUTS][N_HIDDEN];
-        alignas(ALIGNMENT) i16 b0[N_HIDDEN];
-        // layer1: N_HIDDEN -> 1
-        alignas(ALIGNMENT) i16 W1[N_OUTBUCKETS][N_HIDDEN];
-        alignas(ALIGNMENT) i16 b1[N_OUTBUCKETS];
+        // accumulator: N_INPUTS -> L1_SIZE
+        alignas(ALIGNMENT) i16 W0[N_INBUCKETS][N_INPUTS][L1_SIZE];
+        alignas(ALIGNMENT) i16 b0[L1_SIZE];
+        // layer1: L1_SIZE -> L2_SIZE
+        alignas(ALIGNMENT) i8 W1[N_OUTBUCKETS][L1_SIZE / 4][L2_SIZE * 4];
+        alignas(ALIGNMENT) f32 b1[N_OUTBUCKETS][L2_SIZE];
+        // layer2: L2_SIZE -> L3_SIZE
+        alignas(ALIGNMENT) f32 W2[N_OUTBUCKETS][L2_SIZE][L3_SIZE];
+        alignas(ALIGNMENT) f32 b2[N_OUTBUCKETS][L3_SIZE];
+        // layer3: L3_SIZE -> 1
+        alignas(ALIGNMENT) f32 W3[N_OUTBUCKETS][L3_SIZE];
+        alignas(ALIGNMENT) f32 b3[N_OUTBUCKETS];
     };
     const NnueParams* params;  // network weights and biases
 
@@ -214,5 +222,13 @@ private:
      * \param perspective accumulator perspective
      */
     void lazy_update(const chess::Board& board, chess::Color perspective);
+
+    void activate_l0(const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2]) const;
+
+    void forward_l1(const u8 l0_out[L1_SIZE], f32 l1_out[L2_SIZE], i32 bucket_idx) const;
+
+    void forward_l2(const f32 l1_out[L2_SIZE], f32 l2_out[L3_SIZE], i32 bucket_idx) const;
+
+    void forward_l3(const f32 l2_out[L3_SIZE], f32& l3_out, i32 bucket_idx) const;
 };
 }  // namespace raphael

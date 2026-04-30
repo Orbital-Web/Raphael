@@ -1,18 +1,18 @@
 use bullet_lib::{
     game::{
-        inputs::{get_num_buckets, ChessBucketsMirrored},
+        inputs::{ChessBucketsMirrored, get_num_buckets},
         outputs::MaterialCount,
     },
     nn::{
-        optimiser::{AdamW, AdamWParams},
         InitSettings, Shape,
+        optimiser::{AdamW, AdamWParams},
     },
     trainer::{
         save::SavedFormat,
-        schedule::{lr, wdl, TrainingSchedule, TrainingSteps},
+        schedule::{TrainingSchedule, TrainingSteps, lr, wdl},
         settings::LocalSettings,
     },
-    value::{loader::ViriBinpackLoader, ValueTrainerBuilder},
+    value::{ValueTrainerBuilder, loader::ViriBinpackLoader},
 };
 use viriformat::dataformat::Filter;
 
@@ -125,16 +125,8 @@ fn main() {
     // ensure abs(l0w + l0f) <= 1.98 so that QA*(QB*l0w_merged) = QA*(QB*1.98) <= 32767
     // we also need to ensure abs(QB*l1w) <= 127, default clip of 1.98 handles that for l1
     // since l2 and l3 are float inference, we can remove the default clipping
-    let l0_clip = AdamWParams {
-        max_weight: 0.99,
-        min_weight: -0.99,
-        ..Default::default()
-    };
-    let no_clip = AdamWParams {
-        max_weight: 128.0,
-        min_weight: -128.0,
-        ..Default::default()
-    };
+    let l0_clip = AdamWParams { max_weight: 0.99, min_weight: -0.99, ..Default::default() };
+    let no_clip = AdamWParams { max_weight: 128.0, min_weight: -128.0, ..Default::default() };
     trainer.optimiser.set_params_for_weight("l0w", l0_clip);
     trainer.optimiser.set_params_for_weight("l0f", l0_clip);
     trainer.optimiser.set_params_for_weight("l2w", no_clip);
@@ -142,12 +134,8 @@ fn main() {
     trainer.optimiser.set_params_for_weight("l3w", no_clip);
     trainer.optimiser.set_params_for_weight("l3b", no_clip);
 
-    let filter = Filter {
-        min_pieces: 4,
-        random_fen_skipping: true,
-        random_fen_skip_probability: 0.5,
-        ..Filter::default()
-    };
+    let filter =
+        Filter { min_pieces: 4, random_fen_skipping: true, random_fen_skip_probability: 0.5, ..Filter::default() };
 
     let schedule_stage0 = TrainingSchedule {
         net_id: NET_ID.to_string() + "_stage0",
@@ -179,20 +167,11 @@ fn main() {
             end_superbatch: SUPERBATCHES_STAGE1,
         },
         wdl_scheduler: wdl::ConstantWDL { value: 0.6 },
-        lr_scheduler: lr::LinearDecayLR {
-            initial_lr: 1.0e-5,
-            final_lr: 1.0e-7,
-            final_superbatch: SUPERBATCHES_STAGE1,
-        },
+        lr_scheduler: lr::LinearDecayLR { initial_lr: 1.0e-5, final_lr: 1.0e-7, final_superbatch: SUPERBATCHES_STAGE1 },
         save_rate: 100,
     };
 
-    let settings = LocalSettings {
-        threads: 2,
-        test_set: None,
-        output_directory: "checkpoints",
-        batch_queue_size: 32,
-    };
+    let settings = LocalSettings { threads: 2, test_set: None, output_directory: "checkpoints", batch_queue_size: 32 };
 
     trainer.run(
         &schedule_stage0,

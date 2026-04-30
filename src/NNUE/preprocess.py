@@ -79,6 +79,7 @@ def merge_king_planes(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
 
 
 def permute_l0(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    # FIXME: move this to build-time
     # _mm256_packus_epi16 will permute the output, thus we must permute l0 to
     # counteract this
     l0w = net["l0w"]

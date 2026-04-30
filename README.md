@@ -20,22 +20,79 @@ The following are the historic elo for Raphael.
     <th>Release Date</th>
     <th><a href="https://www.computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?family=Raphael">CCRL Blitz</a></th>
     <th><a href="https://www.computerchess.org.uk/ccrl/4040/cgi/compare_engines.cgi?family=Raphael">CCRL 40/15</a></th>
+    <th><a href="http://www.cegt.net/40_40%20Rating%20List/40_40%20SingleVersion/rangliste.html">CEGT 40/20</a></th>
     <th><a href="https://ipmanchess.yolasite.com/r9-7945hx-uho2024.php">Ipman R9**</a></th>
   </tr>
-  <tr align="center"><td>4.0.0</td> <td>Apr 26, 2026</td> <td>3697*</td> <td>3578*</td> <td>3432 (#33/#19)</td></tr>
-  <tr align="center"><td>3.3.0</td> <td>Apr 06, 2026</td> <td>3670 </td> <td>3558 </td> <td></td></tr>
-  <tr align="center"><td>3.2.0</td> <td>Mar 19, 2026</td> <td>3612*</td> <td>3484 </td> <td></td></tr>
-  <tr align="center"><td>3.1.0</td> <td>Mar 01, 2026</td> <td>3510 </td> <td>3416 </td> <td></td></tr>
-  <tr align="center"><td>3.0.0</td> <td>Feb 12, 2026</td> <td>3252 </td> <td>3206 </td> <td></td></tr>
-  <tr align="center"><td>2.3.0</td> <td>Jan 25, 2026</td> <td>3146*</td> <td>3061 </td> <td></td></tr>
-  <tr align="center"><td>2.2.0</td> <td>Jan 08, 2026</td> <td>3035*</td> <td>2953 </td> <td></td></tr>
-  <tr align="center"><td>2.1.0</td> <td>Dec 31, 2025</td> <td>2739*</td> <td>2689 </td> <td></td></tr>
-  <tr align="center"><td>2.0.0</td> <td>Dec 23, 2025</td> <td>2646*</td> <td></td>      <td></td></tr>
-  <tr align="center"><td>1.8.0</td> <td>Dec 27, 2024</td> <td>2223*</td> <td></td>      <td></td></tr>
-  <tr align="center"><td>1.7.6</td> <td>Dec 16, 2024</td> <td>1970 </td> <td></td>      <td></td></tr>
-  <tr align="center"><td>1.7.0</td> <td>Aug 26, 2023</td> <td>1853 </td> <td></td>      <td></td></tr>
-  <tr align="center"><td>1.6.0</td> <td>Aug 20, 2023</td> <td>1797*</td> <td></td>      <td></td></tr>
-  <tr align="center"><td>1.5.0</td> <td>Aug 16, 2023</td> <td>1764*</td> <td></td>      <td></td></tr>
+  <tr align="center">
+    <td>4.0.0     </td> <td>Apr 26, 2026  </td>
+    <td>3697*     </td> <td>3578*         </td>
+    <td>3521 (#34)</td> <td>3432 (#33/#19)</td>
+  </tr>
+  <tr align="center">
+    <td>3.3.0</td> <td>Apr 06, 2026</td>
+    <td>3670 </td> <td>3558 </td>
+    <td>3433 </td> <td>     </td>
+  </tr>
+  <tr align="center">
+    <td>3.2.0</td> <td>Mar 19, 2026</td>
+    <td>3612*</td> <td>3484 </td>
+    <td>     </td> <td>     </td>
+  </tr>
+  <tr align="center">
+    <td>3.1.0</td> <td>Mar 01, 2026</td>
+    <td>3510 </td> <td>3416 </td>
+    <td>     </td> <td>     </td>
+  </tr>
+  <tr align="center">
+    <td>3.0.0</td> <td>Feb 12, 2026</td>
+    <td>3252 </td> <td>3206 </td>
+    <td>     </td> <td>     </td>
+  </tr>
+  <tr align="center">
+    <td>2.3.0</td> <td>Jan 25, 2026</td>
+    <td>3146*</td> <td>3061 </td>
+    <td>     </td> <td>     </td>
+  </tr>
+  <tr align="center">
+    <td>2.2.0</td> <td>Jan 08, 2026</td>
+    <td>3035*</td> <td>2953 </td>
+    <td>     </td> <td>     </td>
+  </tr>
+  <tr align="center">
+    <td>2.1.0</td> <td>Dec 31, 2025</td>
+    <td>2739*</td> <td>2689 </td>
+    <td>     </td> <td>     </td>
+  </tr>
+  <tr align="center">
+    <td>2.0.0</td> <td>Dec 23, 2025</td>
+    <td>2646*</td> <td>     </td>
+    <td>     </td> <td>     </td>
+  </tr>
+  <tr align="center">
+    <td>1.8.0</td> <td>Dec 27, 2024</td>
+    <td>2223*</td> <td>     </td>
+    <td>     </td> <td>     </td>
+  </tr>
+  <tr align="center">
+    <td>1.7.6</td> <td>Dec 16, 2024</td>
+    <td>1970 </td> <td>     </td>
+    <td>     </td> <td>     </td>
+  </tr>
+  <tr align="center">
+    <td>1.7.0</td> <td>Aug 26, 2023</td>
+    <td>1853 </td> <td>     </td>
+    <td>     </td> <td>     </td>
+  </tr>
+  <tr align="center">
+    <td>1.6.0</td> <td>Aug 20, 2023</td>
+    <td>1797*</td> <td>     </td>
+    <td>     </td> <td>     </td>
+  </tr>
+  <tr align="center">
+    <td>1.5.0</td> <td>Aug 16, 2023</td>
+    <td>1764*</td> <td>     </td>
+    <td>     </td> <td>     </td>
+  </tr>
 </table>
 *estimated<br>
 **first ranking is in full list, second is if you only compare best version per engine

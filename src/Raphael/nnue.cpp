@@ -435,7 +435,7 @@ void Nnue::forward_l1(const u8 l0_out[L1_SIZE], f32 l1_out[L2_SIZE], i32 bucket_
     constexpr i32 regw32 = ALIGNMENT / sizeof(i32);
     constexpr i32 regw8 = ALIGNMENT / sizeof(i8);
     static_assert(L2_SIZE % regw32 == 0);
-    static_assert(L1_SIZE % 4 == 0);
+    static_assert(L1_SIZE % 8 == 0);
 
     constexpr i32 n_chunks = L2_SIZE / regw32;
     VecI32 l1_pre[n_chunks];
@@ -443,17 +443,21 @@ void Nnue::forward_l1(const u8 l0_out[L1_SIZE], f32 l1_out[L2_SIZE], i32 bucket_
     #pragma GCC unroll 32  // fmt: skip
     for (i32 r = 0; r < n_chunks; r++) l1_pre[r] = zero_i32();
 
-    for (i32 i = 0; i < n_tiles; i++) {
-        // compute l1_pre += W1[:, 4i:4(i+1)] * l0_out[4i:4(i+1)]
-        VecU8 inputs = tile_u8(&l0_out[4 * i]);
-        VecI8 weights[n_chunks];
+    for (i32 i = 0; i < n_tiles; i += 2) {
+        // compute l1_pre += W1[:, 8i:8(i+1)] * l0_out[8i:8(i+1)]
+        VecU8 inputs0 = tile_u8(&l0_out[4 * (i + 0)]);
+        VecU8 inputs1 = tile_u8(&l0_out[4 * (i + 1)]);
+        VecI8 weights[n_chunks][2];
+
+        #pragma GCC unroll 32  // fmt: skip
+        for (i32 r = 0; r < n_chunks; r++) {
+            weights[r][0] = load_i8(&params->W1[bucket_idx][i + 0][r * regw8]);
+            weights[r][1] = load_i8(&params->W1[bucket_idx][i + 1][r * regw8]);
+        }
 
         #pragma GCC unroll 32  // fmt: skip
         for (i32 r = 0; r < n_chunks; r++)
-            weights[r] = load_i8(&params->W1[bucket_idx][i][r * regw8]);
-
-        #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < n_chunks; r++) l1_pre[r] = dpbusd_i32(l1_pre[r], inputs, weights[r]);
+            l1_pre[r] = dpbusd2_i32(l1_pre[r], inputs0, weights[r][0], inputs1, weights[r][1]);
     }
 
     // activate l1

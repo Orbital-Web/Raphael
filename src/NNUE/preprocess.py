@@ -3,7 +3,9 @@ import sys
 
 import numpy as np
 
-HIDDEN_SIZE = 1024
+L1_SIZE = 1024
+L2_SIZE = 16
+L3_SIZE = 32
 NUM_INPUT_BUCKET = 16
 NUM_OUTPUT_BUCKET = 8
 
@@ -18,26 +20,37 @@ BUCKETS = [
     14, 14, 15, 15
 ]   # fmt: skip
 
+NETWORK: dict[str, tuple[tuple[int], np.dtype]] = {
+    "l0w": ((NUM_INPUT_BUCKET, 12, 64, L1_SIZE), np.dtype(np.int16)),
+    "l0b": ((L1_SIZE,), np.dtype(np.int16)),
+    "l1w": ((NUM_OUTPUT_BUCKET, L2_SIZE, L1_SIZE), np.dtype(np.int8)),
+    "l1b": ((NUM_OUTPUT_BUCKET, L2_SIZE), np.dtype(np.float32)),
+    "l2w": ((NUM_OUTPUT_BUCKET, L3_SIZE, L2_SIZE), np.dtype(np.float32)),
+    "l2b": ((NUM_OUTPUT_BUCKET, L3_SIZE), np.dtype(np.float32)),
+    "l3w": ((NUM_OUTPUT_BUCKET, L3_SIZE), np.dtype(np.float32)),
+    "l3b": ((NUM_OUTPUT_BUCKET,), np.dtype(np.float32)),
+}
+
 
 def load_network(filename: str) -> dict[str, np.ndarray]:
     assert len(set(BUCKETS)) == NUM_INPUT_BUCKET, "incorrect input bucket count"
     assert max(BUCKETS) + 1 == NUM_INPUT_BUCKET, "incorrect output bucket count"
 
-    W0_SIZE = 12 * 64 * NUM_INPUT_BUCKET * HIDDEN_SIZE
-    B0_SIZE = HIDDEN_SIZE
-    W1_SIZE = NUM_OUTPUT_BUCKET * HIDDEN_SIZE
-    B1_SIZE = NUM_OUTPUT_BUCKET
+    NET_SIZE = sum(np.prod(shape) * dt.itemsize for (shape, dt) in NETWORK.values())
+    PADDING_SIZE = ((NET_SIZE + 63) // 64 * 64) - NET_SIZE
 
-    NET_SIZE = W0_SIZE + B0_SIZE + W1_SIZE + B1_SIZE
-    PADDED_NET_SIZE = (NET_SIZE + 31) // 32 * 32  # padded to 64 bytes
+    net = {}
+    with open(filename, "rb") as raw:
+        for layer, (shape, dt) in NETWORK.items():
+            expected = np.prod(shape) * dt.itemsize
+            chunk = raw.read(expected)
+            assert len(chunk) == expected, f"file terminated, could not read {layer=}"
+            net[layer] = np.frombuffer(chunk, dtype=dt).reshape(shape)
 
-    data = np.frombuffer(open(filename, "rb").read(), dtype=np.int16)
-    assert data.size == PADDED_NET_SIZE, "invalid network size"
+        chunk = raw.read()
+        assert len(chunk) == PADDING_SIZE, f"invalid network size"
 
-    ft = data[:W0_SIZE].reshape((NUM_INPUT_BUCKET, 12, 64, HIDDEN_SIZE))
-    rest = data[W0_SIZE:]
-
-    return {"ft": ft, "rest": rest}
+    return net
 
 
 def merge_king_planes(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
@@ -45,7 +58,7 @@ def merge_king_planes(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     # the bucket squares, the enemy king must be outside the bucket squares
     # thus, we can copy over the enemy king features to the same plane as our king
     # features, thus reducing the network size by 64 * NUM_INPUT_BUCKET parameters
-    ft = net["ft"]
+    ft = net["l0w"]
     merged_ft = ft[:, :11, :, :].copy()
 
     full_buckets = np.full((8, 8), -1, dtype=np.int16)
@@ -60,16 +73,71 @@ def merge_king_planes(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         merged_ft[bucket, OUR_KING, bucket_mask, :] = ft[
             bucket, OUR_KING, bucket_mask, :
         ]
+    net["l0w"] = merged_ft
 
-    return {"ft": merged_ft, "rest": net["rest"]}
+    return net
+
+
+def permute_l0(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    # FIXME: move this to build-time
+    # _mm256_packus_epi16 will permute the output, thus we must permute l0 to
+    # counteract this
+    l0w = net["l0w"]
+    l0b = net["l0b"]
+    assert l0w.shape == (
+        NUM_INPUT_BUCKET,
+        11,
+        64,
+        L1_SIZE,
+    ), "must merge l0w king planes first before permuting"
+
+    l0wp = l0w.copy()
+    l0bp = l0b.copy()
+
+    for i in range(0, L1_SIZE, 32):
+        # swap [8:16] and [16:24]
+        l0wp[:, :, :, i + 8 : i + 16] = l0w[:, :, :, i + 16 : i + 24]
+        l0wp[:, :, :, i + 16 : i + 24] = l0w[:, :, :, i + 8 : i + 16]
+        l0bp[i + 8 : i + 16] = l0b[i + 16 : i + 24]
+        l0bp[i + 16 : i + 24] = l0b[i + 8 : i + 16]
+    net["l0w"] = l0wp
+    net["l0b"] = l0bp
+
+    return net
+
+
+def permute_l1(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    # we must put L2_SIZE * 4 tiles contiguously in memory for fast inference
+    l1w = net["l1w"]  # [output][l2][l1]
+    l1wp = np.empty((NUM_OUTPUT_BUCKET, L1_SIZE // 4, L2_SIZE * 4), l1w.dtype)
+
+    for b in range(NUM_OUTPUT_BUCKET):
+        for i in range(0, L1_SIZE // 4):
+            l1wp[b, i, :] = l1w[b, :, 4 * i : 4 * (i + 1)].reshape(L2_SIZE * 4)
+    net["l1w"] = l1wp
+
+    return net
+
+
+def permute_l2(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    # we want to map [bucket][output][input] to [bucket][input][output]
+    l2w = net["l2w"]
+    l2wp = l2w.transpose((0, 2, 1))
+    net["l2w"] = l2wp
+
+    return net
 
 
 def write_network(net: dict[str, np.ndarray], filename: str) -> None:
-    data = np.concatenate([net["ft"].flatten(), net["rest"]])
-    assert data.dtype == np.int16, "network data type must be int16"
-    assert data.size % 32 == 0, "network size is not padded to 64 bytes"
+    filesize = 0
+    with open(filename, "wb") as file:
+        for layer in net.values():
+            data = layer.flatten().tobytes()
+            filesize += len(data)
+            file.write(data)
 
-    data.tofile(filename)
+        padding_size = ((filesize + 63) // 64 * 64) - filesize
+        file.write(bytes(padding_size))
 
 
 if __name__ == "__main__":
@@ -81,5 +149,8 @@ if __name__ == "__main__":
     net = load_network(filename)
 
     net = merge_king_planes(net)
+    net = permute_l0(net)
+    net = permute_l1(net)
+    net = permute_l2(net)
 
     write_network(net, f"processed_{filename}")

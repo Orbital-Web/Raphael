@@ -31,12 +31,12 @@ i32 Nnue::NnueFeature::index(chess::Color perspective, bool mirror) const {
 
 Nnue::NnueFinnyEntry::NnueFinnyEntry() {}
 
-void Nnue::NnueFinnyEntry::initialize(const i16 biases[N_HIDDEN]) {
-    copy(biases, biases + N_HIDDEN, values);
+void Nnue::NnueFinnyEntry::initialize(const i16 biases[L1_SIZE]) {
+    copy(biases, biases + L1_SIZE, values);
 }
 
 void Nnue::NnueFinnyEntry::update(
-    const i16 weights[N_INPUTS][N_HIDDEN],
+    const i16 weights[N_INPUTS][L1_SIZE],
     const chess::Board& board,
     chess::Color perspective,
     bool mirror
@@ -80,23 +80,23 @@ void Nnue::NnueFinnyEntry::update(
 
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
-    constexpr i32 n_chunks = N_HIDDEN / regw;
-    static_assert(N_HIDDEN % regw == 0);
-    static_assert(n_chunks % SIMD_UNROLL == 0);
-    VecI16 accs[SIMD_UNROLL];
+    constexpr i32 n_chunks = L1_SIZE / regw;
+    static_assert(L1_SIZE % regw == 0);
+    static_assert(n_chunks % SIMD_REGS == 0);
+    VecI16 accs[SIMD_REGS];
 
-    for (i32 i = 0; i < n_chunks; i += SIMD_UNROLL) {
-        // copy bias
+    for (i32 i = 0; i < n_chunks; i += SIMD_REGS) {
+    // copy bias
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_UNROLL; r++) accs[r] = load_i16(&values[(i + r) * regw]);
+        for (i32 r = 0; r < SIMD_REGS; r++) accs[r] = load_i16(&values[(i + r) * regw]);
 
         // add features
         for (i32 f = 0; f < n_adds; f++) {
             const auto fidx = adds[f];
 
             #pragma GCC unroll 32  // fmt: skip
-            for (i32 r = 0; r < SIMD_UNROLL; r++)
-                accs[r] = adds_i16(accs[r], load_i16(&weights[fidx][(i + r) * regw]));
+            for (i32 r = 0; r < SIMD_REGS; r++)
+                accs[r] = add_i16(accs[r], load_i16(&weights[fidx][(i + r) * regw]));
         }
 
         // rem features
@@ -104,19 +104,19 @@ void Nnue::NnueFinnyEntry::update(
             const auto fidx = subs[f];
 
             #pragma GCC unroll 32  // fmt: skip
-            for (i32 r = 0; r < SIMD_UNROLL; r++)
-                accs[r] = subs_i16(accs[r], load_i16(&weights[fidx][(i + r) * regw]));
+            for (i32 r = 0; r < SIMD_REGS; r++)
+                accs[r] = sub_i16(accs[r], load_i16(&weights[fidx][(i + r) * regw]));
         }
 
-    // store into self
+        // store into self
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_UNROLL; r++) store_i16(&values[(i + r) * regw], accs[r]);
+        for (i32 r = 0; r < SIMD_REGS; r++) store_i16(&values[(i + r) * regw], accs[r]);
     }
 #else
     for (i32 f = 0; f < n_adds; f++)
-        for (i32 i = 0; i < N_HIDDEN; i++) values[i] += weights[adds[f]][i];
+        for (i32 i = 0; i < L1_SIZE; i++) values[i] += weights[adds[f]][i];
     for (i32 f = 0; f < n_subs; f++)
-        for (i32 i = 0; i < N_HIDDEN; i++) values[i] -= weights[subs[f]][i];
+        for (i32 i = 0; i < L1_SIZE; i++) values[i] -= weights[subs[f]][i];
 #endif
 }
 
@@ -150,7 +150,7 @@ void Nnue::NnueAccumulator::reset_updates() {
 
 void Nnue::NnueAccumulator::update(
     const NnueAccumulator& old_acc,
-    const i16 weights[N_INPUTS][N_HIDDEN],
+    const i16 weights[N_INPUTS][L1_SIZE],
     chess::Color perspective,
     bool mirror
 ) {
@@ -165,40 +165,38 @@ void Nnue::NnueAccumulator::update(
 
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
-    constexpr i32 n_chunks = N_HIDDEN / regw;
-    static_assert(N_HIDDEN % regw == 0);
-    static_assert(n_chunks % SIMD_UNROLL == 0);
-    VecI16 accs[SIMD_UNROLL];
+    constexpr i32 n_chunks = L1_SIZE / regw;
+    static_assert(L1_SIZE % regw == 0);
+    static_assert(n_chunks % SIMD_REGS == 0);
+    VecI16 accs[SIMD_REGS];
 
-    for (i32 i = 0; i < n_chunks; i += SIMD_UNROLL) {
-        // copy old_acc
+    for (i32 i = 0; i < n_chunks; i += SIMD_REGS) {
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_UNROLL; r++) accs[r] = load_i16(&old_acc.values[(i + r) * regw]);
+        for (i32 r = 0; r < SIMD_REGS; r++) accs[r] = load_i16(&old_acc.values[(i + r) * regw]);
 
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_UNROLL; r++)
-            accs[r] = subs_i16(accs[r], load_i16(&weights[sub1][(i + r) * regw]));
+        for (i32 r = 0; r < SIMD_REGS; r++)
+            accs[r] = sub_i16(accs[r], load_i16(&weights[sub1][(i + r) * regw]));
 
         if (n_subs > 1)
             #pragma GCC unroll 32  // fmt: skip
-            for (i32 r = 0; r < SIMD_UNROLL; r++)
-                accs[r] = subs_i16(accs[r], load_i16(&weights[sub2][(i + r) * regw]));
+            for (i32 r = 0; r < SIMD_REGS; r++)
+                accs[r] = sub_i16(accs[r], load_i16(&weights[sub2][(i + r) * regw]));
 
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_UNROLL; r++)
-            accs[r] = adds_i16(accs[r], load_i16(&weights[add1][(i + r) * regw]));
+        for (i32 r = 0; r < SIMD_REGS; r++)
+            accs[r] = add_i16(accs[r], load_i16(&weights[add1][(i + r) * regw]));
 
         if (n_adds > 1)
             #pragma GCC unroll 32  // fmt: skip
-            for (i32 r = 0; r < SIMD_UNROLL; r++)
-                accs[r] = adds_i16(accs[r], load_i16(&weights[add2][(i + r) * regw]));
+            for (i32 r = 0; r < SIMD_REGS; r++)
+                accs[r] = add_i16(accs[r], load_i16(&weights[add2][(i + r) * regw]));
 
-    // store into self
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_UNROLL; r++) store_i16(&values[(i + r) * regw], accs[r]);
+        for (i32 r = 0; r < SIMD_REGS; r++) store_i16(&values[(i + r) * regw], accs[r]);
     }
 #else
-    for (i32 i = 0; i < N_HIDDEN; i++) {
+    for (i32 i = 0; i < L1_SIZE; i++) {
         values[i] = old_acc.values[i];
 
         values[i] -= weights[sub1][i];
@@ -212,7 +210,7 @@ void Nnue::NnueAccumulator::update(
 }
 
 void Nnue::NnueAccumulator::refresh_from(const NnueFinnyEntry& finny_entry) {
-    copy(finny_entry.values, finny_entry.values + N_HIDDEN, values);
+    copy(finny_entry.values, finny_entry.values + L1_SIZE, values);
     reset_updates();
     needs_refresh = false;
 }
@@ -251,57 +249,19 @@ i32 Nnue::evaluate(const chess::Board& board) {
     assert(!stm_acc.dirty());
     assert(!ntm_acc.dirty());
 
-    // get address to weights and biases
+    alignas(ALIGNMENT) u8 l0_out[L1_SIZE];
+    activate_l0(stm_acc, l0_out);
+    activate_l0(ntm_acc, l0_out + L1_SIZE / 2);
+
     constexpr i32 bucket_div = (32 + N_OUTBUCKETS - 1) / N_OUTBUCKETS;
     const i32 bucket_idx = (board.occ().count() - 2) / bucket_div;
-    const auto stm_w_base = params->W1[bucket_idx];
-    const auto ntm_w_base = stm_w_base + N_HIDDEN / 2;
-    const auto bias = params->b1[bucket_idx];
 
-#ifdef USE_SIMD
-    constexpr i32 regw = ALIGNMENT / sizeof(i16);
-    constexpr i32 n_chunks = (N_HIDDEN / 2) / regw;
-    static_assert((N_HIDDEN / 2) % regw == 0);
+    alignas(ALIGNMENT) f32 l1_out[L2_SIZE];
+    f32 eval;
+    forward_l1(l0_out, l1_out, bucket_idx);
+    forward_l2l3(l1_out, eval, bucket_idx);
 
-    const VecI16 zs = zero_i16();
-    const VecI16 qa = full_i16(QA);
-
-    VecI32 sum = zero_i16();
-    for (i32 i = 0; i < n_chunks; i++) {
-        const VecI16 stm_v0 = clamp_i16(load_i16(&stm_acc.values[i * regw]), zs, qa);
-        const VecI16 stm_v1 = clamp_i16(load_i16(&stm_acc.values[i * regw + N_HIDDEN / 2]), zs, qa);
-        const VecI16 ntm_v0 = clamp_i16(load_i16(&ntm_acc.values[i * regw]), zs, qa);
-        const VecI16 ntm_v1 = clamp_i16(load_i16(&ntm_acc.values[i * regw + N_HIDDEN / 2]), zs, qa);
-
-        const VecI16 stm_w = load_i16(&stm_w_base[i * regw]);
-        const VecI16 ntm_w = load_i16(&ntm_w_base[i * regw]);
-
-        const VecI16 stm_pw = madd_i16(mul_i16(stm_w, stm_v0), stm_v1);
-        const VecI16 ntm_pw = madd_i16(mul_i16(ntm_w, ntm_v0), ntm_v1);
-
-        sum = add_i32(sum, add_i32(stm_pw, ntm_pw));
-    }
-
-    i32 eval = QA * bias + hadd_i32(sum);
-#else
-    i32 eval = QA * bias;
-
-    // compute W1 dot SCReLU(acc)
-    for (i32 i = 0; i < N_HIDDEN / 2; i++) {
-        const i32 stm_v0 = min(max(static_cast<i32>(stm_acc.values[i]), 0), QA);
-        const i32 stm_v1 = min(max(static_cast<i32>(stm_acc.values[i + N_HIDDEN / 2]), 0), QA);
-        const i32 ntm_v0 = min(max(static_cast<i32>(ntm_acc.values[i]), 0), QA);
-        const i32 ntm_v1 = min(max(static_cast<i32>(ntm_acc.values[i + N_HIDDEN / 2]), 0), QA);
-
-        eval += stm_w_base[i] * stm_v0 * stm_v1;
-        eval += ntm_w_base[i] * ntm_v0 * ntm_v1;
-    }
-#endif
-
-    eval /= QA;
-    eval *= OUTPUT_SCALE;
-    eval /= (QA * QB);
-    return eval;
+    return i32(eval * OUTPUT_SCALE);
 }
 
 
@@ -420,4 +380,171 @@ void Nnue::lazy_update(const chess::Board& board, chess::Color perspective) {
         accumulators[clean_idx][perspective].update(
             accumulators[clean_idx - 1][perspective], params->W0[bucket], perspective, mirror
         );
+}
+
+void Nnue::activate_l0(const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2]) const {
+    constexpr i32 n_pairs = L1_SIZE / 2;
+
+#ifdef USE_SIMD
+    constexpr i32 regw16 = ALIGNMENT / sizeof(i16);
+    static_assert(L1_SIZE % (8 * regw16) == 0);
+
+    constexpr i32 n_chunks = n_pairs / regw16;
+    const VecI16 zs = zero_i16();
+    const VecI16 qa = full_i16(QA);
+
+    for (i32 i = 0; i < n_chunks; i += 4) {
+        // compute 4 * regw16 values of the pairwise mul at once
+        const VecI16 acc0_v0 = clamp_i16(load_i16(&acc.values[(i + 0) * regw16]), zs, qa);
+        const VecI16 acc1_v0 = clamp_i16(load_i16(&acc.values[(i + 1) * regw16]), zs, qa);
+        const VecI16 acc2_v0 = clamp_i16(load_i16(&acc.values[(i + 2) * regw16]), zs, qa);
+        const VecI16 acc3_v0 = clamp_i16(load_i16(&acc.values[(i + 3) * regw16]), zs, qa);
+        const VecI16 acc0_v1 = clamp_i16(load_i16(&acc.values[(i + 0) * regw16 + n_pairs]), zs, qa);
+        const VecI16 acc1_v1 = clamp_i16(load_i16(&acc.values[(i + 1) * regw16 + n_pairs]), zs, qa);
+        const VecI16 acc2_v1 = clamp_i16(load_i16(&acc.values[(i + 2) * regw16 + n_pairs]), zs, qa);
+        const VecI16 acc3_v1 = clamp_i16(load_i16(&acc.values[(i + 3) * regw16 + n_pairs]), zs, qa);
+
+        const VecI16 pw0 = mulhi_i16(lshift_i16(acc0_v0, 7), acc0_v1);
+        const VecI16 pw1 = mulhi_i16(lshift_i16(acc1_v0, 7), acc1_v1);
+        const VecI16 pw2 = mulhi_i16(lshift_i16(acc2_v0, 7), acc2_v1);
+        const VecI16 pw3 = mulhi_i16(lshift_i16(acc3_v0, 7), acc3_v1);
+
+        // note that packus will interleave every 8 values, thus l1w must be permuted
+        const VecU8 out0 = pack_u8_i16(pw0, pw1);
+        const VecU8 out1 = pack_u8_i16(pw2, pw3);
+        store_u8(&l0_out[(i + 0) * regw16], out0);
+        store_u8(&l0_out[(i + 2) * regw16], out1);
+    }
+#else
+    for (i32 i = 0; i < n_pairs; i++) {
+        const i32 acc_v0 = min(max(acc.values[i], i16(0)), i16(QA));
+        const i32 acc_v1 = min(max(acc.values[i + n_pairs], i16(0)), i16(QA));
+
+        // simulate mulhi, assuming non-permuted weights
+        l0_out[i] = ((acc_v0 << 7) * acc_v1) >> 16;
+    }
+#endif
+}
+
+void Nnue::forward_l1(const u8 l0_out[L1_SIZE], f32 l1_out[L2_SIZE], i32 bucket_idx) const {
+    constexpr i32 n_tiles = L1_SIZE / 4;
+    constexpr f32 scale = 1.0f / (QA * QA * QB / 512.0f);
+
+#ifdef USE_SIMD
+    // compute l1 matmul
+    constexpr i32 regw32 = ALIGNMENT / sizeof(i32);
+    constexpr i32 regw8 = ALIGNMENT / sizeof(i8);
+    static_assert(L2_SIZE % regw32 == 0);
+    static_assert(L1_SIZE % 8 == 0);
+
+    constexpr i32 n_chunks = L2_SIZE / regw32;
+    VecI32 l1_pre[n_chunks];
+
+    #pragma GCC unroll 32  // fmt: skip
+    for (i32 r = 0; r < n_chunks; r++) l1_pre[r] = zero_i32();
+
+    for (i32 i = 0; i < n_tiles; i += 2) {
+        // compute l1_pre += W1[:, 8i:8(i+1)] * l0_out[8i:8(i+1)]
+        VecU8 inputs0 = tile_u8(&l0_out[4 * (i + 0)]);
+        VecU8 inputs1 = tile_u8(&l0_out[4 * (i + 1)]);
+        VecI8 weights[n_chunks][2];
+
+        #pragma GCC unroll 32  // fmt: skip
+        for (i32 r = 0; r < n_chunks; r++) {
+            weights[r][0] = load_i8(&params->W1[bucket_idx][i + 0][r * regw8]);
+            weights[r][1] = load_i8(&params->W1[bucket_idx][i + 1][r * regw8]);
+        }
+
+        #pragma GCC unroll 32  // fmt: skip
+        for (i32 r = 0; r < n_chunks; r++)
+            l1_pre[r] = dpbusd2_i32(l1_pre[r], inputs0, weights[r][0], inputs1, weights[r][1]);
+    }
+
+    // activate l1
+    const VecF32 zs = zero_f32();
+    const VecF32 os = full_f32(1.0f);
+    const VecF32 scales = full_f32(scale);
+
+    for (i32 r = 0; r < n_chunks; r++) {
+        const VecF32 bias = load_f32(&params->b1[bucket_idx][r * regw32]);
+        const VecF32 pre = fmadd_f32(cvt_i32_f32(l1_pre[r]), scales, bias);
+        const VecF32 crelu = clamp_f32(pre, zs, os);
+        const VecF32 screlu = mul_f32(crelu, crelu);
+        store_f32(&l1_out[r * regw32], screlu);
+    }
+#else
+    i32 l1_pre[L2_SIZE] = {0};
+
+    // compute l1 matmul
+    for (i32 i = 0; i < n_tiles; i++)
+        for (i32 j = 0; j < L2_SIZE; j++)
+            for (i32 k = 0; k < 4; k++)
+                l1_pre[j] += l0_out[4 * i + k] * params->W1[bucket_idx][i][4 * j + k];
+
+    // activate l1
+    for (i32 i = 0; i < L2_SIZE; i++) {
+        const f32 bias = params->b1[bucket_idx][i];
+        const f32 crelu = min(max(l1_pre[i] * scale + bias, 0.0f), 1.0f);
+        const f32 screlu = crelu * crelu;
+        l1_out[i] = screlu;
+    }
+#endif
+}
+
+void Nnue::forward_l2l3(const f32 l1_out[L2_SIZE], f32& l3_out, i32 bucket_idx) const {
+#ifdef USE_SIMD
+    // compute l2 matmul
+    constexpr i32 regw32 = ALIGNMENT / sizeof(f32);
+    static_assert(L3_SIZE % regw32 == 0);
+
+    constexpr i32 n_chunks = L3_SIZE / regw32;
+    VecF32 l2_pre[n_chunks];
+
+    #pragma GCC unroll 32  // fmt: skip
+    for (i32 r = 0; r < n_chunks; r++) l2_pre[r] = load_f32(&params->b2[bucket_idx][r * regw32]);
+
+    for (i32 i = 0; i < L2_SIZE; i++) {
+        // compute l1_pre += W2[:, i] * l1_out[i]
+        VecF32 input = full_f32(l1_out[i]);
+        VecF32 weights[n_chunks];
+
+        #pragma GCC unroll 32  // fmt: skip
+        for (i32 r = 0; r < n_chunks; r++)
+            weights[r] = load_f32(&params->W2[bucket_idx][i][r * regw32]);
+
+        #pragma GCC unroll 32  // fmt: skip
+        for (i32 r = 0; r < n_chunks; r++) l2_pre[r] = fmadd_f32(input, weights[r], l2_pre[r]);
+    }
+
+    // activate l2 and compute l3 matmul
+    const VecF32 zs = zero_f32();
+    const VecF32 os = full_f32(1.0f);
+
+    l3_out = params->b3[bucket_idx];
+    VecF32 sums = zero_f32();
+
+    for (i32 r = 0; r < n_chunks; r++) {
+        const VecF32 crelu = clamp_f32(l2_pre[r], zs, os);
+        const VecF32 screlu = mul_f32(crelu, crelu);
+        const VecF32 weights = load_f32(&params->W3[bucket_idx][r * regw32]);
+        sums = fmadd_f32(screlu, weights, sums);
+    }
+
+    l3_out += hadd_f32(sums);
+#else
+    f32 l2_out[L3_SIZE];
+    for (i32 i = 0; i < L3_SIZE; i++) l2_out[i] = params->b2[bucket_idx][i];
+
+    // compute l2 matmul
+    for (i32 i = 0; i < L2_SIZE; i++)
+        for (i32 j = 0; j < L3_SIZE; j++) l2_out[j] += l1_out[i] * params->W2[bucket_idx][i][j];
+
+    // activate l2 and compute l3 dotprod
+    l3_out = params->b3[bucket_idx];
+    for (i32 i = 0; i < L3_SIZE; i++) {
+        const f32 crelu = min(max(l2_out[i], 0.0f), 1.0f);
+        const f32 screlu = crelu * crelu;
+        l3_out += screlu * params->W3[bucket_idx][i];
+    }
+#endif
 }

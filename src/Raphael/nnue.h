@@ -223,12 +223,27 @@ private:
      */
     void lazy_update(const chess::Board& board, chess::Color perspective);
 
+    /** Activates the output of l0 (the accumulators)
+     *
+     * \param acc accumulator of perspective
+     * \param l0_out output buffer to write activated l0 outputs to
+     */
     void activate_l0(const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2]) const;
 
+    /** Does a forward pass through l1
+     *
+     * \param l0_out activated outputs of l0
+     * \param l1_out output buffer to write activated l1 outputs to
+     * \param bucket_idx output bucket
+     */
     void forward_l1(const u8 l0_out[L1_SIZE], f32 l1_out[L2_SIZE], i32 bucket_idx) const;
 
-    void forward_l2(const f32 l1_out[L2_SIZE], f32 l2_out[L3_SIZE], i32 bucket_idx) const;
-
-    void forward_l3(const f32 l2_out[L3_SIZE], f32& l3_out, i32 bucket_idx) const;
+    /** Does a forward pass through l2 and l3
+     *
+     * \param l1_out activated outputs of l1
+     * \param l3_out output buffer
+     * \param bucket_idx output bucket
+     */
+    void forward_l2l3(const f32 l1_out[L2_SIZE], f32& l3_out, i32 bucket_idx) const;
 };
 }  // namespace raphael

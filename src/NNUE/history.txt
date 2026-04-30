@@ -300,7 +300,7 @@ merged as #87     | activ: screlu                     |   data: d5-12 (14.2b)   
                   | 14, 14, 15, 15                    |                                   |                                             |                                                |
 ------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
 orthrus_v1        | (768x16hm->1024pw)x2->1x8         | 600sb                             | stc:                                        | Implemented pairwise multiplication.           |
-merged as #89     | activ: screlu                     |   data: d5-12 (14.2b)             | Elo   | 4.21 +- 3.10 (95%)                  |                                                |
+merged as #89     | activ: pw                         |   data: d5-12 (14.2b)             | Elo   | 4.21 +- 3.10 (95%)                  |                                                |
                   | scale: 250                        |   lr: 1600b warmup                | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
                   | quant: [255,64]                   |       cos(0.001,0.00000243)       | LLR   | 3.00 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Games | N: 12790 W: 3086 L: 2931 D: 6773    |                                                |
@@ -315,7 +315,7 @@ merged as #89     | activ: screlu                     |   data: d5-12 (14.2b)   
                   | 14, 14, 15, 15                    |                                   |                                             |                                                |
 ------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
 orthrus_v2        | (768x16hm->1024pw)x2->1x8         | 600sb                             | Elo   | 4.83 +- 3.38 (95%)                  | Switched to linear lr for finetuning.          |
-merged as #93     | activ: screlu                     |   data: d5-12 (14.2b)             | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+merged as #93     | activ: pw                         |   data: d5-12 (14.2b)             | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
                   | scale: 250                        |   lr: 1600b warmup                | LLR   | 3.01 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 10224 W: 2386 L: 2244 D: 5594    |                                                |
                   | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [16, 1154, 2631, 1294, 17]          |                                                |
@@ -330,7 +330,7 @@ merged as #93     | activ: screlu                     |   data: d5-12 (14.2b)   
                   | 14, 14, 15, 15                    |                                   |                                             |                                                |
 ------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
 orthrus_v3        | (768x16hm->1024pw)x2->1x8         | 600sb                             | stc:                                        | Tried switching to cosine lr for finetuning.   |
-unmerged          | activ: screlu                     |   data: d5-12 (14.2b)             | Elo   | -0.36 +- 2.55 (95%)                 | Seemed to be neutral for both stc and ltc.     |
+unmerged          | activ: pw                         |   data: d5-12 (14.2b)             | Elo   | -0.36 +- 2.55 (95%)                 | Seemed to be neutral for both stc and ltc.     |
                   | scale: 250                        |   lr: 1600b warmup                | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
                   | quant: [255,64]                   |       cos(0.001,0.00000243)       | LLR   | -2.42 (-2.25, 2.89) [0.00, 5.00]    |                                                |
                   | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Games | N: 18152 W: 4138 L: 4157 D: 9857    |                                                |
@@ -345,7 +345,7 @@ unmerged          | activ: screlu                     |   data: d5-12 (14.2b)   
                   | 14, 14, 15, 15                    |                                   |                                             |                                                |
 ------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
 orthrus_v4        | (768x16hm->1024pw)x2->1x8         | 600sb                             | stc:                                        | Tried switching to linear wdl for finetuning.  |
-unmerged          | activ: screlu                     |   data: d5-12 (14.2b)             | Elo   | -1.63 +- 3.47 (95%)                 |                                                |
+unmerged          | activ: pw                         |   data: d5-12 (14.2b)             | Elo   | -1.63 +- 3.47 (95%)                 |                                                |
                   | scale: 212                        |   lr: 1600b warmup                | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
                   | quant: [255,64]                   |       cos(0.001,0.00000243)       | LLR   | -2.33 (-2.25, 2.89) [0.00, 5.00]    |                                                |
                   | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Games | N: 9816 W: 2160 L: 2206 D: 5450     |                                                |
@@ -368,7 +368,7 @@ data: d14         | games: 21.60m                     | source: orthrus_v1-2    
                   |                                   | filter: noisy, checks             |                                                                                              |
 ------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
 orthrus_v5        | (768x16hm->1024pw)x2->1x8         | 600sb                             | Elo   | 7.77 +- 4.66 (95%)                  | Trained on more data generated with 24ksn.     |
-merged as #102    | activ: screlu                     |   data: d5-14 (19.7b)             | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+merged as #102    | activ: pw                         |   data: d5-14 (19.7b)             | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
                   | scale: 250                        |   lr: 1600b warmup                | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 5682 W: 1412 L: 1285 D: 2985     |                                                |
                   | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [15, 628, 1433, 745, 20]            |                                                |
@@ -383,7 +383,7 @@ merged as #102    | activ: screlu                     |   data: d5-14 (19.7b)   
                   | 14, 14, 15, 15                    |                                   |                                             |                                                |
 ------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
 cerberus_v1       | (768x16hm->1024pw)->(16->32->1)x8 | 800sb                             | fixed nodes:                                | First multilayer net. Fixed nodes gain was     |
-unmerged          | activ: screlu                     |   data: d5-14 (19.7b)             | Elo   | 28.13 +- 8.60 (95%)                 | modest compared to other implementations,      |
+unmerged          | activ: pw->screlu->screlu         |   data: d5-14 (19.7b)             | Elo   | 28.13 +- 8.60 (95%)                 | modest compared to other implementations,      |
                   | scale: 272                        |   lr: 1600b warmup                | SPRT  | N=25000 Threads=1 Hash=16MB         | which is probably why it lost at stc.          |
                   | quant: [255,64]                   |       cos(0.001,0.00000243)       | LLR   | 4.54 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Games | N: 2822 W: 930 L: 702 D: 1190       |                                                |

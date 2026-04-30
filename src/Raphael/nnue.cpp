@@ -171,7 +171,6 @@ void Nnue::NnueAccumulator::update(
     VecI16 accs[SIMD_REGS];
 
     for (i32 i = 0; i < n_chunks; i += SIMD_REGS) {
-    // copy old_acc
         #pragma GCC unroll 32  // fmt: skip
         for (i32 r = 0; r < SIMD_REGS; r++) accs[r] = load_i16(&old_acc.values[(i + r) * regw]);
 
@@ -193,7 +192,6 @@ void Nnue::NnueAccumulator::update(
             for (i32 r = 0; r < SIMD_REGS; r++)
                 accs[r] = add_i16(accs[r], load_i16(&weights[add2][(i + r) * regw]));
 
-        // store into self
         #pragma GCC unroll 32  // fmt: skip
         for (i32 r = 0; r < SIMD_REGS; r++) store_i16(&values[(i + r) * regw], accs[r]);
     }
@@ -259,13 +257,9 @@ i32 Nnue::evaluate(const chess::Board& board) {
     const i32 bucket_idx = (board.occ().count() - 2) / bucket_div;
 
     alignas(ALIGNMENT) f32 l1_out[L2_SIZE];
-    forward_l1(l0_out, l1_out, bucket_idx);
-
-    alignas(ALIGNMENT) f32 l2_out[L3_SIZE];
-    forward_l2(l1_out, l2_out, bucket_idx);
-
     f32 eval;
-    forward_l3(l2_out, eval, bucket_idx);
+    forward_l1(l0_out, l1_out, bucket_idx);
+    forward_l2l3(l1_out, eval, bucket_idx);
 
     return i32(eval * OUTPUT_SCALE);
 }
@@ -393,26 +387,33 @@ void Nnue::activate_l0(const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2]) const
 
 #ifdef USE_SIMD
     constexpr i32 regw16 = ALIGNMENT / sizeof(i16);
-    static_assert(L1_SIZE % (4 * regw16) == 0);
+    static_assert(L1_SIZE % (8 * regw16) == 0);
 
     constexpr i32 n_chunks = n_pairs / regw16;
     const VecI16 zs = zero_i16();
     const VecI16 qa = full_i16(QA);
 
-    for (i32 i = 0; i < n_chunks; i += 2) {
-        // compute 2 * regw16 values of the pairwise mul at once
+    for (i32 i = 0; i < n_chunks; i += 4) {
+        // compute 4 * regw16 values of the pairwise mul at once
         const VecI16 acc0_v0 = clamp_i16(load_i16(&acc.values[(i + 0) * regw16]), zs, qa);
         const VecI16 acc1_v0 = clamp_i16(load_i16(&acc.values[(i + 1) * regw16]), zs, qa);
+        const VecI16 acc2_v0 = clamp_i16(load_i16(&acc.values[(i + 2) * regw16]), zs, qa);
+        const VecI16 acc3_v0 = clamp_i16(load_i16(&acc.values[(i + 3) * regw16]), zs, qa);
         const VecI16 acc0_v1 = clamp_i16(load_i16(&acc.values[(i + 0) * regw16 + n_pairs]), zs, qa);
         const VecI16 acc1_v1 = clamp_i16(load_i16(&acc.values[(i + 1) * regw16 + n_pairs]), zs, qa);
+        const VecI16 acc2_v1 = clamp_i16(load_i16(&acc.values[(i + 2) * regw16 + n_pairs]), zs, qa);
+        const VecI16 acc3_v1 = clamp_i16(load_i16(&acc.values[(i + 3) * regw16 + n_pairs]), zs, qa);
 
         const VecI16 pw0 = mulhi_i16(lshift_i16(acc0_v0, 7), acc0_v1);
         const VecI16 pw1 = mulhi_i16(lshift_i16(acc1_v0, 7), acc1_v1);
+        const VecI16 pw2 = mulhi_i16(lshift_i16(acc2_v0, 7), acc2_v1);
+        const VecI16 pw3 = mulhi_i16(lshift_i16(acc3_v0, 7), acc3_v1);
 
-        // note that pack will interleave pw0[:8], pw1[:8], pw0[8:], pw1[8:]
-        // W0 [8:16] and [16:24] must be swapped every 32 values to account for this
-        const VecU8 out = pack_u8_i16(pw0, pw1);
-        store_u8(&l0_out[i * regw16], out);
+        // note that packus will interleave every 8 values, thus l1w must be permuted
+        const VecU8 out0 = pack_u8_i16(pw0, pw1);
+        const VecU8 out1 = pack_u8_i16(pw2, pw3);
+        store_u8(&l0_out[(i + 0) * regw16], out0);
+        store_u8(&l0_out[(i + 2) * regw16], out1);
     }
 #else
     for (i32 i = 0; i < n_pairs; i++) {
@@ -486,7 +487,7 @@ void Nnue::forward_l1(const u8 l0_out[L1_SIZE], f32 l1_out[L2_SIZE], i32 bucket_
 #endif
 }
 
-void Nnue::forward_l2(const f32 l1_out[L2_SIZE], f32 l2_out[L3_SIZE], i32 bucket_idx) const {
+void Nnue::forward_l2l3(const f32 l1_out[L2_SIZE], f32& l3_out, i32 bucket_idx) const {
 #ifdef USE_SIMD
     // compute l2 matmul
     constexpr i32 regw32 = ALIGNMENT / sizeof(f32);
@@ -511,50 +512,35 @@ void Nnue::forward_l2(const f32 l1_out[L2_SIZE], f32 l2_out[L3_SIZE], i32 bucket
         for (i32 r = 0; r < n_chunks; r++) l2_pre[r] = fmadd_f32(input, weights[r], l2_pre[r]);
     }
 
-    // activate l2
+    // activate l2 and compute l3 matmul
     const VecF32 zs = zero_f32();
     const VecF32 os = full_f32(1.0f);
+
+    l3_out = params->b3[bucket_idx];
+    VecF32 sums = zero_f32();
 
     for (i32 r = 0; r < n_chunks; r++) {
         const VecF32 crelu = clamp_f32(l2_pre[r], zs, os);
         const VecF32 screlu = mul_f32(crelu, crelu);
-        store_f32(&l2_out[r * regw32], screlu);
-    }
-#else
-    f32 l2_pre[L3_SIZE];
-
-    for (i32 i = 0; i < L3_SIZE; i++) l2_pre[i] = params->b2[bucket_idx][i];
-
-    // compute l2 matmul
-    for (i32 i = 0; i < L2_SIZE; i++)
-        for (i32 j = 0; j < L3_SIZE; j++) l2_pre[j] += l1_out[i] * params->W2[bucket_idx][i][j];
-
-    // activate l2
-    for (i32 i = 0; i < L3_SIZE; i++) {
-        const f32 crelu = min(max(l2_pre[i], 0.0f), 1.0f);
-        const f32 screlu = crelu * crelu;
-        l2_out[i] = screlu;
-    }
-#endif
-}
-
-void Nnue::forward_l3(const f32 l2_out[L3_SIZE], f32& l3_out, i32 bucket_idx) const {
-    l3_out = params->b3[bucket_idx];
-
-#ifdef USE_SIMD
-    // compute l3 matmul
-    constexpr i32 regw32 = ALIGNMENT / sizeof(f32);
-    constexpr i32 n_chunks = L3_SIZE / regw32;
-
-    VecF32 sums = zero_f32();
-    for (i32 i = 0; i < n_chunks; i++) {
-        const VecF32 inputs = load_f32(&l2_out[i * regw32]);
-        const VecF32 weights = load_f32(&params->W3[bucket_idx][i * regw32]);
-        sums = fmadd_f32(inputs, weights, sums);
+        const VecF32 weights = load_f32(&params->W3[bucket_idx][r * regw32]);
+        sums = fmadd_f32(screlu, weights, sums);
     }
 
     l3_out += hadd_f32(sums);
 #else
-    for (i32 i = 0; i < L3_SIZE; i++) l3_out += l2_out[i] * params->W3[bucket_idx][i];
+    f32 l2_out[L3_SIZE];
+    for (i32 i = 0; i < L3_SIZE; i++) l2_out[i] = params->b2[bucket_idx][i];
+
+    // compute l2 matmul
+    for (i32 i = 0; i < L2_SIZE; i++)
+        for (i32 j = 0; j < L3_SIZE; j++) l2_out[j] += l1_out[i] * params->W2[bucket_idx][i][j];
+
+    // activate l2 and compute l3 dotprod
+    l3_out = params->b3[bucket_idx];
+    for (i32 i = 0; i < L3_SIZE; i++) {
+        const f32 crelu = min(max(l2_out[i], 0.0f), 1.0f);
+        const f32 screlu = crelu * crelu;
+        l3_out += screlu * params->W3[bucket_idx][i];
+    }
 #endif
 }

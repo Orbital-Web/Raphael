@@ -25,7 +25,7 @@ inline VecI16 load_i16(const i16* src) {
  * \param dst the array of 32x i16 elements to store into
  * \param src the register to store
  */
-inline void store_i16(i16* dst, VecI16& src) {
+inline void store_i16(i16* dst, VecI16 src) {
     _mm512_store_si512(reinterpret_cast<VecI16*>(dst), src);
 }
 

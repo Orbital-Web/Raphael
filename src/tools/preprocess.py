@@ -78,34 +78,6 @@ def merge_king_planes(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     return net
 
 
-def permute_l0(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-    # FIXME: move this to build-time
-    # _mm256_packus_epi16 will permute the output, thus we must permute l0 to
-    # counteract this
-    l0w = net["l0w"]
-    l0b = net["l0b"]
-    assert l0w.shape == (
-        NUM_INPUT_BUCKET,
-        11,
-        64,
-        L1_SIZE,
-    ), "must merge l0w king planes first before permuting"
-
-    l0wp = l0w.copy()
-    l0bp = l0b.copy()
-
-    for i in range(0, L1_SIZE, 32):
-        # swap [8:16] and [16:24]
-        l0wp[:, :, :, i + 8 : i + 16] = l0w[:, :, :, i + 16 : i + 24]
-        l0wp[:, :, :, i + 16 : i + 24] = l0w[:, :, :, i + 8 : i + 16]
-        l0bp[i + 8 : i + 16] = l0b[i + 16 : i + 24]
-        l0bp[i + 16 : i + 24] = l0b[i + 8 : i + 16]
-    net["l0w"] = l0wp
-    net["l0b"] = l0bp
-
-    return net
-
-
 def permute_l1(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     # we must put L2_SIZE * 4 tiles contiguously in memory for fast inference
     l1w = net["l1w"]  # [output][l2][l1]
@@ -136,6 +108,10 @@ def write_network(net: dict[str, np.ndarray], filename: str) -> None:
             filesize += len(data)
             file.write(data)
 
+        # write flags
+        file.write(np.int8(0).tobytes())  # 0 = NONE permutation
+        filesize += 1
+
         padding_size = ((filesize + 63) // 64 * 64) - filesize
         file.write(bytes(padding_size))
 
@@ -148,8 +124,8 @@ if __name__ == "__main__":
     filename = sys.argv[1]
     net = load_network(filename)
 
+    # permuting l0 is done at build time, depending on the selected arch
     net = merge_king_planes(net)
-    net = permute_l0(net)
     net = permute_l1(net)
     net = permute_l2(net)
 

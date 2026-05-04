@@ -3,6 +3,7 @@
 
 #if defined(__AVX512F__)
     #include <immintrin.h>
+    #define USE_AVX512
     #define USE_SIMD 512
     #define ALIGNMENT 64
     #define SIMD_REGS 32
@@ -124,6 +125,7 @@ inline i32 hadd_i32(VecI32 reg) {
 
 #elif defined(__AVX__) || defined(__AVX2__)
     #include <immintrin.h>
+    #define USE_AVX2
     #define USE_SIMD 256
     #define ALIGNMENT 32
     #define SIMD_REGS 16

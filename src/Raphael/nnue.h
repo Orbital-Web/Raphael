@@ -10,7 +10,7 @@
 namespace raphael {
 class Nnue {
 public:
-    static constexpr i32 OUTPUT_SCALE = 272;
+    static constexpr i32 OUTPUT_SCALE = 274;
 
 private:
     static constexpr i32 N_INPUTS = 11 * 64;
@@ -20,6 +20,7 @@ private:
     static constexpr i32 N_OUTBUCKETS = 8;
     static constexpr i32 QA = 255;
     static constexpr i32 QB = 64;
+    static constexpr i32 QC = 64;
     static constexpr i32 N_INBUCKETS = 16;
     static constexpr i32 BUCKETS[32] = {  // clang-format off
         0,  1,  2,  3,
@@ -31,6 +32,7 @@ private:
         14, 14, 15, 15,
         14, 14, 15, 15
     };  // clang-format on
+    static constexpr i32 L1_SHIFT = 8;
 
     struct NnueFeature {
         chess::Piece piece;
@@ -151,13 +153,13 @@ private:
         alignas(ALIGNMENT) i16 b0[L1_SIZE];
         // layer1: L1_SIZE -> L2_SIZE
         alignas(ALIGNMENT) i8 W1[N_OUTBUCKETS][L1_SIZE / 4][L2_SIZE * 4];
-        alignas(ALIGNMENT) f32 b1[N_OUTBUCKETS][L2_SIZE];
+        alignas(ALIGNMENT) i32 b1[N_OUTBUCKETS][L2_SIZE];
         // layer2: L2_SIZE -> L3_SIZE
-        alignas(ALIGNMENT) f32 W2[N_OUTBUCKETS][L2_SIZE][L3_SIZE];
-        alignas(ALIGNMENT) f32 b2[N_OUTBUCKETS][L3_SIZE];
+        alignas(ALIGNMENT) i32 W2[N_OUTBUCKETS][L2_SIZE][L3_SIZE];
+        alignas(ALIGNMENT) i32 b2[N_OUTBUCKETS][L3_SIZE];
         // layer3: L3_SIZE -> 1
-        alignas(ALIGNMENT) f32 W3[N_OUTBUCKETS][L3_SIZE];
-        alignas(ALIGNMENT) f32 b3[N_OUTBUCKETS];
+        alignas(ALIGNMENT) i32 W3[N_OUTBUCKETS][L3_SIZE];
+        alignas(ALIGNMENT) i32 b3[N_OUTBUCKETS];
     };
     const NnueParams* params;  // network weights and biases
 
@@ -236,7 +238,7 @@ private:
      * \param l1_out output buffer to write activated l1 outputs to
      * \param bucket_idx output bucket
      */
-    void forward_l1(const u8 l0_out[L1_SIZE], f32 l1_out[L2_SIZE], i32 bucket_idx) const;
+    void forward_l1(const u8 l0_out[L1_SIZE], i32 l1_out[L2_SIZE], i32 bucket_idx) const;
 
     /** Does a forward pass through l2 and l3
      *
@@ -244,6 +246,6 @@ private:
      * \param l3_out output buffer
      * \param bucket_idx output bucket
      */
-    void forward_l2l3(const f32 l1_out[L2_SIZE], f32& l3_out, i32 bucket_idx) const;
+    void forward_l2l3(const i32 l1_out[L2_SIZE], i64& l3_out, i32 bucket_idx) const;
 };
 }  // namespace raphael

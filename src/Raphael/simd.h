@@ -105,7 +105,7 @@ inline VecI16 add_i16(VecI16 a, VecI16 b) { return _mm512_add_epi16(a, b); }
  * \param b register 2
  * \returns the result of the addition
  */
-inline VecI16 add_i32(VecI32 a, VecI32 b) { return _mm512_sub_epi32(a, b); }
+inline VecI16 add_i32(VecI32 a, VecI32 b) { return _mm512_add_epi32(a, b); }
 
 /** Does an element-wise subtraction of two VecI16 registers
  *

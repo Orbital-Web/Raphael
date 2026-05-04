@@ -55,7 +55,7 @@ private:
     static constexpr u8 PERMS[3][8] = {
         {0, 1, 2, 3, 4, 5, 6, 7}, // generic
         {0, 2, 1, 3, 4, 6, 5, 7}, // avx2
-        {0, 2, 4, 6, 1, 3, 5, 7}, // avx512
+        {0, 4, 1, 5, 2, 6, 3, 7}, // avx512
     };
 
 #ifdef USE_AVX512

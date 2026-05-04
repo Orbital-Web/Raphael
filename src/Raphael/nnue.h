@@ -19,7 +19,7 @@ private:
     static constexpr i32 L3_SIZE = 32;
     static constexpr i32 N_OUTBUCKETS = 8;
     static constexpr i32 QA = 255;
-    static constexpr i32 QB = 64;
+    static constexpr i32 QB = 128;
     static constexpr i32 QC = 64;
     static constexpr i32 N_INBUCKETS = 16;
     static constexpr i32 BUCKETS[32] = {  // clang-format off

@@ -382,11 +382,11 @@ merged as #102    | activ: pw                         |   data: d5-14 (19.7b)   
                   | 14, 14, 15, 15                    |                                   |                                             |                                                |
                   | 14, 14, 15, 15                    |                                   |                                             |                                                |
 ------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-cerberus_v1       | (768x16hm->1024pw)->(16->32->1)x8 | 800sb                             | fixed nodes:                                | First multilayer net. Fixed nodes gain was     |
-unmerged          | activ: pw->screlu->screlu         |   data: d5-14 (19.7b)             | Elo   | 28.13 +- 8.60 (95%)                 | modest compared to other implementations,      |
-                  | scale: 272                        |   lr: 1600b warmup                | SPRT  | N=25000 Threads=1 Hash=16MB         | which is probably why it lost at stc.          |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | LLR   | 4.54 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Games | N: 2822 W: 930 L: 702 D: 1190       |                                                |
+cerberus_v1       | (768x16hm->1024pw)->(16->32->1)x8 | 800sb                             | fixed nodes:                                | First multilayer net. Last two layers are      |
+unmerged          | activ: pw->screlu->screlu         |   data: d5-14 (19.7b)             | Elo   | 28.13 +- 8.60 (95%)                 | using float inference. Fixed node gain was     |
+                  | scale: 272                        |   lr: 1600b warmup                | SPRT  | N=25000 Threads=1 Hash=16MB         | modest compared to other implementations. Note |
+                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | LLR   | 4.54 (-2.25, 2.89) [0.00, 5.00]     | that the stc was accidentally comparing avx512 |
+                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Games | N: 2822 W: 930 L: 702 D: 1190       | single layer with avx2 multilayer.             |
                   | buckets:                          | 200sb                             | Penta | [54, 279, 549, 443, 86]             |                                                |
                   | 0,  1,  2,  3                     |   data: d7-14 (18.6b)             |                                             |                                                |
                   | 4,  5,  6,  7                     |   lr: lin(1e-5, 1e-7)             | stc:                                        |                                                |
@@ -395,5 +395,20 @@ unmerged          | activ: pw->screlu->screlu         |   data: d5-14 (19.7b)   
                   | 12, 12, 13, 13                    |                                   | LLR   | -2.57 (-2.25, 2.89) [0.00, 5.00]    |                                                |
                   | 12, 12, 13, 13                    |                                   | Games | N: 5488 W: 1223 L: 1295 D: 2970     |                                                |
                   | 14, 14, 15, 15                    |                                   | Penta | [26, 680, 1390, 636, 12]            |                                                |
+                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
+------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+cerberus_v2       | (768x16hm->1024pw)->(16->32->1)x8 | 800sb                             | fixed nodes:                                | Switched to int inference to ensure            |
+unmerged          | activ: pw->screlu->crelu          |   data: d5-14 (19.7b)             | Elo   | 28.13 +- 8.60 (95%)                 | deterministic bench across arches, and         |
+                  | scale: 274                        |   lr: 1600b warmup                | SPRT  | N=25000 Threads=1 Hash=16MB         | switched to crelu for the last layer to deal   |
+                  | quant: [255,128,64]               |       cos(0.001,0.00000243)       | LLR   | 4.54 (-2.25, 2.89) [0.00, 5.00]     | with the effects of quantization. There was    |
+                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Games | N: 2822 W: 930 L: 702 D: 1190       | virtually no difference in bench speed or      |
+                  | buckets:                          | 200sb                             | Penta | [54, 279, 549, 443, 86]             | final loss compared to the previous net. Note  |
+                  | 0,  1,  2,  3                     |   data: d7-14 (18.6b)             |                                             | that this stc test was again comparing avx512  |
+                  | 4,  5,  6,  7                     |   lr: lin(1e-5, 1e-7)             | stc:                                        | and avx2 accidentally.                         |
+                  | 8,  8,  9,  9                     |   wdl: const(0.6)                 | Elo   | -9.65 +- 7.02 (95%)                 |                                                |
+                  | 10, 10, 11, 11                    | filter: 0.5 random fen skipping   | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | 12, 12, 13, 13                    |                                   | LLR   | -2.28 (-2.25, 2.89) [0.00, 5.00]    |                                                |
+                  | 12, 12, 13, 13                    |                                   | Games | N: 2666 W: 615 L: 689 D: 1362       |                                                |
+                  | 14, 14, 15, 15                    |                                   | Penta | [18, 354, 652, 302, 7]              |                                                |
                   | 14, 14, 15, 15                    |                                   |                                             |                                                |
 ------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|

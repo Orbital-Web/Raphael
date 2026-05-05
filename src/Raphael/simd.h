@@ -196,11 +196,12 @@ inline VecU8 tile_u8(const u8* vals) {
  * \returns the result of the accumulated dot product
  */
 inline VecI32 dpbusd_i32(VecI32 a, VecU8 b, VecI8 c) {
-    #ifdef __AVX512VNNI__
-    return _mm512_dpbusd_epi32(a, b, c);
-    #else
+    // for some reason, dpbusd is a lot slower...
+    // #ifdef __AVX512VNNI__
+    // return _mm512_dpbusd_epi32(a, b, c);
+    // #else
     return add_i32(a, _mm512_madd_epi16(_mm512_maddubs_epi16(b, c), full_i16(1)));
-    #endif
+    // #endif
 }
 
 /** Computes out[i] = a[i] + dot(b[4*i : 4*(i+1)], c[4*i : 4*(i+1)]) +
@@ -214,16 +215,17 @@ inline VecI32 dpbusd_i32(VecI32 a, VecU8 b, VecI8 c) {
  * \returns the result of the accumulated dot product
  */
 inline VecI32 dpbusd2_i32(VecI32 a, VecU8 b, VecI8 c, VecU8 d, VecI8 e) {
-    #ifdef __AVX512VNNI__
-    return _mm512_dpbusd_epi32(_mm512_dpbusd_epi32(a, b, c), d, e);
-    #else
+    // for some reason, dpbusd is a lot slower...
+    // #ifdef __AVX512VNNI__
+    // return _mm512_dpbusd_epi32(_mm512_dpbusd_epi32(a, b, c), d, e);
+    // #else
     return add_i32(
         a,
         _mm512_madd_epi16(
             add_i16(_mm512_maddubs_epi16(b, c), _mm512_maddubs_epi16(d, e)), full_i16(1)
         )
     );
-    #endif
+    // #endif
 }
 
 /** Does an element-wise fused multiply add a[i] * b[i] + c[i]

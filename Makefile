@@ -105,15 +105,18 @@ endif
 # Architecture Flags
 #---------------------------------------------------------------------------------------------------
 
-CCFLAGS_NATIVE    := -march=native
-CCFLAGS_AVX512    := -march=skylake-avx512 -mbmi2 -DCHESS_USE_PEXT
-CCFLAGS_AVX2_BMI2 := -march=haswell -DCHESS_USE_PEXT
-CCFLAGS_AVX2      := -march=haswell -mno-bmi2
-CCFLAGS_GENERIC   := -march=x86-64
-CCFLAGS_TUNABLE   := -march=native -DTUNE
+CCFLAGS_NATIVE      := -march=native
+CCFLAGS_AVX512_VNNI := -march=cascadelake -mbmi2 -DCHESS_USE_PEXT
+CCFLAGS_AVX512      := -march=skylake-avx512 -mbmi2 -DCHESS_USE_PEXT
+CCFLAGS_AVX2_BMI2   := -march=haswell -DCHESS_USE_PEXT
+CCFLAGS_AVX2        := -march=haswell -mno-bmi2
+CCFLAGS_GENERIC     := -march=x86-64
+CCFLAGS_TUNABLE     := -march=native -DTUNE
 
 ifeq ($(ARCH),native)
     ARCH_FLAGS := $(CCFLAGS_NATIVE)
+else ifeq ($(ARCH),avx512_vnni)
+    ARCH_FLAGS := $(CCFLAGS_AVX512_VNNI)
 else ifeq ($(ARCH),avx512)
     ARCH_FLAGS := $(CCFLAGS_AVX512)
 else ifeq ($(ARCH),avx2_bmi2)
@@ -283,6 +286,7 @@ else
 		exit 1; \
 	fi
 endif
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx512-vnni ARCH=avx512_vnni DEBUG=release -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx512 ARCH=avx512 DEBUG=release -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2-bmi2 ARCH=avx2_bmi2 DEBUG=release PGO=on -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2 ARCH=avx2 DEBUG=release PGO=on -j uci

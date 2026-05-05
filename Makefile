@@ -8,6 +8,7 @@
 MAIN_EXE := main
 EXE  := uci
 TEST_EXE := test
+PERM_EXE := perm
 
 # NNUE file
 EVALFILE := default
@@ -38,9 +39,14 @@ TEST_SOURCES := \
     $(wildcard src/Raphael/*.cpp) \
     $(wildcard src/tests/*.cpp)
 
+PERM_SOURCES := \
+    $(wildcard src/Raphael/*.cpp) \
+    src/NNUE/permute.cpp
+
 MAIN_OBJS := $(MAIN_SOURCES:.cpp=.o)
 UCI_OBJS  := $(UCI_SOURCES:.cpp=.o)
 TEST_OBJS := $(TEST_SOURCES:.cpp=.o)
+PERM_OBJS := $(PERM_SOURCES:.cpp=.o)
 
 #---------------------------------------------------------------------------------------------------
 # Platform and Compiler Detection
@@ -99,15 +105,18 @@ endif
 # Architecture Flags
 #---------------------------------------------------------------------------------------------------
 
-CCFLAGS_NATIVE    := -march=native
-CCFLAGS_AVX512    := -march=skylake-avx512 -mbmi2 -DCHESS_USE_PEXT
-CCFLAGS_AVX2_BMI2 := -march=haswell -DCHESS_USE_PEXT
-CCFLAGS_AVX2      := -march=haswell -mno-bmi2
-CCFLAGS_GENERIC   := -march=x86-64
-CCFLAGS_TUNABLE   := -march=native -DTUNE
+CCFLAGS_NATIVE      := -march=native
+CCFLAGS_AVX512_VNNI := -march=cascadelake -mbmi2 -DCHESS_USE_PEXT
+CCFLAGS_AVX512      := -march=skylake-avx512 -mbmi2 -DCHESS_USE_PEXT
+CCFLAGS_AVX2_BMI2   := -march=haswell -DCHESS_USE_PEXT
+CCFLAGS_AVX2        := -march=haswell -mno-bmi2
+CCFLAGS_GENERIC     := -march=x86-64
+CCFLAGS_TUNABLE     := -march=native -DTUNE
 
 ifeq ($(ARCH),native)
     ARCH_FLAGS := $(CCFLAGS_NATIVE)
+else ifeq ($(ARCH),avx512_vnni)
+    ARCH_FLAGS := $(CCFLAGS_AVX512_VNNI)
 else ifeq ($(ARCH),avx512)
     ARCH_FLAGS := $(CCFLAGS_AVX512)
 else ifeq ($(ARCH),avx2_bmi2)
@@ -220,7 +229,7 @@ all: uci packages main test
 
 # main executable
 .PHONY: main
-main: $(MAIN_OBJS) $(EVALFILE)
+main: $(MAIN_OBJS) __network_preprocess
 	$(CXX) -o $(MAIN_EXE) $(MAIN_OBJS) $(LDFLAGS) $(SFML_LIBS)
 
 # uci executable
@@ -235,11 +244,11 @@ uci:
 endif
 
 .PHONY: test
-test: $(TEST_OBJS) $(EVALFILE)
+test: $(TEST_OBJS) __network_preprocess
 	$(CXX) -o $(TEST_EXE) $(TEST_OBJS) $(LDFLAGS)
 
 .PHONY: __nopgo __pgo
-__nopgo: $(UCI_OBJS) $(EVALFILE)
+__nopgo: $(UCI_OBJS) __network_preprocess
 	$(CXX) -o $(EXE) $(UCI_OBJS) $(LDFLAGS) $(LDFLAGS_UCI)
 
 __pgo:
@@ -248,6 +257,13 @@ __pgo:
 	$(PGO_MERGE)
 	$(MAKE) clean && $(MAKE) PGO_PHASE=use -j __nopgo
 	$(PGO_CLEAN)
+
+$(PERM_EXE): $(PERM_OBJS)
+	$(CXX) -o $(PERM_EXE) $(PERM_OBJS) $(LDFLAGS)
+
+.PHONY: __network_preprocess
+__network_preprocess: $(PERM_EXE) $(EVALFILE)
+	./$(PERM_EXE) $(EVALFILE)
 
 # compile .cpp -> .o
 %.o: %.cpp
@@ -270,6 +286,7 @@ else
 		exit 1; \
 	fi
 endif
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx512-vnni ARCH=avx512_vnni DEBUG=release -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx512 ARCH=avx512 DEBUG=release -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2-bmi2 ARCH=avx2_bmi2 DEBUG=release PGO=on -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2 ARCH=avx2 DEBUG=release PGO=on -j uci
@@ -311,14 +328,14 @@ endif
 .PHONY: clean clean_all
 clean:
 ifeq ($(DETECTED_OS),Windows)
-	del /Q $(subst /,\,$(MAIN_OBJS) $(UCI_OBJS) $(TEST_OBJS)) 2>nul
+	del /Q $(subst /,\,$(MAIN_OBJS) $(UCI_OBJS) $(TEST_OBJS) $(PERM_OBJS)) 2>nul
 else
-	rm -f $(MAIN_OBJS) $(UCI_OBJS) $(TEST_OBJS)
+	rm -f $(MAIN_OBJS) $(UCI_OBJS) $(TEST_OBJS) $(PERM_OBJS)
 endif
 
 clean_all: clean
 ifeq ($(DETECTED_OS),Windows)
-	del /Q $(MAIN_EXE) $(EXE) $(TEST_EXE) 2>nul
+	del /Q $(MAIN_EXE) $(EXE) $(TEST_EXE) $(PERM_EXE) 2>nul
 else
-	rm -f $(MAIN_EXE) $(EXE) $(TEST_EXE)
+	rm -f $(MAIN_EXE) $(EXE) $(TEST_EXE) $(PERM_EXE)
 endif

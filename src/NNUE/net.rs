@@ -47,13 +47,16 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "orthrus_v5";
-    const HIDDEN_SIZE: usize = 1024;
+    const NET_ID: &str = "cerberus_v2";
+    const L1_SIZE: usize = 1024;
+    const L2_SIZE: usize = 16;
+    const L3_SIZE: usize = 32;
     const NUM_INPUT_BUCKETS: usize = 16;
     const NUM_OUTPUT_BUCKETS: usize = 8;
     const SCALE: f32 = 400.0;
     const QA: i16 = 255;
-    const QB: i16 = 64;
+    const QB: i16 = 128;
+    const QC: i32 = 64;
     #[rustfmt::skip]
     const BUCKET_LAYOUT: [usize; 32] = [
         0,  1,  2,  3,
@@ -68,11 +71,17 @@ fn main() {
     const _: () = assert!(get_num_buckets(&BUCKET_LAYOUT) == NUM_INPUT_BUCKETS);
 
     // hyperparams
-    const SUPERBATCHES_STAGE0: usize = 600;
+    const SUPERBATCHES_STAGE0: usize = 800;
     const SUPERBATCHES_STAGE1: usize = 200;
     const DATASET_STAGE0: &str = "data/combined.vf";
     const DATASET_STAGE1: &str = "data/combined_ft.vf";
     const BATCH_GLOM: usize = 8;
+
+    // error correction terms
+    const L1_SHIFT: usize = 8;
+    const L1_SHIFT_SCALE: f32 = QA as f32 / ((1 << L1_SHIFT) as f32);
+    const I8_RANGE: f32 = i8::MAX as f32 / (QB as f32);
+    const L1_RANGE: f32 = I8_RANGE * L1_SHIFT_SCALE * L1_SHIFT_SCALE;
 
     let mut trainer = ValueTrainerBuilder::default()
         .dual_perspective()
@@ -88,33 +97,54 @@ fn main() {
                 .round()
                 .quantise::<i16>(QA),
             SavedFormat::id("l0b").round().quantise::<i16>(QA),
-            SavedFormat::id("l1w").round().quantise::<i16>(QB).transpose(),
-            SavedFormat::id("l1b").round().quantise::<i16>(QA * QB),
+            SavedFormat::id("l1w")
+                .transform(|_, mut weights| {
+                    for i in weights.iter_mut() {
+                        *i /= L1_SHIFT_SCALE * L1_SHIFT_SCALE;
+                    }
+                    weights
+                })
+                .round()
+                .quantise::<i8>(QB)
+                .transpose(),
+            SavedFormat::id("l1b").round().quantise::<i32>(QC * (1 << L1_SHIFT)),
+            SavedFormat::id("l2w").round().quantise::<i32>(QC).transpose(),
+            SavedFormat::id("l2b").round().quantise::<i32>(QC.pow(3)),
+            SavedFormat::id("l3w").round().quantise::<i32>(QC).transpose(),
+            SavedFormat::id("l3b").round().quantise::<i32>(QC.pow(4)),
         ])
         .loss_fn(|output, target| output.sigmoid().squared_error(target))
         .build(|builder, stm_inputs, ntm_inputs, output_buckets| {
             // input layer factorizer
-            let l0f = builder.new_weights("l0f", Shape::new(HIDDEN_SIZE, 768), InitSettings::Zeroed);
+            let l0f = builder.new_weights("l0f", Shape::new(L1_SIZE, 768), InitSettings::Zeroed);
             let expanded_factorizer = l0f.repeat(NUM_INPUT_BUCKETS);
 
             // input layer weights
-            let mut l0 = builder.new_affine("l0", 768 * NUM_INPUT_BUCKETS, HIDDEN_SIZE);
+            let mut l0 = builder.new_affine("l0", 768 * NUM_INPUT_BUCKETS, L1_SIZE);
+            l0.init_with_effective_input_size(32);
             l0.weights = l0.weights + expanded_factorizer;
 
-            // output layer weights
-            let l1 = builder.new_affine("l1", HIDDEN_SIZE, NUM_OUTPUT_BUCKETS);
+            // layerstack weights
+            let l1 = builder.new_affine("l1", L1_SIZE, NUM_OUTPUT_BUCKETS * L2_SIZE);
+            let l2 = builder.new_affine("l2", L2_SIZE, NUM_OUTPUT_BUCKETS * L3_SIZE);
+            let l3 = builder.new_affine("l3", L3_SIZE, NUM_OUTPUT_BUCKETS);
 
             // inference
             let stm_hidden = l0.forward(stm_inputs).crelu().pairwise_mul();
             let ntm_hidden = l0.forward(ntm_inputs).crelu().pairwise_mul();
-            let hidden_layer = stm_hidden.concat(ntm_hidden);
-            l1.forward(hidden_layer).select(output_buckets)
+            let h1 = stm_hidden.concat(ntm_hidden);
+            let h2 = l1.forward(h1).select(output_buckets).screlu();
+            let h3 = l2.forward(h2).select(output_buckets).crelu();
+            l3.forward(h3).select(output_buckets)
         });
 
-    // ensure abs(factorizer + weights) <= 1.98
+    // ensure abs(l0w + l0f) <= 1.98 so that QA*(QB*l0w_merged) = QA*(QB*1.98) <= 32767
+    // ensure abs(l1w) <= L1_RANGE so that abs(QB*l1w / FT_SHIFT_SCALE^2) <= 127
     let l0_clip = AdamWParams { max_weight: 0.99, min_weight: -0.99, ..Default::default() };
+    let l1_clip = AdamWParams { max_weight: L1_RANGE, min_weight: -L1_RANGE, ..Default::default() };
     trainer.optimiser.set_params_for_weight("l0w", l0_clip);
     trainer.optimiser.set_params_for_weight("l0f", l0_clip);
+    trainer.optimiser.set_params_for_weight("l1w", l1_clip);
 
     let filter =
         Filter { min_pieces: 4, random_fen_skipping: true, random_fen_skip_probability: 0.5, ..Filter::default() };
@@ -160,7 +190,7 @@ fn main() {
         &settings,
         &ViriBinpackLoader::new(&DATASET_STAGE0.to_string(), 4096, 6, filter.clone()),
     );
-    // trainer.load_from_checkpoint("checkpoints/orthrus_v1_stage0-600");
+    // trainer.load_from_checkpoint("checkpoints/cerberus_v1_stage0-800");
     trainer.run(
         &schedule_stage1,
         &settings,

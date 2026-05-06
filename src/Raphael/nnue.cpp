@@ -445,7 +445,8 @@ void Nnue::forward_l1(const u8 l0_out[L1_SIZE], i32 l1_out[L2_SIZE], i32 bucket_
     for (i32 r = 0; r < n_chunks; r++) l1_pre[r] = zero_i32();
 
     for (i32 i = 0; i < n_tiles; i += 2) {
-        // l1_pre += W1[:, 8i:8(i+1)] * l0_out[8i:8(i+1)], input in [0, 127], weights in QB space
+        // l1_pre += W1[:, 8i:8(i+1)] * l0_out[8i:8(i+1)], input in [0, 127]
+        // weights in QB * (256/255)^2 space
         VecU8 inputs0 = tile_u8(&l0_out[4 * (i + 0)]);
         VecU8 inputs1 = tile_u8(&l0_out[4 * (i + 1)]);
         VecI8 weights[n_chunks][2];
@@ -463,14 +464,14 @@ void Nnue::forward_l1(const u8 l0_out[L1_SIZE], i32 l1_out[L2_SIZE], i32 bucket_
 
     // activate l1
     const VecI32 zs = zero_i32();
-    const VecI32 qs = full_i32(QC);
+    const VecI32 qs = full_i32(QC << L1_SHIFT);
 
     for (i32 r = 0; r < n_chunks; r++) {
-        // downshift by L1_SHIFT to go into QC space and screlu into QC^2 space
+        // apply screlu and downshift into QC^2 space
         const VecI32 bias = load_i32(&params->b1[bucket_idx][r * regw32]);
-        const VecI32 pre = rshift_i32(add_i32(l1_pre[r], bias), L1_SHIFT);
+        const VecI32 pre = add_i32(l1_pre[r], bias);
         const VecI32 crelu = clamp_i32(pre, zs, qs);
-        const VecI32 screlu = mullo_i32(crelu, crelu);
+        const VecI32 screlu = rshift_i32(mullo_i32(crelu, crelu), 2 * L1_SHIFT);
         store_i32(&l1_out[r * regw32], screlu);
     }
 #else

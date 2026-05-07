@@ -37,7 +37,7 @@ static_assert(sizeof(PackedBoard) == 32);
 
 struct ViriMove {
     u16 move = 0;
-    u16 score = 0;
+    i16 score = 0;
 
     /** Packs a move and a score into a 4 byte entry
      *

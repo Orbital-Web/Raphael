@@ -164,6 +164,53 @@ private:
         void refresh_from(const NnueFinnyEntry& finny_entry);
     };
 
+#ifdef USE_SIMD
+    class SparseIterator {
+    private:
+        u16 indices_[L1_SIZE / 4] = {};
+        i32 count_ = 0;
+        __m128i offset_;
+
+        // precompute nonzero_idx[mask][nnz_idx] = position of nonzero block
+        alignas(16) static constexpr MultiArray<u16, 256, 8> nonzero_idx = [] {
+            MultiArray<u16, 256, 8> idx{};
+
+            for (i32 i = 0; i < 256; i++) {
+                i32 nnz = 0;
+
+                for (u8 mask = i; mask != 0; mask &= mask - 1)
+                    idx[i][nnz++] = std::countr_zero(mask);
+            }
+
+            return idx;
+        }();
+
+
+    public:
+        /** Initializes the sparse iterator */
+        SparseIterator();
+
+        /** Adds the nonzero indices to the sparse iterator
+         *
+         * \param l0_out a chunk of l0 outputs
+         */
+        void add_nonzeros(VecU8 l0_out);
+
+        /** Returns the number of nonezero blocks
+         *
+         * \returns the nnz count
+         */
+        i32 count() const;
+
+        /** Returns the tile id for a nonzero block
+         *
+         * \param nnz_id which nonzero chunk we want the index for
+         * \returns the corresponding tile id
+         */
+        i32 index(i32 nnz_id) const;
+    };
+#endif
+
     const NnueParams* params;  // network weights and biases
 
     /** Loads the embedded network

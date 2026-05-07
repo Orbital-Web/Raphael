@@ -13,6 +13,15 @@ using VecI16 = __m512i;  // a list of 32x i16
 using VecI32 = __m512i;  // a list of 16x i32
 
 
+/** Loads an u8[64] array into a VecU8 register
+ *
+ * \param src an array of 64x u8 elements
+ * \returns the loaded register
+ */
+inline VecU8 load_u8(const u8* src) {
+    return _mm512_load_si512(reinterpret_cast<const VecU8*>(src));
+}
+
 /** Loads an i8[64] array into a VecI8 register
  *
  * \param src an array of 64x i8 elements
@@ -188,6 +197,13 @@ inline VecU8 tile_u8(const u8* vals) {
     return _mm512_set1_epi32(*reinterpret_cast<const u32*>(vals));  // technically UB
 }
 
+/** Returns a mask of nonzero groups of 4x u8 in the VecU8 register
+ *
+ * \param reg register to get mask for
+ * \returns a bitmask of nonzero blocks
+ */
+inline u32 nonzero_mask(VecU8 reg) { return _mm512_cmpgt_epi32_mask(reg, zero_i32()); }
+
 /** Computes out[i] = a[i] + dot(b[4*i : 4*(i+1)], c[4*i : 4*(i+1)])
  *
  * \param a register 1
@@ -273,6 +289,14 @@ using VecI16 = __m256i;  // a list of 16x i16
 using VecI32 = __m256i;  // a list of 8x i32
 
 
+/** Loads an u8[32] array into a VecU8 register
+ *
+ * \param src an array of 32x u8 elements
+ * \returns the loaded register
+ */
+inline VecU8 load_u8(const u8* src) {
+    return _mm256_load_si256(reinterpret_cast<const VecU8*>(src));
+}
 
 /** Loads an i8[32] array into a VecI8 register
  *
@@ -446,6 +470,15 @@ inline VecU8 pack_u8_i16(VecI16 a, VecI16 b) { return _mm256_packus_epi16(a, b);
  */
 inline VecU8 tile_u8(const u8* vals) {
     return _mm256_set1_epi32(*reinterpret_cast<const u32*>(vals));  // technically UB
+}
+
+/** Returns a mask of nonzero groups of 4x u8 in the VecU8 register
+ *
+ * \param reg register to get mask for
+ * \returns a bitmask of nonzero blocks
+ */
+inline u32 nonzero_mask(VecU8 reg) {
+    return _mm256_movemask_ps(_mm256_castsi256_ps(_mm256_cmpgt_epi32(reg, zero_i32())));
 }
 
 /** Computes out[i] = a[i] + dot(b[4*i : 4*(i+1)], c[4*i : 4*(i+1)])

@@ -47,7 +47,7 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "cerberus_v2";
+    const NET_ID: &str = "cerberus_v3";
     const L1_SIZE: usize = 1024;
     const L2_SIZE: usize = 16;
     const L3_SIZE: usize = 32;
@@ -113,8 +113,7 @@ fn main() {
             SavedFormat::id("l3w").round().quantise::<i32>(QC).transpose(),
             SavedFormat::id("l3b").round().quantise::<i32>(QC.pow(4)),
         ])
-        .loss_fn(|output, target| output.sigmoid().squared_error(target))
-        .build(|builder, stm_inputs, ntm_inputs, output_buckets| {
+        .build_custom(|builder, (stm_inputs, ntm_inputs, output_buckets), target| {
             // input layer factorizer
             let l0f = builder.new_weights("l0f", Shape::new(L1_SIZE, 768), InitSettings::Zeroed);
             let expanded_factorizer = l0f.repeat(NUM_INPUT_BUCKETS);
@@ -135,7 +134,15 @@ fn main() {
             let h1 = stm_hidden.concat(ntm_hidden);
             let h2 = l1.forward(h1).select(output_buckets).screlu();
             let h3 = l2.forward(h2).select(output_buckets).crelu();
-            l3.forward(h3).select(output_buckets)
+            let output = l3.forward(h3).select(output_buckets);
+
+            // loss
+            let ones_l1_vec = builder.new_constant(Shape::new(1, L1_SIZE), &[1.0 / L1_SIZE as f32; L1_SIZE]);
+            let reg_loss = ones_l1_vec.matmul(h1);
+            let eval_loss = output.sigmoid().squared_error(target);
+            let loss = eval_loss + 0.005 * reg_loss;
+
+            (output, loss)
         });
 
     // ensure abs(l0w + l0f) <= 1.98 so that QA*(QB*l0w_merged) = QA*(QB*1.98) <= 32767

@@ -21,22 +21,22 @@ The following are the historic elo for Raphael.
     <th><a href="https://www.computerchess.org.uk/ccrl/404/cgi/compare_engines.cgi?family=Raphael">CCRL Blitz</a></th>
     <th><a href="https://www.computerchess.org.uk/ccrl/4040/cgi/compare_engines.cgi?family=Raphael">CCRL 40/15</a></th>
     <th><a href="http://www.cegt.net/40_40%20Rating%20List/40_40%20SingleVersion/rangliste.html">CEGT 40/20</a></th>
-    <th><a href="https://ipmanchess.yolasite.com/r9-7945hx.php">Ipman R9**</a></th>
+    <th><a href="https://ipmanchess.yolasite.com/r9-7945hx.php">Ipman R9</a></th>
   </tr>
   <tr align="center">
-    <td>4.0.0     </td> <td>Apr 26, 2026  </td>
-    <td>3697*     </td> <td>3568*         </td>
-    <td>3521 (#34)</td> <td>3487 (#37/#20)</td>
+    <td>4.0.0     </td> <td>Apr 26, 2026 </td>
+    <td>3697*     </td> <td>3568*        </td>
+    <td>          </td> <td>3487 (#20**) </td>
   </tr>
   <tr align="center">
     <td>3.3.0</td> <td>Apr 06, 2026</td>
     <td>3670 </td> <td>3558 </td>
-    <td>3433 </td> <td>     </td>
+    <td>3521 </td> <td>     </td>
   </tr>
   <tr align="center">
     <td>3.2.0</td> <td>Mar 19, 2026</td>
     <td>3612*</td> <td>3484 </td>
-    <td>     </td> <td>     </td>
+    <td>3433 </td> <td>     </td>
   </tr>
   <tr align="center">
     <td>3.1.0</td> <td>Mar 01, 2026</td>
@@ -95,7 +95,7 @@ The following are the historic elo for Raphael.
   </tr>
 </table>
 *estimated<br>
-**first ranking is in full list, second is if you only compare best version per engine
+**ranking based on best single version per engine
 
 ## Getting Started
 

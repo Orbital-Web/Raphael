@@ -106,8 +106,8 @@ endif
 #---------------------------------------------------------------------------------------------------
 
 CCFLAGS_NATIVE      := -march=native
-CCFLAGS_AVX512_VNNI := -march=cascadelake -mbmi2 -DCHESS_USE_PEXT
-CCFLAGS_AVX512      := -march=skylake-avx512 -mbmi2 -DCHESS_USE_PEXT
+CCFLAGS_AVX512_VNNI := -march=icelake-client -DCHESS_USE_PEXT
+CCFLAGS_AVX512      := -march=skylake-avx512 -DCHESS_USE_PEXT
 CCFLAGS_AVX2_BMI2   := -march=haswell -DCHESS_USE_PEXT
 CCFLAGS_AVX2        := -march=haswell -mno-bmi2
 CCFLAGS_GENERIC     := -march=x86-64

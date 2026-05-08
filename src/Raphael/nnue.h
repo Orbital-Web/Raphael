@@ -170,7 +170,17 @@ private:
     private:
         u16 indices_[L1_SIZE / 4] = {};
         i32 count_ = 0;
-        __m128i offset_;
+
+    #ifdef __AVX512VBMI2__
+        // clang-format off
+        __m512i offset_ = _mm512_set_epi16(
+            31, 30, 29, 28, 27, 26, 25, 24,
+            23, 22, 21, 20, 19, 18, 17, 16,
+            15, 14, 13, 12, 11, 10,  9,  8,
+             7,  6,  5,  4,  3,  2,  1,  0
+        );  // clang-format on
+    #else
+        __m128i offset_ = _mm_setzero_si128();
 
         // precompute nonzero_idx[mask][nnz_idx] = position of nonzero block
         alignas(16) static constexpr MultiArray<u16, 256, 8> nonzero_idx = [] {
@@ -185,17 +195,16 @@ private:
 
             return idx;
         }();
+    #endif
 
 
     public:
-        /** Initializes the sparse iterator */
-        SparseIterator();
-
         /** Adds the nonzero indices to the sparse iterator
          *
-         * \param l0_out a chunk of l0 outputs
+         * \param l0_out0 first chunk of l0 outputs
+         * \param l0_out1 second chunk of l0 outputs
          */
-        void add_nonzeros(VecU8 l0_out);
+        void add_nonzeros(VecU8 l0_out0, VecU8 l0_out1);
 
         /** Returns the number of nonezero blocks
          *

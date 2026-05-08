@@ -18,61 +18,49 @@ using VecI32 = __m512i;  // a list of 16x i32
  * \param src an array of 64x u8 elements
  * \returns the loaded register
  */
-inline VecU8 load_u8(const u8* src) {
-    return _mm512_load_si512(reinterpret_cast<const VecU8*>(src));
-}
+inline VecU8 load_u8(const u8* src) { return _mm512_load_si512(src); }
 
 /** Loads an i8[64] array into a VecI8 register
  *
  * \param src an array of 64x i8 elements
  * \returns the loaded register
  */
-inline VecI8 load_i8(const i8* src) {
-    return _mm512_load_si512(reinterpret_cast<const VecI8*>(src));
-}
+inline VecI8 load_i8(const i8* src) { return _mm512_load_si512(src); }
 
 /** Loads an i16[32] array into a VecI16 register
  *
  * \param src an array of 32x i16 elements
  * \returns the loaded register
  */
-inline VecI16 load_i16(const i16* src) {
-    return _mm512_load_si512(reinterpret_cast<const VecI16*>(src));
-}
+inline VecI16 load_i16(const i16* src) { return _mm512_load_si512(src); }
 
 /** Loads an i32[16] array into a VecI32 register
  *
  * \param src an array of 16x i32 elements
  * \returns the loaded register
  */
-inline VecI32 load_i32(const i32* src) {
-    return _mm512_load_si512(reinterpret_cast<const VecI32*>(src));
-}
+inline VecI32 load_i32(const i32* src) { return _mm512_load_si512(src); }
 
 /** Stores a VecU8 register into a u8[64] array
  *
  * \param dst the array of 64x u8 elements to store into
  * \param src the register to store
  */
-inline void store_u8(u8* dst, VecU8 src) { _mm512_store_si512(reinterpret_cast<VecU8*>(dst), src); }
+inline void store_u8(u8* dst, VecU8 src) { _mm512_store_si512(dst, src); }
 
 /** Stores a VecI16 register into an i16[32] array
  *
  * \param dst the array of 32x i16 elements to store into
  * \param src the register to store
  */
-inline void store_i16(i16* dst, VecI16 src) {
-    _mm512_store_si512(reinterpret_cast<VecI16*>(dst), src);
-}
+inline void store_i16(i16* dst, VecI16 src) { _mm512_store_si512(dst, src); }
 
 /** Stores a VecI32 register into an i32[16] array
  *
  * \param dst the array of 16x i32 elements to store into
  * \param src the register to store
  */
-inline void store_i32(i32* dst, VecI32 src) {
-    _mm512_store_si512(reinterpret_cast<VecI32*>(dst), src);
-}
+inline void store_i32(i32* dst, VecI32 src) { _mm512_store_si512(dst, src); }
 
 /** Returns a VecI16 register with all zeros
  *

@@ -4,12 +4,14 @@
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
 #include <thirdparty/incbin.h>
 
+#include <fstream>
 #include <stdexcept>
 
 using namespace raphael;
 using std::copy;
 using std::max;
 using std::min;
+using std::ofstream;
 using std::popcount;
 using std::runtime_error;
 using std::vector;
@@ -87,7 +89,6 @@ void Nnue::NnueFinnyEntry::update(
     VecI16 accs[SIMD_REGS];
 
     for (i32 i = 0; i < n_chunks; i += SIMD_REGS) {
-        // copy bias
         #pragma GCC unroll 32  // fmt: skip
         for (i32 r = 0; r < SIMD_REGS; r++) accs[r] = load_i16(&values[(i + r) * regw]);
 
@@ -109,7 +110,6 @@ void Nnue::NnueFinnyEntry::update(
                 accs[r] = sub_i16(accs[r], load_i16(&weights[fidx][(i + r) * regw]));
         }
 
-    // store into self
         #pragma GCC unroll 32  // fmt: skip
         for (i32 r = 0; r < SIMD_REGS; r++) store_i16(&values[(i + r) * regw], accs[r]);
     }
@@ -460,6 +460,10 @@ void Nnue::activate_l0(const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2]) const
         l0_out[i] = ((acc_v0 << 7) * acc_v1) >> 16;
     }
 #endif
+
+#ifdef MEASURE_SPARSITY
+    record_ft_activations(l0_out);
+#endif
 }
 
 void Nnue::forward_l1(const u8 l0_out[L1_SIZE], i32 l1_out[L2_SIZE], i32 bucket_idx) const {
@@ -608,3 +612,42 @@ void Nnue::forward_l2l3(const i32 l1_out[L2_SIZE], i64& l3_out, i32 bucket_idx) 
     }
 #endif
 }
+
+
+#ifdef MEASURE_SPARSITY
+u64 Nnue::save_ft_activations() {
+    ofstream outfile("ft_activations.json");
+    if (!outfile.is_open()) throw runtime_error("could not save ft activations");
+
+    outfile << "[ ";
+    for (i32 i = 0; i < L1_SIZE / 2; i++) {
+        if (i != 0) outfile << ", ";
+        outfile << ft_activations[i];
+    }
+    outfile << " ]\n";
+    outfile.close();
+
+    // called once for each perspective
+    assert(total_calls % 2 == 0);
+    return total_nnz / (total_calls / 2);
+}
+
+void Nnue::record_ft_activations(const u8 l0_out[L1_SIZE / 2]) {
+    // track activations
+    for (i32 i = 0; i < L1_SIZE / 2; i++)
+        if (l0_out[i] != 0) ft_activations[i]++;
+
+    // track nonzero blocks
+    for (i32 i = 0; i < L1_SIZE / 2; i += 4) {
+        bool nonzero = false;
+        for (i32 j = 0; j < 4; j++) {
+            if (l0_out[i + j] != 0) {
+                nonzero = true;
+                break;
+            }
+        }
+        if (nonzero) total_nnz++;
+    }
+    total_calls++;
+}
+#endif

@@ -218,6 +218,7 @@ perm
 
 # Network Files
 *.nnue
+ft_activations.json
 
 # SFML
 SFML-*/

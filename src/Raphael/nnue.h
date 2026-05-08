@@ -211,6 +211,13 @@ private:
     };
 #endif
 
+#ifdef MEASURE_SPARSITY
+    static inline u64 ft_activations[L1_SIZE / 2] = {};  // number of times each ft neuron fired
+
+    static inline u64 total_nnz = 0;
+    static inline u64 total_calls = 0;
+#endif
+
     const NnueParams* params;  // network weights and biases
 
     /** Loads the embedded network
@@ -251,6 +258,15 @@ public:
 
     /** Updates internal states to unmake the last move */
     void unmake_move();
+
+#ifdef MEASURE_SPARSITY
+    /** Saves the number of times each ft neuron fired to a file and returns the average number of
+     * nonzero blocks
+     *
+     * \returns average number of nonzero blocks
+     */
+    static u64 save_ft_activations();
+#endif
 
 private:
     /** Returns whether the features need horizontal mirroring
@@ -297,5 +313,13 @@ private:
      * \param bucket_idx output bucket
      */
     void forward_l2l3(const i32 l1_out[L2_SIZE], i64& l3_out, i32 bucket_idx) const;
+
+#ifdef MEASURE_SPARSITY
+    /** Updates the ft activation count and tracks the number of nonzero blocks
+     *
+     * \param l0_out activated l0 output for one perspective
+     */
+    static void record_ft_activations(const u8 l0_out[L1_SIZE / 2]);
+#endif
 };
 }  // namespace raphael

@@ -99,6 +99,11 @@ void bench(Raphael& engine) {
     cout << "\nbench: completed in " << runtime << "ms:\n"
          << nodes << " nodes " << nps << " nps\n"
          << flush;
+
+#ifdef MEASURE_SPARSITY
+    const auto avg_nnz = Nnue::save_ft_activations();
+    cout << "avg nnz: " << avg_nnz << "\n" << flush;
+#endif
 }
 
 

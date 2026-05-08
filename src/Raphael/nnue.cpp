@@ -223,7 +223,7 @@ void Nnue::SparseIterator::add_nonzeros(VecU8 l0_out0, VecU8 l0_out1) {
 
     #ifdef __AVX512VBMI2__
     static_assert(USE_SIMD == 512);
-    u32 mask = _mm512_kunpackw(nonzero_mask(l0_out1), nonzero_mask(l0_out0));
+    const auto mask = _mm512_kunpackw(nonzero_mask(l0_out1), nonzero_mask(l0_out0));
 
     const auto idxs = _mm512_maskz_compress_epi16(mask, offset_);
     _mm512_storeu_si512(&indices_[count_], idxs);

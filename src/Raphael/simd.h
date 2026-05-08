@@ -212,36 +212,11 @@ inline u32 nonzero_mask(VecU8 reg) { return _mm512_cmpgt_epi32_mask(reg, zero_i3
  * \returns the result of the accumulated dot product
  */
 inline VecI32 dpbusd_i32(VecI32 a, VecU8 b, VecI8 c) {
-    // for some reason, dpbusd is a lot slower...
-    // #ifdef __AVX512VNNI__
-    // return _mm512_dpbusd_epi32(a, b, c);
-    // #else
+    #ifdef __AVX512VNNI__
+    return _mm512_dpbusd_epi32(a, b, c);
+    #else
     return add_i32(a, _mm512_madd_epi16(_mm512_maddubs_epi16(b, c), full_i16(1)));
-    // #endif
-}
-
-/** Computes out[i] = a[i] + dot(b[4*i : 4*(i+1)], c[4*i : 4*(i+1)]) +
- * dot(d[4*i : 4*(i+1)], e[4*i : 4*(i+1)])
- *
- * \param a register 1
- * \param b register 2
- * \param c register 3
- * \param d register 4
- * \param e register 5
- * \returns the result of the accumulated dot product
- */
-inline VecI32 dpbusd2_i32(VecI32 a, VecU8 b, VecI8 c, VecU8 d, VecI8 e) {
-    // for some reason, dpbusd is a lot slower...
-    // #ifdef __AVX512VNNI__
-    // return _mm512_dpbusd_epi32(_mm512_dpbusd_epi32(a, b, c), d, e);
-    // #else
-    return add_i32(
-        a,
-        _mm512_madd_epi16(
-            add_i16(_mm512_maddubs_epi16(b, c), _mm512_maddubs_epi16(d, e)), full_i16(1)
-        )
-    );
-    // #endif
+    #endif
 }
 
 /** Does an element-wise fused multiply add a[i] * b[i] + c[i]
@@ -490,25 +465,6 @@ inline u32 nonzero_mask(VecU8 reg) {
  */
 inline VecI32 dpbusd_i32(VecI32 a, VecU8 b, VecI8 c) {
     return add_i32(a, _mm256_madd_epi16(_mm256_maddubs_epi16(b, c), full_i16(1)));
-}
-
-/** Computes out[i] = a[i] + dot(b[4*i : 4*(i+1)], c[4*i : 4*(i+1)]) +
- * dot(d[4*i : 4*(i+1)], e[4*i : 4*(i+1)])
- *
- * \param a register 1
- * \param b register 2
- * \param c register 3
- * \param d register 4
- * \param e register 5
- * \returns the result of the accumulated dot product
- */
-inline VecI32 dpbusd2_i32(VecI32 a, VecU8 b, VecI8 c, VecU8 d, VecI8 e) {
-    return add_i32(
-        a,
-        _mm256_madd_epi16(
-            add_i16(_mm256_maddubs_epi16(b, c), _mm256_maddubs_epi16(d, e)), full_i16(1)
-        )
-    );
 }
 
 /** Does an element-wise fused multiply add a[i] * b[i] + c[i]

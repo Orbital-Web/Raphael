@@ -479,49 +479,55 @@ void Nnue::forward_l1(const u8 l0_out[L1_SIZE], i32 l1_out[L2_SIZE], i32 bucket_
     }
 
     const i32 nnz = sp.count();
-    const i32 nnz2 = (nnz / 2) * 2;
+    const i32 nnz4 = (nnz / 4) * 4;
 
     // compute l1 matmul
     constexpr i32 regw32 = ALIGNMENT / sizeof(i32);
     static_assert(L2_SIZE % regw32 == 0);
 
     constexpr i32 n_chunks = L2_SIZE / regw32;
-    VecI32 l1_pre[n_chunks];
+    VecI32 l1_pre[n_chunks][4];
 
     #pragma GCC unroll 32  // fmt: skip
-    for (i32 r = 0; r < n_chunks; r++) l1_pre[r] = zero_i32();
+    for (i32 r = 0; r < n_chunks; r++) {
+        l1_pre[r][0] = zero_i32();
+        l1_pre[r][1] = zero_i32();
+        l1_pre[r][2] = zero_i32();
+        l1_pre[r][3] = zero_i32();
+    }
 
-    for (i32 nnz_id = 0; nnz_id < nnz2; nnz_id += 2) {
+    for (i32 nnz_id = 0; nnz_id < nnz4; nnz_id += 4) {
         const i32 tile_id0 = sp.index(nnz_id + 0);
         const i32 tile_id1 = sp.index(nnz_id + 1);
+        const i32 tile_id2 = sp.index(nnz_id + 2);
+        const i32 tile_id3 = sp.index(nnz_id + 3);
 
         const VecU8 inputs0 = tile_u8(&l0_out[4 * tile_id0]);
         const VecU8 inputs1 = tile_u8(&l0_out[4 * tile_id1]);
-        VecI8 weights[n_chunks][2];
+        const VecU8 inputs2 = tile_u8(&l0_out[4 * tile_id2]);
+        const VecU8 inputs3 = tile_u8(&l0_out[4 * tile_id3]);
 
-        #pragma GCC unroll 32  // fmt: skip
         for (i32 r = 0; r < n_chunks; r++) {
-            weights[r][0] = load_i8(&params->W1[bucket_idx][tile_id0][r * regw8]);
-            weights[r][1] = load_i8(&params->W1[bucket_idx][tile_id1][r * regw8]);
-        }
+            const VecI8 weights0 = load_i8(&params->W1[bucket_idx][tile_id0][r * regw8]);
+            const VecI8 weights1 = load_i8(&params->W1[bucket_idx][tile_id1][r * regw8]);
+            const VecI8 weights2 = load_i8(&params->W1[bucket_idx][tile_id2][r * regw8]);
+            const VecI8 weights3 = load_i8(&params->W1[bucket_idx][tile_id3][r * regw8]);
 
-        #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < n_chunks; r++)
-            l1_pre[r] = dpbusd2_i32(l1_pre[r], inputs0, weights[r][0], inputs1, weights[r][1]);
+            l1_pre[r][0] = dpbusd_i32(l1_pre[r][0], inputs0, weights0);
+            l1_pre[r][1] = dpbusd_i32(l1_pre[r][1], inputs1, weights1);
+            l1_pre[r][2] = dpbusd_i32(l1_pre[r][2], inputs2, weights2);
+            l1_pre[r][3] = dpbusd_i32(l1_pre[r][3], inputs3, weights3);
+        }
     }
 
-    for (i32 nnz_id = nnz2; nnz_id < nnz; nnz_id++) {
+    for (i32 nnz_id = nnz4; nnz_id < nnz; nnz_id++) {
         const i32 tile_id = sp.index(nnz_id);
-
         const VecU8 inputs = tile_u8(&l0_out[4 * tile_id]);
-        VecI8 weights[n_chunks];
 
-        #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < n_chunks; r++)
-            weights[r] = load_i8(&params->W1[bucket_idx][tile_id][r * regw8]);
-
-        #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < n_chunks; r++) l1_pre[r] = dpbusd_i32(l1_pre[r], inputs, weights[r]);
+        for (i32 r = 0; r < n_chunks; r++) {
+            const VecI8 weights = load_i8(&params->W1[bucket_idx][tile_id][r * regw8]);
+            l1_pre[r][0] = dpbusd_i32(l1_pre[r][0], inputs, weights);
+        }
     }
 
     // activate l1
@@ -529,9 +535,12 @@ void Nnue::forward_l1(const u8 l0_out[L1_SIZE], i32 l1_out[L2_SIZE], i32 bucket_
     const VecI32 qs = full_i32(QC << L1_SHIFT);
 
     for (i32 r = 0; r < n_chunks; r++) {
+        const VecI32 pre0 = add_i32(l1_pre[r][0], l1_pre[r][1]);
+        const VecI32 pre1 = add_i32(l1_pre[r][2], l1_pre[r][3]);
+
         // apply screlu and downshift into QC^2 space
         const VecI32 bias = load_i32(&params->b1[bucket_idx][r * regw32]);
-        const VecI32 pre = add_i32(l1_pre[r], bias);
+        const VecI32 pre = add_i32(add_i32(pre0, pre1), bias);
         const VecI32 crelu = clamp_i32(pre, zs, qs);
         const VecI32 screlu = rshift_i32(mullo_i32(crelu, crelu), 2 * L1_SHIFT);
         store_i32(&l1_out[r * regw32], screlu);

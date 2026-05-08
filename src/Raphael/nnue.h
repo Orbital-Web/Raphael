@@ -49,6 +49,7 @@ public:
 
         // flags
         NnuePerm permutation;
+        bool sparsity_permed;
     };
 
 private:

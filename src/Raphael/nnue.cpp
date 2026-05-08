@@ -284,15 +284,16 @@ i32 Nnue::evaluate(const chess::Board& board) {
     assert(!ntm_acc.dirty());
 
     alignas(ALIGNMENT) u8 l0_out[L1_SIZE];
-    activate_l0(stm_acc, l0_out);
-    activate_l0(ntm_acc, l0_out + L1_SIZE / 2);
+    SparseIterator sp;
+    activate_l0(stm_acc, l0_out, sp);
+    activate_l0(ntm_acc, l0_out + L1_SIZE / 2, sp);
 
     constexpr i32 bucket_div = (32 + N_OUTBUCKETS - 1) / N_OUTBUCKETS;
     const i32 bucket_idx = (board.occ().count() - 2) / bucket_div;
 
     alignas(ALIGNMENT) i32 l1_out[L2_SIZE];
     i64 eval;
-    forward_l1(l0_out, l1_out, bucket_idx);
+    forward_l1(l0_out, l1_out, sp, bucket_idx);
     forward_l2l3(l1_out, eval, bucket_idx);
 
     eval *= OUTPUT_SCALE;
@@ -418,7 +419,9 @@ void Nnue::lazy_update(const chess::Board& board, chess::Color perspective) {
         );
 }
 
-void Nnue::activate_l0(const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2]) const {
+void Nnue::activate_l0(
+    const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2], [[maybe_unused]] SparseIterator& sp
+) const {
     constexpr i32 n_pairs = L1_SIZE / 2;
 
 #ifdef USE_SIMD
@@ -450,6 +453,10 @@ void Nnue::activate_l0(const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2]) const
         const VecU8 out1 = pack_u8_i16(pw2, pw3);
         store_u8(&l0_out[(i + 0) * regw16], out0);
         store_u8(&l0_out[(i + 2) * regw16], out1);
+
+        // track nonzero blocks
+        sp.add_nonzeros(out0);
+        sp.add_nonzeros(out1);
     }
 #else
     for (i32 i = 0; i < n_pairs; i++) {
@@ -466,25 +473,23 @@ void Nnue::activate_l0(const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2]) const
 #endif
 }
 
-void Nnue::forward_l1(const u8 l0_out[L1_SIZE], i32 l1_out[L2_SIZE], i32 bucket_idx) const {
+void Nnue::forward_l1(
+    const u8 l0_out[L1_SIZE],
+    i32 l1_out[L2_SIZE],
+    [[maybe_unused]] const SparseIterator& sp,
+    i32 bucket_idx
+) const {
 #ifdef USE_SIMD
-    // get nonzero blocks
+    // get nnz
     constexpr i32 regw8 = ALIGNMENT / sizeof(i8);
-    static_assert(L1_SIZE % regw8 == 0);
-
-    SparseIterator sp;
-    for (i32 i = 0; i < L1_SIZE; i += regw8) {
-        VecU8 inputs = load_u8(&l0_out[i]);
-        sp.add_nonzeros(inputs);
-    }
+    constexpr i32 regw32 = ALIGNMENT / sizeof(i32);
+    static_assert(L2_SIZE % regw32 == 0);
+    static_assert(L1_SIZE % 16 == 0);
 
     const i32 nnz = sp.count();
     const i32 nnz4 = (nnz / 4) * 4;
 
     // compute l1 matmul
-    constexpr i32 regw32 = ALIGNMENT / sizeof(i32);
-    static_assert(L2_SIZE % regw32 == 0);
-
     constexpr i32 n_chunks = L2_SIZE / regw32;
     VecI32 l1_pre[n_chunks][4];
 

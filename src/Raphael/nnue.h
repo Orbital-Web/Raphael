@@ -165,8 +165,8 @@ private:
         void refresh_from(const NnueFinnyEntry& finny_entry);
     };
 
-#ifdef USE_SIMD
     class SparseIterator {
+#ifdef USE_SIMD
     private:
         u16 indices_[L1_SIZE / 4] = {};
         i32 count_ = 0;
@@ -209,8 +209,8 @@ private:
          * \returns the corresponding tile id
          */
         i32 index(i32 nnz_id) const;
-    };
 #endif
+    };
 
 #ifdef MEASURE_SPARSITY
     static inline u64 ft_activations[L1_SIZE / 2] = {};  // number of times each ft neuron fired
@@ -296,16 +296,25 @@ private:
      *
      * \param acc accumulator of perspective
      * \param l0_out output buffer to write activated l0 outputs to
+     * \param sp an iterator into the nonzero blocks of l0_out
      */
-    void activate_l0(const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2]) const;
+    void activate_l0(
+        const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2], [[maybe_unused]] SparseIterator& sp
+    ) const;
 
     /** Does a forward pass through l1
      *
      * \param l0_out activated outputs of l0
      * \param l1_out output buffer to write activated l1 outputs to
+     * \param sp an iterator into the nonzero blocks of l0_out
      * \param bucket_idx output bucket
      */
-    void forward_l1(const u8 l0_out[L1_SIZE], i32 l1_out[L2_SIZE], i32 bucket_idx) const;
+    void forward_l1(
+        const u8 l0_out[L1_SIZE],
+        i32 l1_out[L2_SIZE],
+        [[maybe_unused]] const SparseIterator& sp,
+        i32 bucket_idx
+    ) const;
 
     /** Does a forward pass through l2 and l3
      *

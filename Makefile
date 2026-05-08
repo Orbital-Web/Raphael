@@ -6,7 +6,7 @@
 
 # Executables
 MAIN_EXE := main
-EXE  := uci
+EXE      := uci
 TEST_EXE := test
 PERM_EXE := perm
 
@@ -142,6 +142,7 @@ $(info Building for ARCH=$(ARCH))
 CCFLAGS_RELEASE  := -DNDEBUG
 CCFLAGS_DEBUG    := -g
 CCFLAGS_SANITIZE := -g -fsanitize=address,undefined
+CCFLAGS_NETDEBUG := -g -DMEASURE_SPARSITY
 
 ifeq ($(DEBUG),on)
     $(info Debug enabled)
@@ -157,6 +158,9 @@ else ifeq ($(DEBUG),san)
     $(info Debug and address, ub sanitization enabled)
     DEBUG_FLAGS := $(CCFLAGS_SANITIZE)
     override LDFLAGS += -fsanitize=address,undefined
+else ifeq ($(DEBUG),net)
+    $(info Debug for network enabled)
+    DEBUG_FLAGS := $(CCFLAGS_NETDEBUG)
 else
     $(error Unknown debug flag '$(DEBUG)')
 endif

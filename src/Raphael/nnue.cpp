@@ -4,12 +4,15 @@
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
 #include <thirdparty/incbin.h>
 
+#include <fstream>
 #include <stdexcept>
 
 using namespace raphael;
 using std::copy;
 using std::max;
 using std::min;
+using std::ofstream;
+using std::popcount;
 using std::runtime_error;
 using std::vector;
 
@@ -86,7 +89,6 @@ void Nnue::NnueFinnyEntry::update(
     VecI16 accs[SIMD_REGS];
 
     for (i32 i = 0; i < n_chunks; i += SIMD_REGS) {
-        // copy bias
         #pragma GCC unroll 32  // fmt: skip
         for (i32 r = 0; r < SIMD_REGS; r++) accs[r] = load_i16(&values[(i + r) * regw]);
 
@@ -108,7 +110,6 @@ void Nnue::NnueFinnyEntry::update(
                 accs[r] = sub_i16(accs[r], load_i16(&weights[fidx][(i + r) * regw]));
         }
 
-    // store into self
         #pragma GCC unroll 32  // fmt: skip
         for (i32 r = 0; r < SIMD_REGS; r++) store_i16(&values[(i + r) * regw], accs[r]);
     }
@@ -215,6 +216,39 @@ void Nnue::NnueAccumulator::refresh_from(const NnueFinnyEntry& finny_entry) {
     needs_refresh = false;
 }
 
+#ifdef USE_SIMD
+Nnue::SparseIterator::SparseIterator(): offset_(_mm_setzero_si128()) {}
+
+void Nnue::SparseIterator::add_nonzeros(VecU8 l0_out) {
+    constexpr i32 regw32 = ALIGNMENT / sizeof(i32);
+    static_assert(regw32 % 8 == 0);
+
+    u32 full_mask = nonzero_mask(l0_out);
+
+    for (i32 i = 0; i < regw32 / 8; i++) {
+        // get offset of up to 8 nonzeros at a time
+        const u8 mask = full_mask & 0xFF;
+        full_mask >>= 8;
+
+        const auto idxs = _mm_add_epi16(
+            offset_, _mm_load_si128(reinterpret_cast<const __m128i*>(&nonzero_idx[mask]))
+        );
+        _mm_storeu_si128(reinterpret_cast<__m128i*>(&indices_[count_]), idxs);
+        offset_ = _mm_add_epi16(offset_, _mm_set1_epi16(8));
+        count_ += popcount(mask);
+    }
+
+    assert(count_ <= L1_SIZE / 4);
+}
+
+i32 Nnue::SparseIterator::count() const { return count_; }
+
+i32 Nnue::SparseIterator::index(i32 nnz_id) const {
+    assert(nnz_id < count_);
+    return indices_[nnz_id];
+}
+#endif
+
 
 
 Nnue::Nnue(): params(load_network()), idx_(0) {
@@ -250,15 +284,16 @@ i32 Nnue::evaluate(const chess::Board& board) {
     assert(!ntm_acc.dirty());
 
     alignas(ALIGNMENT) u8 l0_out[L1_SIZE];
-    activate_l0(stm_acc, l0_out);
-    activate_l0(ntm_acc, l0_out + L1_SIZE / 2);
+    SparseIterator sp;
+    activate_l0(stm_acc, l0_out, sp);
+    activate_l0(ntm_acc, l0_out + L1_SIZE / 2, sp);
 
     constexpr i32 bucket_div = (32 + N_OUTBUCKETS - 1) / N_OUTBUCKETS;
     const i32 bucket_idx = (board.occ().count() - 2) / bucket_div;
 
     alignas(ALIGNMENT) i32 l1_out[L2_SIZE];
     i64 eval;
-    forward_l1(l0_out, l1_out, bucket_idx);
+    forward_l1(l0_out, l1_out, sp, bucket_idx);
     forward_l2l3(l1_out, eval, bucket_idx);
 
     eval *= OUTPUT_SCALE;
@@ -384,7 +419,9 @@ void Nnue::lazy_update(const chess::Board& board, chess::Color perspective) {
         );
 }
 
-void Nnue::activate_l0(const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2]) const {
+void Nnue::activate_l0(
+    const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2], [[maybe_unused]] SparseIterator& sp
+) const {
     constexpr i32 n_pairs = L1_SIZE / 2;
 
 #ifdef USE_SIMD
@@ -416,6 +453,10 @@ void Nnue::activate_l0(const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2]) const
         const VecU8 out1 = pack_u8_i16(pw2, pw3);
         store_u8(&l0_out[(i + 0) * regw16], out0);
         store_u8(&l0_out[(i + 2) * regw16], out1);
+
+        // track nonzero blocks
+        sp.add_nonzeros(out0);
+        sp.add_nonzeros(out1);
     }
 #else
     for (i32 i = 0; i < n_pairs; i++) {
@@ -426,40 +467,72 @@ void Nnue::activate_l0(const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2]) const
         l0_out[i] = ((acc_v0 << 7) * acc_v1) >> 16;
     }
 #endif
+
+#ifdef MEASURE_SPARSITY
+    record_ft_activations(l0_out);
+#endif
 }
 
-void Nnue::forward_l1(const u8 l0_out[L1_SIZE], i32 l1_out[L2_SIZE], i32 bucket_idx) const {
-    constexpr i32 n_tiles = L1_SIZE / 4;
-
+void Nnue::forward_l1(
+    const u8 l0_out[L1_SIZE],
+    i32 l1_out[L2_SIZE],
+    [[maybe_unused]] const SparseIterator& sp,
+    i32 bucket_idx
+) const {
 #ifdef USE_SIMD
-    // compute l1 matmul
-    constexpr i32 regw32 = ALIGNMENT / sizeof(i32);
+    // get nnz
     constexpr i32 regw8 = ALIGNMENT / sizeof(i8);
+    constexpr i32 regw32 = ALIGNMENT / sizeof(i32);
     static_assert(L2_SIZE % regw32 == 0);
-    static_assert(L1_SIZE % 8 == 0);
+    static_assert(L1_SIZE % 16 == 0);
 
+    const i32 nnz = sp.count();
+    const i32 nnz4 = (nnz / 4) * 4;
+
+    // compute l1 matmul
     constexpr i32 n_chunks = L2_SIZE / regw32;
-    VecI32 l1_pre[n_chunks];
+    VecI32 l1_pre[n_chunks][4];
 
     #pragma GCC unroll 32  // fmt: skip
-    for (i32 r = 0; r < n_chunks; r++) l1_pre[r] = zero_i32();
+    for (i32 r = 0; r < n_chunks; r++) {
+        l1_pre[r][0] = zero_i32();
+        l1_pre[r][1] = zero_i32();
+        l1_pre[r][2] = zero_i32();
+        l1_pre[r][3] = zero_i32();
+    }
 
-    for (i32 i = 0; i < n_tiles; i += 2) {
-        // l1_pre += W1[:, 8i:8(i+1)] * l0_out[8i:8(i+1)], input in [0, 127]
-        // weights in QB * (256/255)^2 space
-        VecU8 inputs0 = tile_u8(&l0_out[4 * (i + 0)]);
-        VecU8 inputs1 = tile_u8(&l0_out[4 * (i + 1)]);
-        VecI8 weights[n_chunks][2];
+    for (i32 nnz_id = 0; nnz_id < nnz4; nnz_id += 4) {
+        const i32 tile_id0 = sp.index(nnz_id + 0);
+        const i32 tile_id1 = sp.index(nnz_id + 1);
+        const i32 tile_id2 = sp.index(nnz_id + 2);
+        const i32 tile_id3 = sp.index(nnz_id + 3);
 
-        #pragma GCC unroll 32  // fmt: skip
+        const VecU8 inputs0 = tile_u8(&l0_out[4 * tile_id0]);
+        const VecU8 inputs1 = tile_u8(&l0_out[4 * tile_id1]);
+        const VecU8 inputs2 = tile_u8(&l0_out[4 * tile_id2]);
+        const VecU8 inputs3 = tile_u8(&l0_out[4 * tile_id3]);
+
         for (i32 r = 0; r < n_chunks; r++) {
-            weights[r][0] = load_i8(&params->W1[bucket_idx][i + 0][r * regw8]);
-            weights[r][1] = load_i8(&params->W1[bucket_idx][i + 1][r * regw8]);
-        }
+            const VecI8 weights0 = load_i8(&params->W1[bucket_idx][tile_id0][r * regw8]);
+            const VecI8 weights1 = load_i8(&params->W1[bucket_idx][tile_id1][r * regw8]);
+            const VecI8 weights2 = load_i8(&params->W1[bucket_idx][tile_id2][r * regw8]);
+            const VecI8 weights3 = load_i8(&params->W1[bucket_idx][tile_id3][r * regw8]);
 
-        #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < n_chunks; r++)
-            l1_pre[r] = dpbusd2_i32(l1_pre[r], inputs0, weights[r][0], inputs1, weights[r][1]);
+            l1_pre[r][0] = dpbusd_i32(l1_pre[r][0], inputs0, weights0);
+            l1_pre[r][1] = dpbusd_i32(l1_pre[r][1], inputs1, weights1);
+            l1_pre[r][2] = dpbusd_i32(l1_pre[r][2], inputs2, weights2);
+            l1_pre[r][3] = dpbusd_i32(l1_pre[r][3], inputs3, weights3);
+        }
+    }
+
+    for (i32 nnz_id = nnz4; nnz_id < nnz; nnz_id++) {
+        const i32 tile_id = sp.index(nnz_id);
+        const VecU8 inputs = tile_u8(&l0_out[4 * tile_id]);
+
+        for (i32 r = 0; r < n_chunks; r++) {
+            const VecI8 weights = load_i8(&params->W1[bucket_idx][tile_id][r * regw8]);
+            l1_pre[r][0] = dpbusd_i32(l1_pre[r][0], inputs, weights);
+        }
     }
 
     // activate l1
@@ -467,14 +540,18 @@ void Nnue::forward_l1(const u8 l0_out[L1_SIZE], i32 l1_out[L2_SIZE], i32 bucket_
     const VecI32 qs = full_i32(QC << L1_SHIFT);
 
     for (i32 r = 0; r < n_chunks; r++) {
+        const VecI32 pre0 = add_i32(l1_pre[r][0], l1_pre[r][1]);
+        const VecI32 pre1 = add_i32(l1_pre[r][2], l1_pre[r][3]);
+
         // apply screlu and downshift into QC^2 space
         const VecI32 bias = load_i32(&params->b1[bucket_idx][r * regw32]);
-        const VecI32 pre = add_i32(l1_pre[r], bias);
+        const VecI32 pre = add_i32(add_i32(pre0, pre1), bias);
         const VecI32 crelu = clamp_i32(pre, zs, qs);
         const VecI32 screlu = rshift_i32(mullo_i32(crelu, crelu), 2 * L1_SHIFT);
         store_i32(&l1_out[r * regw32], screlu);
     }
 #else
+    constexpr i32 n_tiles = L1_SIZE / 4;
     i32 l1_pre[L2_SIZE] = {0};
 
     // compute l1 matmul
@@ -486,9 +563,9 @@ void Nnue::forward_l1(const u8 l0_out[L1_SIZE], i32 l1_out[L2_SIZE], i32 bucket_
     // activate l1
     for (i32 i = 0; i < L2_SIZE; i++) {
         const i32 bias = params->b1[bucket_idx][i];
-        const i32 pre = (l1_pre[i] + bias) >> L1_SHIFT;
-        const i32 crelu = min(max(pre, 0), QC);
-        const i32 screlu = crelu * crelu;
+        const i32 pre = l1_pre[i] + bias;
+        const i32 crelu = min(max(pre, 0), QC << L1_SHIFT);
+        const i32 screlu = (crelu * crelu) >> (2 * L1_SHIFT);
         l1_out[i] = screlu;
     }
 #endif
@@ -549,3 +626,42 @@ void Nnue::forward_l2l3(const i32 l1_out[L2_SIZE], i64& l3_out, i32 bucket_idx) 
     }
 #endif
 }
+
+
+#ifdef MEASURE_SPARSITY
+u64 Nnue::save_ft_activations() {
+    ofstream outfile("ft_activations.json");
+    if (!outfile.is_open()) throw runtime_error("could not save ft activations");
+
+    outfile << "[ ";
+    for (i32 i = 0; i < L1_SIZE / 2; i++) {
+        if (i != 0) outfile << ", ";
+        outfile << ft_activations[i];
+    }
+    outfile << " ]\n";
+    outfile.close();
+
+    // called once for each perspective
+    assert(total_calls % 2 == 0);
+    return total_nnz / (total_calls / 2);
+}
+
+void Nnue::record_ft_activations(const u8 l0_out[L1_SIZE / 2]) {
+    // track activations
+    for (i32 i = 0; i < L1_SIZE / 2; i++)
+        if (l0_out[i] != 0) ft_activations[i]++;
+
+    // track nonzero blocks
+    for (i32 i = 0; i < L1_SIZE / 2; i += 4) {
+        bool nonzero = false;
+        for (i32 j = 0; j < 4; j++) {
+            if (l0_out[i + j] != 0) {
+                nonzero = true;
+                break;
+            }
+        }
+        if (nonzero) total_nnz++;
+    }
+    total_calls++;
+}
+#endif

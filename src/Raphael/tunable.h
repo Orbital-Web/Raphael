@@ -348,7 +348,11 @@ Tunable(MAT_SCALE_ROOK, 590, 400, 900, false);
 Tunable(MAT_SCALE_QUEEN, 970, 800, 1600, false);
 
 // commands
+#ifndef MEASURE_SPARSITY
 static constexpr i32 BENCH_DEPTH = 14;
+#else
+static constexpr i32 BENCH_DEPTH = 15;
+#endif
 
 static constexpr i32 GENFENS_MAX_NODES = 1000;
 static constexpr i32 GENFENS_MAX_SCORE = 1000;

@@ -1,5 +1,9 @@
 # preprocesses the network file from bullet
+# 1. run net_export.py quantised.bin
+# 2. compile with EVALFILE=processed_quantised.bin DEBUG=net and run bench
+# 3. run net_export.py quantised.bin ft_activations.json
 import sys
+import json
 
 import numpy as np
 
@@ -24,11 +28,11 @@ NETWORK: dict[str, tuple[tuple[int], np.dtype]] = {
     "l0w": ((NUM_INPUT_BUCKET, 12, 64, L1_SIZE), np.dtype(np.int16)),
     "l0b": ((L1_SIZE,), np.dtype(np.int16)),
     "l1w": ((NUM_OUTPUT_BUCKET, L2_SIZE, L1_SIZE), np.dtype(np.int8)),
-    "l1b": ((NUM_OUTPUT_BUCKET, L2_SIZE), np.dtype(np.float32)),
-    "l2w": ((NUM_OUTPUT_BUCKET, L3_SIZE, L2_SIZE), np.dtype(np.float32)),
-    "l2b": ((NUM_OUTPUT_BUCKET, L3_SIZE), np.dtype(np.float32)),
-    "l3w": ((NUM_OUTPUT_BUCKET, L3_SIZE), np.dtype(np.float32)),
-    "l3b": ((NUM_OUTPUT_BUCKET,), np.dtype(np.float32)),
+    "l1b": ((NUM_OUTPUT_BUCKET, L2_SIZE), np.dtype(np.int32)),
+    "l2w": ((NUM_OUTPUT_BUCKET, L3_SIZE, L2_SIZE), np.dtype(np.int32)),
+    "l2b": ((NUM_OUTPUT_BUCKET, L3_SIZE), np.dtype(np.int32)),
+    "l3w": ((NUM_OUTPUT_BUCKET, L3_SIZE), np.dtype(np.int32)),
+    "l3b": ((NUM_OUTPUT_BUCKET,), np.dtype(np.int32)),
 }
 
 
@@ -78,6 +82,25 @@ def merge_king_planes(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     return net
 
 
+def permute_sparsity(
+    net: dict[str, np.ndarray], ft_activations: str
+) -> dict[str, np.ndarray]:
+    # we want to permute the l0 outputs and l1 inputs to group nonzeros together
+    with open(ft_activations, "rb") as act_file:
+        act: list[int] = json.load(act_file)
+        order = np.argsort(act)[::-1]  # [L1_SIZE // 2]
+        perm = np.concatenate([order, order + (L1_SIZE // 2)])  # [L1_SIZE]
+
+    l0w = net["l0w"]  # [NUM_INPUT_BUCKETS, 11, 64, L1_SIZE]
+    l0b = net["l0b"]  # [L1_SIZE]
+    l1w = net["l1w"]  # [NUM_OUTPUT_BUCKETS][L2_SIZE][L1_SIZE]
+
+    net["l0w"] = l0w[:, :, :, perm]
+    net["l0b"] = l0b[perm]
+    net["l1w"] = l1w[:, :, perm]
+    return net
+
+
 def permute_l1(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     # we must put L2_SIZE * 4 tiles contiguously in memory for fast inference
     l1w = net["l1w"]  # [output][l2][l1]
@@ -100,7 +123,9 @@ def permute_l2(net: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     return net
 
 
-def write_network(net: dict[str, np.ndarray], filename: str) -> None:
+def write_network(
+    net: dict[str, np.ndarray], filename: str, sparsity_permed: bool
+) -> None:
     filesize = 0
     with open(filename, "wb") as file:
         for layer in net.values():
@@ -111,22 +136,34 @@ def write_network(net: dict[str, np.ndarray], filename: str) -> None:
         # write flags
         file.write(np.int8(0).tobytes())  # 0 = NONE permutation
         filesize += 1
+        file.write(np.bool(sparsity_permed).tobytes())
+        filesize += 1
 
         padding_size = ((filesize + 63) // 64 * 64) - filesize
         file.write(bytes(padding_size))
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print(f"Usage: {sys.argv[0]} <filename>")
+    if len(sys.argv) < 2 or len(sys.argv) > 3:
+        print(f"Usage: {sys.argv[0]} <filename> [ft_activation_filename]")
         sys.exit(1)
 
     filename = sys.argv[1]
     net = load_network(filename)
+    net = merge_king_planes(net)
+
+    sparsity_permed = False
+    if len(sys.argv) == 2:
+        print("Skipping sparsity permutation")
+    else:
+        print("Running sparsity permutation")
+        sparsity_permed = True
+
+        ft_activations = sys.argv[2]
+        net = permute_sparsity(net, ft_activations)
 
     # permuting l0 is done at build time, depending on the selected arch
-    net = merge_king_planes(net)
     net = permute_l1(net)
     net = permute_l2(net)
 
-    write_network(net, f"processed_{filename}")
+    write_network(net, f"processed_{filename}", sparsity_permed)

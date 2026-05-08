@@ -45,6 +45,10 @@ public:
         processed_params->permutation = static_cast<Nnue::NnuePerm>(target_idx);
 
         write_network();
+
+        // send warning that our net isn't permuted for optimal sparsity
+        if (!processed_params->sparsity_permed)
+            cout << "\033[35mWARNING: network not permuted for sparsity\033[0m\n" << flush;
     }
 
 private:

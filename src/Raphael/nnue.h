@@ -10,7 +10,7 @@
 namespace raphael {
 class Nnue {
 public:
-    static constexpr i32 OUTPUT_SCALE = 274;
+    static constexpr i32 OUTPUT_SCALE = 275;
     static constexpr i32 N_INPUTS = 11 * 64;
     static constexpr i32 L1_SIZE = 1024;
     static constexpr i32 L2_SIZE = 16;
@@ -49,6 +49,7 @@ public:
 
         // flags
         NnuePerm permutation;
+        bool sparsity_permed;
     };
 
 private:
@@ -164,6 +165,60 @@ private:
         void refresh_from(const NnueFinnyEntry& finny_entry);
     };
 
+    class SparseIterator {
+#ifdef USE_SIMD
+    private:
+        u16 indices_[L1_SIZE / 4] = {};
+        i32 count_ = 0;
+        __m128i offset_;
+
+        // precompute nonzero_idx[mask][nnz_idx] = position of nonzero block
+        alignas(16) static constexpr MultiArray<u16, 256, 8> nonzero_idx = [] {
+            MultiArray<u16, 256, 8> idx{};
+
+            for (i32 i = 0; i < 256; i++) {
+                i32 nnz = 0;
+
+                for (u8 mask = i; mask != 0; mask &= mask - 1)
+                    idx[i][nnz++] = std::countr_zero(mask);
+            }
+
+            return idx;
+        }();
+
+
+    public:
+        /** Initializes the sparse iterator */
+        SparseIterator();
+
+        /** Adds the nonzero indices to the sparse iterator
+         *
+         * \param l0_out a chunk of l0 outputs
+         */
+        void add_nonzeros(VecU8 l0_out);
+
+        /** Returns the number of nonezero blocks
+         *
+         * \returns the nnz count
+         */
+        i32 count() const;
+
+        /** Returns the tile id for a nonzero block
+         *
+         * \param nnz_id which nonzero chunk we want the index for
+         * \returns the corresponding tile id
+         */
+        i32 index(i32 nnz_id) const;
+#endif
+    };
+
+#ifdef MEASURE_SPARSITY
+    static inline u64 ft_activations[L1_SIZE / 2] = {};  // number of times each ft neuron fired
+
+    static inline u64 total_nnz = 0;
+    static inline u64 total_calls = 0;
+#endif
+
     const NnueParams* params;  // network weights and biases
 
     /** Loads the embedded network
@@ -205,6 +260,15 @@ public:
     /** Updates internal states to unmake the last move */
     void unmake_move();
 
+#ifdef MEASURE_SPARSITY
+    /** Saves the number of times each ft neuron fired to a file and returns the average number of
+     * nonzero blocks
+     *
+     * \returns average number of nonzero blocks
+     */
+    static u64 save_ft_activations();
+#endif
+
 private:
     /** Returns whether the features need horizontal mirroring
      *
@@ -232,16 +296,25 @@ private:
      *
      * \param acc accumulator of perspective
      * \param l0_out output buffer to write activated l0 outputs to
+     * \param sp an iterator into the nonzero blocks of l0_out
      */
-    void activate_l0(const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2]) const;
+    void activate_l0(
+        const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2], [[maybe_unused]] SparseIterator& sp
+    ) const;
 
     /** Does a forward pass through l1
      *
      * \param l0_out activated outputs of l0
      * \param l1_out output buffer to write activated l1 outputs to
+     * \param sp an iterator into the nonzero blocks of l0_out
      * \param bucket_idx output bucket
      */
-    void forward_l1(const u8 l0_out[L1_SIZE], i32 l1_out[L2_SIZE], i32 bucket_idx) const;
+    void forward_l1(
+        const u8 l0_out[L1_SIZE],
+        i32 l1_out[L2_SIZE],
+        [[maybe_unused]] const SparseIterator& sp,
+        i32 bucket_idx
+    ) const;
 
     /** Does a forward pass through l2 and l3
      *
@@ -250,5 +323,13 @@ private:
      * \param bucket_idx output bucket
      */
     void forward_l2l3(const i32 l1_out[L2_SIZE], i64& l3_out, i32 bucket_idx) const;
+
+#ifdef MEASURE_SPARSITY
+    /** Updates the ft activation count and tracks the number of nonzero blocks
+     *
+     * \param l0_out activated l0 output for one perspective
+     */
+    static void record_ft_activations(const u8 l0_out[L1_SIZE / 2]);
+#endif
 };
 }  // namespace raphael

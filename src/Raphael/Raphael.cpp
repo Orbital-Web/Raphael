@@ -767,7 +767,7 @@ i32 Raphael::negamax(
     // terminal analysis
     if (move_searched == 0) return (in_check) ? -MATE_SCORE + ply : 0;  // reward faster mate
 
-    // previous countermove
+    // prior countermove
     if (!is_root && !bestmove && (ss - 1)->move && (ss - 1)->is_quiet) {
         const auto bonus
             = history.bonus(fdepth, PCM_BONUS_DEPTH_MUL, PCM_BONUS_BASE, PCM_BONUS_MAX);

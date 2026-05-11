@@ -60,7 +60,7 @@ public:
      *
      * \returns current board
      */
-    const chess::Board board() const { return current_; }
+    const chess::Board& board() const { return current_; }
 
 
     /** Returns the board n plies ago, assuming n is valid
@@ -68,7 +68,7 @@ public:
      * \param i32 ply number of plies to go back
      * \returns the board at this ply
      */
-    const chess::Board prev_board(i32 ply) const {
+    const chess::Board& prev_board(i32 ply) const {
         assert(ply > 0);
         assert(ply <= static_cast<i32>(boards_.size()));
         return boards_[boards_.size() - ply];

@@ -117,7 +117,7 @@ public:
 
     [[nodiscard]] i32 halfmove_bucket() const { return halfmove_bucket(halfmoves_); }
     [[nodiscard]] i32 halfmove_bucket(u8 halfmoves) const {
-        return (halfmoves < 8) ? 0 : std::min((halfmoves - 6) / 8, 15);
+        return (halfmoves < 42) ? 0 : std::min((halfmoves - 42) / 8, 15);
     }
 
     [[nodiscard]] u64 key() const { return hash_; }

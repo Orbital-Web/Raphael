@@ -38,6 +38,7 @@ void CorrectionEntry::update(i32 bonus) {
 
 History::History()
     : butterfly_hist_{},
+      pieceto_hist_{},
       cont_hist_{},
       capt_hist_{},
       pawn_correction_{},
@@ -83,6 +84,7 @@ void History::update_quiet(chess::Move move, const Position<true>& position, i32
     const auto total_conthist = get_conthist(move, position);
 
     butterfly_entry(move, threats).update(bonus);
+    pieceto_entry(move, moving, threats).update(bonus);
     if (prev1.moving != chess::Piece::NONE)
         cont_entry(move, moving, prev1).update_with_base(bonus, total_conthist);
     if (prev2.moving != chess::Piece::NONE)
@@ -118,10 +120,11 @@ i32 History::get_conthist(chess::Move move, const Position<true>& position) cons
 
 i32 History::get_quietscore(chess::Move move, const Position<true>& position) const {
     const auto& board = position.board();
+    const auto moving = board.at(move.from());
     const auto threats = board.threats();
 
     i32 score = 0;
-    score += butterfly_entry(move, threats);
+    score += (butterfly_entry(move, threats) + pieceto_entry(move, moving, threats)) / 2;
     score += get_conthist(move, position);
     return score;
 }
@@ -173,6 +176,7 @@ i32 History::correct(const Position<true>& position, i32 score) const {
 
 void History::clear() {
     memset(butterfly_hist_, 0, sizeof(butterfly_hist_));
+    memset(pieceto_hist_, 0, sizeof(pieceto_hist_));
     memset(cont_hist_, 0, sizeof(cont_hist_));
     memset(capt_hist_, 0, sizeof(capt_hist_));
     memset(pawn_correction_, 0, sizeof(pawn_correction_));
@@ -192,6 +196,21 @@ HistoryEntry& History::butterfly_entry(chess::Move move, chess::BitBoard threats
     const auto from_attacked = threats.is_set(move.from());
     const auto to_attacked = threats.is_set(move.to());
     return butterfly_hist_[move.from()][move.to()][from_attacked][to_attacked];
+}
+
+const HistoryEntry& History::pieceto_entry(
+    chess::Move move, chess::Piece moving, chess::BitBoard threats
+) const {
+    const auto from_attacked = threats.is_set(move.from());
+    const auto to_attacked = threats.is_set(move.to());
+    return pieceto_hist_[moving][move.to()][from_attacked][to_attacked];
+}
+HistoryEntry& History::pieceto_entry(
+    chess::Move move, chess::Piece moving, chess::BitBoard threats
+) {
+    const auto from_attacked = threats.is_set(move.from());
+    const auto to_attacked = threats.is_set(move.to());
+    return pieceto_hist_[moving][move.to()][from_attacked][to_attacked];
 }
 
 const HistoryEntry& History::cont_entry(

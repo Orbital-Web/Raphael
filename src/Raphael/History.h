@@ -40,6 +40,7 @@ struct CorrectionEntry {
 class History {
 private:
     HistoryEntry butterfly_hist_[64][64][2][2];  // [from][to][from attacked][to attacked]
+    HistoryEntry pieceto_hist_[12][64][2][2];    // [piece][to][from attacked][to attacked]
     HistoryEntry cont_hist_[12][64][12][64];     // [prev from][prev to][from][to]
     HistoryEntry capt_hist_[64][64][13];         // [from][to][piece, 12 for non-capture queening]
 
@@ -154,6 +155,18 @@ private:
      */
     const HistoryEntry& butterfly_entry(chess::Move move, chess::BitBoard threats) const;
     HistoryEntry& butterfly_entry(chess::Move move, chess::BitBoard threats);
+
+    /** Returns a reference to the pieceto history entry
+     *
+     * \param move move to get history for
+     * \param moving current moving piece
+     * \param threats squares attacked by the current not side to move
+     * \returns butterfly history entry
+     */
+    const HistoryEntry& pieceto_entry(
+        chess::Move move, chess::Piece moving, chess::BitBoard threats
+    ) const;
+    HistoryEntry& pieceto_entry(chess::Move move, chess::Piece moving, chess::BitBoard threats);
 
     /** Returns a reference to the continuation history entry
      *

@@ -32,7 +32,7 @@ using std::swap;
 
 
 
-const string Raphael::version = "4.0.0";
+const string Raphael::version = "4.1.0-dev";
 
 const Raphael::EngineOptions& Raphael::default_params() {
     static EngineOptions opts{
@@ -631,7 +631,11 @@ i32 Raphael::negamax(
                 fdepth <= LDSE_MAX_DEPTH && !in_check && ss->static_eval <= alpha - LDSE_MARGIN
                 && ttentry.flag == tt_.LOWER
             )
-                fext = LDSE_EXT;  // low depth singular extensions
+                // low depth singular extensions
+                fext = LDSE_EXT
+                       + (!is_PV && is_quiet && ttentry.fdepth >= fdepth - DLDSE_MIN_TT_DEPTH
+                          && ss->static_eval <= alpha - DLDSE_MARGIN)
+                             * DLDSE_EXT;
         }
 
         const u64 old_nodes = tm_.get_nodes(thread_id);

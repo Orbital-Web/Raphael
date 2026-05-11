@@ -64,6 +64,14 @@ public:
     i32 bonus(i32 fdepth, i32 depth_mul, i32 base_bonus, i32 max_bonus) const;
 
 
+    /** Applies a bonus to the quiet main history score
+     *
+     * \param move quiet move
+     * \param threats squares attacked by the current not side to move
+     * \param bonus bonus to apply, negative to apply penalty
+     */
+    void update_mainhist(chess::Move move, chess::BitBoard threats, i32 bonus);
+
     /** Applies a bonus to the quiet history score
      *
      * \param move quiet move

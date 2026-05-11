@@ -73,6 +73,7 @@ private:
         chess::Move excluded = chess::Move::NO_MOVE;
         i16 freductions = 0;
         bool ttpv;
+        bool is_quiet;
     };
 
     struct MoveStack {

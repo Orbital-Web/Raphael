@@ -51,6 +51,10 @@ i32 History::bonus(i32 fdepth, i32 depth_mul, i32 base_bonus, i32 max_bonus) con
 }
 
 
+void History::update_mainhist(chess::Move move, chess::BitBoard threats, i32 bonus) {
+    butterfly_entry(move, threats).update(bonus);
+}
+
 void History::update_quiet(chess::Move move, const Position<true>& position, i32 bonus) {
     const auto& board = position.board();
     const auto threats = board.threats();
@@ -61,7 +65,7 @@ void History::update_quiet(chess::Move move, const Position<true>& position, i32
 
     const auto total_conthist = get_conthist(move, position);
 
-    butterfly_entry(move, threats).update(bonus);
+    update_mainhist(move, threats, bonus);
     if (prev1.moving != chess::Piece::NONE)
         cont_entry(move, moving, prev1).update_with_base(bonus, total_conthist);
     if (prev2.moving != chess::Piece::NONE)

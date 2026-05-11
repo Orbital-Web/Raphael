@@ -515,6 +515,7 @@ i32 Raphael::negamax(
             tt_.prefetch(board.hash_after<true>(chess::Move::NO_MOVE));
             position.make_nullmove();
             ss->move = chess::Move::NO_MOVE;
+            ss->is_quiet = true;
 
             i32 fred = NMP_RED_BASE;
             fred += fdepth * NMP_RED_DEPTH_MUL / 1024;
@@ -639,6 +640,7 @@ i32 Raphael::negamax(
         tt_.prefetch(board.hash_after<false>(move));
         position.make_move(move);
         ss->move = move;
+        ss->is_quiet = is_quiet;
         move_searched++;
         tm_.inc_nodes(thread_id);
 
@@ -764,6 +766,14 @@ i32 Raphael::negamax(
 
     // terminal analysis
     if (move_searched == 0) return (in_check) ? -MATE_SCORE + ply : 0;  // reward faster mate
+
+    // previous countermove
+    if (!is_root && !bestmove && (ss - 1)->move && (ss - 1)->is_quiet) {
+        const auto bonus
+            = history.bonus(fdepth, PCM_BONUS_DEPTH_MUL, PCM_BONUS_BASE, PCM_BONUS_MAX);
+        const auto prev_threats = position.prev_board(1).threats();
+        history.update_mainhist((ss - 1)->move, prev_threats, bonus);
+    }
 
     // update transposition table
     if (!ss->excluded && !stop_.load(memory_order_relaxed)) {

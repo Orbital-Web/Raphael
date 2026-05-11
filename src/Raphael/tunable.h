@@ -317,6 +317,10 @@ Tunable(HISTORY_PENALTY_DEPTH_MUL, 92, 32, 384, true);
 Tunable(HISTORY_PENALTY_BASE, 105, 32, 384, true);
 Tunable(HISTORY_PENALTY_MAX, 1739, 1024, 4096, true);
 
+Tunable(PCM_BONUS_DEPTH_MUL, 100, 32, 384, true);
+Tunable(PCM_BONUS_BASE, 50, 0, 384, true);
+Tunable(PCM_BONUS_MAX, 1024, 768, 4096, true);
+
 Tunable(CONTHIST1_WEIGHT, 136, 32, 256, true);
 Tunable(CONTHIST2_WEIGHT, 116, 32, 256, true);
 Tunable(CONTHIST4_WEIGHT, 69, 32, 256, true);

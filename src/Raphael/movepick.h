@@ -83,6 +83,12 @@ public:
     /** Signal move generator to skip quiet moves */
     void skip_quiets();
 
+    /** Returns the current stage
+     *
+     * \returns current stage
+     */
+    Stage stage() const;
+
 private:
     /** Initializes the move generator
      *

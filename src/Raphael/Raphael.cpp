@@ -587,6 +587,13 @@ i32 Raphael::negamax(
                     generator.skip_quiets();
                     continue;
                 }
+            } else {
+                // bad noisy futility pruning
+                const i32 futility = ss->static_eval + BNFP_MARGIN_DEPTH_MUL * fdepth / DEPTH_SCALE;
+                if (!in_check && fdepth <= BNFP_MAX_DEPTH
+                    && generator.stage() == MoveGenerator::Stage::BAD_NOISY && futility <= alpha
+                    && !board.gives_direct_check(move))
+                    break;
             }
 
             // SEE pruning

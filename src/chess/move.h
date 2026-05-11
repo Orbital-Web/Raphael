@@ -52,7 +52,6 @@ public:
     }
 
     static constexpr u16 NO_MOVE = 0;
-    static constexpr u16 NULL_MOVE = 65;
     static constexpr u16 NORMAL = 0;
     static constexpr u16 PROMOTION = 1 << 14;
     static constexpr u16 ENPASSANT = 2 << 14;

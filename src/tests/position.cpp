@@ -219,7 +219,7 @@ TEST_SUITE("Position") {
 
         position.make_nullmove();
         prev = position.prev_move(1);
-        CHECK(prev.move == chess::Move::NULL_MOVE);
+        CHECK(prev.move == chess::Move::NO_MOVE);
         CHECK(prev.moving == chess::Piece::NONE);
 
         position.unmake_nullmove();

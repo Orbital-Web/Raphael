@@ -53,33 +53,15 @@ public:
     History();
 
 
-    /** Computes the quiet history bonus score at a given fdepth
+    /** Computes the history bonus score at a given fdepth
      *
      * \param fdepth current fractional depth
-     * \returns the bonus score
+     * \param depth_mul depth multiplier
+     * \param base_bonus base bonus
+     * \param max_bonus max bonus
+     * \returns the history bonus
      */
-    i32 quiet_bonus(i32 fdepth) const;
-
-    /** Computes the noisy history bonus score at a given fdepth
-     *
-     * \param fdepth current fractional depth
-     * \returns the bonus score
-     */
-    i32 noisy_bonus(i32 fdepth) const;
-
-    /** Computes the quiet history penalty score at a given fdepth
-     *
-     * \param fdepth current fractional depth
-     * \returns the penalty score (already negative)
-     */
-    i32 quiet_penalty(i32 fdepth) const;
-
-    /** Computes the noisy history penalty score at a given fdepth
-     *
-     * \param fdepth current fractional depth
-     * \returns the penalty score (already negative)
-     */
-    i32 noisy_penalty(i32 fdepth) const;
+    i32 bonus(i32 fdepth, i32 depth_mul, i32 base_bonus, i32 max_bonus) const;
 
 
     /** Applies a bonus to the quiet history score

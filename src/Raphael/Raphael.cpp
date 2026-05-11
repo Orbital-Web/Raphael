@@ -508,13 +508,13 @@ i32 Raphael::negamax(
         const i32 nmp_margin
             = max(NMP_MARGIN_BASE - NMP_MARGIN_DEPTH_MUL * fdepth / (DEPTH_SCALE * 128), 0);
         if (fdepth >= NMP_MIN_DEPTH && ply >= tdata.min_nmp_ply
-            && ss->static_eval >= beta + nmp_margin && (ss - 1)->move != chess::Move::NULL_MOVE
+            && ss->static_eval >= beta + nmp_margin && (ss - 1)->move
             && !(ttentry.flag == tt_.UPPER && ttentry.score < beta)
             && !board.is_kingpawn(board.stm()))
         {
-            tt_.prefetch(board.hash_after<true>(chess::Move::NULL_MOVE));
+            tt_.prefetch(board.hash_after<true>(chess::Move::NO_MOVE));
             position.make_nullmove();
-            ss->move = chess::Move::NULL_MOVE;
+            ss->move = chess::Move::NO_MOVE;
 
             i32 fred = NMP_RED_BASE;
             fred += fdepth * NMP_RED_DEPTH_MUL / 1024;
@@ -713,24 +713,41 @@ i32 Raphael::negamax(
                         // store killer moves and update quiet history
                         ss->killer = move;
 
-                        const auto quiet_bonus = history.quiet_bonus(history_fdepth);
-                        const auto quiet_penalty = history.quiet_penalty(history_fdepth);
-
-                        history.update_quiet(bestmove, position, quiet_bonus);
+                        const i32 bonus = history.bonus(
+                            history_fdepth,
+                            HISTORY_BONUS_DEPTH_MUL,
+                            HISTORY_BONUS_BASE,
+                            HISTORY_BONUS_MAX
+                        );
+                        const i32 penalty = -history.bonus(
+                            history_fdepth,
+                            HISTORY_PENALTY_DEPTH_MUL,
+                            HISTORY_PENALTY_BASE,
+                            HISTORY_PENALTY_MAX
+                        );
+                        history.update_quiet(bestmove, position, bonus);
                         for (const auto quietmove : mv->quietlist)
-                            history.update_quiet(quietmove, position, quiet_penalty);
+                            history.update_quiet(quietmove, position, penalty);
                     } else {
                         // apply capthist bonus
-                        const auto noisy_bonus = history.noisy_bonus(history_fdepth);
-                        history.update_noisy(bestmove, board.get_captured(bestmove), noisy_bonus);
+                        const i32 bonus = history.bonus(
+                            history_fdepth,
+                            CAPTHIST_BONUS_DEPTH_MUL,
+                            CAPTHIST_BONUS_BASE,
+                            CAPTHIST_BONUS_MAX
+                        );
+                        history.update_noisy(bestmove, board.get_captured(bestmove), bonus);
                     }
 
                     // always apply capthist penalty
-                    const auto noisy_penalty = history.noisy_penalty(history_fdepth);
+                    const i32 penalty = -history.bonus(
+                        history_fdepth,
+                        CAPTHIST_PENALTY_DEPTH_MUL,
+                        CAPTHIST_PENALTY_BASE,
+                        CAPTHIST_PENALTY_MAX
+                    );
                     for (const auto noisymove : mv->noisylist)
-                        history.update_noisy(
-                            noisymove, board.get_captured(noisymove), noisy_penalty
-                        );
+                        history.update_noisy(noisymove, board.get_captured(noisymove), penalty);
 
                     break;  // prune
                 }

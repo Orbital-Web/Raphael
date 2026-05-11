@@ -132,7 +132,7 @@ public:
     /** Plays a nullmove */
     void make_nullmove() {
         boards_.push_back(current_);
-        moves_.push_back({.move = chess::Move::NULL_MOVE, .moving = chess::Piece::NONE});
+        moves_.push_back({.move = chess::Move::NO_MOVE, .moving = chess::Piece::NONE});
         current_.make_nullmove();
     }
 

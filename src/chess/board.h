@@ -372,7 +372,7 @@ public:
         newhash ^= Zobrist::stm();
         if (EXACT && enpassant_ != Square::NONE) newhash ^= Zobrist::enpassant(enpassant_.file());
 
-        if (move == Move::NULL_MOVE) return newhash;
+        if (move == Move::NO_MOVE) return newhash;
 
         const auto captured = at(move.to());
         const auto capture = captured != Piece::NONE && move.type() != Move::CASTLING;

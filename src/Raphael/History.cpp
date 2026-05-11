@@ -46,29 +46,8 @@ History::History()
       cont_correction_{} {}
 
 
-i32 History::quiet_bonus(i32 fdepth) const {
-    return min<i32>(
-        HISTORY_BONUS_DEPTH_MUL * fdepth / DEPTH_SCALE + HISTORY_BONUS_BASE, HISTORY_BONUS_MAX
-    );
-}
-
-i32 History::noisy_bonus(i32 fdepth) const {
-    return min<i32>(
-        CAPTHIST_BONUS_DEPTH_MUL * fdepth / DEPTH_SCALE + CAPTHIST_BONUS_BASE, CAPTHIST_BONUS_MAX
-    );
-}
-
-i32 History::quiet_penalty(i32 fdepth) const {
-    return -min<i32>(
-        HISTORY_PENALTY_DEPTH_MUL * fdepth / DEPTH_SCALE + HISTORY_PENALTY_BASE, HISTORY_PENALTY_MAX
-    );
-}
-
-i32 History::noisy_penalty(i32 fdepth) const {
-    return -min<i32>(
-        CAPTHIST_PENALTY_DEPTH_MUL * fdepth / DEPTH_SCALE + CAPTHIST_PENALTY_BASE,
-        CAPTHIST_PENALTY_MAX
-    );
+i32 History::bonus(i32 fdepth, i32 depth_mul, i32 base_bonus, i32 max_bonus) const {
+    return min(depth_mul * fdepth / DEPTH_SCALE + base_bonus, max_bonus);
 }
 
 
@@ -197,22 +176,18 @@ HistoryEntry& History::butterfly_entry(chess::Move move, chess::BitBoard threats
 const HistoryEntry& History::cont_entry(
     chess::Move move, chess::Piece moving, chess::PieceMove prev_move
 ) const {
-    assert(move != chess::Move::NO_MOVE);
-    assert(move != chess::Move::NULL_MOVE);
+    assert(move);
     assert(moving != chess::Piece::NONE);
-    assert(prev_move.move != chess::Move::NO_MOVE);
-    assert(prev_move.move != chess::Move::NULL_MOVE);
+    assert(prev_move.move);
     assert(prev_move.moving != chess::Piece::NONE);
     return cont_hist_[prev_move.moving][prev_move.move.to()][moving][move.to()];
 }
 HistoryEntry& History::cont_entry(
     chess::Move move, chess::Piece moving, chess::PieceMove prev_move
 ) {
-    assert(move != chess::Move::NO_MOVE);
-    assert(move != chess::Move::NULL_MOVE);
+    assert(move);
     assert(moving != chess::Piece::NONE);
-    assert(prev_move.move != chess::Move::NO_MOVE);
-    assert(prev_move.move != chess::Move::NULL_MOVE);
+    assert(prev_move.move);
     assert(prev_move.moving != chess::Piece::NONE);
     return cont_hist_[prev_move.moving][prev_move.move.to()][moving][move.to()];
 }
@@ -250,22 +225,18 @@ CorrectionEntry& History::nonpawn_corr_entry(const chess::Board& board, chess::C
 const CorrectionEntry& History::cont_corr_entry(
     chess::Move move, chess::Piece moving, chess::PieceMove prev_move
 ) const {
-    assert(move != chess::Move::NO_MOVE);
-    assert(move != chess::Move::NULL_MOVE);
+    assert(move);
     assert(moving != chess::Piece::NONE);
-    assert(prev_move.move != chess::Move::NO_MOVE);
-    assert(prev_move.move != chess::Move::NULL_MOVE);
+    assert(prev_move.move);
     assert(prev_move.moving != chess::Piece::NONE);
     return cont_correction_[prev_move.moving][prev_move.move.to()][moving][move.to()];
 }
 CorrectionEntry& History::cont_corr_entry(
     chess::Move move, chess::Piece moving, chess::PieceMove prev_move
 ) {
-    assert(move != chess::Move::NO_MOVE);
-    assert(move != chess::Move::NULL_MOVE);
+    assert(move);
     assert(moving != chess::Piece::NONE);
-    assert(prev_move.move != chess::Move::NO_MOVE);
-    assert(prev_move.move != chess::Move::NULL_MOVE);
+    assert(prev_move.move);
     assert(prev_move.moving != chess::Piece::NONE);
     return cont_correction_[prev_move.moving][prev_move.move.to()][moving][move.to()];
 }

@@ -331,7 +331,7 @@ TEST_SUITE("Zobrist Hash") {
         Board b;
 
         b.set_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-        CHECK(b.hash_after<true>(Move::NULL_MOVE) == 13757846718353144213ull);
+        CHECK(b.hash_after<true>(Move::NO_MOVE) == 13757846718353144213ull);
         b.make_nullmove();
         CHECK(b.hash() == 13757846718353144213ull);
     }

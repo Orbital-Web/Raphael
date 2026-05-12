@@ -60,7 +60,7 @@ public:
      *
      * \returns current board
      */
-    const chess::Board board() const { return current_; }
+    const chess::Board& board() const { return current_; }
 
 
     /** Returns a move n plies ago, or NO_MOVE, Piece::NONE if ply > number of moves played

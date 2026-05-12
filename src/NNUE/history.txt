@@ -3,437 +3,448 @@ Note that this document also includes failed experiments for future references
 (document style taken from https://github.com/kelseyde/hobbes-chess-engine/blob/main/network_history.txt)
 
 
-NET/DATA ID       | SPECS                             | DETAILS                           | vs. PREVIOUS                                | NOTES                                          |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d1          | games: n.a                        | source: raphael v1.8 (HCE)        | Used roughly 200m positions from previous tests, public CCRL matches, and books, all         |
-                  | pos: 200m                         | nodes: 5k soft                    | positions re-evaluated using Raphael v1.8.                                                   |
-                  |                                   | filter: captures, checks          |                                                                                              |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
-basilisk_v1       | (768->64)x2->1                    | n.a sb                            | n.a, likely +200-300                        | Trained with custom pytorch trainer.           |
-default for v2.0  | activ: screlu                     |   data: d1 (0.2b)                 |                                             |                                                |
-                  | scale: 400                        |   lr: lin(0.001,0.00000243)       |                                             |                                                |
-                  | quant: [255,64]                   |   wdl: const(0.3)                 |                                             |                                                |
-                  | optim: AdamW                      |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d2          | games: 6.29m                      | source: raphael v3.0              | Training data now comes from fully self-play games using OpenBench.                          |
-                  | pos: 615m                         | nodes: 5k soft                    |                                                                                              |
-                  |                                   | filter: noisy, checks             |                                                                                              |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
-basilisk_v2       | (768->64)x2->1                    | 60sb                              | Elo   | 155.84 +- 23.70 (95%)               | Switched to bullet for training. Scale was     |
-merged as #11     | activ: screlu                     |   data: d2 (0.6b)                 | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | adjusted by comparing the abs mean against v1  |
-                  | scale: 283                        |   lr: cos(0.001,0.00000243)       | LLR   | 2.89 (-2.25, 2.89) [0.00, 5.00]     | on lichess-big3-resolved. Future outputs       |
-                  | quant: [255,64]                   |   wdl: const(0.4)                 | Games | N: 454 W: 250 L: 59 D: 145          | scales were also calibrated using v1 as the    |
-                  | optim: AdamW                      |                                   | Penta | [2, 9, 66, 96, 54]                  | baseline.                                      |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-basilisk_v3       | (768hm->64)x2->1                  | 60sb                              | Elo   | 16.51 +- 8.00 (95%)                 | Added horizontal mirroring. Also made minor    |
-merged as #16     | activ: screlu                     |   data: d2 (0.6b)                 | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | changes in SIMD code to make better use of     |
-                  | scale: 283                        |   lr: 1600b warmup                | LLR   | 2.91 (-2.25, 2.89) [0.00, 5.00]     | registers, which the compiler probably already |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 3074 W: 943 L: 797 D: 1334       | does.                                          |
-                  | optim: AdamW                      |   wdl: const(0.4)                 | Penta | [51, 343, 637, 421, 85]             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-basilisk_v4       | (768hm->128)x2->1                 | 100sb                             | Elo   | 59.33 +- 14.44 (95%)                | Increased HL to 128.                           |
-merged as #17     | activ: screlu                     |   data: d2 (0.6b)                 | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | scale: 283                        |   lr: 1600b warmup                | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 810 W: 302 L: 165 D: 343         |                                                |
-                  | optim: AdamW                      |   wdl: const(0.4)                 | Penta | [5, 49, 182, 142, 27]               |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d3          | games: 5.38m                      | source: basilisk_v4               |                                                                                              |
-                  | pos: 538m                         | nodes: 5k soft                    |                                                                                              |
-                  |                                   | filter: noisy, checks             |                                                                                              |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
-basilisk_v5       | (768hm->256)x2->1                 | 140sb                             | Elo   | 82.63 +- 16.84 (95%)                | Increased HL to 256. Combining both d2 + d3    |
-merged as #19     | activ: screlu                     |   data: d2-3 (1.1b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | worked better than only using d3               |
-                  | scale: 276                        |   lr: 1600b warmup                | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     | (onlynew vs combined = -7.98 +- 6.71)          |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 634 W: 263 L: 115 D: 256         |                                                |
-                  | optim: AdamW                      |   wdl: const(0.4)                 | Penta | [2, 31, 131, 123, 30]               |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-sleipnir_v1       | (768hm->256)x2->1x8               | 160sb                             | Elo   | 12.66 +- 6.55 (95%)                 | Added 8 output buckets.                        |
-merged as #20     | activ: screlu                     |   data: d2-3 (1.1b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | scale: 279                        |   lr: 1600b warmup                | LLR   | 2.99 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 3898 W: 1118 L: 976 D: 1804      |                                                |
-                  | optim: AdamW                      |   wdl: const(0.4)                 | Penta | [49, 420, 886, 528, 66]             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-sleipnir_v2       | (768hm->512)x2->1x8               | 320sb                             | Elo   | 18.14 +- 8.09 (95%)                 | Increased HL to 512.                           |
-merged as #21     | activ: screlu                     |   data: d2-3 (1.1b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | scale: 280                        |   lr: 1600b warmup                | LLR   | 2.97 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 2646 W: 771 L: 633 D: 1242       |                                                |
-                  | optim: AdamW                      |   wdl: const(0.4)                 | Penta | [31, 284, 574, 384, 50]             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d4          | games: 3.87m                      | source: sleipnir_v2               |                                                                                              |
-                  | pos: 383m                         | nodes: 5k soft                    |                                                                                              |
-                  |                                   | filter: noisy, checks             |                                                                                              |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
-sleipnir_v3       | (768hm->512)x2->1x8               | 320sb                             | Elo   | 5.41 +- 3.86 (95%)                  | Switched to linear WDL. Normally, lowering wdl |
-merged as #23     | activ: screlu                     |   data: d2-3 (1.1b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | leads to antiscaling. This surprisingly wasn't |
-                  | scale: 278                        |   lr: 1600b warmup                | LLR   | 3.02 (-2.25, 2.89) [0.00, 5.00]     | the case (5.59 +- 3.88 at 40+0.4). Trying 0.2  |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 11104 W: 2965 L: 2792 D: 5347    | to 0.6 wdl at this point did not gain elo stc  |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [138, 1320, 2482, 1455, 157]        | (-0.85 +- 3.35).                               |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-sleipnir_v4       | (768hm->768)x2->1x8               | 360sb                             | Elo   | 15.73 +- 7.45 (95%)                 | Increased HL to 768.                           |
-default for v3.1  | activ: screlu                     |   data: d2-4 (1.5b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-merged as #26     | scale: 276                        |   lr: 1600b warmup                | LLR   | 2.92 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 2962 W: 831 L: 697 D: 1434       |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [34, 314, 661, 428, 44]             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d5          | games: 3.97m (dfrc)               | source: sleipnir_v4               | Data from dfrc games.                                                                        |
-                  | pos: 440m                         | nodes: 5k soft                    |                                                                                              |
-                  |                                   | filter: noisy, checks             |                                                                                              |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
-sleipnir_v5       | (768hm->768)x2->1x8               | 360sb                             | Elo   | 16.03 +- 7.49 (95%)                 | Trained on dfrc positions. STC results in dfrc |
-merged as #28     | activ: screlu                     |   data: d2-5 (1.9b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | was 121.70 +- 21.31.                           |
-                  | scale: 275                        |   lr: 1600b warmup                | LLR   | 2.92 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 2884 W: 799 L: 666 D: 1419       |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [33, 298, 656, 413, 42]             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d6          | games: 5.91m (dfrc)               | source: sleipnir_v5               |                                                                                              |
-                  | pos: 633m                         | nodes: 5k soft                    |                                                                                              |
-                  |                                   | filter: noisy, checks             |                                                                                              |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
-sleipnir_v6       | (768hm->1024)x2->1x8              | 400sb                             | Elo   | 6.59 +- 4.45 (95%)                  | Increased HL to 1024.                          |
-merged as #37     | activ: screlu                     |   data: d2-6 (2.6b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | scale: 274                        |   lr: 1600b warmup                | LLR   | 2.91 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 8016 W: 2155 L: 2003 D: 3858     |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [87, 933, 1832, 1053, 103]          |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-hydra_v1          | (768x4hm->1024)x2->1x8            | 400sb                             | Elo   | 2.90 +- 2.21 (95%)                  | Added input buckets. Did not pass STC against  |
-unmerged          | activ: screlu                     |   data: d2-6 (2.6b)               | SPRT  | N=25000 Threads=1 Hash=16MB         | main. STC results of hydra_v1 with finny       |
-                  | scale: 277                        |   lr: 1600b warmup                | LLR   | 3.19 (-2.25, 2.89) [0.00, 5.00]     | tables vs without was:                         |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 45022 W: 13500 L: 13124 D: 18398 | Elo   | 6.14 +- 3.96 (95%)                     |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [1281, 5310, 9028, 5536, 1356]      | SPRT  | 8.0+0.08s Threads=1 Hash=16MB          |
-                  | buckets:                          |                                   |                                             | LLR   | 3.05 (-2.25, 2.89) [0.00, 5.00]        |
-                  | 0, 0, 1, 1                        |                                   |                                             | Games | N: 7750 W: 1887 L: 1750 D: 4113        |
-                  | 2, 2, 2, 2                        |                                   |                                             | Penta | [22, 840, 2033, 939, 41]               |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d7          | games: 9.98m (60% dfrc)           | source: sleipnir_v6               | Didn't use hydra_v1 for data as I simply forgot.                                             |
-                  | pos: 1094m                        | nodes: 5k soft                    |                                                                                              |
-                  |                                   | filter: noisy, checks             |                                                                                              |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
-hydra_v2          | (768x4hm->1024)x2->1x8            | 400sb                             | Elo   | 25.42 +- 9.23 (95%)                 | Trained on more data and replaced oldest data. |
-default for v3.2  | activ: screlu                     |   data: d3-7 (3.0b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-merged as #55     | scale: 271                        |   lr: 1600b warmup                | LLR   | 2.91 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 1588 W: 461 L: 345 D: 782        |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [4, 152, 376, 248, 14]              |                                                |
-                  | buckets:                          |                                   |                                             |                                                |
-                  | 0, 0, 1, 1                        |                                   |                                             |                                                |
-                  | 2, 2, 2, 2                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-hydra_v3          | (768x4hm->1024)x2->1x8            | 400sb                             | Elo   | 0.32 +- 2.97 (95%)                  | Increased batch size by a factor of 8, and     |
-merged as #57     | activ: screlu                     |   data: d3-7 (3.0b)               | SPRT  | N=25000 Threads=1 Hash=16MB         | decreased batches per sb by a factor of 8.     |
-                  | scale: 272                        |   lr: 1600b warmup                | LLR   | 3.05 (-2.25, 2.89) [-5.00, 0.00]    | This sped up network training time by roughly  |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 24834 W: 7340 L: 7317 D: 10177   | half an hour (down to 5h). Perhaps with a      |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [690, 3054, 4946, 2997, 730]        | proper desktop GPU (mine is a laptop RTX 5060) |
-                  | buckets:                          |                                   |                                             | the speedup would be even higher.              |
-                  | 0, 0, 1, 1                        |                                   |                                             |                                                |
-                  | 2, 2, 2, 2                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-hydra_v4          | (768x4hm->1024)x2->1x8            | 400sb                             | Elo   | 2.36 +- 1.87 (95%)                  | Enabled random fen skipping with a probability |
-merged as #58     | activ: screlu                     |   data: d3-7 (3.0b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | of 0.5 (helps shuffle the data more). Likely   |
-                  | scale: 271                        |   lr: 1600b warmup                | LLR   | 2.96 (-2.25, 2.89) [0.00, 5.00]     | would have passed faster with fixed nodes.     |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 40050 W: 10051 L: 9779 D: 20220  |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [263, 4826, 9637, 4974, 325]        |                                                |
-                  | buckets:                          | filter: 0.5 random fen skipping   |                                             |                                                |
-                  | 0, 0, 1, 1                        |                                   |                                             |                                                |
-                  | 2, 2, 2, 2                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-                  | 3, 3, 3, 3                        |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d8          | games: 13.99m (28% dfrc)          | source: hydra_v1-3                |                                                                                              |
-                  | pos: 1474m                        | nodes: 5k soft                    |                                                                                              |
-                  |                                   | filter: noisy, checks             |                                                                                              |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
-hydra_v5          | (768x6hm->1024)x2->1x8            | 400sb                             | Elo   | 33.36 +- 10.48 (95%)                | Increased input bucket count to 6.             |
-merged as #59     | activ: screlu                     |   data: d4-8 (4.0b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | scale: 266                        |   lr: 1600b warmup                | LLR   | 2.93 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 1212 W: 353 L: 237 D: 622        |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [4, 94, 306, 186, 16]               |                                                |
-                  | buckets:                          | filter: 0.5 random fen skipping   |                                             |                                                |
-                  | 0, 0, 1, 1                        |                                   |                                             |                                                |
-                  | 2, 2, 3, 3                        |                                   |                                             |                                                |
-                  | 4, 4, 4, 4                        |                                   |                                             |                                                |
-                  | 4, 4, 4, 4                        |                                   |                                             |                                                |
-                  | 4, 4, 4, 4                        |                                   |                                             |                                                |
-                  | 5, 5, 5, 5                        |                                   |                                             |                                                |
-                  | 5, 5, 5, 5                        |                                   |                                             |                                                |
-                  | 5, 5, 5, 5                        |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-hydra_v6          | (768x6hm->1024)x2->1x8            | 400sb                             | Elo   | -8.48 +- 6.63 (95%)                 | Tried raising WDL. Did not gain in STC and in  |
-unmerged          | activ: screlu                     |   data: d4-8 (4.0b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | LTC too (stopped test early at -0.72 LLR).     |
-                  | scale: 266                        |   lr: 1600b warmup                | LLR   | -2.34 (-2.25, 2.89) [0.00, 5.00]    |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 3116 W: 723 L: 799 D: 1594       |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.6)              | Penta | [26, 402, 770, 342, 18]             |                                                |
-                  | buckets:                          | filter: 0.5 random fen skipping   |                                             |                                                |
-                  | 0, 0, 1, 1                        |                                   |                                             |                                                |
-                  | 2, 2, 3, 3                        |                                   |                                             |                                                |
-                  | 4, 4, 4, 4                        |                                   |                                             |                                                |
-                  | 4, 4, 4, 4                        |                                   |                                             |                                                |
-                  | 4, 4, 4, 4                        |                                   |                                             |                                                |
-                  | 5, 5, 5, 5                        |                                   |                                             |                                                |
-                  | 5, 5, 5, 5                        |                                   |                                             |                                                |
-                  | 5, 5, 5, 5                        |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d9          | games: 17.94m (44% dfrc)          | source: hydra_v4-5                |                                                                                              |
-                  | pos: 1861m                        | nodes: 5k soft                    |                                                                                              |
-                  |                                   | filter: noisy, checks             |                                                                                              |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
-hydra_v7          | (768x8hm->1024)x2->1x8            | 400sb                             | Elo   | 10.32 +- 5.53 (95%)                 | Increased input bucket count to 8.             |
-merged as #68     | activ: screlu                     |   data: d5-9 (5.5b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | scale: 261                        |   lr: 1600b warmup                | LLR   | 2.96 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 4174 W: 1106 L: 982 D: 2086      |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [16, 445, 1046, 559, 21]            |                                                |
-                  | buckets:                          | filter: 0.5 random fen skipping   |                                             |                                                |
-                  | 0, 1, 2, 3                        |                                   |                                             |                                                |
-                  | 4, 4, 5, 5                        |                                   |                                             |                                                |
-                  | 6, 6, 6, 6                        |                                   |                                             |                                                |
-                  | 6, 6, 6, 6                        |                                   |                                             |                                                |
-                  | 6, 6, 6, 6                        |                                   |                                             |                                                |
-                  | 7, 7, 7, 7                        |                                   |                                             |                                                |
-                  | 7, 7, 7, 7                        |                                   |                                             |                                                |
-                  | 7, 7, 7, 7                        |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d10         | games: 15.95m (37% dfrc)          | source: hydra_v5,7                | Generated using custom datagen script that is 23% faster than OpenBench. Trained two 64HL    |
-                  | pos: 1542m                        | nodes: 5k soft                    | nets using 2m OpenBench and 2m new data. Results were 1.88 +- 3.84 25k nodes nonregr using   |
-                  |                                   | filter: noisy, checks             | the new data. Interestingly, using shared tt+history was -3.77 +- 2.80 against the old data. |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
-hydra_v8          | (768x10hm->1024)x2->1x8           | 500sb                             | Elo   | 9.73 +- 5.42 (95%)                  | Increased input bucket count to 10.            |
-merged as #71     | activ: screlu                     |   data: d5-10 (7.0b)              | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | scale: 261                        |   lr: 1600b warmup                | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 4574 W: 1212 L: 1084 D: 2278     |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [17, 514, 1115, 606, 35]            |                                                |
-                  | buckets:                          | filter: 0.5 random fen skipping   |                                             |                                                |
-                  | 0, 1, 2, 3                        |                                   |                                             |                                                |
-                  | 4, 5, 6, 7                        |                                   |                                             |                                                |
-                  | 8, 8, 8, 8                        |                                   |                                             |                                                |
-                  | 9, 9, 9, 9                        |                                   |                                             |                                                |
-                  | 9, 9, 9, 9                        |                                   |                                             |                                                |
-                  | 9, 9, 9, 9                        |                                   |                                             |                                                |
-                  | 9, 9, 9, 9                        |                                   |                                             |                                                |
-                  | 9, 9, 9, 9                        |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d11         | games: 40.00m (25% dfrc)          | source: hydra_v7-8                |                                                                                              |
-                  | pos: 3669m                        | nodes: 5k soft                    |                                                                                              |
-                  |                                   | filter: noisy, checks             |                                                                                              |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
-hydra_v9          | (768x16hm->1024)x2->1x8           | 600sb                             | Elo   | 8.30 +- 4.85 (95%)                  | Increased input bucket count to 16. Added      |
-merged as #78     | activ: screlu                     |   data: d5-11 (10.7b)             | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | king plane merging to reduce network size by   |
-                  | scale: 257                        |   lr: 1600b warmup                | LLR   | 3.01 (-2.25, 2.89) [0.00, 5.00]     | 8% (input feature is technically 704, not 768) |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 5486 W: 1375 L: 1244 D: 2867     |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [11, 634, 1343, 723, 32]            |                                                |
-                  | buckets:                          | filter: 0.5 random fen skipping   |                                             |                                                |
-                  | 0,  1,  2,  3                     |                                   |                                             |                                                |
-                  | 4,  5,  6,  7                     |                                   |                                             |                                                |
-                  | 8,  8,  9,  9                     |                                   |                                             |                                                |
-                  | 10, 10, 11, 11                    |                                   |                                             |                                                |
-                  | 12, 12, 13, 13                    |                                   |                                             |                                                |
-                  | 12, 12, 13, 13                    |                                   |                                             |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-hydra_v10         | (768x16hm->1024)x2->1x8           | 600sb                             | Elo   | -2.65 +- 3.93 (95%)                 | Tried piece count distribution skipping, where |
-unmerged          | activ: screlu                     |   data: d5-11 (10.7b)             | SPRT  | 40.0+0.40s Threads=1 Hash=128MB     | you skip positions randomly so that the piece  |
-                  | scale: 258                        |   lr: 1600b warmup                | LLR   | -2.33 (-2.25, 2.89) [0.00, 5.00]    | count distribution matches some ideal curve.   |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 7084 W: 1719 L: 1773 D: 3592     | Looked like it was gaining elo slightly at stc |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [4, 847, 1894, 793, 4]              | (1.23 +- 1.81) but likely not enough to pass.  |
-                  | buckets:                          | filter: 0.5 random fen skipping   |                                             |                                                |
-                  | 0,  1,  2,  3                     |         piece count distribution  |                                             |                                                |
-                  | 4,  5,  6,  7                     |                                   |                                             |                                                |
-                  | 8,  8,  9,  9                     |                                   |                                             |                                                |
-                  | 10, 10, 11, 11                    |                                   |                                             |                                                |
-                  | 12, 12, 13, 13                    |                                   |                                             |                                                |
-                  | 12, 12, 13, 13                    |                                   |                                             |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d12         | games: 40.00m (25% dfrc)          | source: hydra_v8-9                |                                                                                              |
-                  | pos: 3526m                        | nodes: 5k soft                    |                                                                                              |
-                  |                                   | filter: noisy, checks             |                                                                                              |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
-hydra_v11         | (768x16hm->1024)x2->1x8           | 600sb                             | Elo   | 18.29 +- 7.52 (95%)                 | Added a 100sb finetune stage at 0.6wdl.        |
-merged as #85     | activ: screlu                     |   data: d5-12 (14.2b)             | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | scale: 248                        |   lr: 1600b warmup                | LLR   | 2.99 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 2224 W: 586 L: 469 D: 1169       |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [4, 223, 548, 326, 11]              |                                                |
-                  | buckets:                          | 100sb                             |                                             |                                                |
-                  | 0,  1,  2,  3                     |   data: d7-12 (13.1b)             |                                             |                                                |
-                  | 4,  5,  6,  7                     |   lr: const(0.00000121)           |                                             |                                                |
-                  | 8,  8,  9,  9                     |   wdl: const(0.6)                 |                                             |                                                |
-                  | 10, 10, 11, 11                    | filter: 0.5 random fen skipping   |                                             |                                                |
-                  | 12, 12, 13, 13                    |                                   |                                             |                                                |
-                  | 12, 12, 13, 13                    |                                   |                                             |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-hydra_v12         | (768x16hm->1024)x2->1x8           | 600sb                             | stc:                                        | Finetuned for another 100 superbatches.        |
-merged as #87     | activ: screlu                     |   data: d5-12 (14.2b)             | Elo   | 3.47 +- 2.69 (95%)                  |                                                |
-                  | scale: 248                        |   lr: 1600b warmup                | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | LLR   | 2.98 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Games | N: 16502 W: 3811 L: 3646 D: 9045    |                                                |
-                  | buckets:                          | 200sb                             | Penta | [23, 1930, 4193, 2069, 36]          |                                                |
-                  | 0,  1,  2,  3                     |   data: d7-12 (13.1b)             |                                             |                                                |
-                  | 4,  5,  6,  7                     |   lr: const(0.00000121)           | ltc:                                        |                                                |
-                  | 8,  8,  9,  9                     |   wdl: const(0.6)                 | Elo   | 1.89 +- 1.46 (95%)                  |                                                |
-                  | 10, 10, 11, 11                    | filter: 0.5 random fen skipping   | SPRT  | 40.0+0.40s Threads=1 Hash=128MB     |                                                |
-                  | 12, 12, 13, 13                    |                                   | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | 12, 12, 13, 13                    |                                   | Games | N: 53046 W: 12191 L: 11902 D: 28953 |                                                |
-                  | 14, 14, 15, 15                    |                                   | Penta | [26, 6186, 13808, 6479, 24]         |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-orthrus_v1        | (768x16hm->1024pw)x2->1x8         | 600sb                             | stc:                                        | Implemented pairwise multiplication.           |
-merged as #89     | activ: pw                         |   data: d5-12 (14.2b)             | Elo   | 4.21 +- 3.10 (95%)                  |                                                |
-                  | scale: 250                        |   lr: 1600b warmup                | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | LLR   | 3.00 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Games | N: 12790 W: 3086 L: 2931 D: 6773    |                                                |
-                  | buckets:                          | 200sb                             | Penta | [32, 1477, 3239, 1598, 49]          |                                                |
-                  | 0,  1,  2,  3                     |   data: d7-12 (13.1b)             |                                             |                                                |
-                  | 4,  5,  6,  7                     |   lr: const(0.00000121)           | ltc:                                        |                                                |
-                  | 8,  8,  9,  9                     |   wdl: const(0.6)                 | Elo   | 0.88 +- 2.61 (95%)                  |                                                |
-                  | 10, 10, 11, 11                    | filter: 0.5 random fen skipping   | SPRT  | 40.0+0.40s Threads=1 Hash=128MB     |                                                |
-                  | 12, 12, 13, 13                    |                                   | LLR   | 2.94 (-2.25, 2.89) [-5.00, 0.00]    |                                                |
-                  | 12, 12, 13, 13                    |                                   | Games | N: 16554 W: 3915 L: 3873 D: 8766    |                                                |
-                  | 14, 14, 15, 15                    |                                   | Penta | [14, 1935, 4333, 1985, 10]          |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-orthrus_v2        | (768x16hm->1024pw)x2->1x8         | 600sb                             | Elo   | 4.83 +- 3.38 (95%)                  | Switched to linear lr for finetuning.          |
-merged as #93     | activ: pw                         |   data: d5-12 (14.2b)             | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | scale: 250                        |   lr: 1600b warmup                | LLR   | 3.01 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 10224 W: 2386 L: 2244 D: 5594    |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [16, 1154, 2631, 1294, 17]          |                                                |
-                  | buckets:                          | 200sb                             |                                             |                                                |
-                  | 0,  1,  2,  3                     |   data: d7-12 (13.1b)             |                                             |                                                |
-                  | 4,  5,  6,  7                     |   lr: lin(1e-5, 1e-7)             |                                             |                                                |
-                  | 8,  8,  9,  9                     |   wdl: const(0.6)                 |                                             |                                                |
-                  | 10, 10, 11, 11                    | filter: 0.5 random fen skipping   |                                             |                                                |
-                  | 12, 12, 13, 13                    |                                   |                                             |                                                |
-                  | 12, 12, 13, 13                    |                                   |                                             |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-orthrus_v3        | (768x16hm->1024pw)x2->1x8         | 600sb                             | stc:                                        | Tried switching to cosine lr for finetuning.   |
-unmerged          | activ: pw                         |   data: d5-12 (14.2b)             | Elo   | -0.36 +- 2.55 (95%)                 | Seemed to be neutral for both stc and ltc.     |
-                  | scale: 250                        |   lr: 1600b warmup                | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | LLR   | -2.42 (-2.25, 2.89) [0.00, 5.00]    |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Games | N: 18152 W: 4138 L: 4157 D: 9857    |                                                |
-                  | buckets:                          | 200sb                             | Penta | [36, 2183, 4651, 2176, 30]          |                                                |
-                  | 0,  1,  2,  3                     |   data: d7-12 (13.1b)             |                                             |                                                |
-                  | 4,  5,  6,  7                     |   lr: cos(1e-5, 1e-7)             | ltc (stopped):                              |                                                |
-                  | 8,  8,  9,  9                     |   wdl: const(0.6)                 | Elo   | 0.83 +- 2.22 (95%)                  |                                                |
-                  | 10, 10, 11, 11                    | filter: 0.5 random fen skipping   | SPRT  | 40.0+0.40s Threads=1 Hash=128MB     |                                                |
-                  | 12, 12, 13, 13                    |                                   | LLR   | -0.77 (-2.25, 2.89) [0.00, 5.00]    |                                                |
-                  | 12, 12, 13, 13                    |                                   | Games | N: 22728 W: 5190 L: 5136 D: 12402   |                                                |
-                  | 14, 14, 15, 15                    |                                   | Penta | [10, 2685, 5918, 2743, 8]           |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-orthrus_v4        | (768x16hm->1024pw)x2->1x8         | 600sb                             | stc:                                        | Tried switching to linear wdl for finetuning.  |
-unmerged          | activ: pw                         |   data: d5-12 (14.2b)             | Elo   | -1.63 +- 3.47 (95%)                 |                                                |
-                  | scale: 212                        |   lr: 1600b warmup                | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | LLR   | -2.33 (-2.25, 2.89) [0.00, 5.00]    |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Games | N: 9816 W: 2160 L: 2206 D: 5450     |                                                |
-                  | buckets:                          | 200sb                             | Penta | [19, 1200, 2514, 1158, 17]          |                                                |
-                  | 0,  1,  2,  3                     |   data: d7-12 (13.1b)             |                                             |                                                |
-                  | 4,  5,  6,  7                     |   lr: cos(1e-5, 1e-7)             | ltc:                                        |                                                |
-                  | 8,  8,  9,  9                     |   wdl: lin(0.6, 0.8)              | Elo   | -4.57 +- 4.93 (95%)                 |                                                |
-                  | 10, 10, 11, 11                    | filter: 0.5 random fen skipping   | SPRT  | 40.0+0.40s Threads=1 Hash=128MB     |                                                |
-                  | 12, 12, 13, 13                    |                                   | LLR   | -2.26 (-2.25, 2.89) [0.00, 5.00]    |                                                |
-                  | 12, 12, 13, 13                    |                                   | Games | N: 4634 W: 1005 L: 1066 D: 2563     |                                                |
-                  | 14, 14, 15, 15                    |                                   | Penta | [3, 580, 1212, 519, 3]              |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d13         | games: 40.00m (25% dfrc)          | source: hydra_v11-12              |                                                                                              |
-                  | pos: 3576m                        | nodes: 5k soft                    |                                                                                              |
-                  |                                   | filter: noisy, checks             |                                                                                              |
-------------------|-----------------------------------|-----------------------------------|----------------------------------------------------------------------------------------------|
-data: d14         | games: 21.60m                     | source: orthrus_v1-2              |                                                                                              |
-                  | pos: 1945m                        | nodes: 24k soft                   |                                                                                              |
-                  |                                   | filter: noisy, checks             |                                                                                              |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
-orthrus_v5        | (768x16hm->1024pw)x2->1x8         | 600sb                             | Elo   | 7.77 +- 4.66 (95%)                  | Trained on more data generated with 24ksn.     |
-merged as #102    | activ: pw                         |   data: d5-14 (19.7b)             | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | scale: 250                        |   lr: 1600b warmup                | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | Games | N: 5682 W: 1412 L: 1285 D: 2985     |                                                |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [15, 628, 1433, 745, 20]            |                                                |
-                  | buckets:                          | 200sb                             |                                             |                                                |
-                  | 0,  1,  2,  3                     |   data: d7-14 (18.6b)             |                                             |                                                |
-                  | 4,  5,  6,  7                     |   lr: lin(1e-5, 1e-7)             |                                             |                                                |
-                  | 8,  8,  9,  9                     |   wdl: const(0.6)                 |                                             |                                                |
-                  | 10, 10, 11, 11                    | filter: 0.5 random fen skipping   |                                             |                                                |
-                  | 12, 12, 13, 13                    |                                   |                                             |                                                |
-                  | 12, 12, 13, 13                    |                                   |                                             |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-cerberus_v1       | (768x16hm->1024pw)->(16->32->1)x8 | 800sb                             | fixed nodes:                                | First multilayer net. Last two layers are      |
-unmerged          | activ: pw->screlu->screlu         |   data: d5-14 (19.7b)             | Elo   | 28.13 +- 8.60 (95%)                 | using float inference. Fixed node gain was     |
-                  | scale: 272                        |   lr: 1600b warmup                | SPRT  | N=25000 Threads=1 Hash=16MB         | modest compared to other implementations. Note |
-                  | quant: [255,64]                   |       cos(0.001,0.00000243)       | LLR   | 4.54 (-2.25, 2.89) [0.00, 5.00]     | that the stc was accidentally comparing avx512 |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Games | N: 2822 W: 930 L: 702 D: 1190       | single layer with avx2 multilayer.             |
-                  | buckets:                          | 200sb                             | Penta | [54, 279, 549, 443, 86]             |                                                |
-                  | 0,  1,  2,  3                     |   data: d7-14 (18.6b)             |                                             |                                                |
-                  | 4,  5,  6,  7                     |   lr: lin(1e-5, 1e-7)             | stc:                                        |                                                |
-                  | 8,  8,  9,  9                     |   wdl: const(0.6)                 | Elo   | -4.56 +- 4.76 (95%)                 |                                                |
-                  | 10, 10, 11, 11                    | filter: 0.5 random fen skipping   | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | 12, 12, 13, 13                    |                                   | LLR   | -2.57 (-2.25, 2.89) [0.00, 5.00]    |                                                |
-                  | 12, 12, 13, 13                    |                                   | Games | N: 5488 W: 1223 L: 1295 D: 2970     |                                                |
-                  | 14, 14, 15, 15                    |                                   | Penta | [26, 680, 1390, 636, 12]            |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-cerberus_v2       | (768x16hm->1024pw)->(16->32->1)x8 | 800sb                             | fixed nodes:                                | Switched to int inference to ensure            |
-merged as #113    | activ: pw->screlu->crelu          |   data: d5-14 (19.7b)             | Elo   | 28.13 +- 8.60 (95%)                 | deterministic bench across arches, and         |
-                  | scale: 274                        |   lr: 1600b warmup                | SPRT  | N=25000 Threads=1 Hash=16MB         | switched to crelu for the last layer to deal   |
-                  | quant: [255,128,64]               |       cos(0.001,0.00000243)       | LLR   | 4.54 (-2.25, 2.89) [0.00, 5.00]     | with the effects of quantization. There was    |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Games | N: 2822 W: 930 L: 702 D: 1190       | virtually no difference in bench speed or      |
-                  | buckets:                          | 200sb                             | Penta | [54, 279, 549, 443, 86]             | final loss compared to the previous net.       |
-                  | 0,  1,  2,  3                     |   data: d7-14 (18.6b)             |                                             |                                                |
-                  | 4,  5,  6,  7                     |   lr: lin(1e-5, 1e-7)             | stc:                                        |                                                |
-                  | 8,  8,  9,  9                     |   wdl: const(0.6)                 | Elo   | -3.70 +- 4.64 (95%)                 |                                                |
-                  | 10, 10, 11, 11                    | filter: 0.5 random fen skipping   | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
-                  | 12, 12, 13, 13                    |                                   | LLR   | -2.30 (-2.25, 2.89) [0.00, 5.00]    |                                                |
-                  | 12, 12, 13, 13                    |                                   | Games | N: 5724 W: 1323 L: 1384 D: 3017     |                                                |
-                  | 14, 14, 15, 15                    |                                   | Penta | [26, 701, 1453, 672, 10]            |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-                  |                                   |                                   | ltc:                                        |                                                |
-                  |                                   |                                   | Elo   | 6.60 +- 4.20 (95%)                  |                                                |
-                  |                                   |                                   | SPRT  | 40.0+0.40s Threads=1 Hash=128MB     |                                                |
-                  |                                   |                                   | LLR   | 2.89 (-2.25, 2.89) [0.00, 5.00]     |                                                |
-                  |                                   |                                   | Games | N: 6474 W: 1553 L: 1430 D: 3491     |                                                |
-                  |                                   |                                   | Penta | [6, 715, 1671, 840, 5]              |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
-cerberus_v3       | (768x16hm->1024pw)->(16->32->1)x8 | 800sb                             | Elo   | 13.04 +- 5.83 (95%)                 | Added sparse affine inference, network         |
-merged as #115    | activ: pw->screlu->crelu          |   data: d5-14 (19.7b)             | SPRT  | 4.0+0.04s Threads=1 Hash=16MB       | permutation to group nonzero blocks together,  |
-                  | scale: 275                        |   lr: 1600b warmup                | LLR   | 3.54 (-2.25, 2.89) [0.00, 5.00]     | and a light l0 activation regularization to    |
-                  | quant: [255,128,64]               |       cos(0.001,0.00000243)       | Games | N: 3944 W: 1018 L: 870 D: 2056      | reduce the number of l0 activations. Roughly a |
-                  | optim: AdamW                      |   wdl: lin(0.2, 0.4)              | Penta | [20, 411, 969, 545, 27]             | 12% speedup compared to dense affine on AVX2.  |
-                  | buckets:                          | 200sb                             |                                             |                                                |
-                  | 0,  1,  2,  3                     |   data: d7-14 (18.6b)             |                                             |                                                |
-                  | 4,  5,  6,  7                     |   lr: lin(1e-5, 1e-7)             |                                             |                                                |
-                  | 8,  8,  9,  9                     |   wdl: const(0.6)                 |                                             |                                                |
-                  | 10, 10, 11, 11                    | filter: 0.5 random fen skipping   |                                             |                                                |
-                  | 12, 12, 13, 13                    |                                   |                                             |                                                |
-                  | 12, 12, 13, 13                    |                                   |                                             |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-                  | 14, 14, 15, 15                    |                                   |                                             |                                                |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
-data: d15         | games: 7.20m                      | source: orthrus_v2                |                                                                                              |
-                  | pos: 650m                         | nodes: 24k soft                   |                                                                                              |
-                  |                                   | filter: noisy, checks             |                                                                                              |
-------------------|-----------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+NET/DATA ID       | SPECS                               | DETAILS                           | vs. PREVIOUS                                | NOTES                                          |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d1          | games: n.a                          | source: raphael v1.8 (HCE)        | Used roughly 200m positions from previous tests, public CCRL matches, and books, all         |
+                  | pos: 200m                           | nodes: 5k soft                    | positions re-evaluated using Raphael v1.8.                                                   |
+                  |                                     | filter: captures, checks          |                                                                                              |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+basilisk_v1       | (768->64)x2->1                      | n.a sb                            | n.a, likely +200-300                        | Trained with custom pytorch trainer.           |
+default for v2.0  | activ: screlu                       |   data: d1 (0.2b)                 |                                             |                                                |
+                  | scale: 400                          |   lr: lin(0.001,0.00000243)       |                                             |                                                |
+                  | quant: [255,64]                     |   wdl: const(0.3)                 |                                             |                                                |
+                  | optim: AdamW                        |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d2          | games: 6.29m                        | source: raphael v3.0              | Training data now comes from fully self-play games using OpenBench.                          |
+                  | pos: 615m                           | nodes: 5k soft                    |                                                                                              |
+                  |                                     | filter: noisy, checks             |                                                                                              |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+basilisk_v2       | (768->64)x2->1                      | 60sb                              | Elo   | 155.84 +- 23.70 (95%)               | Switched to bullet for training. Scale was     |
+merged as #11     | activ: screlu                       |   data: d2 (0.6b)                 | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | adjusted by comparing the abs mean against v1  |
+                  | scale: 283                          |   lr: cos(0.001,0.00000243)       | LLR   | 2.89 (-2.25, 2.89) [0.00, 5.00]     | on lichess-big3-resolved. Future outputs       |
+                  | quant: [255,64]                     |   wdl: const(0.4)                 | Games | N: 454 W: 250 L: 59 D: 145          | scales were also calibrated using v1 as the    |
+                  | optim: AdamW                        |                                   | Penta | [2, 9, 66, 96, 54]                  | baseline.                                      |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+basilisk_v3       | (768hm->64)x2->1                    | 60sb                              | Elo   | 16.51 +- 8.00 (95%)                 | Added horizontal mirroring. Also made minor    |
+merged as #16     | activ: screlu                       |   data: d2 (0.6b)                 | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | changes in SIMD code to make better use of     |
+                  | scale: 283                          |   lr: 1600b warmup                | LLR   | 2.91 (-2.25, 2.89) [0.00, 5.00]     | registers, which the compiler probably already |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 3074 W: 943 L: 797 D: 1334       | does.                                          |
+                  | optim: AdamW                        |   wdl: const(0.4)                 | Penta | [51, 343, 637, 421, 85]             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+basilisk_v4       | (768hm->128)x2->1                   | 100sb                             | Elo   | 59.33 +- 14.44 (95%)                | Increased HL to 128.                           |
+merged as #17     | activ: screlu                       |   data: d2 (0.6b)                 | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 283                          |   lr: 1600b warmup                | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 810 W: 302 L: 165 D: 343         |                                                |
+                  | optim: AdamW                        |   wdl: const(0.4)                 | Penta | [5, 49, 182, 142, 27]               |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d3          | games: 5.38m                        | source: basilisk_v4               |                                                                                              |
+                  | pos: 538m                           | nodes: 5k soft                    |                                                                                              |
+                  |                                     | filter: noisy, checks             |                                                                                              |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+basilisk_v5       | (768hm->256)x2->1                   | 140sb                             | Elo   | 82.63 +- 16.84 (95%)                | Increased HL to 256. Combining both d2 + d3    |
+merged as #19     | activ: screlu                       |   data: d2-3 (1.1b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | worked better than only using d3               |
+                  | scale: 276                          |   lr: 1600b warmup                | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     | (onlynew vs combined = -7.98 +- 6.71)          |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 634 W: 263 L: 115 D: 256         |                                                |
+                  | optim: AdamW                        |   wdl: const(0.4)                 | Penta | [2, 31, 131, 123, 30]               |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+sleipnir_v1       | (768hm->256)x2->1x8                 | 160sb                             | Elo   | 12.66 +- 6.55 (95%)                 | Added 8 output buckets.                        |
+merged as #20     | activ: screlu                       |   data: d2-3 (1.1b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 279                          |   lr: 1600b warmup                | LLR   | 2.99 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 3898 W: 1118 L: 976 D: 1804      |                                                |
+                  | optim: AdamW                        |   wdl: const(0.4)                 | Penta | [49, 420, 886, 528, 66]             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+sleipnir_v2       | (768hm->512)x2->1x8                 | 320sb                             | Elo   | 18.14 +- 8.09 (95%)                 | Increased HL to 512.                           |
+merged as #21     | activ: screlu                       |   data: d2-3 (1.1b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 280                          |   lr: 1600b warmup                | LLR   | 2.97 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 2646 W: 771 L: 633 D: 1242       |                                                |
+                  | optim: AdamW                        |   wdl: const(0.4)                 | Penta | [31, 284, 574, 384, 50]             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d4          | games: 3.87m                        | source: sleipnir_v2               |                                                                                              |
+                  | pos: 383m                           | nodes: 5k soft                    |                                                                                              |
+                  |                                     | filter: noisy, checks             |                                                                                              |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+sleipnir_v3       | (768hm->512)x2->1x8                 | 320sb                             | Elo   | 5.41 +- 3.86 (95%)                  | Switched to linear WDL. Normally, lowering wdl |
+merged as #23     | activ: screlu                       |   data: d2-3 (1.1b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | leads to antiscaling. This surprisingly wasn't |
+                  | scale: 278                          |   lr: 1600b warmup                | LLR   | 3.02 (-2.25, 2.89) [0.00, 5.00]     | the case (5.59 +- 3.88 at 40+0.4). Trying 0.2  |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 11104 W: 2965 L: 2792 D: 5347    | to 0.6 wdl at this point did not gain elo stc  |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [138, 1320, 2482, 1455, 157]        | (-0.85 +- 3.35).                               |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+sleipnir_v4       | (768hm->768)x2->1x8                 | 360sb                             | Elo   | 15.73 +- 7.45 (95%)                 | Increased HL to 768.                           |
+default for v3.1  | activ: screlu                       |   data: d2-4 (1.5b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+merged as #26     | scale: 276                          |   lr: 1600b warmup                | LLR   | 2.92 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 2962 W: 831 L: 697 D: 1434       |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [34, 314, 661, 428, 44]             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d5          | games: 3.97m (dfrc)                 | source: sleipnir_v4               | Data from dfrc games.                                                                        |
+                  | pos: 440m                           | nodes: 5k soft                    |                                                                                              |
+                  |                                     | filter: noisy, checks             |                                                                                              |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+sleipnir_v5       | (768hm->768)x2->1x8                 | 360sb                             | Elo   | 16.03 +- 7.49 (95%)                 | Trained on dfrc positions. STC results in dfrc |
+merged as #28     | activ: screlu                       |   data: d2-5 (1.9b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | was 121.70 +- 21.31.                           |
+                  | scale: 275                          |   lr: 1600b warmup                | LLR   | 2.92 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 2884 W: 799 L: 666 D: 1419       |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [33, 298, 656, 413, 42]             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d6          | games: 5.91m (dfrc)                 | source: sleipnir_v5               |                                                                                              |
+                  | pos: 633m                           | nodes: 5k soft                    |                                                                                              |
+                  |                                     | filter: noisy, checks             |                                                                                              |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+sleipnir_v6       | (768hm->1024)x2->1x8                | 400sb                             | Elo   | 6.59 +- 4.45 (95%)                  | Increased HL to 1024.                          |
+merged as #37     | activ: screlu                       |   data: d2-6 (2.6b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 274                          |   lr: 1600b warmup                | LLR   | 2.91 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 8016 W: 2155 L: 2003 D: 3858     |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [87, 933, 1832, 1053, 103]          |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+hydra_v1          | (768x4hm->1024)x2->1x8              | 400sb                             | Elo   | 2.90 +- 2.21 (95%)                  | Added input buckets. Did not pass STC against  |
+unmerged          | activ: screlu                       |   data: d2-6 (2.6b)               | SPRT  | N=25000 Threads=1 Hash=16MB         | main. STC results of hydra_v1 with finny       |
+                  | scale: 277                          |   lr: 1600b warmup                | LLR   | 3.19 (-2.25, 2.89) [0.00, 5.00]     | tables vs without was:                         |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 45022 W: 13500 L: 13124 D: 18398 | Elo   | 6.14 +- 3.96 (95%)                     |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [1281, 5310, 9028, 5536, 1356]      | SPRT  | 8.0+0.08s Threads=1 Hash=16MB          |
+                  | buckets:                            |                                   |                                             | LLR   | 3.05 (-2.25, 2.89) [0.00, 5.00]        |
+                  | 0, 0, 1, 1                          |                                   |                                             | Games | N: 7750 W: 1887 L: 1750 D: 4113        |
+                  | 2, 2, 2, 2                          |                                   |                                             | Penta | [22, 840, 2033, 939, 41]               |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d7          | games: 9.98m (60% dfrc)             | source: sleipnir_v6               | Didn't use hydra_v1 for data as I simply forgot.                                             |
+                  | pos: 1094m                          | nodes: 5k soft                    |                                                                                              |
+                  |                                     | filter: noisy, checks             |                                                                                              |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+hydra_v2          | (768x4hm->1024)x2->1x8              | 400sb                             | Elo   | 25.42 +- 9.23 (95%)                 | Trained on more data and replaced oldest data. |
+default for v3.2  | activ: screlu                       |   data: d3-7 (3.0b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+merged as #55     | scale: 271                          |   lr: 1600b warmup                | LLR   | 2.91 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 1588 W: 461 L: 345 D: 782        |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [4, 152, 376, 248, 14]              |                                                |
+                  | buckets:                            |                                   |                                             |                                                |
+                  | 0, 0, 1, 1                          |                                   |                                             |                                                |
+                  | 2, 2, 2, 2                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+hydra_v3          | (768x4hm->1024)x2->1x8              | 400sb                             | Elo   | 0.32 +- 2.97 (95%)                  | Increased batch size by a factor of 8, and     |
+merged as #57     | activ: screlu                       |   data: d3-7 (3.0b)               | SPRT  | N=25000 Threads=1 Hash=16MB         | decreased batches per sb by a factor of 8.     |
+                  | scale: 272                          |   lr: 1600b warmup                | LLR   | 3.05 (-2.25, 2.89) [-5.00, 0.00]    | This sped up network training time by roughly  |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 24834 W: 7340 L: 7317 D: 10177   | half an hour (down to 5h). Perhaps with a      |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [690, 3054, 4946, 2997, 730]        | proper desktop GPU (mine is a laptop RTX 5060) |
+                  | buckets:                            |                                   |                                             | the speedup would be even higher.              |
+                  | 0, 0, 1, 1                          |                                   |                                             |                                                |
+                  | 2, 2, 2, 2                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+hydra_v4          | (768x4hm->1024)x2->1x8              | 400sb                             | Elo   | 2.36 +- 1.87 (95%)                  | Enabled random fen skipping with a probability |
+merged as #58     | activ: screlu                       |   data: d3-7 (3.0b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | of 0.5 (helps shuffle the data more). Likely   |
+                  | scale: 271                          |   lr: 1600b warmup                | LLR   | 2.96 (-2.25, 2.89) [0.00, 5.00]     | would have passed faster with fixed nodes.     |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 40050 W: 10051 L: 9779 D: 20220  |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [263, 4826, 9637, 4974, 325]        |                                                |
+                  | buckets:                            | filter: 0.5 random fen skipping   |                                             |                                                |
+                  | 0, 0, 1, 1                          |                                   |                                             |                                                |
+                  | 2, 2, 2, 2                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+                  | 3, 3, 3, 3                          |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d8          | games: 13.99m (28% dfrc)            | source: hydra_v1-3                |                                                                                              |
+                  | pos: 1474m                          | nodes: 5k soft                    |                                                                                              |
+                  |                                     | filter: noisy, checks             |                                                                                              |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+hydra_v5          | (768x6hm->1024)x2->1x8              | 400sb                             | Elo   | 33.36 +- 10.48 (95%)                | Increased input bucket count to 6.             |
+merged as #59     | activ: screlu                       |   data: d4-8 (4.0b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 266                          |   lr: 1600b warmup                | LLR   | 2.93 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 1212 W: 353 L: 237 D: 622        |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [4, 94, 306, 186, 16]               |                                                |
+                  | buckets:                            | filter: 0.5 random fen skipping   |                                             |                                                |
+                  | 0, 0, 1, 1                          |                                   |                                             |                                                |
+                  | 2, 2, 3, 3                          |                                   |                                             |                                                |
+                  | 4, 4, 4, 4                          |                                   |                                             |                                                |
+                  | 4, 4, 4, 4                          |                                   |                                             |                                                |
+                  | 4, 4, 4, 4                          |                                   |                                             |                                                |
+                  | 5, 5, 5, 5                          |                                   |                                             |                                                |
+                  | 5, 5, 5, 5                          |                                   |                                             |                                                |
+                  | 5, 5, 5, 5                          |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+hydra_v6          | (768x6hm->1024)x2->1x8              | 400sb                             | Elo   | -8.48 +- 6.63 (95%)                 | Tried raising WDL. Did not gain in STC and in  |
+unmerged          | activ: screlu                       |   data: d4-8 (4.0b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | LTC too (stopped test early at -0.72 LLR).     |
+                  | scale: 266                          |   lr: 1600b warmup                | LLR   | -2.34 (-2.25, 2.89) [0.00, 5.00]    |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 3116 W: 723 L: 799 D: 1594       |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.6)              | Penta | [26, 402, 770, 342, 18]             |                                                |
+                  | buckets:                            | filter: 0.5 random fen skipping   |                                             |                                                |
+                  | 0, 0, 1, 1                          |                                   |                                             |                                                |
+                  | 2, 2, 3, 3                          |                                   |                                             |                                                |
+                  | 4, 4, 4, 4                          |                                   |                                             |                                                |
+                  | 4, 4, 4, 4                          |                                   |                                             |                                                |
+                  | 4, 4, 4, 4                          |                                   |                                             |                                                |
+                  | 5, 5, 5, 5                          |                                   |                                             |                                                |
+                  | 5, 5, 5, 5                          |                                   |                                             |                                                |
+                  | 5, 5, 5, 5                          |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d9          | games: 17.94m (44% dfrc)            | source: hydra_v4-5                |                                                                                              |
+                  | pos: 1861m                          | nodes: 5k soft                    |                                                                                              |
+                  |                                     | filter: noisy, checks             |                                                                                              |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+hydra_v7          | (768x8hm->1024)x2->1x8              | 400sb                             | Elo   | 10.32 +- 5.53 (95%)                 | Increased input bucket count to 8.             |
+merged as #68     | activ: screlu                       |   data: d5-9 (5.5b)               | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 261                          |   lr: 1600b warmup                | LLR   | 2.96 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 4174 W: 1106 L: 982 D: 2086      |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [16, 445, 1046, 559, 21]            |                                                |
+                  | buckets:                            | filter: 0.5 random fen skipping   |                                             |                                                |
+                  | 0, 1, 2, 3                          |                                   |                                             |                                                |
+                  | 4, 4, 5, 5                          |                                   |                                             |                                                |
+                  | 6, 6, 6, 6                          |                                   |                                             |                                                |
+                  | 6, 6, 6, 6                          |                                   |                                             |                                                |
+                  | 6, 6, 6, 6                          |                                   |                                             |                                                |
+                  | 7, 7, 7, 7                          |                                   |                                             |                                                |
+                  | 7, 7, 7, 7                          |                                   |                                             |                                                |
+                  | 7, 7, 7, 7                          |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d10         | games: 15.95m (37% dfrc)            | source: hydra_v5,7                | Generated using custom datagen script that is 23% faster than OpenBench. Trained two 64HL    |
+                  | pos: 1542m                          | nodes: 5k soft                    | nets using 2m OpenBench and 2m new data. Results were 1.88 +- 3.84 25k nodes nonregr using   |
+                  |                                     | filter: noisy, checks             | the new data. Interestingly, using shared tt+history was -3.77 +- 2.80 against the old data. |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+hydra_v8          | (768x10hm->1024)x2->1x8             | 500sb                             | Elo   | 9.73 +- 5.42 (95%)                  | Increased input bucket count to 10.            |
+merged as #71     | activ: screlu                       |   data: d5-10 (7.0b)              | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 261                          |   lr: 1600b warmup                | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 4574 W: 1212 L: 1084 D: 2278     |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [17, 514, 1115, 606, 35]            |                                                |
+                  | buckets:                            | filter: 0.5 random fen skipping   |                                             |                                                |
+                  | 0, 1, 2, 3                          |                                   |                                             |                                                |
+                  | 4, 5, 6, 7                          |                                   |                                             |                                                |
+                  | 8, 8, 8, 8                          |                                   |                                             |                                                |
+                  | 9, 9, 9, 9                          |                                   |                                             |                                                |
+                  | 9, 9, 9, 9                          |                                   |                                             |                                                |
+                  | 9, 9, 9, 9                          |                                   |                                             |                                                |
+                  | 9, 9, 9, 9                          |                                   |                                             |                                                |
+                  | 9, 9, 9, 9                          |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d11         | games: 40.00m (25% dfrc)            | source: hydra_v7-8                |                                                                                              |
+                  | pos: 3669m                          | nodes: 5k soft                    |                                                                                              |
+                  |                                     | filter: noisy, checks             |                                                                                              |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+hydra_v9          | (768x16hm->1024)x2->1x8             | 600sb                             | Elo   | 8.30 +- 4.85 (95%)                  | Increased input bucket count to 16. Added      |
+merged as #78     | activ: screlu                       |   data: d5-11 (10.7b)             | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       | king plane merging to reduce network size by   |
+                  | scale: 257                          |   lr: 1600b warmup                | LLR   | 3.01 (-2.25, 2.89) [0.00, 5.00]     | 8% (input feature is technically 704, not 768) |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 5486 W: 1375 L: 1244 D: 2867     |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [11, 634, 1343, 723, 32]            |                                                |
+                  | buckets:                            | filter: 0.5 random fen skipping   |                                             |                                                |
+                  | 0,  1,  2,  3                       |                                   |                                             |                                                |
+                  | 4,  5,  6,  7                       |                                   |                                             |                                                |
+                  | 8,  8,  9,  9                       |                                   |                                             |                                                |
+                  | 10, 10, 11, 11                      |                                   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+hydra_v10         | (768x16hm->1024)x2->1x8             | 600sb                             | Elo   | -2.65 +- 3.93 (95%)                 | Tried piece count distribution skipping, where |
+unmerged          | activ: screlu                       |   data: d5-11 (10.7b)             | SPRT  | 40.0+0.40s Threads=1 Hash=128MB     | you skip positions randomly so that the piece  |
+                  | scale: 258                          |   lr: 1600b warmup                | LLR   | -2.33 (-2.25, 2.89) [0.00, 5.00]    | count distribution matches some ideal curve.   |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 7084 W: 1719 L: 1773 D: 3592     | Looked like it was gaining elo slightly at stc |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [4, 847, 1894, 793, 4]              | (1.23 +- 1.81) but likely not enough to pass.  |
+                  | buckets:                            | filter: 0.5 random fen skipping   |                                             |                                                |
+                  | 0,  1,  2,  3                       |         piece count distribution  |                                             |                                                |
+                  | 4,  5,  6,  7                       |                                   |                                             |                                                |
+                  | 8,  8,  9,  9                       |                                   |                                             |                                                |
+                  | 10, 10, 11, 11                      |                                   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d12         | games: 40.00m (25% dfrc)            | source: hydra_v8-9                |                                                                                              |
+                  | pos: 3526m                          | nodes: 5k soft                    |                                                                                              |
+                  |                                     | filter: noisy, checks             |                                                                                              |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+hydra_v11         | (768x16hm->1024)x2->1x8             | 600sb                             | Elo   | 18.29 +- 7.52 (95%)                 | Added a 100sb finetune stage at 0.6wdl.        |
+merged as #85     | activ: screlu                       |   data: d5-12 (14.2b)             | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 248                          |   lr: 1600b warmup                | LLR   | 2.99 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 2224 W: 586 L: 469 D: 1169       |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [4, 223, 548, 326, 11]              |                                                |
+                  | buckets:                            | 100sb                             |                                             |                                                |
+                  | 0,  1,  2,  3                       |   data: d7-12 (13.1b)             |                                             |                                                |
+                  | 4,  5,  6,  7                       |   lr: const(0.00000121)           |                                             |                                                |
+                  | 8,  8,  9,  9                       |   wdl: const(0.6)                 |                                             |                                                |
+                  | 10, 10, 11, 11                      | filter: 0.5 random fen skipping   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+hydra_v12         | (768x16hm->1024)x2->1x8             | 600sb                             | stc:                                        | Finetuned for another 100 superbatches.        |
+merged as #87     | activ: screlu                       |   data: d5-12 (14.2b)             | Elo   | 3.47 +- 2.69 (95%)                  |                                                |
+                  | scale: 248                          |   lr: 1600b warmup                | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | LLR   | 2.98 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Games | N: 16502 W: 3811 L: 3646 D: 9045    |                                                |
+                  | buckets:                            | 200sb                             | Penta | [23, 1930, 4193, 2069, 36]          |                                                |
+                  | 0,  1,  2,  3                       |   data: d7-12 (13.1b)             |                                             |                                                |
+                  | 4,  5,  6,  7                       |   lr: const(0.00000121)           | ltc:                                        |                                                |
+                  | 8,  8,  9,  9                       |   wdl: const(0.6)                 | Elo   | 1.89 +- 1.46 (95%)                  |                                                |
+                  | 10, 10, 11, 11                      | filter: 0.5 random fen skipping   | SPRT  | 40.0+0.40s Threads=1 Hash=128MB     |                                                |
+                  | 12, 12, 13, 13                      |                                   | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | 12, 12, 13, 13                      |                                   | Games | N: 53046 W: 12191 L: 11902 D: 28953 |                                                |
+                  | 14, 14, 15, 15                      |                                   | Penta | [26, 6186, 13808, 6479, 24]         |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+orthrus_v1        | (768x16hm->1024pw)x2->1x8           | 600sb                             | stc:                                        | Implemented pairwise multiplication.           |
+merged as #89     | activ: pw                           |   data: d5-12 (14.2b)             | Elo   | 4.21 +- 3.10 (95%)                  |                                                |
+                  | scale: 250                          |   lr: 1600b warmup                | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | LLR   | 3.00 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Games | N: 12790 W: 3086 L: 2931 D: 6773    |                                                |
+                  | buckets:                            | 200sb                             | Penta | [32, 1477, 3239, 1598, 49]          |                                                |
+                  | 0,  1,  2,  3                       |   data: d7-12 (13.1b)             |                                             |                                                |
+                  | 4,  5,  6,  7                       |   lr: const(0.00000121)           | ltc:                                        |                                                |
+                  | 8,  8,  9,  9                       |   wdl: const(0.6)                 | Elo   | 0.88 +- 2.61 (95%)                  |                                                |
+                  | 10, 10, 11, 11                      | filter: 0.5 random fen skipping   | SPRT  | 40.0+0.40s Threads=1 Hash=128MB     |                                                |
+                  | 12, 12, 13, 13                      |                                   | LLR   | 2.94 (-2.25, 2.89) [-5.00, 0.00]    |                                                |
+                  | 12, 12, 13, 13                      |                                   | Games | N: 16554 W: 3915 L: 3873 D: 8766    |                                                |
+                  | 14, 14, 15, 15                      |                                   | Penta | [14, 1935, 4333, 1985, 10]          |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+orthrus_v2        | (768x16hm->1024pw)x2->1x8           | 600sb                             | Elo   | 4.83 +- 3.38 (95%)                  | Switched to linear lr for finetuning.          |
+merged as #93     | activ: pw                           |   data: d5-12 (14.2b)             | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 250                          |   lr: 1600b warmup                | LLR   | 3.01 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 10224 W: 2386 L: 2244 D: 5594    |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [16, 1154, 2631, 1294, 17]          |                                                |
+                  | buckets:                            | 200sb                             |                                             |                                                |
+                  | 0,  1,  2,  3                       |   data: d7-12 (13.1b)             |                                             |                                                |
+                  | 4,  5,  6,  7                       |   lr: lin(1e-5, 1e-7)             |                                             |                                                |
+                  | 8,  8,  9,  9                       |   wdl: const(0.6)                 |                                             |                                                |
+                  | 10, 10, 11, 11                      | filter: 0.5 random fen skipping   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+orthrus_v3        | (768x16hm->1024pw)x2->1x8           | 600sb                             | stc:                                        | Tried switching to cosine lr for finetuning.   |
+unmerged          | activ: pw                           |   data: d5-12 (14.2b)             | Elo   | -0.36 +- 2.55 (95%)                 | Seemed to be neutral for both stc and ltc.     |
+                  | scale: 250                          |   lr: 1600b warmup                | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | LLR   | -2.42 (-2.25, 2.89) [0.00, 5.00]    |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Games | N: 18152 W: 4138 L: 4157 D: 9857    |                                                |
+                  | buckets:                            | 200sb                             | Penta | [36, 2183, 4651, 2176, 30]          |                                                |
+                  | 0,  1,  2,  3                       |   data: d7-12 (13.1b)             |                                             |                                                |
+                  | 4,  5,  6,  7                       |   lr: cos(1e-5, 1e-7)             | ltc (stopped):                              |                                                |
+                  | 8,  8,  9,  9                       |   wdl: const(0.6)                 | Elo   | 0.83 +- 2.22 (95%)                  |                                                |
+                  | 10, 10, 11, 11                      | filter: 0.5 random fen skipping   | SPRT  | 40.0+0.40s Threads=1 Hash=128MB     |                                                |
+                  | 12, 12, 13, 13                      |                                   | LLR   | -0.77 (-2.25, 2.89) [0.00, 5.00]    |                                                |
+                  | 12, 12, 13, 13                      |                                   | Games | N: 22728 W: 5190 L: 5136 D: 12402   |                                                |
+                  | 14, 14, 15, 15                      |                                   | Penta | [10, 2685, 5918, 2743, 8]           |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+orthrus_v4        | (768x16hm->1024pw)x2->1x8           | 600sb                             | stc:                                        | Tried switching to linear wdl for finetuning.  |
+unmerged          | activ: pw                           |   data: d5-12 (14.2b)             | Elo   | -1.63 +- 3.47 (95%)                 |                                                |
+                  | scale: 212                          |   lr: 1600b warmup                | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | LLR   | -2.33 (-2.25, 2.89) [0.00, 5.00]    |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Games | N: 9816 W: 2160 L: 2206 D: 5450     |                                                |
+                  | buckets:                            | 200sb                             | Penta | [19, 1200, 2514, 1158, 17]          |                                                |
+                  | 0,  1,  2,  3                       |   data: d7-12 (13.1b)             |                                             |                                                |
+                  | 4,  5,  6,  7                       |   lr: cos(1e-5, 1e-7)             | ltc:                                        |                                                |
+                  | 8,  8,  9,  9                       |   wdl: lin(0.6, 0.8)              | Elo   | -4.57 +- 4.93 (95%)                 |                                                |
+                  | 10, 10, 11, 11                      | filter: 0.5 random fen skipping   | SPRT  | 40.0+0.40s Threads=1 Hash=128MB     |                                                |
+                  | 12, 12, 13, 13                      |                                   | LLR   | -2.26 (-2.25, 2.89) [0.00, 5.00]    |                                                |
+                  | 12, 12, 13, 13                      |                                   | Games | N: 4634 W: 1005 L: 1066 D: 2563     |                                                |
+                  | 14, 14, 15, 15                      |                                   | Penta | [3, 580, 1212, 519, 3]              |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d13         | games: 40.00m (25% dfrc)            | source: hydra_v11-12              |                                                                                              |
+                  | pos: 3576m                          | nodes: 5k soft                    |                                                                                              |
+                  |                                     | filter: noisy, checks             |                                                                                              |
+------------------|-------------------------------------|-----------------------------------|----------------------------------------------------------------------------------------------|
+data: d14         | games: 21.60m                       | source: orthrus_v1-2              |                                                                                              |
+                  | pos: 1945m                          | nodes: 24k soft                   |                                                                                              |
+                  |                                     | filter: noisy, checks             |                                                                                              |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+orthrus_v5        | (768x16hm->1024pw)x2->1x8           | 600sb                             | Elo   | 7.77 +- 4.66 (95%)                  | Trained on more data generated with 24ksn.     |
+merged as #102    | activ: pw                           |   data: d5-14 (19.7b)             | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | scale: 250                          |   lr: 1600b warmup                | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | Games | N: 5682 W: 1412 L: 1285 D: 2985     |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [15, 628, 1433, 745, 20]            |                                                |
+                  | buckets:                            | 200sb                             |                                             |                                                |
+                  | 0,  1,  2,  3                       |   data: d7-14 (18.6b)             |                                             |                                                |
+                  | 4,  5,  6,  7                       |   lr: lin(1e-5, 1e-7)             |                                             |                                                |
+                  | 8,  8,  9,  9                       |   wdl: const(0.6)                 |                                             |                                                |
+                  | 10, 10, 11, 11                      | filter: 0.5 random fen skipping   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+cerberus_v1       | (768x16hm->1024pw)->(16->32->1)x8   | 800sb                             | fixed nodes:                                | First multilayer net. Last two layers are      |
+unmerged          | activ: pw->screlu->screlu           |   data: d5-14 (19.7b)             | Elo   | 28.13 +- 8.60 (95%)                 | using float inference. Fixed node gain was     |
+                  | scale: 272                          |   lr: 1600b warmup                | SPRT  | N=25000 Threads=1 Hash=16MB         | modest compared to other implementations. Note |
+                  | quant: [255,64]                     |       cos(0.001,0.00000243)       | LLR   | 4.54 (-2.25, 2.89) [0.00, 5.00]     | that the stc was accidentally comparing avx512 |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Games | N: 2822 W: 930 L: 702 D: 1190       | single layer with avx2 multilayer.             |
+                  | buckets:                            | 200sb                             | Penta | [54, 279, 549, 443, 86]             |                                                |
+                  | 0,  1,  2,  3                       |   data: d7-14 (18.6b)             |                                             |                                                |
+                  | 4,  5,  6,  7                       |   lr: lin(1e-5, 1e-7)             | stc:                                        |                                                |
+                  | 8,  8,  9,  9                       |   wdl: const(0.6)                 | Elo   | -4.56 +- 4.76 (95%)                 |                                                |
+                  | 10, 10, 11, 11                      | filter: 0.5 random fen skipping   | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | 12, 12, 13, 13                      |                                   | LLR   | -2.57 (-2.25, 2.89) [0.00, 5.00]    |                                                |
+                  | 12, 12, 13, 13                      |                                   | Games | N: 5488 W: 1223 L: 1295 D: 2970     |                                                |
+                  | 14, 14, 15, 15                      |                                   | Penta | [26, 680, 1390, 636, 12]            |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+cerberus_v2       | (768x16hm->1024pw)->(16->32->1)x8   | 800sb                             | fixed nodes:                                | Switched to int inference to ensure            |
+merged as #113    | activ: pw->screlu->crelu            |   data: d5-14 (19.7b)             | Elo   | 28.13 +- 8.60 (95%)                 | deterministic bench across arches, and         |
+                  | scale: 274                          |   lr: 1600b warmup                | SPRT  | N=25000 Threads=1 Hash=16MB         | switched to crelu for the last layer to deal   |
+                  | quant: [255,128,64]                 |       cos(0.001,0.00000243)       | LLR   | 4.54 (-2.25, 2.89) [0.00, 5.00]     | with the effects of quantization. There was    |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Games | N: 2822 W: 930 L: 702 D: 1190       | virtually no difference in bench speed or      |
+                  | buckets:                            | 200sb                             | Penta | [54, 279, 549, 443, 86]             | final loss compared to the previous net.       |
+                  | 0,  1,  2,  3                       |   data: d7-14 (18.6b)             |                                             |                                                |
+                  | 4,  5,  6,  7                       |   lr: lin(1e-5, 1e-7)             | stc:                                        |                                                |
+                  | 8,  8,  9,  9                       |   wdl: const(0.6)                 | Elo   | -3.70 +- 4.64 (95%)                 |                                                |
+                  | 10, 10, 11, 11                      | filter: 0.5 random fen skipping   | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
+                  | 12, 12, 13, 13                      |                                   | LLR   | -2.30 (-2.25, 2.89) [0.00, 5.00]    |                                                |
+                  | 12, 12, 13, 13                      |                                   | Games | N: 5724 W: 1323 L: 1384 D: 3017     |                                                |
+                  | 14, 14, 15, 15                      |                                   | Penta | [26, 701, 1453, 672, 10]            |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+                  |                                     |                                   | ltc:                                        |                                                |
+                  |                                     |                                   | Elo   | 6.60 +- 4.20 (95%)                  |                                                |
+                  |                                     |                                   | SPRT  | 40.0+0.40s Threads=1 Hash=128MB     |                                                |
+                  |                                     |                                   | LLR   | 2.89 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  |                                     |                                   | Games | N: 6474 W: 1553 L: 1430 D: 3491     |                                                |
+                  |                                     |                                   | Penta | [6, 715, 1671, 840, 5]              |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+cerberus_v3       | (768x16hm->1024pw)->(16->32->1)x8   | 800sb                             | Elo   | 13.04 +- 5.83 (95%)                 | Added sparse affine inference, network         |
+merged as #115    | activ: pw->screlu->crelu            |   data: d5-14 (19.7b)             | SPRT  | 4.0+0.04s Threads=1 Hash=16MB       | permutation to group nonzero blocks together,  |
+                  | scale: 275                          |   lr: 1600b warmup                | LLR   | 3.54 (-2.25, 2.89) [0.00, 5.00]     | and a light l0 activation regularization to    |
+                  | quant: [255,128,64]                 |       cos(0.001,0.00000243)       | Games | N: 3944 W: 1018 L: 870 D: 2056      | reduce the number of l0 activations. Roughly a |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [20, 411, 969, 545, 27]             | 12% speedup compared to dense affine on AVX2.  |
+                  | buckets:                            | 200sb                             |                                             |                                                |
+                  | 0,  1,  2,  3                       |   data: d7-14 (18.6b)             |                                             |                                                |
+                  | 4,  5,  6,  7                       |   lr: lin(1e-5, 1e-7)             |                                             |                                                |
+                  | 8,  8,  9,  9                       |   wdl: const(0.6)                 |                                             |                                                |
+                  | 10, 10, 11, 11                      | filter: 0.5 random fen skipping   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
+cerberus_v4       | (768x16hm->1024pw)->(16x2->32->1)x8 | 800sb                             | Elo   | -1.25 +- 3.97 (95%)                 | Tried using dual activations for layer 1.      |
+unmerged          | activ: pw->crelu+cscrelu->crelu     |   data: d7-16 (??.?b)             | SPRT  | N=25000 Threads=1 Hash=16MB         |                                                |
+                  | scale: 275                          |   lr: 1600b warmup                | LLR   | -2.29 (-2.25, 2.89) [0.00, 5.00]    |                                                |
+                  | quant: [255,128,64]                 |       cos(0.001,0.00000243)       | Games | N: 12464 W: 3514 L: 3559 D: 5391    |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [281, 1531, 2653, 1486, 281]        |                                                |
+                  | buckets:                            | 200sb                             |                                             |                                                |
+                  | 0,  1,  2,  3                       |   data: d8-16 (??.?b)             |                                             |                                                |
+                  | 4,  5,  6,  7                       |   lr: lin(1e-5, 1e-7)             |                                             |                                                |
+                  | 8,  8,  9,  9                       |   wdl: const(0.6)                 |                                             |                                                |
+                  | 10, 10, 11, 11                      | filter: 0.5 random fen skipping   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|

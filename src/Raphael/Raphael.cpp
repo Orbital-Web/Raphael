@@ -616,10 +616,11 @@ i32 Raphael::negamax(
                 ss->excluded = chess::Move::NO_MOVE;
 
                 if (score < s_beta) {
-                    if (!is_PV && score + DE_MARGIN < s_beta)
-                        fext = SE_EXT + DE_EXT + TE_EXT * (is_quiet && score + TE_MARGIN < s_beta);
-                    else
-                        fext = SE_EXT;  // singular extensions
+                    // singular/double/triple extensions
+                    const i32 de_margin = DE_MARGIN_BASE + is_PV * DE_MARGIN_PV;
+                    const i32 te_margin = TE_MARGIN_BASE + is_PV * TE_MARGIN_PV;
+                    fext = SE_EXT + (score + de_margin < s_beta) * DE_EXT
+                           + (is_quiet && score + te_margin < s_beta) * TE_EXT;
                 } else if (s_beta >= beta)
                     return s_beta;  // multicut
                 else if (cutnode)

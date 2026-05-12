@@ -616,7 +616,7 @@ i32 Raphael::negamax(
                 ss->excluded = chess::Move::NO_MOVE;
 
                 if (score < s_beta) {
-                    // single/double/triple extensions
+                    // singular/double/triple extensions
                     const i32 de_margin = DE_MARGIN_BASE + is_PV * DE_MARGIN_PV;
                     const i32 te_margin = TE_MARGIN_BASE + is_PV * TE_MARGIN_PV;
                     fext = SE_EXT + (score + de_margin < s_beta) * DE_EXT

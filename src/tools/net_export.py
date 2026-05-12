@@ -29,7 +29,7 @@ NETWORK: dict[str, tuple[tuple[int], np.dtype]] = {
     "l0b": ((L1_SIZE,), np.dtype(np.int16)),
     "l1w": ((NUM_OUTPUT_BUCKET, L2_SIZE, L1_SIZE), np.dtype(np.int8)),
     "l1b": ((NUM_OUTPUT_BUCKET, L2_SIZE), np.dtype(np.int32)),
-    "l2w": ((NUM_OUTPUT_BUCKET, L3_SIZE, L2_SIZE), np.dtype(np.int32)),
+    "l2w": ((NUM_OUTPUT_BUCKET, L3_SIZE, L2_SIZE * 2), np.dtype(np.int32)),
     "l2b": ((NUM_OUTPUT_BUCKET, L3_SIZE), np.dtype(np.int32)),
     "l3w": ((NUM_OUTPUT_BUCKET, L3_SIZE), np.dtype(np.int32)),
     "l3b": ((NUM_OUTPUT_BUCKET,), np.dtype(np.int32)),

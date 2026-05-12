@@ -483,7 +483,7 @@ void Nnue::activate_l0(
 
 void Nnue::forward_l1(
     const u8 l0_out[L1_SIZE],
-    i32 l1_out[L2_SIZE],
+    i32 l1_out[L2_SIZE * 2],
     [[maybe_unused]] const SparseIterator& sp,
     i32 bucket_idx
 ) const {
@@ -545,18 +545,21 @@ void Nnue::forward_l1(
 
     // activate l1
     const VecI32 zs = zero_i32();
-    const VecI32 qs = full_i32(QC << L1_SHIFT);
+    const VecI32 qs1 = full_i32(QC << L1_SHIFT);
+    const VecI32 qs2 = full_i32((QC * QC) << (2 * L1_SHIFT));
 
     for (i32 r = 0; r < n_chunks; r++) {
+        // pre in 128 * QB = QC << L1_SHIFT space
         const VecI32 pre0 = add_i32(l1_pre[r][0], l1_pre[r][1]);
         const VecI32 pre1 = add_i32(l1_pre[r][2], l1_pre[r][3]);
-
-        // apply screlu and downshift into QC^2 space
         const VecI32 bias = load_i32(&params->b1[bucket_idx][r * regw32]);
         const VecI32 pre = add_i32(add_i32(pre0, pre1), bias);
-        const VecI32 crelu = clamp_i32(pre, zs, qs);
-        const VecI32 screlu = rshift_i32(mullo_i32(crelu, crelu), 2 * L1_SHIFT);
-        store_i32(&l1_out[r * regw32], screlu);
+
+        // apply crelu and csrelu, downshifting into QC^2 space
+        const VecI32 crelu = rshift_i32(clamp_i32(pre, zs, qs1), L1_SHIFT - QC_BITS);
+        const VecI32 csrelu = rshift_i32(clamp_i32(mullo_i32(pre, pre), zs, qs2), 2 * L1_SHIFT);
+        store_i32(&l1_out[r * regw32], crelu);
+        store_i32(&l1_out[r * regw32 + L2_SIZE], csrelu);
     }
 #else
     constexpr i32 n_tiles = L1_SIZE / 4;
@@ -569,17 +572,21 @@ void Nnue::forward_l1(
                 l1_pre[j] += l0_out[4 * i + k] * params->W1[bucket_idx][i][4 * j + k];
 
     // activate l1
+    const i32 qs1 = QC << L1_SHIFT;
+    const i32 qs2 = (QC * QC) << (2 * L1_SHIFT);
+
     for (i32 i = 0; i < L2_SIZE; i++) {
         const i32 bias = params->b1[bucket_idx][i];
         const i32 pre = l1_pre[i] + bias;
-        const i32 crelu = min(max(pre, 0), QC << L1_SHIFT);
-        const i32 screlu = (crelu * crelu) >> (2 * L1_SHIFT);
-        l1_out[i] = screlu;
+        const i32 crelu = min(max(pre, 0), qs1) >> (L1_SHIFT - QC_BITS);
+        const i32 csrelu = min(max(pre * pre, 0), qs2) >> (2 * L1_SHIFT);
+        l1_out[i] = crelu;
+        l1_out[i + L2_SIZE] = csrelu;
     }
 #endif
 }
 
-void Nnue::forward_l2l3(const i32 l1_out[L2_SIZE], i64& l3_out, i32 bucket_idx) const {
+void Nnue::forward_l2l3(const i32 l1_out[L2_SIZE * 2], i64& l3_out, i32 bucket_idx) const {
 #ifdef USE_SIMD
     // compute l2 matmul
     constexpr i32 regw32 = ALIGNMENT / sizeof(i32);
@@ -591,7 +598,7 @@ void Nnue::forward_l2l3(const i32 l1_out[L2_SIZE], i64& l3_out, i32 bucket_idx) 
     #pragma GCC unroll 32  // fmt: skip
     for (i32 r = 0; r < n_chunks; r++) l2_pre[r] = load_i32(&params->b2[bucket_idx][r * regw32]);
 
-    for (i32 i = 0; i < L2_SIZE; i++) {
+    for (i32 i = 0; i < L2_SIZE * 2; i++) {
         // l1_pre += W2[:, i] * l1_out[i], inputs in QC^2 space, weights in QC space
         VecI32 input = full_i32(l1_out[i]);
         VecI32 weights[n_chunks];
@@ -623,7 +630,7 @@ void Nnue::forward_l2l3(const i32 l1_out[L2_SIZE], i64& l3_out, i32 bucket_idx) 
     for (i32 i = 0; i < L3_SIZE; i++) l2_out[i] = params->b2[bucket_idx][i];
 
     // compute l2 matmul
-    for (i32 i = 0; i < L2_SIZE; i++)
+    for (i32 i = 0; i < L2_SIZE * 2; i++)
         for (i32 j = 0; j < L3_SIZE; j++) l2_out[j] += l1_out[i] * params->W2[bucket_idx][i][j];
 
     // activate l2 and compute l3 dotprod

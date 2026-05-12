@@ -47,7 +47,7 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "cerberus_v3";
+    const NET_ID: &str = "cerberus_v4";
     const L1_SIZE: usize = 1024;
     const L2_SIZE: usize = 16;
     const L3_SIZE: usize = 32;
@@ -125,20 +125,22 @@ fn main() {
 
             // layerstack weights
             let l1 = builder.new_affine("l1", L1_SIZE, NUM_OUTPUT_BUCKETS * L2_SIZE);
-            let l2 = builder.new_affine("l2", L2_SIZE, NUM_OUTPUT_BUCKETS * L3_SIZE);
+            let l2 = builder.new_affine("l2", L2_SIZE * 2, NUM_OUTPUT_BUCKETS * L3_SIZE);
             let l3 = builder.new_affine("l3", L3_SIZE, NUM_OUTPUT_BUCKETS);
 
             // inference
             let stm_hidden = l0.forward(stm_inputs).crelu().pairwise_mul();
             let ntm_hidden = l0.forward(ntm_inputs).crelu().pairwise_mul();
-            let h1 = stm_hidden.concat(ntm_hidden);
-            let h2 = l1.forward(h1).select(output_buckets).screlu();
-            let h3 = l2.forward(h2).select(output_buckets).crelu();
-            let output = l3.forward(h3).select(output_buckets);
+            let l0_out = stm_hidden.concat(ntm_hidden);
+
+            let l1_pre = l1.forward(l0_out).select(output_buckets);
+            let l1_out = l1_pre.concat(l1_pre.abs_pow(2.0)).crelu();
+            let l2_out = l2.forward(l1_out).select(output_buckets).crelu();
+            let output = l3.forward(l2_out).select(output_buckets);
 
             // loss
             let ones_l1_vec = builder.new_constant(Shape::new(1, L1_SIZE), &[1.0 / L1_SIZE as f32; L1_SIZE]);
-            let reg_loss = ones_l1_vec.matmul(h1);
+            let reg_loss = ones_l1_vec.matmul(l0_out);
             let eval_loss = output.sigmoid().squared_error(target);
             let loss = eval_loss + 0.005 * reg_loss;
 

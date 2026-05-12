@@ -31,6 +31,8 @@ public:
         14, 14, 15, 15
     };  // clang-format on
     static constexpr i32 L1_SHIFT = 8;
+    static constexpr i32 QC_BITS = 6;
+    static_assert(1 << QC_BITS == QC);
 
     enum class NnuePerm : u8 { NONE = 0, AVX2 = 1, AVX512 = 2 };
     struct NnueParams {
@@ -40,8 +42,8 @@ public:
         // layer1: L1_SIZE -> L2_SIZE
         alignas(ALIGNMENT) i8 W1[N_OUTBUCKETS][L1_SIZE / 4][L2_SIZE * 4];
         alignas(ALIGNMENT) i32 b1[N_OUTBUCKETS][L2_SIZE];
-        // layer2: L2_SIZE -> L3_SIZE
-        alignas(ALIGNMENT) i32 W2[N_OUTBUCKETS][L2_SIZE][L3_SIZE];
+        // layer2: L2_SIZE * 2 -> L3_SIZE
+        alignas(ALIGNMENT) i32 W2[N_OUTBUCKETS][L2_SIZE * 2][L3_SIZE];
         alignas(ALIGNMENT) i32 b2[N_OUTBUCKETS][L3_SIZE];
         // layer3: L3_SIZE -> 1
         alignas(ALIGNMENT) i32 W3[N_OUTBUCKETS][L3_SIZE];
@@ -320,7 +322,7 @@ private:
      */
     void forward_l1(
         const u8 l0_out[L1_SIZE],
-        i32 l1_out[L2_SIZE],
+        i32 l1_out[L2_SIZE * 2],
         [[maybe_unused]] const SparseIterator& sp,
         i32 bucket_idx
     ) const;
@@ -331,7 +333,7 @@ private:
      * \param l3_out output buffer
      * \param bucket_idx output bucket
      */
-    void forward_l2l3(const i32 l1_out[L2_SIZE], i64& l3_out, i32 bucket_idx) const;
+    void forward_l2l3(const i32 l1_out[L2_SIZE * 2], i64& l3_out, i32 bucket_idx) const;
 
 #ifdef MEASURE_SPARSITY
     /** Updates the ft activation count and tracks the number of nonzero blocks

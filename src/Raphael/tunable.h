@@ -251,7 +251,7 @@ Tunable(FP_MARGIN_HIST_MUL, 344, 64, 512, true);
 
 Tunable(SEE_QUIET_DEPTH_MUL, -36, -128, -16, true);
 Tunable(SEE_NOISY_DEPTH_MUL, -108, -256, -32, true);
-Tunable(SEE_NOISY_HIST_MUL, 256, 64, 512, true);
+Tunable(SEE_NOISY_HIST_MUL, 200, 64, 512, true);
 
 Tunable(SE_MIN_DEPTH, 739, 512, 1536, true);
 Tunable(SE_MIN_DEPTH_TTPV, 128, 32, 384, true);

@@ -576,6 +576,14 @@ i32 Raphael::negamax(
                     continue;
                 }
 
+                // quiet history pruning
+                const i32 hp_margin
+                    = -QUIET_HP_MARGIN_DEPTH_MUL * fdepth / DEPTH_SCALE * fdepth / DEPTH_SCALE;
+                if (fdepth <= QUIET_HP_MAX_DEPTH && hist < hp_margin) {
+                    generator.skip_quiets();
+                    continue;
+                }
+
                 // futility pruning
                 const i32 futility = ss->static_eval + FP_MARGIN_BASE
                                      + FP_MARGIN_DEPTH_MUL * lmr_fdepth / DEPTH_SCALE

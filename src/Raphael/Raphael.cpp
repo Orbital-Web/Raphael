@@ -490,6 +490,12 @@ i32 Raphael::negamax(
             && ss->static_eval <= -(ss - 1)->static_eval)
             fdepth += HINDSIGHT_EXT;
 
+        // hindsight reduction
+        if (fdepth >= HINDSIGHT_RED + HINDSIGHT_RED_MIN_DEPTH
+            && (ss - 1)->freductions >= HINDSIGHT_RED_MIN_RED && (ss - 1)->static_eval != NONE_SCORE
+            && ss->static_eval >= -(ss - 1)->static_eval + HINDSIGHT_RED_MARGIN)
+            fdepth -= HINDSIGHT_RED;
+
         // reverse futility pruning
         const i32 rfp_margin
             = RFP_MARGIN_DEPTH_MUL * fdepth / DEPTH_SCALE - RFP_MARGIN_IMPROVING * improving;

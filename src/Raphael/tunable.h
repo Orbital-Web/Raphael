@@ -222,6 +222,10 @@ Tunable(IIR_MIN_DEPTH, 404, 384, 768, true);
 Tunable(IIR_RED, 127, 64, 256, true);
 Tunable(HINDSIGHT_MIN_RED, 411, 384, 768, true);
 Tunable(HINDSIGHT_EXT, 123, 64, 256, true);
+Tunable(HINDSIGHT_RED_MIN_DEPTH, 128, 32, 384, true);
+Tunable(HINDSIGHT_RED_MIN_RED, 256, 32, 384, true);
+Tunable(HINDSIGHT_RED_MARGIN, 200, 32, 384, true);
+Tunable(HINDSIGHT_RED, 128, 64, 256, true);
 
 Tunable(RFP_MAX_DEPTH, 921, 128, 1280, true);
 Tunable(RFP_MARGIN_DEPTH_MUL, 44, 16, 128, true);

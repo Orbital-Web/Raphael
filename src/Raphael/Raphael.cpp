@@ -766,14 +766,16 @@ i32 Raphael::negamax(
     // terminal analysis
     if (move_searched == 0) return (in_check) ? -MATE_SCORE + ply : 0;  // reward faster mate
 
-    // update transposition table
-    if (!ss->excluded && !stop_.load(memory_order_relaxed)) {
+    if (!stop_.load(memory_order_relaxed)) {
+        // update transposition table
+        if (!ss->excluded)
+            tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth, ss->ttpv, ttflag, ply);
+
         // update corrhist
-        if (!in_check && (bestmove == chess::Move::NO_MOVE || board.is_quiet(bestmove))
+        if (!in_check && (!bestmove || board.is_quiet(bestmove))
             && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
                 || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
             history.update_corrections(position, fdepth, bestscore, ss->static_eval);
-        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth, ss->ttpv, ttflag, ply);
     }
 
     return bestscore;

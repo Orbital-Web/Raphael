@@ -203,7 +203,7 @@ To see all supported commands, run `uci.exe help`
     - [x] MVV-LVA                           (`v1.0+`)
     - [x] Promotions                        (`v1.0+`)
     - [x] Hash move                         (`v1.6+`)
-    - [x] Killer heuristics                 (`v1.3+`)
+    - ~~[x] Killer heuristics~~             (`v1.3+`)
     - [x] Butterfly history                 (`v1.5+`)
     - [x] Capture history                   (`v2.3+`)
     - [ ] Piece-to history

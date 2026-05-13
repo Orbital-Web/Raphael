@@ -12,10 +12,9 @@ MoveGenerator MoveGenerator::negamax(
     chess::MoveList<chess::ScoredMove>* movelist,
     const Position<true>* position,
     const History* history,
-    chess::Move ttmove,
-    chess::Move killer
+    chess::Move ttmove
 ) {
-    return MoveGenerator(Stage::TT_MOVE, movelist, position, history, ttmove, killer);
+    return MoveGenerator(Stage::TT_MOVE, movelist, position, history, ttmove);
 }
 
 MoveGenerator MoveGenerator::quiescence(
@@ -26,9 +25,7 @@ MoveGenerator MoveGenerator::quiescence(
 ) {
     const auto& board = position->board();
 
-    auto generator = MoveGenerator(
-        Stage::QS_TT_MOVE, movelist, position, history, ttmove, chess::Move::NO_MOVE
-    );
+    auto generator = MoveGenerator(Stage::QS_TT_MOVE, movelist, position, history, ttmove);
     if (!board.in_check()) generator.skip_quiets();
 
     return generator;
@@ -76,16 +73,7 @@ chess::Move MoveGenerator::next() {
             }
 
             // good noisies exhausted
-            stage_ = Stage::KILLER;
-            [[fallthrough]];
-        }
-
-        case Stage::KILLER: {
             stage_ = Stage::GEN_QUIET;
-
-            if (!skip_quiets_ && killer_ && killer_ != ttmove_ && board.is_legal(killer_))
-                return killer_;
-
             [[fallthrough]];
         }
 
@@ -106,12 +94,12 @@ chess::Move MoveGenerator::next() {
 
         case Stage::QUIET: {
             if (!skip_quiets_) {
-                // find next non-tt, non-killer quiet move
+                // find next non-tt quiet move
                 while (idx_ < end_) {
                     const auto idx = select_next();
                     const auto& smove = (*movelist_)[idx];
 
-                    if (smove.move == ttmove_ || smove.move == killer_) continue;
+                    if (smove.move == ttmove_) continue;
 
                     return smove.move;
                 }
@@ -220,15 +208,13 @@ MoveGenerator::MoveGenerator(
     chess::MoveList<chess::ScoredMove>* movelist,
     const Position<true>* position,
     const History* history,
-    chess::Move ttmove,
-    chess::Move killer
+    chess::Move ttmove
 )
     : stage_(start_stage),
       movelist_(movelist),
       position_(position),
       history_(history),
-      ttmove_(ttmove),
-      killer_(killer) {
+      ttmove_(ttmove) {
     movelist_->clear();
 }
 

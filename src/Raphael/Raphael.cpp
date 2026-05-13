@@ -602,11 +602,11 @@ i32 Raphael::negamax(
             if (fdepth >= SE_MIN_DEPTH + ss->ttpv * SE_MIN_DEPTH_TTPV
                 && ttentry.fdepth >= fdepth - SE_MIN_TT_DEPTH && ttentry.flag != tt_.UPPER)
             {
+                const i32 s_beta_margin = SE_MARGIN_DEPTH_MUL
+                                          + (ttentry.flag != tt_.EXACT) * SE_MARGIN_TT_NONEXACT
+                                          + (ss->ttpv && !is_PV) * SE_MARGIN_PREV_PV;
                 const i32 s_beta = max(
-                    ttentry.score
-                        - SE_MARGIN_DEPTH_MUL * ((ttentry.flag == tt_.EXACT) ? 1 : 2) * fdepth
-                              / (DEPTH_SCALE * 128),
-                    -MATE_SCORE + 1
+                    ttentry.score - s_beta_margin * fdepth / (DEPTH_SCALE * 128), -MATE_SCORE + 1
                 );
                 const i32 s_fdepth = (fdepth - DEPTH_SCALE) / 2;
 

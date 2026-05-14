@@ -434,12 +434,12 @@ merged as #115    | activ: pw->screlu->crelu            |   data: d5-14 (19.7b) 
                   | 14, 14, 15, 15                      |                                   |                                             |                                                |
 ------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|
 cerberus_v4       | (768x16hm->1024pw)->(16x2->32->1)x8 | 800sb                             | Elo   | -1.25 +- 3.97 (95%)                 | Tried using dual activations for layer 1.      |
-unmerged          | activ: pw->crelu+cscrelu->crelu     |   data: d7-16 (??.?b)             | SPRT  | N=25000 Threads=1 Hash=16MB         |                                                |
+unmerged          | activ: pw->crelu+cscrelu->crelu     |   data: d5-14 (19.7b)             | SPRT  | N=25000 Threads=1 Hash=16MB         |                                                |
                   | scale: 275                          |   lr: 1600b warmup                | LLR   | -2.29 (-2.25, 2.89) [0.00, 5.00]    |                                                |
                   | quant: [255,128,64]                 |       cos(0.001,0.00000243)       | Games | N: 12464 W: 3514 L: 3559 D: 5391    |                                                |
                   | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [281, 1531, 2653, 1486, 281]        |                                                |
                   | buckets:                            | 200sb                             |                                             |                                                |
-                  | 0,  1,  2,  3                       |   data: d8-16 (??.?b)             |                                             |                                                |
+                  | 0,  1,  2,  3                       |   data: d7-14 (18.6b)             |                                             |                                                |
                   | 4,  5,  6,  7                       |   lr: lin(1e-5, 1e-7)             |                                             |                                                |
                   | 8,  8,  9,  9                       |   wdl: const(0.6)                 |                                             |                                                |
                   | 10, 10, 11, 11                      | filter: 0.5 random fen skipping   |                                             |                                                |
@@ -448,3 +448,26 @@ unmerged          | activ: pw->crelu+cscrelu->crelu     |   data: d7-16 (??.?b) 
                   | 14, 14, 15, 15                      |                                   |                                             |                                                |
                   | 14, 14, 15, 15                      |                                   |                                             |                                                |
 ------------------|-------------------------------------|-----------------------------------|---------------------------------------------┴------------------------------------------------|
+data: d15         | games: 7.20m                        | source: orthrus_v2                |                                                                                              |
+                  | pos: 650m                           | nodes: 24k soft                   |                                                                                              |
+                  |                                     | filter: noisy, checks             |                                                                                              |
+------------------|-------------------------------------|-----------------------------------|----------------------------------------------------------------------------------------------|
+data: d16         | games: 66.85m (29% dfrc)            | source: cerberus_v2-3             | Includes around 630m pos from a branch SPSA-tuned at 24ksn, which was around 42 elo higher   |
+                  | pos: 6304m                          | nodes: 5k soft                    | at 5ksn and 107 elo higher at 24ksn, although it destroyed the time per pos and the idea was |
+                  |                                     | filter: noisy, checks             | scrapped. Surprisingly, the tb blunder rate was slightly higher and draw rate remained low.  |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
+cerberus_v5       | (768x16hm->1024pw)->(16->32->1)x8   | 800sb                             | Elo   | 3.72 +- 2.87 (95%)                  | Trained on more data and removed old ones.     |
+merged as #121    | activ: pw->screlu->crelu            |   data: d7-16 (25.8b)             | SPRT  | N=25000 Threads=1 Hash=16MB         |                                                |
+                  | scale: 278                          |   lr: 1600b warmup                | LLR   | 3.18 (-2.25, 2.89) [0.00, 5.00]     |                                                |
+                  | quant: [255,128,64]                 |       cos(0.001,0.00000243)       | Games | N: 23714 W: 6856 L: 6602 D: 10256   |                                                |
+                  | optim: AdamW                        |   wdl: lin(0.2, 0.4)              | Penta | [498, 2834, 4972, 3022, 531]        |                                                |
+                  | buckets:                            | 200sb                             |                                             |                                                |
+                  | 0,  1,  2,  3                       |   data: d8-16 (24.8b)             |                                             |                                                |
+                  | 4,  5,  6,  7                       |   lr: lin(1e-5, 1e-7)             |                                             |                                                |
+                  | 8,  8,  9,  9                       |   wdl: const(0.6)                 |                                             |                                                |
+                  | 10, 10, 11, 11                      | filter: 0.5 random fen skipping   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 12, 12, 13, 13                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+                  | 14, 14, 15, 15                      |                                   |                                             |                                                |
+------------------|-------------------------------------|-----------------------------------|---------------------------------------------|------------------------------------------------|

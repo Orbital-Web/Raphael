@@ -548,12 +548,11 @@ i32 Raphael::negamax(
     // initialize move generator
     mv->quietlist.clear();
     mv->noisylist.clear();
-    auto generator = MoveGenerator::negamax(&mv->movelist, &position, &history, ttmove, ss->killer);
+    auto generator = MoveGenerator::negamax(&mv->movelist, &position, &history, ttmove);
 
     // search
     i32 bestscore = -INF_SCORE;
     chess::Move bestmove = chess::Move::NO_MOVE;
-    (ss + 1)->killer = chess::Move::NO_MOVE;
     auto ttflag = tt_.UPPER;
 
     i32 move_searched = 0;
@@ -711,9 +710,6 @@ i32 Raphael::negamax(
                         = fdepth + (!in_check && ss->static_eval <= alpha) * DEPTH_SCALE;
 
                     if (is_quiet) {
-                        // store killer moves and update quiet history
-                        ss->killer = move;
-
                         const i32 bonus = history.bonus(
                             history_fdepth,
                             HISTORY_BONUS_DEPTH_MUL,

@@ -12,7 +12,6 @@ public:
         TT_MOVE,
         GEN_NOISY,
         GOOD_NOISY,
-        KILLER,
         GEN_QUIET,
         QUIET,
         BAD_NOISY,
@@ -32,7 +31,6 @@ private:
     const Position<true>* position_;
     const History* history_;
     chess::Move ttmove_ = chess::Move::NO_MOVE;
-    chess::Move killer_ = chess::Move::NO_MOVE;
 
     bool skip_quiets_ = false;
     usize idx_ = 0;
@@ -47,15 +45,13 @@ public:
      * \param position pointer to current position
      * \param history pointer to history table
      * \param ttmove transposition table move
-     * \param killer killer move
      * \returns the move generator
      */
     static MoveGenerator negamax(
         chess::MoveList<chess::ScoredMove>* movelist,
         const Position<true>* position,
         const History* history,
-        chess::Move ttmove,
-        chess::Move killer
+        chess::Move ttmove
     );
 
     /** Initializes a move generator for the quiescence search
@@ -91,15 +87,13 @@ private:
      * \param position pointer to current position
      * \param history pointer to history table
      * \param ttmove transposition table move
-     * \param killer killer move
      */
     MoveGenerator(
         Stage start_stage,
         chess::MoveList<chess::ScoredMove>* movelist,
         const Position<true>* position,
         const History* history,
-        chess::Move ttmove,
-        chess::Move killer
+        chess::Move ttmove
     );
 
 

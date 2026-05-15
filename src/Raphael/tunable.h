@@ -258,8 +258,10 @@ Tunable(SE_MIN_TT_DEPTH, 384, 384, 768, false);
 Tunable(SE_MARGIN_DEPTH_MUL, 128, 64, 512, false);
 Tunable(DE_MARGIN_BASE, 30, 8, 64, false);
 Tunable(DE_MARGIN_PV, 250, 32, 384, false);
+Tunable(DE_MARGIN_CORRPLEXITY, 100, 32, 384, false);
 Tunable(TE_MARGIN_BASE, 100, 32, 128, false);
 Tunable(TE_MARGIN_PV, 700, 256, 1024, false);
+Tunable(TE_MARGIN_CORRPLEXITY, 128, 32, 384, false);
 Tunable(SE_EXT, 152, 64, 256, true);
 Tunable(DE_EXT, 138, 64, 256, true);
 Tunable(TE_EXT, 106, 64, 256, true);
@@ -282,7 +284,6 @@ Tunable(LMR_IMPROVING, 84, 32, 384, true);
 Tunable(LMR_CHECK, 154, 32, 384, true);
 Tunable(LMR_QUIET_HIST_DIV, 11520, 4096, 16384, true);
 Tunable(LMR_NOISY_HIST_DIV, 9709, 4096, 16384, true);
-Tunable(LMR_CORRPLEXITY_DIV, 512, 128, 1024, true);
 
 Tunable(DO_DEEPER_BASE, 40, 0, 128, false);
 Tunable(DO_DEEPER_DEPTH_MUL, 6, 1, 12, false);

@@ -460,7 +460,7 @@ i32 Raphael::negamax(
     const bool in_check = board.in_check();
     i32 raw_static_eval;
     i32 score_estimate;
-    i32 corrplexity;
+    i32 corrplexity = 0;
 
     if (!ss->excluded) {
         if (in_check) {
@@ -620,8 +620,10 @@ i32 Raphael::negamax(
 
                 if (score < s_beta) {
                     // singular/double/triple extensions
-                    const i32 de_margin = DE_MARGIN_BASE + is_PV * DE_MARGIN_PV;
-                    const i32 te_margin = TE_MARGIN_BASE + is_PV * TE_MARGIN_PV;
+                    const i32 de_margin = DE_MARGIN_BASE + is_PV * DE_MARGIN_PV
+                                          - corrplexity * DE_MARGIN_CORRPLEXITY / 1024;
+                    const i32 te_margin = TE_MARGIN_BASE + is_PV * TE_MARGIN_PV
+                                          - corrplexity * TE_MARGIN_CORRPLEXITY / 1024;
                     fext = SE_EXT + (score + de_margin < s_beta) * DE_EXT
                            + (is_quiet && score + te_margin < s_beta) * TE_EXT;
                 } else if (s_beta >= beta)
@@ -660,7 +662,6 @@ i32 Raphael::negamax(
             fred -= improving * LMR_IMPROVING;
             fred -= gives_check * LMR_CHECK;
             fred -= hist * DEPTH_SCALE / ((is_quiet) ? LMR_QUIET_HIST_DIV : LMR_NOISY_HIST_DIV);
-            fred -= corrplexity * DEPTH_SCALE / LMR_CORRPLEXITY_DIV;
 
             ss->freductions = fred;
             const i32 red_fdepth = min(max(new_fdepth - fred, DEPTH_SCALE), new_fdepth);
@@ -796,7 +797,7 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
 
     // max ply
     const bool in_check = board.in_check();
-    i32 corrplexity;
+    i32 corrplexity = 0;
     if (ply >= MAX_DEPTH - 1)
         return (in_check) ? 0
                           : adjust_score(tdata, position.evaluate(!params_.datagen), corrplexity);

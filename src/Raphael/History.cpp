@@ -134,7 +134,7 @@ void History::update_corrections(
         cont_corr_entry(curr.move, curr.moving, prev2).update(bonus);
 }
 
-i32 History::correct(const Position<true>& position, i32 score) const {
+i32 History::get_correction(const Position<true>& position) const {
     const auto& board = position.board();
     const auto curr = position.prev_move(1);
     const auto prev1 = position.prev_move(2);
@@ -153,7 +153,7 @@ i32 History::correct(const Position<true>& position, i32 score) const {
                       : 0;
     correction /= CORRHIST_MAX;
 
-    return score + correction;
+    return correction;
 }
 
 

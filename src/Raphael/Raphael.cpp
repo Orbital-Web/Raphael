@@ -460,7 +460,7 @@ i32 Raphael::negamax(
     const bool in_check = board.in_check();
     i32 raw_static_eval;
     i32 score_estimate;
-    i32 corrplexity;
+    i32 corrplexity = 0;
 
     if (!ss->excluded) {
         if (in_check) {
@@ -796,7 +796,7 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
 
     // max ply
     const bool in_check = board.in_check();
-    i32 corrplexity;
+    i32 corrplexity = 0;
     if (ply >= MAX_DEPTH - 1)
         return (in_check) ? 0
                           : adjust_score(tdata, position.evaluate(!params_.datagen), corrplexity);

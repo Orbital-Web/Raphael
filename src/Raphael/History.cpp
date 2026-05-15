@@ -122,6 +122,7 @@ void History::update_corrections(
     const auto& board = position.board();
     const auto curr = position.prev_move(1);
     const auto prev1 = position.prev_move(2);
+    const auto prev2 = position.prev_move(3);
 
     pawn_corr_entry(board).update(bonus);
     major_corr_entry(board).update(bonus);
@@ -129,12 +130,15 @@ void History::update_corrections(
     nonpawn_corr_entry(board, chess::Color::BLACK).update(bonus);
     if (curr.moving != chess::Piece::NONE && prev1.moving != chess::Piece::NONE)
         cont_corr_entry(curr.move, curr.moving, prev1).update(bonus);
+    if (curr.moving != chess::Piece::NONE && prev2.moving != chess::Piece::NONE)
+        cont_corr_entry(curr.move, curr.moving, prev2).update(bonus);
 }
 
 i32 History::correct(const Position<true>& position, i32 score) const {
     const auto& board = position.board();
     const auto curr = position.prev_move(1);
     const auto prev1 = position.prev_move(2);
+    const auto prev2 = position.prev_move(3);
 
     i32 correction = 0;
     correction += pawn_corr_entry(board) * PAWN_CORRHIST_WEIGHT;
@@ -143,6 +147,9 @@ i32 History::correct(const Position<true>& position, i32 score) const {
     correction += nonpawn_corr_entry(board, chess::Color::BLACK) * NONPAWN_CORRHIST_WEIGHT;
     correction += (curr.moving != chess::Piece::NONE && prev1.moving != chess::Piece::NONE)
                       ? cont_corr_entry(curr.move, curr.moving, prev1) * CONT1_CORRHIST_WEIGHT
+                      : 0;
+    correction += (curr.moving != chess::Piece::NONE && prev2.moving != chess::Piece::NONE)
+                      ? cont_corr_entry(curr.move, curr.moving, prev2) * CONT2_CORRHIST_WEIGHT
                       : 0;
     correction /= CORRHIST_MAX;
 

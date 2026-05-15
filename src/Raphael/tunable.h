@@ -282,6 +282,7 @@ Tunable(LMR_IMPROVING, 84, 32, 384, true);
 Tunable(LMR_CHECK, 154, 32, 384, true);
 Tunable(LMR_QUIET_HIST_DIV, 11520, 4096, 16384, true);
 Tunable(LMR_NOISY_HIST_DIV, 9709, 4096, 16384, true);
+Tunable(LMR_CORRPLEXITY_DIV, 300, 128, 1024, true);
 
 Tunable(DO_DEEPER_BASE, 40, 0, 128, false);
 Tunable(DO_DEEPER_DEPTH_MUL, 6, 1, 12, false);

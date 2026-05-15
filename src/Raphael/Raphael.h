@@ -239,9 +239,10 @@ private:
      *
      * \param tdata this thread's data
      * \param raw_static_eval raw eval to adjust
+     * \param corrplexity reference to store abs correction into
      * \returns the adjusted eval
      */
-    i32 adjust_score(const ThreadData& tdata, i32 raw_static_eval) const;
+    i32 adjust_score(const ThreadData& tdata, i32 raw_static_eval, i32& corrplexity) const;
 
 
     /** Does the actual search logic, calling negamax with increasing depth.

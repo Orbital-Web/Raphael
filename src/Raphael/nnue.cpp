@@ -85,19 +85,19 @@ void Nnue::NnueFinnyEntry::update(
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
     constexpr i32 n_chunks = L1_SIZE / regw;
     static_assert(L1_SIZE % regw == 0);
-    static_assert(n_chunks % SIMD_REGS == 0);
-    VecI16 accs[SIMD_REGS];
+    static_assert(n_chunks % 8 == 0);
+    VecI16 accs[8];
 
-    for (i32 i = 0; i < n_chunks; i += SIMD_REGS) {
+    for (i32 i = 0; i < n_chunks; i += 8) {
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_REGS; r++) accs[r] = load_i16(&values[(i + r) * regw]);
+        for (i32 r = 0; r < 8; r++) accs[r] = load_i16(&values[(i + r) * regw]);
 
         // add features
         for (i32 f = 0; f < n_adds; f++) {
             const auto fidx = adds[f];
 
             #pragma GCC unroll 32  // fmt: skip
-            for (i32 r = 0; r < SIMD_REGS; r++)
+            for (i32 r = 0; r < 8; r++)
                 accs[r] = add_i16(accs[r], load_i16(&weights[fidx][(i + r) * regw]));
         }
 
@@ -106,12 +106,12 @@ void Nnue::NnueFinnyEntry::update(
             const auto fidx = subs[f];
 
             #pragma GCC unroll 32  // fmt: skip
-            for (i32 r = 0; r < SIMD_REGS; r++)
+            for (i32 r = 0; r < 8; r++)
                 accs[r] = sub_i16(accs[r], load_i16(&weights[fidx][(i + r) * regw]));
         }
 
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_REGS; r++) store_i16(&values[(i + r) * regw], accs[r]);
+        for (i32 r = 0; r < 8; r++) store_i16(&values[(i + r) * regw], accs[r]);
     }
 #else
     for (i32 f = 0; f < n_adds; f++)
@@ -168,33 +168,33 @@ void Nnue::NnueAccumulator::update(
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
     constexpr i32 n_chunks = L1_SIZE / regw;
     static_assert(L1_SIZE % regw == 0);
-    static_assert(n_chunks % SIMD_REGS == 0);
-    VecI16 accs[SIMD_REGS];
+    static_assert(n_chunks % 8 == 0);
+    VecI16 accs[8];
 
-    for (i32 i = 0; i < n_chunks; i += SIMD_REGS) {
+    for (i32 i = 0; i < n_chunks; i += 8) {
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_REGS; r++) accs[r] = load_i16(&old_acc.values[(i + r) * regw]);
+        for (i32 r = 0; r < 8; r++) accs[r] = load_i16(&old_acc.values[(i + r) * regw]);
 
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_REGS; r++)
+        for (i32 r = 0; r < 8; r++)
             accs[r] = sub_i16(accs[r], load_i16(&weights[sub1][(i + r) * regw]));
 
         if (n_subs > 1)
             #pragma GCC unroll 32  // fmt: skip
-            for (i32 r = 0; r < SIMD_REGS; r++)
+            for (i32 r = 0; r < 8; r++)
                 accs[r] = sub_i16(accs[r], load_i16(&weights[sub2][(i + r) * regw]));
 
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_REGS; r++)
+        for (i32 r = 0; r < 8; r++)
             accs[r] = add_i16(accs[r], load_i16(&weights[add1][(i + r) * regw]));
 
         if (n_adds > 1)
             #pragma GCC unroll 32  // fmt: skip
-            for (i32 r = 0; r < SIMD_REGS; r++)
+            for (i32 r = 0; r < 8; r++)
                 accs[r] = add_i16(accs[r], load_i16(&weights[add2][(i + r) * regw]));
 
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_REGS; r++) store_i16(&values[(i + r) * regw], accs[r]);
+        for (i32 r = 0; r < 8; r++) store_i16(&values[(i + r) * regw], accs[r]);
     }
 #else
     for (i32 i = 0; i < L1_SIZE; i++) {

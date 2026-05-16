@@ -240,6 +240,7 @@ Tunable(NMP_RED_BASE, 426, 256, 1024, true);
 Tunable(NMP_RED_DEPTH_MUL, 200, 64, 512, false);
 Tunable(NMP_RED_EVAL_MUL, 82, 16, 128, false);
 Tunable(NMP_RED_EVAL_MAX, 384, 128, 512, false);
+Tunable(NMP_RED_OPP_WORSENING, 128, 32, 384, true);
 Tunable(NMP_VERIF_MIN_DEPTH, 1920, 1280, 2560, false);
 Tunable(NMP_VERIF_DEPTH_FACTOR, 96, 32, 128, false);
 

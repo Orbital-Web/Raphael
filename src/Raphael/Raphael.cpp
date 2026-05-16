@@ -488,6 +488,7 @@ i32 Raphael::negamax(
     const bool improving = !in_check && ss->static_eval > (ss - 2)->static_eval;
     const i32 opp_worsening_rate
         = (is_root || in_check) ? 0 : ss->static_eval + (ss - 1)->static_eval;
+    const bool is_opp_worsening = opp_worsening_rate > 0;
 
     // pre-moveloop pruning
     if (!is_PV && !in_check && !ss->excluded) {
@@ -499,7 +500,7 @@ i32 Raphael::negamax(
         // reverse futility pruning
         const i32 rfp_margin = RFP_MARGIN_DEPTH_MUL * fdepth / DEPTH_SCALE
                                - improving * RFP_MARGIN_IMPROVING
-                               - (opp_worsening_rate > 0) * RFP_MARGIN_OPP_WORSENING
+                               - is_opp_worsening * RFP_MARGIN_OPP_WORSENING
                                + corrplexity * RFP_MARGIN_CORRPLEXITY / 1024;
         if (fdepth <= RFP_MAX_DEPTH && score_estimate - rfp_margin >= beta) return score_estimate;
 
@@ -527,6 +528,7 @@ i32 Raphael::negamax(
             i32 fred = NMP_RED_BASE;
             fred += fdepth * NMP_RED_DEPTH_MUL / 1024;
             fred += min<i32>((ss->static_eval - beta) * NMP_RED_EVAL_MUL, NMP_RED_EVAL_MAX);
+            fred += is_opp_worsening * NMP_RED_OPP_WORSENING;
 
             const i32 red_fdepth = fdepth - fred;
             const i32 score = -negamax<false>(

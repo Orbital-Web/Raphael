@@ -226,6 +226,7 @@ Tunable(HINDSIGHT_EXT, 123, 64, 256, true);
 Tunable(RFP_MAX_DEPTH, 921, 128, 1280, true);
 Tunable(RFP_MARGIN_DEPTH_MUL, 44, 16, 128, true);
 Tunable(RFP_MARGIN_IMPROVING, 29, 16, 128, true);
+Tunable(RFP_MARGIN_CORRPLEXITY, 100, 32, 384, true);
 
 Tunable(RAZOR_MAX_DEPTH, 602, 128, 1280, true);
 Tunable(RAZOR_MARGIN_DEPTH_MUL, 243, 32, 384, true);

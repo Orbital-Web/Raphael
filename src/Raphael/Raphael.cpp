@@ -496,7 +496,7 @@ i32 Raphael::negamax(
 
         // reverse futility pruning
         const i32 rfp_margin = RFP_MARGIN_DEPTH_MUL * fdepth / DEPTH_SCALE
-                               - improving * RFP_MARGIN_IMPROVING
+                               - improving * RFP_MARGIN_IMPROVING - cutnode * RFP_MARGIN_CUTNODE
                                + corrplexity * RFP_MARGIN_CORRPLEXITY / 1024;
         if (fdepth <= RFP_MAX_DEPTH && score_estimate - rfp_margin >= beta) return score_estimate;
 

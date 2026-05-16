@@ -226,11 +226,8 @@ Tunable(HINDSIGHT_EXT, 123, 64, 256, true);
 Tunable(RFP_MAX_DEPTH, 921, 128, 1280, true);
 Tunable(RFP_MARGIN_DEPTH_MUL, 44, 16, 128, true);
 Tunable(RFP_MARGIN_IMPROVING, 29, 16, 128, true);
-<<<<<<< HEAD
+Tunable(RFP_MARGIN_CUTNODE, 15, 0, 64, true);
 Tunable(RFP_MARGIN_CORRPLEXITY, 100, 32, 384, true);
-=======
-Tunable(RFP_MARGIN_CUTNODE, 20, 16, 128, true);
->>>>>>> 4c5aa5e (feat: decrease rfp margin in expected cutnode)
 
 Tunable(RAZOR_MAX_DEPTH, 602, 128, 1280, true);
 Tunable(RAZOR_MARGIN_DEPTH_MUL, 243, 32, 384, true);

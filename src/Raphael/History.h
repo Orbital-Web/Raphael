@@ -122,6 +122,12 @@ public:
      */
     i32 get_correction(const Position<true>& position) const;
 
+    /** Prefetches the corrhists for a position
+     *
+     * \param position current position
+     */
+    void prefetch_corrhist(const Position<true>& position) const;
+
 
     /** Zeros out all the histories */
     void clear();

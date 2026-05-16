@@ -156,6 +156,22 @@ i32 History::get_correction(const Position<true>& position) const {
     return correction;
 }
 
+void History::prefetch_corrhist(const Position<true>& position) const {
+    const auto& board = position.board();
+    const auto curr = position.prev_move(1);
+    const auto prev1 = position.prev_move(2);
+    const auto prev2 = position.prev_move(3);
+
+    __builtin_prefetch(&pawn_corr_entry(board));
+    __builtin_prefetch(&major_corr_entry(board));
+    __builtin_prefetch(&nonpawn_corr_entry(board, chess::Color::WHITE));
+    __builtin_prefetch(&nonpawn_corr_entry(board, chess::Color::BLACK));
+    if (curr.moving != chess::Piece::NONE && prev1.moving != chess::Piece::NONE)
+        __builtin_prefetch(&cont_corr_entry(curr.move, curr.moving, prev1));
+    if (curr.moving != chess::Piece::NONE && prev2.moving != chess::Piece::NONE)
+        __builtin_prefetch(&cont_corr_entry(curr.move, curr.moving, prev2));
+}
+
 
 void History::clear() {
     memset(butterfly_hist_, 0, sizeof(butterfly_hist_));

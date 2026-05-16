@@ -518,6 +518,7 @@ i32 Raphael::negamax(
         {
             tt_.prefetch(board.hash_after<true>(chess::Move::NO_MOVE));
             position.make_nullmove();
+            history.prefetch_corrhist(position);
             ss->move = chess::Move::NO_MOVE;
 
             i32 fred = NMP_RED_BASE;
@@ -642,6 +643,7 @@ i32 Raphael::negamax(
 
         tt_.prefetch(board.hash_after<false>(move));
         position.make_move(move);
+        history.prefetch_corrhist(position);
         ss->move = move;
         move_searched++;
         tm_.inc_nodes(thread_id);
@@ -870,6 +872,7 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
 
         tt_.prefetch(board.hash_after<false>(move));
         position.make_move(move);
+        history.prefetch_corrhist(position);
         move_searched++;
         tm_.inc_nodes(thread_id);
 

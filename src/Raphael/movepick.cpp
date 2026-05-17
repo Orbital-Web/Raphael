@@ -248,6 +248,8 @@ chess::Move MoveGenerator::next() {
 
 void MoveGenerator::skip_quiets() { skip_quiets_ = true; }
 
+MoveGenerator::Stage MoveGenerator::stage() const { return stage_; }
+
 
 MoveGenerator::MoveGenerator(
     Stage start_stage,

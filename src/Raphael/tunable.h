@@ -261,19 +261,19 @@ Tunable(SEE_NOISY_DEPTH_MUL, -108, -256, -32, true);
 
 Tunable(SE_MIN_DEPTH, 739, 512, 1536, true);
 Tunable(SE_MIN_DEPTH_TTPV, 128, 32, 384, true);
-Tunable(SE_MIN_TT_DEPTH, 384, 384, 768, false);
-Tunable(SE_MARGIN_DEPTH_MUL, 128, 64, 512, false);
-Tunable(DE_MARGIN_BASE, 30, 8, 64, false);
-Tunable(DE_MARGIN_PV, 250, 32, 384, false);
-Tunable(TE_MARGIN_BASE, 100, 32, 128, false);
-Tunable(TE_MARGIN_PV, 700, 256, 1024, false);
+Tunable(SE_MIN_TT_DEPTH, 384, 384, 768, true);
+Tunable(SE_MARGIN_DEPTH_MUL, 128, 64, 512, true);
+Tunable(DE_MARGIN_BASE, 30, 0, 50, true);
+Tunable(DE_MARGIN_PV, 250, 200, 300, true);
+Tunable(TE_MARGIN_BASE, 100, 50, 150, true);
+Tunable(TE_MARGIN_PV, 700, 600, 800, true);
 Tunable(SE_EXT, 152, 64, 256, true);
 Tunable(DE_EXT, 138, 64, 256, true);
 Tunable(TE_EXT, 106, 64, 256, true);
 Tunable(NE_RED, 136, 64, 256, true);
 Tunable(CUTNODE_NE_RED, 128, 64, 256, true);
 Tunable(LDSE_MAX_DEPTH, 768, 256, 1024, true);
-Tunable(LDSE_MARGIN, 30, 8, 64, false);
+Tunable(LDSE_MARGIN, 30, 0, 50, true);
 Tunable(LDSE_EXT, 128, 64, 256, true);
 
 Tunable(LMR_MIN_DEPTH, 372, 128, 640, true);

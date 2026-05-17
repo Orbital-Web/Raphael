@@ -22,7 +22,12 @@ public:
         QS_NOISY,
         // only if in check
         QS_GEN_QUIET,
-        QS_QUIET
+        QS_QUIET,
+
+        // probcut
+        PC_TT_MOVE,
+        PC_GEN_NOISY,
+        PC_NOISY,
     };
 
 private:
@@ -63,6 +68,21 @@ public:
      * \returns the move generator
      */
     static MoveGenerator quiescence(
+        chess::MoveList<chess::ScoredMove>* movelist,
+        const Position<true>* position,
+        const History* history,
+        chess::Move ttmove
+    );
+
+    /** Initializes a move generator for probcut
+     *
+     * \param movelist pointer to preallocated move list to use
+     * \param position pointer to current position
+     * \param history pointer to history table
+     * \param ttmove transposition table move
+     * \returns the move generator
+     */
+    static MoveGenerator probcut(
         chess::MoveList<chess::ScoredMove>* movelist,
         const Position<true>* position,
         const History* history,

@@ -452,6 +452,7 @@ i32 Raphael::negamax(
         ss->ttpv = is_PV || ttentry.was_pv;
     }
     const auto ttmove = ttentry.move;
+    const bool ttmove_quiet = ttmove && board.is_quiet(ttmove);
 
     // internal iterative reduction
     if (fdepth >= IIR_MIN_DEPTH && !ss->excluded && (is_PV || cutnode) && !ttmove)
@@ -546,6 +547,50 @@ i32 Raphael::negamax(
                 tdata.min_nmp_ply = 0;
 
                 if (verif_score >= beta) return verif_score;
+            }
+        }
+
+        // probcut
+        const i32 pc_beta = beta + PC_MARGIN;
+        const i32 pc_fdepth = max<i32>(fdepth - PC_RED, DEPTH_SCALE);
+
+        if (!ss->ttpv && fdepth >= PC_MIN_DEPTH && !utils::is_mate(beta)
+            && (!ttmove || !ttmove_quiet)
+            && !(tthit && ttentry.fdepth >= pc_fdepth && ttentry.score < pc_beta))
+        {
+            const i32 see_thresh = (pc_beta - ss->static_eval) * PC_SEE_FACTOR / 128;
+            auto generator = MoveGenerator::probcut(&mv->movelist, &position, &history, ttmove);
+
+            while (const auto move = generator.next()) {
+                if (!SEE::see(move, board, see_thresh)) continue;
+
+                tt_.prefetch(board.hash_after<false>(move));
+                position.make_move(move);
+                ss->move = move;
+                tm_.inc_nodes(thread_id);
+
+                i32 score = -quiescence<false>(tdata, ply + 1, -pc_beta, -pc_beta + 1, mv + 1);
+
+                if (score >= pc_beta)
+                    score = -negamax<false>(
+                        tdata,
+                        pc_fdepth - DEPTH_SCALE,
+                        ply + 1,
+                        -pc_beta,
+                        -pc_beta + 1,
+                        !cutnode,
+                        ss + 1,
+                        mv + 1
+                    );
+
+                position.unmake_move();
+
+                if (stop_.load(memory_order_relaxed)) return 0;
+
+                if (score >= pc_beta) {
+                    tt_.set(ttkey, score, raw_static_eval, move, pc_fdepth, false, tt_.LOWER, ply);
+                    return score;
+                }
             }
         }
     }

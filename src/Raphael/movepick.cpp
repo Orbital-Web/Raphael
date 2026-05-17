@@ -31,6 +31,16 @@ MoveGenerator MoveGenerator::quiescence(
     return generator;
 }
 
+MoveGenerator MoveGenerator::probcut(
+    chess::MoveList<chess::ScoredMove>* movelist,
+    const Position<true>* position,
+    const History* history,
+    chess::Move ttmove
+) {
+    auto generator = MoveGenerator(Stage::PC_TT_MOVE, movelist, position, history, ttmove);
+    return generator;
+}
+
 
 chess::Move MoveGenerator::next() {
     const auto& board = position_->board();
@@ -190,6 +200,42 @@ chess::Move MoveGenerator::next() {
                     idx_ = end_;  // only generate one quiet move
                     return smove.move;
                 }
+            }
+
+            // all moves exhausted
+            return chess::Move::NO_MOVE;
+        }
+
+        // probcut stages
+        case Stage::PC_TT_MOVE: {
+            stage_ = Stage::PC_GEN_NOISY;
+
+            if (ttmove_ && board.is_legal(ttmove_)) return ttmove_;
+
+            [[fallthrough]];
+        }
+
+        case Stage::PC_GEN_NOISY: {
+            // generate noisy moves
+            assert(movelist_->empty());
+            chess::Movegen::generate_legals<chess::Movegen::MoveGenType::NOISY>(*movelist_, board);
+            end_ = movelist_->size();
+
+            score_noisies();
+
+            stage_ = Stage::PC_NOISY;
+            [[fallthrough]];
+        }
+
+        case Stage::PC_NOISY: {
+            // find next non-tt noisy move
+            while (idx_ < end_) {
+                const auto idx = select_next();
+                const auto& smove = (*movelist_)[idx];
+
+                if (smove.move == ttmove_) continue;
+
+                return smove.move;
             }
 
             // all moves exhausted

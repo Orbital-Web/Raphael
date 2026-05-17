@@ -243,6 +243,11 @@ Tunable(NMP_RED_EVAL_MAX, 384, 128, 512, false);
 Tunable(NMP_VERIF_MIN_DEPTH, 1920, 1280, 2560, false);
 Tunable(NMP_VERIF_DEPTH_FACTOR, 96, 32, 128, false);
 
+Tunable(PC_MIN_DEPTH, 768, 512, 1024, true);
+Tunable(PC_MARGIN, 300, 128, 512, true);
+Tunable(PC_RED, 384, 128, 512, true);
+Tunable(PC_SEE_FACTOR, 128, 64, 256, true);
+
 inline MultiArray<i32, 2, 256> LMP_TABLE;  // lmp moves threshold[improving][depth]
 TunableCallback(LMP_THRESH_BASE, 3, 1, 12, update_lmp_table, false);
 

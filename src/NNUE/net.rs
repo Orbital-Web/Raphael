@@ -47,8 +47,8 @@ use viriformat::dataformat::Filter;
 
 fn main() {
     // model params
-    const NET_ID: &str = "cerberus_v3";
-    const L1_SIZE: usize = 1024;
+    const NET_ID: &str = "cerberus_v6";
+    const L1_SIZE: usize = 1280;
     const L2_SIZE: usize = 16;
     const L3_SIZE: usize = 32;
     const NUM_INPUT_BUCKETS: usize = 16;
@@ -195,13 +195,13 @@ fn main() {
     trainer.run(
         &schedule_stage0,
         &settings,
-        &ViriBinpackLoader::new(&DATASET_STAGE0.to_string(), 4096, 6, filter.clone()),
+        &ViriBinpackLoader::new(&DATASET_STAGE0.to_string(), 4096, 4, filter.clone()),
     );
     // trainer.load_from_checkpoint("checkpoints/cerberus_v1_stage0-800");
     trainer.run(
         &schedule_stage1,
         &settings,
-        &ViriBinpackLoader::new(&DATASET_STAGE1.to_string(), 4096, 6, filter.clone()),
+        &ViriBinpackLoader::new(&DATASET_STAGE1.to_string(), 4096, 4, filter.clone()),
     );
 
     for fen in [

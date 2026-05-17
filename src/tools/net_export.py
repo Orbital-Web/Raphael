@@ -7,7 +7,7 @@ import json
 
 import numpy as np
 
-L1_SIZE = 1024
+L1_SIZE = 1280
 L2_SIZE = 16
 L3_SIZE = 32
 NUM_INPUT_BUCKET = 16

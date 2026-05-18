@@ -11,8 +11,8 @@ using std::atomic;
 using std::cout;
 using std::flush;
 using std::ifstream;
-using std::lock_guard;
 using std::memory_order_relaxed;
+using std::min;
 using std::mt19937_64;
 using std::mutex;
 using std::ofstream;
@@ -130,22 +130,30 @@ void generation_thread(
     board.set960(dfrc);
     chess::MoveList<chess::ScoredMove> movelist;
     Position<false> position;
+    uniform_int_distribution<u64> pos_distribution(0, seed_fens.size() - 1);
 
 
     // keep generating upon wakeup
-    while (true) {
-        {
-            lock_guard<mutex> gen_lock(gen_mutex);
-            if (num_batch_remaining == 0) break;
-            num_batch_remaining--;
-        }
+    while (!stop.load(memory_order_relaxed)) {
+        // determine batch size
+        i32 batch_size = 0;
+        i32 current = num_games_reserved.load(memory_order_relaxed);
 
-        // generate DATAGEN_BATCH_SIZE games
+        while (current < num_target_games) {
+            batch_size = min(num_target_games - current, DATAGEN_BATCH_SIZE);
+            const i32 target = current + batch_size;
+            if (num_games_reserved.compare_exchange_weak(
+                    current, target, memory_order_relaxed, memory_order_relaxed
+                ))
+                break;
+        }
+        if (batch_size == 0) break;
+
+        // generate batch_size games
         i32 generated = 0;
-        while (generated < DATAGEN_BATCH_SIZE) {
+        while (generated < batch_size && !stop.load(memory_order_relaxed)) {
             // choose random seed_fen
-            uniform_int_distribution<u64> distribution(0, seed_fens.size() - 1);
-            board.set_fen(seed_fens[distribution(generator)]);
+            board.set_fen(seed_fens[pos_distribution(generator)]);
 
             // play random moves
             for (i32 m = 0; m < randmoves; m++) {
@@ -258,8 +266,7 @@ void generation_thread(
             generated++;
         }
 
-        i32 n_games = num_games_generated.fetch_add(generated);
-        n_games += generated;
+        const i32 n_games = num_games_generated.fetch_add(generated) + generated;
         const auto delta
             = ch::duration_cast<ch::milliseconds>(ch::system_clock::now() - start_time).count();
         const auto games_persec = f64(n_games) * 1000.0 / delta;
@@ -273,10 +280,7 @@ void generation_thread(
 }
 
 
-void handle_interrupt(i32) {
-    lock_guard<mutex> gen_lock(gen_mutex);
-    num_batch_remaining = 0;
-}
+void handle_interrupt(i32) { stop.store(true, memory_order_relaxed); }
 }  // namespace internal
 
 
@@ -323,7 +327,7 @@ void generate_games(
     uniform_int_distribution<u64> distribution(0, UINT64_MAX);
 
     // set total number of batches to run
-    internal::num_batch_remaining = (games + DATAGEN_BATCH_SIZE - 1) / DATAGEN_BATCH_SIZE;
+    internal::num_target_games = games;
     cout << "starting generation of " + to_string(games) + " games with " << to_string(softnodes)
          << " softnodes, " << to_string(concurrency) << " threads\n"
          << "generated: 0 games (0.0000 games/sec)" << flush;
@@ -345,7 +349,8 @@ void generate_games(
     // wait for completion
     for (int i = 0; i < concurrency; i++) threads[i].join();
 
-    cout << "\nfinished generation of " + to_string(internal::num_games_generated) + " games\n"
+    cout << "\nfinished generation of "
+                + to_string(internal::num_games_generated.load(memory_order_relaxed)) + " games\n"
          << std::flush;
 }
 }  // namespace raphael::datagen

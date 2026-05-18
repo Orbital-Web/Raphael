@@ -1,15 +1,15 @@
 #include <Raphael/Raphael.h>
 
 #include <atomic>
-#include <mutex>
 
 
 
 namespace raphael::datagen {
 namespace internal {
-inline std::mutex gen_mutex;
-inline i32 num_batch_remaining = 0;
+inline std::atomic<bool> stop{false};
+inline std::atomic<i32> num_games_reserved{0};
 inline std::atomic<i32> num_games_generated{0};
+inline i32 num_target_games;
 inline std::chrono::_V2::system_clock::time_point start_time;
 
 

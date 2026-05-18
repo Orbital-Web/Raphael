@@ -14,7 +14,7 @@ PERM_EXE := perm
 EVALFILE := default
 
 # Architecture configuration
-ARCH ?= tunable
+ARCH ?= native
 
 # Debug option
 DEBUG ?= off

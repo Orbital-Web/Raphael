@@ -32,7 +32,7 @@ using std::swap;
 
 
 
-const string Raphael::version = "4.2.0-dev";
+const string Raphael::version = "4.1.1";
 
 const Raphael::EngineOptions& Raphael::default_params() {
     static EngineOptions opts{

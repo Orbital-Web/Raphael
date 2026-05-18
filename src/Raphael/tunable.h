@@ -191,15 +191,15 @@ Tunable(HARD_TIME_FACTOR, 1983, 1750, 2250, true);
 Tunable(SOFT_TIME_FACTOR, 727, 500, 1000, true);
 
 Tunable(MV_STAB_TM_MIN_DEPTH, 5, 3, 10, false);
-Tunable(MV_STAB_TM_BASE, 1169, 1000, 1400, true);
+Tunable(MV_STAB_TM_BASE, 1169, 1000, 1500, true);
 Tunable(MV_STAB_TM_MUL, 37, 0, 150, true);
-Tunable(MV_STAB_TM_MIN, 798, 600, 1000, true);
+Tunable(MV_STAB_TM_MIN, 798, 500, 1000, true);
 
 Tunable(SCORE_STAB_MARGIN, 10, 1, 50, false);
 Tunable(SCORE_STAB_TM_MIN_DEPTH, 5, 3, 10, false);
-Tunable(SCORE_STAB_TM_BASE, 1179, 1000, 1400, true);
+Tunable(SCORE_STAB_TM_BASE, 1179, 1000, 1500, true);
 Tunable(SCORE_STAB_TM_MUL, 50, 0, 150, true);
-Tunable(SCORE_STAB_TM_MIN, 779, 600, 1000, true);
+Tunable(SCORE_STAB_TM_MIN, 779, 500, 1000, true);
 
 Tunable(NODE_TM_MIN_DEPTH, 5, 3, 10, false);
 Tunable(NODE_TM_BASE, 1998, 1750, 2250, true);
@@ -207,8 +207,8 @@ Tunable(NODE_TM_MUL, 1510, 1250, 1750, true);
 
 // search
 Tunable(ASP_MIN_DEPTH, 3, 2, 5, false);
-Tunable(ASP_INIT_SIZE, 23, 5, 100, true);
-Tunable(ASP_WIDENING_FACTOR, 80, 16, 192, true);
+Tunable(ASP_INIT_SIZE, 23, 5, 50, true);
+Tunable(ASP_WIDENING_FACTOR, 80, 16, 128, true);
 Tunable(ASP_RED, 132, 64, 256, true);
 Tunable(ASP_MAX_RED, 378, 128, 640, true);
 
@@ -234,7 +234,7 @@ Tunable(RAZOR_MARGIN_DEPTH_MUL, 243, 32, 384, true);
 Tunable(RAZOR_MARGIN_BASE, 308, 32, 384, true);
 
 Tunable(NMP_MIN_DEPTH, 226, 128, 1280, true);
-Tunable(NMP_MARGIN_DEPTH_MUL, 1045, 1024, 4096, true);
+Tunable(NMP_MARGIN_DEPTH_MUL, 1045, 768, 1536, true);
 Tunable(NMP_MARGIN_BASE, 110, 32, 384, true);
 Tunable(NMP_RED_BASE, 426, 256, 1024, true);
 Tunable(NMP_RED_DEPTH_MUL, 200, 64, 512, false);
@@ -261,7 +261,7 @@ Tunable(SEE_NOISY_DEPTH_MUL, -108, -256, -32, true);
 
 Tunable(SE_MIN_DEPTH, 739, 512, 1536, true);
 Tunable(SE_MIN_DEPTH_TTPV, 128, 32, 384, true);
-Tunable(SE_MIN_TT_DEPTH, 384, 384, 768, true);
+Tunable(SE_MIN_TT_DEPTH, 384, 128, 512, true);
 Tunable(SE_MARGIN_DEPTH_MUL, 128, 64, 512, true);
 Tunable(DE_MARGIN_BASE, 30, 0, 50, true);
 Tunable(DE_MARGIN_PV, 250, 200, 300, true);
@@ -287,8 +287,8 @@ Tunable(LMR_NONPV, 84, 32, 384, true);
 Tunable(LMR_CUTNODE, 163, 32, 384, true);
 Tunable(LMR_IMPROVING, 84, 32, 384, true);
 Tunable(LMR_CHECK, 154, 32, 384, true);
-Tunable(LMR_QUIET_HIST_DIV, 11520, 4096, 16384, true);
-Tunable(LMR_NOISY_HIST_DIV, 9709, 4096, 16384, true);
+Tunable(LMR_QUIET_HIST_DIV, 11520, 8192, 16384, true);
+Tunable(LMR_NOISY_HIST_DIV, 9709, 8192, 16384, true);
 Tunable(LMR_CORRPLEXITY_DIV, 300, 128, 1024, true);
 
 Tunable(DO_DEEPER_BASE, 40, 0, 128, false);
@@ -344,19 +344,19 @@ static constexpr i32 CORRHIST_MAX = 1024;
 static constexpr i32 CORRHIST_BONUS_DEPTH_DIV = 8;
 static constexpr i32 CORRHIST_BONUS_MAX = 256;
 
-Tunable(PAWN_CORRHIST_WEIGHT, 50, 32, 384, true);
-Tunable(MAJOR_CORRHIST_WEIGHT, 41, 32, 384, true);
-Tunable(NONPAWN_CORRHIST_WEIGHT, 39, 32, 384, true);
-Tunable(CONT1_CORRHIST_WEIGHT, 63, 32, 384, true);
-Tunable(CONT2_CORRHIST_WEIGHT, 48, 32, 384, true);
+Tunable(PAWN_CORRHIST_WEIGHT, 50, 16, 128, true);
+Tunable(MAJOR_CORRHIST_WEIGHT, 41, 16, 128, true);
+Tunable(NONPAWN_CORRHIST_WEIGHT, 39, 16, 128, true);
+Tunable(CONT1_CORRHIST_WEIGHT, 63, 16, 128, true);
+Tunable(CONT2_CORRHIST_WEIGHT, 48, 16, 128, true);
 
 // eval scaling
 Tunable(MAT_SCALE_BASE, 25100, 20000, 30000, false);
-Tunable(MAT_SCALE_PAWN, 110, 0, 200, false);
-Tunable(MAT_SCALE_KNIGHT, 340, 200, 600, false);
-Tunable(MAT_SCALE_BISHOP, 340, 200, 600, false);
-Tunable(MAT_SCALE_ROOK, 590, 400, 900, false);
-Tunable(MAT_SCALE_QUEEN, 970, 800, 1600, false);
+Tunable(MAT_SCALE_PAWN, 110, 50, 200, false);
+Tunable(MAT_SCALE_KNIGHT, 340, 200, 500, false);
+Tunable(MAT_SCALE_BISHOP, 340, 200, 500, false);
+Tunable(MAT_SCALE_ROOK, 590, 400, 800, false);
+Tunable(MAT_SCALE_QUEEN, 970, 800, 1400, false);
 
 // commands
 #ifndef MEASURE_SPARSITY

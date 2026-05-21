@@ -131,38 +131,41 @@ TEST_SUITE("Position") {
         Position<false> position;
         position.set_board(board);
 
-        CHECK(!position.is_repetition(1));
-        CHECK(!position.is_repetition(2));
+        CHECK(!position.is_repetition(0));
 
         position.make_move(chess::Move::make(chess::Square::D1, chess::Square::D2));
         position.make_move(chess::Move::make(chess::Square::H8, chess::Square::H7));
-        CHECK(!position.is_repetition(1));
+        CHECK(!position.is_repetition(0));
         CHECK(!position.is_repetition(2));
 
         position.make_move(chess::Move::make(chess::Square::D2, chess::Square::D1));
         position.make_move(chess::Move::make(chess::Square::H7, chess::Square::H8));
-        CHECK(position.is_repetition(1));
-        CHECK(!position.is_repetition(2));
+        CHECK(!position.is_repetition(0));
+        CHECK(position.is_repetition(4));
 
         position.make_move(chess::Move::make(chess::Square::D1, chess::Square::D2));
         position.make_move(chess::Move::make(chess::Square::H8, chess::Square::H7));
-        CHECK(position.is_repetition(1));
+        CHECK(!position.is_repetition(0));
         CHECK(!position.is_repetition(2));
+        CHECK(position.is_repetition(4));
 
         Position<false> position2;
         position2.set_position(position);
-        CHECK(position2.is_repetition(1));
-        CHECK(!position2.is_repetition(2));
+        CHECK(!position.is_repetition(0));
+        CHECK(!position.is_repetition(2));
+        CHECK(position.is_repetition(4));
 
         position.make_move(chess::Move::make(chess::Square::D2, chess::Square::D1));
         position.make_move(chess::Move::make(chess::Square::H7, chess::Square::H8));
-        CHECK(position.is_repetition(1));
+        CHECK(position.is_repetition(0));
         CHECK(position.is_repetition(2));
+        CHECK(position.is_repetition(4));
 
         Position<true> position3;
         position3.set_position(position);
-        CHECK(position3.is_repetition(1));
-        CHECK(position3.is_repetition(2));
+        CHECK(position.is_repetition(0));
+        CHECK(position.is_repetition(2));
+        CHECK(position.is_repetition(4));
     }
 
     TEST_CASE("Prev Move") {

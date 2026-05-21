@@ -128,7 +128,7 @@ void GameEngine::run_match(const GameOptions& options) {
         game_result = GameResult::NONE;
         if (position.board().is_halfmovedraw()) game_result = GameResult::DRAW;
         if (position.board().is_insufficientmaterial()) game_result = GameResult::DRAW;
-        if (position.is_repetition()) game_result = GameResult::DRAW;
+        if (position.is_repetition(0)) game_result = GameResult::DRAW;
         if (movelist.empty())
             game_result = (position.board().in_check()) ? GameResult::LOSE : GameResult::DRAW;
     }

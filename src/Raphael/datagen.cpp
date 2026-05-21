@@ -248,7 +248,7 @@ void generation_thread(
 
                 // handle draws
                 if (curr_board.is_halfmovedraw() || curr_board.is_insufficientmaterial()
-                    || position.is_repetition())
+                    || position.is_repetition(0))
                     outcome = Outcome::DRAW;
 
                 movescores.push_back(ViriMove::from_move(res.move, abs_score));

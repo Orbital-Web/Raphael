@@ -421,7 +421,7 @@ i32 Raphael::negamax(
     if (!is_root) {
         // prevent draw in winning positions
         // technically this ignores checkmate on the 50th move
-        if (position.is_repetition(1) || board.is_halfmovedraw())
+        if (position.is_repetition(ply) || board.is_halfmovedraw())
             return (tm_.get_nodes(thread_id) & 0x2) - 1;
 
         // mate distance pruning

@@ -76,18 +76,21 @@ public:
     }
 
 
-    /** Checks if the position is in repetition
+    /** Checks if the position is in repetition, requiring threefold if the repetition is before
+     * the root
      *
-     * \param count number of times we must see the same move to report a repetition
+     * \param ply distance from root
      * \returns whether the position is in repetition
      */
-    bool is_repetition(i32 count = 2) const {
+    bool is_repetition(i32 ply) const {
         const i32 size = boards_.size();
+        const i32 end = std::max(0, size - current_.halfmoves() - 1);
 
-        u8 c = 0;
-        for (i32 i = size - 2; i >= 0 && i >= size - current_.halfmoves() - 1; i -= 2) {
+        ply -= 4;
+        i32 c = 1;
+        for (i32 i = size - 4; i >= end; i -= 2, ply -= 2) {
             if (boards_[i].hash() == current_.hash()) c++;
-            if (c == count) return true;
+            if (c == 2 + (ply < 0)) return true;
         }
         return false;
     }

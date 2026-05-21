@@ -32,7 +32,7 @@ using std::swap;
 
 
 
-const string Raphael::version = "4.1.1";
+const string Raphael::version = "4.2.0-dev";
 
 const Raphael::EngineOptions& Raphael::default_params() {
     static EngineOptions opts{
@@ -837,6 +837,9 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
     if (tm_.is_hard_limit_reached(thread_id, stop_)) return 0;
 
     if constexpr (is_PV) tm_.update_seldepth(thread_id, ply);
+
+    // detect draws
+    if (position.is_drawn(ply)) return (tm_.get_nodes(thread_id) & 0x2) - 1;
 
     // max ply
     const bool in_check = board.in_check();

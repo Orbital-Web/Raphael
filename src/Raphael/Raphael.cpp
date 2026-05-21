@@ -419,16 +419,14 @@ i32 Raphael::negamax(
     if constexpr (is_PV) ss->pv.length = 0;
 
     if (!is_root) {
-        // prevent draw in winning positions
-        // technically this ignores checkmate on the 50th move
-        if (position.is_repetition(ply) || board.is_halfmovedraw())
-            return (tm_.get_nodes(thread_id) & 0x2) - 1;
-
         // mate distance pruning
         alpha = max(alpha, -MATE_SCORE + ply);
         beta = min(beta, MATE_SCORE - ply - 1);
         if (alpha >= beta) return alpha;
     }
+
+    // detect draws
+    if (position.is_drawn(ply)) return (tm_.get_nodes(thread_id) & 0x2) - 1;
 
     // terminal depth or max ply
     if (fdepth <= 0 || ply >= MAX_DEPTH - 1) return quiescence<is_PV>(tdata, ply, alpha, beta, mv);
@@ -594,9 +592,6 @@ i32 Raphael::negamax(
             }
         }
     }
-
-    // draw analysis
-    if (board.is_insufficientmaterial()) return (tm_.get_nodes(thread_id) & 0x2) - 1;
 
     // initialize move generator
     mv->quietlist.clear();

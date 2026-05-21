@@ -95,6 +95,26 @@ public:
         return false;
     }
 
+    /** Checks if the position is drawn
+     *
+     * \param ply distance from root
+     * \returns whether the position is drawn
+     */
+    bool is_drawn(i32 ply) const {
+        if (current_.is_halfmovedraw()) {
+            if (!current_.in_check()) return true;
+
+            // TODO: exit as soon as we find one legal move
+            chess::MoveList<chess::ScoredMove> movelist;
+            chess::Movegen::generate_legals(movelist, current_);
+            return !movelist.empty();
+        }
+
+        if (current_.is_insufficientmaterial()) return true;
+
+        return is_repetition(ply);
+    }
+
 
     /** Evaluates the current board from the current side to move
      *

@@ -168,6 +168,13 @@ TEST_SUITE("Position") {
         CHECK(position.is_repetition(4));
     }
 
+    TEST_CASE("Halfmove Checkmate") {
+        chess::Board board = chess::Board("3nkn2/3nQn2/8/6B1/8/8/8/4K3 b - - 100 1");
+        Position<false> position;
+        position.set_board(board);
+        CHECK(!position.is_drawn(0));
+    }
+
     TEST_CASE("Prev Move") {
         chess::Board board = chess::Board();
         Position<false> position;

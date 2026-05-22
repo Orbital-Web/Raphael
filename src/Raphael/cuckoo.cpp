@@ -12,7 +12,7 @@ Cuckoo::Cuckoo() {
 
     for (chess::Piece piece = chess::Piece::WHITEKNIGHT; piece <= chess::Piece::BLACKKING; ++piece)
     {
-        // skip pawns as their moves are not irreversible
+        // skip pawns moves as they are irreversible
         if (piece == chess::Piece::BLACKPAWN) continue;
 
         for (chess::Square sq0 = chess::Square::A1; sq0 <= chess::Square::H8; ++sq0) {

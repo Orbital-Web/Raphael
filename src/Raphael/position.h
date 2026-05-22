@@ -1,4 +1,5 @@
 #pragma once
+#include <Raphael/cuckoo.h>
 #include <Raphael/nnue.h>
 #include <Raphael/tunable.h>
 
@@ -113,6 +114,52 @@ public:
         if (current_.is_insufficientmaterial()) return true;
 
         return is_repetition(ply);
+    }
+
+    /** Checks if there is an upcoming repetition
+     *
+     * \param ply distance from root
+     * \returns whether there is an upcoming repetition
+     */
+    bool has_upcoming_repetition(i32 ply) const {
+        // https://web.archive.org/web/20201107002606/https://marcelk.net/2013-04-06/paper/upcoming-rep-v2.pdf
+        const i32 size = boards_.size();
+        const i32 end = std::min(current_.halfmoves(), size);
+        if (end < 3) return false;
+
+        const auto S = [&](i32 d) { return boards_[size - d].hash(); };
+
+        const auto occ = current_.occ();
+        const u64 S0 = current_.hash();
+        auto other = S0 ^ S(1);
+
+        for (i32 d = 3; d <= end; d += 2) {
+            const u64 Sd = S(d);
+            other ^= S(d - 1) ^ Sd;
+            if (other != 0) continue;
+
+            // check if we can play a reversible move that would result in a repetition
+            const u64 key_delta = S0 ^ Sd;
+            u32 slot = cuckoo.h1(key_delta);
+            if (key_delta != cuckoo.keys[slot]) slot = cuckoo.h2(key_delta);
+            if (key_delta != cuckoo.keys[slot]) continue;
+
+            const auto move = cuckoo.moves[slot];
+            const auto between = chess::Attacks::between(move.from(), move.to())
+                                 & ~chess::BitBoard::from_square(move.to());
+
+            // check move is legal
+            if ((occ & between).is_empty()) {
+                // only need twofold if repetition happens in the tree
+                if (ply >= d) return true;
+
+                // otherwise, require threefold
+                for (i32 i = d + 4; i <= end; i += 2)
+                    if (Sd == S(i)) return true;
+            }
+        }
+
+        return false;
     }
 
 

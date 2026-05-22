@@ -147,5 +147,10 @@ public:
         if (piece_ == Piece::NONE) return Piece::NONE;
         return Piece((piece_ + (color * 6)) % 12);
     }
+
+    constexpr Piece& operator++() {
+        piece_ = static_cast<underlying>(piece_ + 1);
+        return *this;
+    }
 };
 }  // namespace chess

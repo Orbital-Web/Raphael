@@ -241,9 +241,9 @@ chess::Move MoveGenerator::next() {
             // all moves exhausted
             return chess::Move::NO_MOVE;
         }
+
+        default: __builtin_unreachable();
     }
-    assert(false);
-    return chess::Move::NO_MOVE;
 }
 
 void MoveGenerator::skip_quiets() { skip_quiets_ = true; }

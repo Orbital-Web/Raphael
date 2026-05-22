@@ -418,18 +418,26 @@ i32 Raphael::negamax(
 
     if constexpr (is_PV) ss->pv.length = 0;
 
+    const i32 draw_score = (tm_.get_nodes(thread_id) & 0x2) - 1;
+
     if (!is_root) {
         // mate distance pruning
         alpha = max(alpha, -MATE_SCORE + ply);
         beta = min(beta, MATE_SCORE - ply - 1);
         if (alpha >= beta) return alpha;
-    }
 
-    // detect draws
-    if (position.is_drawn(ply)) return (tm_.get_nodes(thread_id) & 0x2) - 1;
+        // detect upcoming draws
+        if (alpha < draw_score && position.has_upcoming_repetition(ply)) {
+            alpha = draw_score;
+            if (alpha >= beta) return alpha;
+        }
+    }
 
     // terminal depth or max ply
     if (fdepth <= 0 || ply >= MAX_DEPTH - 1) return quiescence<is_PV>(tdata, ply, alpha, beta, mv);
+
+    // detect draws
+    if (position.is_drawn(ply)) return draw_score;
 
     // probe transposition table
     const auto ttkey = board.hash();
@@ -838,8 +846,14 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
 
     if constexpr (is_PV) tm_.update_seldepth(thread_id, ply);
 
-    // detect draws
-    if (position.is_drawn(ply)) return (tm_.get_nodes(thread_id) & 0x2) - 1;
+    // detect upcoming and immediate draws
+    const i32 draw_score = (tm_.get_nodes(thread_id) & 0x2) - 1;
+
+    if (alpha < draw_score && position.has_upcoming_repetition(ply)) {
+        alpha = draw_score;
+        if (alpha >= beta) return alpha;
+    }
+    if (position.is_drawn(ply)) return draw_score;
 
     // max ply
     const bool in_check = board.in_check();

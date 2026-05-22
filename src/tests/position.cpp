@@ -139,9 +139,15 @@ TEST_SUITE("Position") {
         CHECK(!position.is_repetition(2));
 
         position.make_move(chess::Move::make(chess::Square::D2, chess::Square::D1));
+        CHECK(!position.is_repetition(0));
+        CHECK(!position.is_repetition(3));
+        CHECK(!position.has_upcoming_repetition(0));
+        CHECK(position.has_upcoming_repetition(3));
         position.make_move(chess::Move::make(chess::Square::H7, chess::Square::H8));
         CHECK(!position.is_repetition(0));
         CHECK(position.is_repetition(4));
+        CHECK(!position.has_upcoming_repetition(0));
+        CHECK(position.has_upcoming_repetition(4));
 
         position.make_move(chess::Move::make(chess::Square::D1, chess::Square::D2));
         position.make_move(chess::Move::make(chess::Square::H8, chess::Square::H7));
@@ -154,18 +160,22 @@ TEST_SUITE("Position") {
         CHECK(!position.is_repetition(0));
         CHECK(!position.is_repetition(2));
         CHECK(position.is_repetition(4));
+        CHECK(!position.has_upcoming_repetition(0));
+        CHECK(position.has_upcoming_repetition(6));
 
         position.make_move(chess::Move::make(chess::Square::D2, chess::Square::D1));
+        CHECK(position.has_upcoming_repetition(0));
+        CHECK(position.has_upcoming_repetition(7));
         position.make_move(chess::Move::make(chess::Square::H7, chess::Square::H8));
         CHECK(position.is_repetition(0));
-        CHECK(position.is_repetition(2));
         CHECK(position.is_repetition(4));
+        CHECK(position.is_repetition(8));
 
         Position<true> position3;
         position3.set_position(position);
         CHECK(position.is_repetition(0));
-        CHECK(position.is_repetition(2));
         CHECK(position.is_repetition(4));
+        CHECK(position.is_repetition(8));
     }
 
     TEST_CASE("Halfmove Checkmate") {

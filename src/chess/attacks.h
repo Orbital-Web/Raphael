@@ -311,6 +311,20 @@ public:
         if constexpr (pt == PieceType::QUEEN) return queen(sq, occupied);
     }
 
+    [[nodiscard]] static BitBoard nonpawn_attack(PieceType pt, Square sq, BitBoard occupied) {
+        assert(pt != PieceType::NONE);
+        assert(pt != PieceType::PAWN);
+
+        switch (pt) {
+            case PieceType::KNIGHT: return knight(sq);
+            case PieceType::BISHOP: return bishop(sq, occupied);
+            case PieceType::ROOK: return rook(sq, occupied);
+            case PieceType::QUEEN: return queen(sq, occupied);
+            case PieceType::KING: return king(sq);
+            default: __builtin_unreachable();
+        }
+    }
+
 private:
     static void init_attacks() {
 #ifdef CHESS_USE_PEXT

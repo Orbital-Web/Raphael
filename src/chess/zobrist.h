@@ -7,7 +7,7 @@
 // https://github.com/Disservin/chess-library/blob/master/src/zobrist.hpp
 namespace chess {
 class Zobrist {
-private:
+public:
     static constexpr u64 RANDOM_ARRAY[781]
         = {0x9D39247E33776D41, 0x2AF7398005AAA5C7, 0x44DB015024623547, 0x9C15F73E62A76AE2,
            0x75834465489C0C89, 0x3290AC3A203001BF, 0x0FBBAD1F61042279, 0xE83A908FF2FB60CA,
@@ -244,8 +244,5 @@ private:
     }
 
     [[nodiscard]] static u64 stm() { return RANDOM_ARRAY[780]; }
-
-public:
-    friend class Board;
 };
 }  // namespace chess

@@ -683,11 +683,12 @@ i32 Raphael::negamax(
                 else if (ttentry.score >= beta)
                     fext = -NE_RED;  // negative extensions
 
-            } else if (
-                fdepth <= LDSE_MAX_DEPTH && !in_check && ss->static_eval <= alpha - LDSE_MARGIN
-                && ttentry.flag == tt_.LOWER
-            )
-                fext = LDSE_EXT;  // low depth singular extensions
+            } else if (fdepth <= LDSE_MAX_DEPTH && !in_check && ttentry.flag == tt_.LOWER) {
+                // low depth singular extensions
+                const i32 ldse_margin
+                    = alpha - LDSE_MARGIN_BASE + LDSE_MARGIN_CORRPLEXITY_MUL * corrplexity / 16384;
+                if (ss->static_eval <= ldse_margin) fext = LDSE_EXT;
+            }
         }
 
         const u64 old_nodes = tm_.get_nodes(thread_id);

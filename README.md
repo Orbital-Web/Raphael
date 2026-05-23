@@ -267,6 +267,7 @@ To see all supported commands, run `uci.exe help`
   - [x] Incremental selection sort          (`v2.2+`)
   - [x] Linux huge pages                    (`v2.2+`)
   - [x] Staged movegen                      (`v3.0+`)
+  - [x] Upcoming cycle detection            (`v4.2+`)
 - [x] Multithreading                        (`v4.0+`)
   - [x] Lazy SMP                            (`v4.0+`)
   - [ ] Shared corrhist

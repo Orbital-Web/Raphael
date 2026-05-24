@@ -1,6 +1,6 @@
 #pragma once
 #include <chess/bitboard.h>
-#ifdef CHESS_USE_PEXT
+#if defined(CHESS_USE_PEXT) || defined(__AVX512F__) || defined(__AVX2__)
     #include <immintrin.h>
 #endif
 
@@ -325,6 +325,16 @@ public:
         }
     }
 
+    [[nodiscard]] static BitBoard setwise_knight_sliders(
+        BitBoard knights, BitBoard rqs, BitBoard bqs, BitBoard occupied
+    ) {
+#if defined(__AVX512F__) || defined(__AVX2__)
+        return BitBoard(hor2(setwise_knight(knights), setwise_sliders(rqs, bqs, occupied)));
+#else
+        return setwise_knight(knights) | setwise_sliders(rqs, bqs, occupied);
+#endif
+    }
+
 private:
     static void init_attacks() {
 #ifdef CHESS_USE_PEXT
@@ -417,6 +427,163 @@ private:
 
         return attacks;
     }
+
+#ifdef __AVX512F__
+    static constexpr i64 a = static_cast<i64>(static_cast<u64>(BitBoard::FILEA));
+    static constexpr i64 b = static_cast<i64>(static_cast<u64>(BitBoard::FILEB));
+    static constexpr i64 g = static_cast<i64>(static_cast<u64>(BitBoard::FILEG));
+    static constexpr i64 h = static_cast<i64>(static_cast<u64>(BitBoard::FILEH));
+    static constexpr i64 r1 = static_cast<i64>(static_cast<u64>(BitBoard::RANK1));
+    static constexpr i64 r2 = static_cast<i64>(static_cast<u64>(BitBoard::RANK2));
+    static constexpr i64 r7 = static_cast<i64>(static_cast<u64>(BitBoard::RANK7));
+    static constexpr i64 r8 = static_cast<i64>(static_cast<u64>(BitBoard::RANK8));
+
+    [[nodiscard]] static __m512i setwise_knight(BitBoard knights) {
+        // generate knight attacks clockwise
+        const __m512i rotates = _mm512_set_epi64(-10, -17, -15, -6, 10, 17, 15, 6);
+        const __m512i mask = _mm512_set_epi64(
+            a | b | r1,
+            a | r1 | r2,
+            h | r1 | r2,
+            g | h | r1,
+            g | h | r8,
+            h | r7 | r8,
+            a | r7 | r8,
+            a | b | r8
+        );
+        return _mm512_rolv_epi64(
+            _mm512_andnot_si512(
+                mask, _mm512_set1_epi64(static_cast<i64>(static_cast<u64>(knights)))
+            ),
+            rotates
+        );
+    }
+
+    [[nodiscard]] static __m512i setwise_sliders(BitBoard rqs, BitBoard bqs, BitBoard occupied) {
+        const i64 orth = static_cast<i64>(static_cast<u64>(rqs));
+        const i64 diag = static_cast<i64>(static_cast<u64>(bqs));
+        const i64 occ = static_cast<i64>(static_cast<u64>(occupied));
+
+        // initialize mask to prevent wraparound
+        const __m512i mask = _mm512_set_epi64(r1, h, r8, a, a | r1, h | r1, h | r8, a | r8);
+
+        const auto rotate = [](i64 n) {
+            return _mm512_set_epi64(8 * n, -n, -8 * n, n, 9 * n, 7 * n, -9 * n, -7 * n);
+        };
+
+        // keep rotating and propagation slider attacks
+        __m512i gen = _mm512_set_epi64(orth, orth, orth, orth, diag, diag, diag, diag);
+        __m512i block = _mm512_or_si512(mask, _mm512_set1_epi64(occ));
+
+        gen = _mm512_ternarylogic_epi64(gen, block, _mm512_rolv_epi64(gen, rotate(1)), 242);
+        block = _mm512_or_si512(block, _mm512_rolv_epi64(block, rotate(1)));
+
+        gen = _mm512_ternarylogic_epi64(gen, block, _mm512_rolv_epi64(gen, rotate(2)), 242);
+        block = _mm512_or_si512(block, _mm512_rolv_epi64(block, rotate(2)));
+
+        gen = _mm512_ternarylogic_epi64(gen, block, _mm512_rolv_epi64(gen, rotate(4)), 242);
+        return _mm512_andnot_si512(mask, _mm512_rolv_epi64(gen, rotate(1)));
+    }
+
+    [[nodiscard]] static u64 hor2(__m512i a, __m512i b) {
+        // horizontal or 2 registers
+        return static_cast<u64>(_mm512_reduce_or_epi64(_mm512_or_si512(a, b)));
+    }
+
+#elif defined(__AVX2__)
+    static constexpr i64 a = static_cast<i64>(static_cast<u64>(BitBoard::FILEA));
+    static constexpr i64 b = static_cast<i64>(static_cast<u64>(BitBoard::FILEB));
+    static constexpr i64 g = static_cast<i64>(static_cast<u64>(BitBoard::FILEG));
+    static constexpr i64 h = static_cast<i64>(static_cast<u64>(BitBoard::FILEH));
+
+    [[nodiscard]] static __m256i setwise_knight(BitBoard knights) {
+        // initialize masks to prevent wraparound
+        const __m256i filemask1 = _mm256_set_epi64x(g | h, h, a, a | b);
+        const __m256i filemask2 = _mm256_set_epi64x(a | b, a, h, g | h);
+
+        // shift knight squares to get knight attacks
+        const __m256i sq = _mm256_set1_epi64x(static_cast<i64>(static_cast<u64>(knights)));
+        const __m256i offsets = _mm256_set_epi64x(10, 17, 15, 6);
+        const __m256i upper = _mm256_sllv_epi64(_mm256_andnot_si256(filemask1, sq), offsets);
+        const __m256i lower = _mm256_srlv_epi64(_mm256_andnot_si256(filemask2, sq), offsets);
+        return _mm256_or_si256(upper, lower);
+    }
+
+    [[nodiscard]] static __m256i setwise_sliders(BitBoard rqs, BitBoard bqs, BitBoard occupied) {
+        const i64 orth = static_cast<i64>(static_cast<u64>(rqs));
+        const i64 diag = static_cast<i64>(static_cast<u64>(bqs));
+        const i64 occ = static_cast<i64>(static_cast<u64>(occupied));
+
+        // initialize masks to prevent wraparound
+        const __m256i filemask1 = _mm256_set_epi64x(h, 0, h, a);
+        const __m256i filemask2 = _mm256_set_epi64x(a, 0, a, h);
+
+        const auto shift = [](i64 n) { return _mm256_set_epi64x(n, 8 * n, 9 * n, 7 * n); };
+
+        // keep shifting slider squares to get their attacks
+        __m256i gen1 = _mm256_set_epi64x(orth, orth, diag, diag);  // se, sw, s, w
+        __m256i block1 = _mm256_or_si256(_mm256_set1_epi64x(occ), filemask1);
+
+        __m256i gen2 = _mm256_set_epi64x(orth, orth, diag, diag);  // nw, ne, n, e
+        __m256i block2 = _mm256_or_si256(_mm256_set1_epi64x(occ), filemask2);
+
+        gen1
+            = _mm256_or_si256(gen1, _mm256_andnot_si256(block1, _mm256_srlv_epi64(gen1, shift(1))));
+        gen2
+            = _mm256_or_si256(gen2, _mm256_andnot_si256(block2, _mm256_sllv_epi64(gen2, shift(1))));
+        block1 = _mm256_or_si256(block1, _mm256_srlv_epi64(block1, shift(1)));
+        block2 = _mm256_or_si256(block2, _mm256_sllv_epi64(block2, shift(1)));
+
+        gen1
+            = _mm256_or_si256(gen1, _mm256_andnot_si256(block1, _mm256_srlv_epi64(gen1, shift(2))));
+        gen2
+            = _mm256_or_si256(gen2, _mm256_andnot_si256(block2, _mm256_sllv_epi64(gen2, shift(2))));
+        block1 = _mm256_or_si256(block1, _mm256_srlv_epi64(block1, shift(2)));
+        block2 = _mm256_or_si256(block2, _mm256_sllv_epi64(block2, shift(2)));
+
+        gen1
+            = _mm256_or_si256(gen1, _mm256_andnot_si256(block1, _mm256_srlv_epi64(gen1, shift(4))));
+        gen2
+            = _mm256_or_si256(gen2, _mm256_andnot_si256(block2, _mm256_sllv_epi64(gen2, shift(4))));
+
+        gen1 = _mm256_andnot_si256(filemask1, _mm256_srlv_epi64(gen1, shift(1)));
+        gen2 = _mm256_andnot_si256(filemask2, _mm256_sllv_epi64(gen2, shift(1)));
+
+        return _mm256_or_si256(gen1, gen2);
+    }
+
+    [[nodiscard]] static u64 hor2(__m256i a, __m256i b) {
+        // horizontal or 2 registers
+        const __m256i or256 = _mm256_or_si256(a, b);
+        const __m128i or128
+            = _mm_or_si128(_mm256_castsi256_si128(or256), _mm256_extracti128_si256(or256, 1));
+        const __m128i or64 = _mm_or_si128(or128, _mm_shuffle_epi32(or128, 0xee));
+        return static_cast<u64>(_mm_cvtsi128_si64(or64));
+    }
+
+#else
+    [[nodiscard]] static BitBoard setwise_knight(BitBoard knights) {
+        BitBoard attacks;
+        while (knights) {
+            const Square sq = static_cast<Square>(knights.poplsb());
+            attacks |= Attacks::knight(sq);
+        }
+        return attacks;
+    }
+
+    [[nodiscard]] static BitBoard setwise_sliders(BitBoard rqs, BitBoard bqs, BitBoard occupied) {
+        BitBoard attacks;
+        while (rqs) {
+            const Square sq = static_cast<Square>(rqs.poplsb());
+            attacks |= rook(sq, occupied);
+        }
+        while (bqs) {
+            const Square sq = static_cast<Square>(bqs.poplsb());
+            attacks |= bishop(sq, occupied);
+        }
+        return attacks;
+    }
+#endif
 };
 
 

@@ -831,28 +831,15 @@ private:
 
 
     [[nodiscard]] BitBoard compute_threats() const {
-        BitBoard threats;
-
         const auto xrayocc = occ() ^ BitBoard::from_square(king_square(stm_));
         const auto queens = occ(PieceType::QUEEN, ~stm_);
 
-        auto rooks = occ(PieceType::ROOK, ~stm_) | queens;
-        while (rooks) {
-            const auto sq = Square(rooks.poplsb());
-            threats |= Attacks::rook(sq, xrayocc);
-        }
-
-        auto bishops = occ(PieceType::BISHOP, ~stm_) | queens;
-        while (bishops) {
-            const auto sq = Square(bishops.poplsb());
-            threats |= Attacks::bishop(sq, xrayocc);
-        }
-
-        auto knights = occ(PieceType::KNIGHT, ~stm_);
-        while (knights) {
-            const auto sq = Square(knights.poplsb());
-            threats |= Attacks::knight(sq);
-        }
+        BitBoard threats = Attacks::setwise_knight_sliders(
+            occ(PieceType::KNIGHT, ~stm_),
+            occ(PieceType::ROOK, ~stm_) | queens,
+            occ(PieceType::BISHOP, ~stm_) | queens,
+            xrayocc
+        );
 
         const auto pawns = occ(PieceType::PAWN, ~stm_);
         if (~stm_ == Color::WHITE)

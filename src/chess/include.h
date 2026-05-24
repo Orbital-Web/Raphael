@@ -7,6 +7,7 @@
 #include <chess/move.h>
 #include <chess/movegen.h>
 #include <chess/movegen_fwd.h>
+#include <chess/perft.h>
 #include <chess/piece.h>
 #include <chess/types.h>
 #include <chess/uci.h>

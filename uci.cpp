@@ -130,11 +130,23 @@ inline void handle_go(const vector<string>& tokens) {
         return;
     }
 
+    // handle go perft N [nonbulk]
+    const i32 ntokens = tokens.size();
+    if (ntokens >= 2 && tokens[1] == "perft") {
+        if (ntokens < 3) {
+            cout << "info string missing required positional argument DEPTH\n" << flush;
+            return;
+        }
+        const i32 depth = stoi(tokens[2]);
+        const bool bulk = (ntokens == 4 && tokens[3] == "nonbulk") ? false : true;
+        chess::Perft::bench_perft(position.board(), depth, bulk);
+        return;
+    }
+
     // get arguments
     raphael::TimeManager::SearchOptions options = {};
 
     bool is_white = position.board().stm() == chess::Color::WHITE;
-    i32 ntokens = tokens.size();
     i32 i = 1;
     while (i < ntokens) {
         if (tokens[i] == "depth")

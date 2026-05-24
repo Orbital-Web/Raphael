@@ -15,40 +15,6 @@ using std::string;
 
 
 
-// https://github.com/Disservin/chess-library/blob/master/tests/perft.cpp
-class Perft {
-public:
-    static u64 perft(const Board& board, i32 depth) {
-        MoveList<ScoredMove> moves;
-        Movegen::generate_legals(moves, board);
-
-        if (depth == 1) return moves.size();
-
-        u64 nodes = 0;
-        for (const auto& smove : moves) {
-            Board newboard = board;
-            newboard.make_move(smove.move);
-            nodes += perft(newboard, depth - 1);
-        }
-
-        return nodes;
-    }
-
-    static void bench_perft(const Board& board, i32 depth, u64 expected_node_count) {
-        const auto t1 = steady_clock::now();
-        const auto nodes = perft(board, depth);
-        const auto t2 = steady_clock::now();
-        const auto ms = duration_cast<milliseconds>(t2 - t1).count();
-
-        cout << "depth " << left << setw(2) << depth << " time " << setw(5) << ms << " nodes "
-             << setw(12) << nodes << " nps " << setw(9) << (nodes * 1000) / (ms + 1) << " fen "
-             << setw(87) << board.get_fen() << "\n"
-             << flush;
-
-        CHECK(nodes == expected_node_count);
-    }
-};
-
 struct Test {
     string fen;
     u64 expected_node_count;
@@ -71,7 +37,7 @@ TEST_SUITE("PERFT") {
 
         for (const auto& test : test_positions) {
             board.set_fen(test.fen);
-            Perft::bench_perft(board, test.depth, test.expected_node_count);
+            CHECK(Perft::bench_perft(board, test.depth, true) == test.expected_node_count);
         }
     }
 
@@ -97,7 +63,7 @@ TEST_SUITE("PERFT") {
 
         for (const auto& test : frc_test_positions) {
             board.set_fen(test.fen);
-            Perft::bench_perft(board, test.depth, test.expected_node_count);
+            CHECK(Perft::bench_perft(board, test.depth, true) == test.expected_node_count);
         }
     }
 }

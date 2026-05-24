@@ -274,7 +274,7 @@ Tunable(NE_RED, 118, 64, 256, true);
 Tunable(CUTNODE_NE_RED, 140, 64, 256, true);
 Tunable(LDSE_MAX_DEPTH, 721, 256, 1024, true);
 Tunable(LDSE_MARGIN_BASE, 28, 0, 50, true);
-Tunable(LDSE_MARGIN_CORRPLEXITY_MUL, 128, 64, 256, true);
+Tunable(LDSE_MARGIN_CORRPLEXITY_MUL, 96, 64, 256, true);
 Tunable(LDSE_EXT, 124, 64, 256, true);
 
 Tunable(LMR_MIN_DEPTH, 393, 128, 640, true);

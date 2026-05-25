@@ -564,7 +564,7 @@ i32 Raphael::negamax(
             && (!ttmove || !ttmove_quiet)
             && !(tthit && ttentry.fdepth >= pc_fdepth && ttentry.score < pc_beta))
         {
-            const i32 see_thresh = (pc_beta - ss->static_eval) * PC_SEE_FACTOR / 128;
+            const i32 see_thresh = (pc_beta - score_estimate) * PC_SEE_FACTOR / 128;
             auto generator = MoveGenerator::probcut(&mv->movelist, &position, &history, ttmove);
 
             while (const auto move = generator.next()) {

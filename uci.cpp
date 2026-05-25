@@ -422,7 +422,7 @@ inline void show_help() {
          << "  ucinewgame               - clear Hash and reset\n"
          << "  position                 - set board (fen <FEN> | startpos) [moves ...]\n"
          << "  go                       - start search. params: depth, nodes, movetime, movestogo\n"
-         << "                             wtime, btime, winc, binc, infinite\n"
+         << "                             wtime, btime, winc, binc, infinite, perft\n"
          << "  eval                     - show raw static eval\n"
          << "  ceval                    - show corrected static eval\n"
          << "  fen                      - show current position's fen\n"

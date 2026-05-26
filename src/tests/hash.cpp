@@ -216,24 +216,24 @@ TEST_SUITE("Zobrist Hash") {
         }
 
         {
-            b.set_fen("r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 13 20");
+            b.set_fen("r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 15 20");
             auto mv = Move::make<Move::CASTLING>(Square::E8, Square::A8);
             CHECK(b.hash_after<true>(mv) == 0xE1002A43733194A6);
             b.make_move(mv);
             CHECK(b.hash() == 0xE1002A43733194A6);
 
-            b.set_fen("2kr3r/8/8/8/8/8/8/R3K2R w KQ - 14 21");
+            b.set_fen("2kr3r/8/8/8/8/8/8/R3K2R w KQ - 16 21");
             CHECK(b.hash() == 0xE1002A43733194A6);
         }
 
         {
-            b.set_fen("r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 12 20");
+            b.set_fen("r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 14 20");
             auto mv = Move::make(Square::E8, Square::F7);
             CHECK(b.hash_after<true>(mv) == 0x3F7F185F94E2F946);
             b.make_move(mv);
             CHECK(b.hash() == 0x3F7F185F94E2F946);
 
-            b.set_fen("r6r/5k2/8/8/8/8/8/R3K2R w KQ - 13 21");
+            b.set_fen("r6r/5k2/8/8/8/8/8/R3K2R w KQ - 15 21");
             CHECK(b.hash() == 0x3F7F185F94E2F946);
         }
 
@@ -330,7 +330,7 @@ TEST_SUITE("Zobrist Hash") {
     TEST_CASE("Test Zobrist Hash Null Move") {
         Board b;
 
-        b.set_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 13 20");
+        b.set_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 15 20");
         CHECK(b.hash_after<true>(Move::NO_MOVE) == 0xE13104F481ED9A91);
         b.make_nullmove();
         CHECK(b.hash() == 0xE13104F481ED9A91);

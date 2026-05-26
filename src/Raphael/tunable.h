@@ -220,6 +220,10 @@ Tunable(TT_VALUE_AGE_WEIGHT, 256, 0, 512, false);
 // negamax
 Tunable(IIR_MIN_DEPTH, 396, 384, 768, true);
 Tunable(IIR_RED, 118, 64, 256, true);
+
+Tunable(SPC_MARGIN, 375, 128, 512, true);
+Tunable(SPC_MIN_TT_DEPTH, 256, 128, 512, true);
+
 Tunable(HINDSIGHT_MIN_RED, 396, 384, 768, true);
 Tunable(HINDSIGHT_EXT, 123, 64, 256, true);
 

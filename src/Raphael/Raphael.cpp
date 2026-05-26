@@ -498,6 +498,13 @@ i32 Raphael::negamax(
 
     // pre-moveloop pruning
     if (!is_PV && !in_check && !ss->excluded) {
+        // small probcut
+        const i32 spc_beta = beta + SPC_MARGIN;
+        if (tthit && !utils::is_mate(ttentry.score) && !utils::is_mate(beta)
+            && ttentry.flag != tt_.UPPER && ttentry.score >= spc_beta
+            && ttentry.fdepth >= fdepth - SPC_MIN_TT_DEPTH)
+            return ttentry.score;
+
         // hindsight extension
         if ((ss - 1)->freductions >= HINDSIGHT_MIN_RED && (ss - 1)->static_eval != NONE_SCORE
             && opp_worsening_rate <= 0)

@@ -9,7 +9,7 @@ using std::swap;
 
 
 MoveGenerator MoveGenerator::negamax(
-    chess::MoveList<chess::ScoredMove>* movelist,
+    chess::MoveList* movelist,
     const Position<true>* position,
     const History* history,
     chess::Move ttmove
@@ -18,7 +18,7 @@ MoveGenerator MoveGenerator::negamax(
 }
 
 MoveGenerator MoveGenerator::quiescence(
-    chess::MoveList<chess::ScoredMove>* movelist,
+    chess::MoveList* movelist,
     const Position<true>* position,
     const History* history,
     chess::Move ttmove
@@ -32,7 +32,7 @@ MoveGenerator MoveGenerator::quiescence(
 }
 
 MoveGenerator MoveGenerator::probcut(
-    chess::MoveList<chess::ScoredMove>* movelist,
+    chess::MoveList* movelist,
     const Position<true>* position,
     const History* history,
     chess::Move ttmove
@@ -253,7 +253,7 @@ MoveGenerator::Stage MoveGenerator::stage() const { return stage_; }
 
 MoveGenerator::MoveGenerator(
     Stage start_stage,
-    chess::MoveList<chess::ScoredMove>* movelist,
+    chess::MoveList* movelist,
     const Position<true>* position,
     const History* history,
     chess::Move ttmove

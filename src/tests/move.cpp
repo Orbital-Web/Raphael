@@ -52,7 +52,7 @@ TEST_SUITE("Move") {
 
 TEST_SUITE("MoveList") {
     TEST_CASE("add") {
-        MoveList<ScoredMove> moves;
+        MoveList moves;
         auto mv = Move::make(Square::A1, Square::A2);
         moves.push({.move = mv});
 
@@ -62,17 +62,17 @@ TEST_SUITE("MoveList") {
     }
 
     TEST_CASE("pop") {
-        MoveList<Move> moves;
+        MoveList moves;
         auto mv = Move::make(Square::A1, Square::A2);
-        moves.push(mv);
+        moves.push({.move = mv});
 
         CHECK(moves.size() == 1);
-        CHECK(moves.pop() == mv);
+        CHECK(moves.pop().move == mv);
         CHECK(moves.empty() == true);
     }
 
     TEST_CASE("clear") {
-        MoveList<ScoredMove> moves;
+        MoveList moves;
         auto mv = Move::make(Square::A1, Square::A2);
         moves.push({.move = mv});
 

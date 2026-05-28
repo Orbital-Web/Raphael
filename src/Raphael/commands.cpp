@@ -117,7 +117,7 @@ void genfens(
     mt19937_64 generator(seed);
     chess::Board board;
     board.set960(dfrc);
-    chess::MoveList<chess::ScoredMove> movelist;
+    chess::MoveList movelist;
 
     // load seed_fens from book
     vector<string> seed_fens;

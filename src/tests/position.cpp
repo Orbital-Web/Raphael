@@ -21,7 +21,7 @@ public:
         if (depth == 0) return;
 
         const auto& oldboard = position_.board();
-        chess::MoveList<chess::ScoredMove> moves;
+        chess::MoveList moves;
         chess::Movegen::generate_legals(moves, oldboard);
 
         for (const auto& smove : moves) {

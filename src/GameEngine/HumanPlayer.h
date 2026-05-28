@@ -15,7 +15,7 @@ struct MouseInfo {
 class HumanPlayer {
 private:
     chess::Board board_;
-    chess::MoveList<chess::ScoredMove> movelist_;
+    chess::MoveList movelist_;
 
     chess::Move move_ = chess::Move::NO_MOVE;
     chess::Square sq_from_;

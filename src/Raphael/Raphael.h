@@ -75,9 +75,9 @@ private:
     };
 
     struct MoveStack {
-        chess::MoveList<chess::ScoredMove> movelist;
-        chess::MoveList<chess::Move> quietlist;
-        chess::MoveList<chess::Move> noisylist;
+        chess::MoveList movelist;
+        StaticVector<chess::Move, 256> quietlist;
+        StaticVector<chess::Move, 256> noisylist;
     };
 
     struct alignas(CACHE_SIZE) ThreadData {

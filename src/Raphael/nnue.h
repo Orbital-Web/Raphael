@@ -116,10 +116,8 @@ private:
         alignas(ALIGNMENT) i16 values[2][L1_SIZE];
 
     private:
-        PSQFeature psq_adds[2];
-        PSQFeature psq_subs[2];
-        u8 n_psq_adds = 0;
-        u8 n_psq_subs = 0;
+        StaticVector<PSQFeature, 2> psq_adds;
+        StaticVector<PSQFeature, 2> psq_subs;
         PSQState psq_state[2];
 
 

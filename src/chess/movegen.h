@@ -8,7 +8,7 @@
 // logic from https://github.com/Disservin/chess-library/blob/master/src/movegen.hpp
 namespace chess {
 template <Movegen::MoveGenType mt>
-inline void Movegen::generate_legals(MoveList<ScoredMove>& movelist, const Board& board) {
+inline void Movegen::generate_legals(MoveList& movelist, const Board& board) {
     if (board.stm() == Color::WHITE)
         generate_legals<Color::WHITE, mt>(movelist, board);
     else
@@ -94,7 +94,7 @@ template <Color::underlying color>
 
 template <Color::underlying color, Movegen::MoveGenType mt>
 inline void Movegen::generate_legal_pawns(
-    MoveList<ScoredMove>& moves,
+    MoveList& moves,
     const Board& board,
     BitBoard pin_d,
     BitBoard pin_hv,
@@ -352,7 +352,7 @@ template <Color::underlying color>
 
 
 template <typename T>
-inline void Movegen::push_moves(MoveList<ScoredMove>& movelist, BitBoard occ, T generator) {
+inline void Movegen::push_moves(MoveList& movelist, BitBoard occ, T generator) {
     while (occ) {
         const Square from = static_cast<Square>(occ.poplsb());
         BitBoard moves = generator(from);
@@ -365,7 +365,7 @@ inline void Movegen::push_moves(MoveList<ScoredMove>& movelist, BitBoard occ, T 
 }
 
 template <Color::underlying color, Movegen::MoveGenType mt>
-inline void Movegen::generate_legals(MoveList<ScoredMove>& movelist, const Board& board) {
+inline void Movegen::generate_legals(MoveList& movelist, const Board& board) {
     assert(board.stm() == color);
 
     const auto king_sq = board.king_square(static_cast<Color>(color));

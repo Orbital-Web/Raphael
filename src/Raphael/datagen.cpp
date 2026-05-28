@@ -128,7 +128,7 @@ void generation_thread(
     mt19937_64 generator(seed);
     chess::Board board;
     board.set960(dfrc);
-    chess::MoveList<chess::ScoredMove> movelist;
+    chess::MoveList movelist;
     Position<false> position;
     uniform_int_distribution<u64> pos_distribution(0, seed_fens.size() - 1);
 

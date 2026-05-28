@@ -106,7 +106,7 @@ public:
             if (!current_.in_check()) return true;
 
             // TODO: exit as soon as we find one legal move
-            chess::MoveList<chess::ScoredMove> movelist;
+            chess::MoveList movelist;
             chess::Movegen::generate_legals(movelist, current_);
             return !movelist.empty();
         }

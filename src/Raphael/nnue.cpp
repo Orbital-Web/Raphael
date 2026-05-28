@@ -136,19 +136,17 @@ void Nnue::NnueAccumulator::set_psq_state(chess::Color perspective, PSQState sta
 }
 
 void Nnue::NnueAccumulator::add_piece(chess::Piece piece, chess::Square square) {
-    assert(n_psq_adds < 2);
-    psq_adds[n_psq_adds++] = {.piece = piece, .square = square};
+    psq_adds.push({.piece = piece, .square = square});
 }
 
 void Nnue::NnueAccumulator::rem_piece(chess::Piece piece, chess::Square square) {
-    assert(n_psq_subs < 2);
-    psq_subs[n_psq_subs++] = {.piece = piece, .square = square};
+    psq_subs.push({.piece = piece, .square = square});
 }
 
 void Nnue::NnueAccumulator::prepare_updates() {
     // reset psq updates and mark as dirty (as we're going to update them immediately after)
-    n_psq_adds = 0;
-    n_psq_subs = 0;
+    psq_adds.clear();
+    psq_subs.clear();
     set_psq_state(chess::Color::WHITE, PSQState::DIRTY);
     set_psq_state(chess::Color::BLACK, PSQState::DIRTY);
 }
@@ -161,13 +159,13 @@ void Nnue::NnueAccumulator::apply_updates(
 ) {
     assert(get_psq_state(perspective) == PSQState::DIRTY);
     assert(old_acc.get_psq_state(perspective) == PSQState::CLEAN);
-    assert(n_psq_adds >= 1);
-    assert(n_psq_subs >= 1);
+    assert(psq_adds.size() >= 1);
+    assert(psq_subs.size() >= 1);
 
-    i32 add1 = psq_adds[0].index(perspective, mirror);
-    i32 add2 = psq_adds[1].index(perspective, mirror);
-    i32 sub1 = psq_subs[0].index(perspective, mirror);
-    i32 sub2 = psq_subs[1].index(perspective, mirror);
+    const i32 add1 = psq_adds[0].index(perspective, mirror);
+    const i32 add2 = (psq_adds.size() > 1) ? psq_adds[1].index(perspective, mirror) : 0;
+    const i32 sub1 = psq_subs[0].index(perspective, mirror);
+    const i32 sub2 = (psq_subs.size() > 1) ? psq_subs[1].index(perspective, mirror) : 0;
 
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
@@ -185,7 +183,7 @@ void Nnue::NnueAccumulator::apply_updates(
         for (i32 r = 0; r < 8; r++)
             accs[r] = sub_i16(accs[r], load_i16(&weights[sub1][(i + r) * regw]));
 
-        if (n_psq_subs > 1)
+        if (psq_subs.size() > 1)
             #pragma GCC unroll 32  // fmt: skip
             for (i32 r = 0; r < 8; r++)
                 accs[r] = sub_i16(accs[r], load_i16(&weights[sub2][(i + r) * regw]));
@@ -194,7 +192,7 @@ void Nnue::NnueAccumulator::apply_updates(
         for (i32 r = 0; r < 8; r++)
             accs[r] = add_i16(accs[r], load_i16(&weights[add1][(i + r) * regw]));
 
-        if (n_psq_adds > 1)
+        if (psq_adds.size() > 1)
             #pragma GCC unroll 32  // fmt: skip
             for (i32 r = 0; r < 8; r++)
                 accs[r] = add_i16(accs[r], load_i16(&weights[add2][(i + r) * regw]));
@@ -207,9 +205,9 @@ void Nnue::NnueAccumulator::apply_updates(
         values[perspective][i] = old_acc.values[perspective][i];
 
         values[perspective][i] -= weights[sub1][i];
-        if (n_psq_subs > 1) values[perspective][i] -= weights[sub2][i];
+        if (psq_subs.size() > 1) values[perspective][i] -= weights[sub2][i];
         values[perspective][i] += weights[add1][i];
-        if (n_psq_adds > 1) values[perspective][i] += weights[add2][i];
+        if (psq_adds.size() > 1) values[perspective][i] += weights[add2][i];
     }
 #endif
 

@@ -100,11 +100,17 @@ public:
     void check(const Board& board, i32 depth) {
         if (depth == 0) return;
 
-        MoveList<chess::ScoredMove> legalmoves;
+        MoveList legalmoves;
         Movegen::generate_legals(legalmoves, board);
 
+        const auto contains = [&legalmoves](Move move) {
+            for (const auto& legalmove : legalmoves)
+                if (legalmove.move == move) return true;
+            return false;
+        };
+
         for (const auto& move : allmoves_) {
-            const bool is_legal = legalmoves.contains(move);
+            const bool is_legal = contains(move);
             const bool check_legal = board.is_legal(move);
             if (check_legal != is_legal) {
                 string move_type;

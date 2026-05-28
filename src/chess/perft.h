@@ -12,7 +12,7 @@ class Perft {
 public:
     template <bool bulk>
     static u64 perft(const Board& board, i32 depth) {
-        MoveList<ScoredMove> moves;
+        MoveList moves;
         Movegen::generate_legals(moves, board);
 
         if (bulk && depth <= 1)

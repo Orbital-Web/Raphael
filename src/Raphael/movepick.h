@@ -32,7 +32,7 @@ public:
 
 private:
     Stage stage_;
-    chess::MoveList<chess::ScoredMove>* movelist_;
+    chess::MoveList* movelist_;
     const Position<true>* position_;
     const History* history_;
     chess::Move ttmove_ = chess::Move::NO_MOVE;
@@ -53,7 +53,7 @@ public:
      * \returns the move generator
      */
     static MoveGenerator negamax(
-        chess::MoveList<chess::ScoredMove>* movelist,
+        chess::MoveList* movelist,
         const Position<true>* position,
         const History* history,
         chess::Move ttmove
@@ -68,7 +68,7 @@ public:
      * \returns the move generator
      */
     static MoveGenerator quiescence(
-        chess::MoveList<chess::ScoredMove>* movelist,
+        chess::MoveList* movelist,
         const Position<true>* position,
         const History* history,
         chess::Move ttmove
@@ -83,7 +83,7 @@ public:
      * \returns the move generator
      */
     static MoveGenerator probcut(
-        chess::MoveList<chess::ScoredMove>* movelist,
+        chess::MoveList* movelist,
         const Position<true>* position,
         const History* history,
         chess::Move ttmove
@@ -116,7 +116,7 @@ private:
      */
     MoveGenerator(
         Stage start_stage,
-        chess::MoveList<chess::ScoredMove>* movelist,
+        chess::MoveList* movelist,
         const Position<true>* position,
         const History* history,
         chess::Move ttmove

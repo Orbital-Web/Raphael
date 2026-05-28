@@ -147,7 +147,7 @@ The GUI is a quick and easy way to start engine battles or play against Raphael 
 To start a quick GUI match against yourself and Raphael as follows:
 
 ```shell
-main.exe human "Human" Raphael "Raphael"
+main.exe
 ```
 
 You can see other command-line arguments by running `main.exe -h`.

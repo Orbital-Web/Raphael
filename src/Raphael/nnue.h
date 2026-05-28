@@ -53,7 +53,7 @@ public:
     };
 
 private:
-    struct NnueFeature {
+    struct PSQFeature {
         chess::Piece piece;
         chess::Square square;
 
@@ -77,7 +77,7 @@ private:
 
     public:
         /** Dummy constructor */
-        NnueFinnyEntry();
+        NnueFinnyEntry() = default;
 
         /** Initializes the finny entry to equal the bias value
          *
@@ -92,7 +92,7 @@ private:
          * \param perspective accumulator perspective, should match this entry's perspective
          * \param mirror whether to mirror the board, should match this entry's mirroring
          */
-        void update(
+        void sync(
             const i16 weights[N_INPUTS][L1_SIZE],
             const chess::Board& board,
             chess::Color perspective,
@@ -111,21 +111,35 @@ private:
 
     class NnueAccumulator {
     public:
-        alignas(ALIGNMENT) i16 values[L1_SIZE];
-        NnueFeature adds[2];
-        NnueFeature subs[2];
-        u8 n_adds = 0;
-        u8 n_subs = 0;
-        bool needs_refresh = false;
+        enum class PSQState : u8 { CLEAN = 0, DIRTY, REFRESH };
 
+        alignas(ALIGNMENT) i16 values[2][L1_SIZE];
+
+    private:
+        PSQFeature psq_adds[2];
+        PSQFeature psq_subs[2];
+        u8 n_psq_adds = 0;
+        u8 n_psq_subs = 0;
+        PSQState psq_state[2];
+
+
+    public:
         /** Initializes the accumulator */
-        NnueAccumulator();
+        NnueAccumulator() = default;
 
-        /** Returns if the accumulator needs to be updated
+        /** Returns the stm accumulator state
          *
-         * \returns whether the accumulator is dirty or not
+         * \param perspective which accumulator to check
+         * \returns the PSQ state of the stm accumulator
          */
-        bool dirty() const;
+        PSQState get_psq_state(chess::Color perspective) const;
+
+        /** Sets the stm accumulator state
+         *
+         * \param perspective side to set
+         * \param state new state
+         */
+        void set_psq_state(chess::Color perspective, PSQState state);
 
         /** Adds a new piece to the accumulator
          *
@@ -141,8 +155,8 @@ private:
          */
         void rem_piece(chess::Piece piece, chess::Square square);
 
-        /** Resets updates stored on this accumulator */
-        void reset_updates();
+        /** Prepares this accumulator for updates */
+        void prepare_updates();
 
         /** Updates the accumulator values
          *
@@ -151,18 +165,19 @@ private:
          * \param perspective accumulator perspective
          * \param mirror whether to mirror the board
          */
-        void update(
+        void apply_updates(
             const NnueAccumulator& old_acc,
             const i16 weights[N_INPUTS][L1_SIZE],
             chess::Color perspective,
             bool mirror
         );
 
-        /** Refreshes the accumulator by copying the finny entry
+        /** Refreshes the stm accumulator by copying the finny entry
          *
          * \param finny_entry finny entry to copy
+         * \param perspective accumulator perspective
          */
-        void refresh_from(const NnueFinnyEntry& finny_entry);
+        void refresh_from(const NnueFinnyEntry& finny_entry, chess::Color perspective);
     };
 
     class SparseIterator {
@@ -239,7 +254,7 @@ private:
 
     // state variables
     NnueFinnyEntry finny_table[2][2][N_INBUCKETS];  // finny_table[perspective][mirror][bucket]
-    NnueAccumulator accumulators[MAX_DEPTH][2];     // accumulators[ply][perspective][index]
+    NnueAccumulator accumulators[MAX_DEPTH];        // accumulators[ply].values[perspective][index]
     i32 idx_ = 0;
 
 
@@ -303,12 +318,12 @@ private:
 
     /** Activates the output of l0 (the accumulators)
      *
-     * \param acc accumulator of perspective
+     * \param acc stm accumulator values
      * \param l0_out output buffer to write activated l0 outputs to
      * \param sp an iterator into the nonzero blocks of l0_out
      */
     void activate_l0(
-        const NnueAccumulator& acc, u8 l0_out[L1_SIZE / 2], [[maybe_unused]] SparseIterator& sp
+        const i16 acc[L1_SIZE], u8 l0_out[L1_SIZE / 2], [[maybe_unused]] SparseIterator& sp
     ) const;
 
     /** Does a forward pass through l1

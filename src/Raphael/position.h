@@ -1,7 +1,7 @@
 #pragma once
 #include <Raphael/cuckoo.h>
-#include <Raphael/nnue.h>
 #include <Raphael/tunable.h>
+#include <eval/eval.h>
 
 #include <cstddef>
 #include <type_traits>
@@ -16,7 +16,7 @@ private:
     std::vector<chess::Board> boards_;
     std::vector<chess::PieceMove> moves_;
 
-    using NetType = std::conditional_t<include_net, Nnue, std::nullptr_t>;
+    using NetType = std::conditional_t<include_net, EvalClass, std::nullptr_t>;
     NetType net_;
 
 public:

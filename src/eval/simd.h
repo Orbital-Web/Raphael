@@ -1,5 +1,8 @@
 #pragma once
+#ifdef EVAL_NNUE
 #include <chess/types.h>
+
+
 
 #if defined(__AVX512F__)
 #include <immintrin.h>
@@ -484,4 +487,6 @@ inline i32 hadd_i32(VecI32 reg) {
 
 #else
     #define ALIGNMENT 32
+#endif
+
 #endif

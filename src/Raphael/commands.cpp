@@ -101,7 +101,7 @@ void bench(Raphael& engine) {
          << flush;
 
 #ifdef MEASURE_SPARSITY
-    const auto avg_nnz = Nnue::save_ft_activations();
+    const auto avg_nnz = EvalClass::save_ft_activations();
     cout << "avg nnz: " << avg_nnz << "\n" << flush;
 #endif
 }
@@ -213,7 +213,11 @@ void evalstats(Raphael& engine, const std::string& book) {
         const auto variance = (f64(sq_total) / f64(count)) - mean * mean;
         const auto stddev = sqrt(variance);
 
-        const i32 newscale = f64(Nnue::OUTPUT_SCALE) * DEF_TARGET_ABS_MEAN / abs_mean;
+        #ifdef EVAL_NNUE
+        const i32 newscale = f64(nnue::OUTPUT_SCALE) * DEF_TARGET_ABS_MEAN / abs_mean;
+        #else
+        const i32 newscale = 1;
+        #endif
 
         cout << fixed << setprecision(4) << "mean:     " << mean << "\n"
              << "abs mean: " << abs_mean << "\n"

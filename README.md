@@ -279,7 +279,7 @@ To see all supported commands, run `uci.exe help`
 
 </details>
 
-For a more in-depth documentation on the NNUE and how it was trained, refer to the [NNUE History](https://github.com/Orbital-Web/Raphael/blob/main/src/NNUE/history.txt).
+For a more in-depth documentation on the NNUE and how it was trained, refer to the [NNUE History](https://github.com/Orbital-Web/Raphael/blob/main/src/eval/net/history.txt).
 All iterations of Raphael's NNUE were trained on self-generated training data.
 The net files can be found on the [Raphael-Net](https://github.com/Orbital-Web/Raphael-Net) repository.
 

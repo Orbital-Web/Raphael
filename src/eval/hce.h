@@ -1,11 +1,10 @@
 #pragma once
+#ifdef EVAL_HCE
 #include <chess/include.h>
 
-#include <array>
 
 
-
-namespace raphael {
+namespace raphael::hce {
 // legacy, kept for future references
 class RaphaelHCE {
 private:
@@ -53,11 +52,28 @@ private:
 
 
 public:
-    /** Statically evaluates the board from the current player's perspective
+    /** Evaluates the board from the current side to move's perspective
      *
-     * \param board board to evaluate
-     * \returns the static evaluation of the board
+     * \param board current board (should match either set_board or new_board in make_move)
+     * \returns the HCE evaluation of the board in centipawns
      */
-    static i32 evaluate(const chess::Board& board);
+    i32 evaluate(const chess::Board& board);
+
+    /** Sets internal states to match the given board
+     *
+     * \param board the board to set
+     */
+    void set_board([[maybe_unused]] const chess::Board& board) {}
+
+    /** Updates internal states based on the given move
+     *
+     * \param board current board (before move is played)
+     * \param move the move to make
+     */
+    void make_move([[maybe_unused]] const chess::Board& board, [[maybe_unused]] chess::Move move) {}
+
+    /** Updates internal states to unmake the last move */
+    void unmake_move() {}
 };
-}  // namespace raphael
+}  // namespace raphael::hce
+#endif

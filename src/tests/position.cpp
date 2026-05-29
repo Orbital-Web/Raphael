@@ -13,7 +13,7 @@ using std::vector;
 class NnueTester {
 private:
     Position<true> position_;
-    Nnue refnet_;
+    EvalClass refnet_;
 
 
 public:

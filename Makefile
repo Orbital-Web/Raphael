@@ -10,8 +10,9 @@ EXE      := uci
 TEST_EXE := test
 PERM_EXE := perm
 
-# NNUE file
+# NNUE
 EVALFILE := default
+EVAL     := multilayer
 
 # Architecture configuration
 ARCH ?= auto
@@ -29,19 +30,23 @@ PGO ?= off
 MAIN_SOURCES := \
     $(wildcard src/GameEngine/*.cpp) \
     $(wildcard src/Raphael/*.cpp) \
+    $(wildcard src/eval/*.cpp) \
     main.cpp
 
 UCI_SOURCES := \
     $(wildcard src/Raphael/*.cpp) \
+    $(wildcard src/eval/*.cpp) \
     uci.cpp
 
 TEST_SOURCES := \
     $(wildcard src/Raphael/*.cpp) \
+    $(wildcard src/eval/*.cpp) \
     $(wildcard src/tests/*.cpp)
 
 PERM_SOURCES := \
     $(wildcard src/Raphael/*.cpp) \
-    src/NNUE/permute.cpp
+    $(wildcard src/eval/*.cpp) \
+    src/eval/net/permute.cpp
 
 MAIN_OBJS := $(MAIN_SOURCES:.cpp=.o)
 UCI_OBJS  := $(UCI_SOURCES:.cpp=.o)
@@ -222,9 +227,9 @@ else
     PGO_USE_FLAGS := -fprofile-use -fprofile-correction
     PGO_MERGE     :=
     ifeq ($(DETECTED_OS),Windows)
-        PGO_CLEAN := del /Q *.gcda src\Raphael\*.gcda src\NNUE\*.gcda 2>nul
+        PGO_CLEAN := del /Q *.gcda src\Raphael\*.gcda src\eval\*.gcda src\eval\net\*.gcda 2>nul
     else
-        PGO_CLEAN := rm -rf *.gcda src/Raphael/*.gcda src/NNUE/*.gcda
+        PGO_CLEAN := rm -rf *.gcda src/Raphael/*.gcda src/eval/*.gcda src/eval/net/*.gcda
     endif
 endif
 
@@ -255,6 +260,14 @@ ifeq ($(EVALFILE),default)
 $(EVALFILE):
 	curl -sL https://github.com/Orbital-Web/Raphael-Net/releases/download/$(DEFAULT_NET)/$(DEFAULT_NET).nnue -o $(EVALFILE)
 
+endif
+
+ifeq ($(EVAL),multilayer)
+    override CXXFLAGS += -DEVAL_NNUE -DEVAL_MULTILAYER
+else ifeq ($(EVAL),hce)
+    override CXXFLAGS += -DEVAL_HCE
+else
+    $(error Unknown EVAL option '$(EVAL)')
 endif
 
 override CXXFLAGS += -DNETWORK_FILE=$(EVALFILE)

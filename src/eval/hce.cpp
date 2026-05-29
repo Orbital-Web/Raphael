@@ -1,7 +1,7 @@
-#include <Raphael/Raphael_hce.h>
-#include <Raphael/utils.h>
+#ifdef EVAL_HCE
+#include <eval/hce.h>
 
-using namespace raphael;
+using namespace raphael::hce;
 using std::max;
 using std::min;
 
@@ -387,3 +387,4 @@ i32 RaphaelHCE::evaluate(const chess::Board& board) {
     }
     return eval;
 }
+#endif

@@ -1,8 +1,8 @@
-# script to help edit NNUE/history.txt
+# script to help edit eval/net/history.txt
 from pathlib import Path
 from typing import TypedDict
 
-HISTORY_PATH = Path(__file__).parents[1] / "NNUE" / "history.txt"
+HISTORY_PATH = Path(__file__).parents[1] / "eval" / "net" / "history.txt"
 START_KEYWORD = "NET/DATA ID"
 
 
@@ -78,7 +78,7 @@ def _find_at(history: History) -> tuple[int, int, int, int]:
 
 def extend() -> None:
     history = _read_history()
-    (_, _, _, c1) = _find_at(history)
+    _, _, _, c1 = _find_at(history)
 
     ext = int(input("How many columns to extend (negative to shrink)?: "))
     if c1 + ext <= 0:
@@ -106,7 +106,7 @@ def extend() -> None:
 
 def insert() -> None:
     history = _read_history()
-    (r0, c0, r1, c1) = _find_at(history)
+    r0, c0, r1, c1 = _find_at(history)
 
     raw_content = ""
     print("Enter content to insert:")

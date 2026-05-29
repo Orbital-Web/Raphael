@@ -1,4 +1,5 @@
-#include <Raphael/nnue.h>
+#ifdef EVAL_NNUE
+#include <eval/eval.h>
 
 #include <fstream>
 #include <iostream>
@@ -22,8 +23,8 @@ class NnuePreprocessor {
 public:
     NnuePreprocessor(const string& filename)
         : filename(filename),
-          original_params(make_unique<Nnue::NnueParams>()),
-          processed_params(make_unique<Nnue::NnueParams>()) {
+          original_params(make_unique<EvalClass::NnueParams>()),
+          processed_params(make_unique<EvalClass::NnueParams>()) {
         load_network();
     };
 
@@ -42,7 +43,7 @@ public:
         for (usize i = 0; i < 8; i++) perms[i] = PERMS[target_idx][inv_perms[i]];
 
         apply_perm(perms);
-        processed_params->permutation = static_cast<Nnue::NnuePerm>(target_idx);
+        processed_params->permutation = static_cast<EvalClass::NnuePerm>(target_idx);
 
         write_network();
 
@@ -53,8 +54,8 @@ public:
 
 private:
     string filename;
-    unique_ptr<Nnue::NnueParams> original_params;
-    unique_ptr<Nnue::NnueParams> processed_params;
+    unique_ptr<EvalClass::NnueParams> original_params;
+    unique_ptr<EvalClass::NnueParams> processed_params;
 
     static constexpr u8 PERMS[3][8] = {
         {0, 1, 2, 3, 4, 5, 6, 7}, // generic
@@ -77,12 +78,12 @@ private:
 
         file.seekg(0, std::ios::end);
         const auto netfile_size = file.tellg();
-        constexpr usize padded_size = 64 * ((sizeof(Nnue::NnueParams) + 63) / 64);
+        constexpr usize padded_size = 64 * ((sizeof(EvalClass::NnueParams) + 63) / 64);
         if (netfile_size != padded_size)
             throw runtime_error("network file and architecture doesn't match");
         file.seekg(0, std::ios::beg);
 
-        file.read(reinterpret_cast<char*>(original_params.get()), sizeof(Nnue::NnueParams));
+        file.read(reinterpret_cast<char*>(original_params.get()), sizeof(EvalClass::NnueParams));
         file.close();
 
         *processed_params = *original_params;
@@ -92,16 +93,16 @@ private:
         ofstream file(filename, std::ios::binary);
         if (!file.is_open()) throw runtime_error("could not open " + filename);
 
-        file.write(reinterpret_cast<char*>(processed_params.get()), sizeof(Nnue::NnueParams));
+        file.write(reinterpret_cast<char*>(processed_params.get()), sizeof(EvalClass::NnueParams));
         file.close();
     }
 
 
     void apply_perm(const u8 perm[8]) {
         // permute W0 to cancel out packus
-        for (usize b = 0; b < Nnue::N_INBUCKETS; b++) {
-            for (usize i = 0; i < Nnue::N_INPUTS; i++) {
-                for (usize j = 0; j < Nnue::L1_SIZE; j += 64) {
+        for (usize b = 0; b < nnue::N_INBUCKETS; b++) {
+            for (usize i = 0; i < nnue::N_INPUTS; i++) {
+                for (usize j = 0; j < nnue::L1_SIZE; j += 64) {
                     const auto src = &original_params->W0[b][i][j];
                     auto dst = &processed_params->W0[b][i][j];
 
@@ -116,7 +117,7 @@ private:
         }
 
         // permute b0 to cancel out packus
-        for (usize j = 0; j < Nnue::L1_SIZE; j += 64) {
+        for (usize j = 0; j < nnue::L1_SIZE; j += 64) {
             const auto src = &original_params->b0[j];
             auto dst = &processed_params->b0[j];
 
@@ -142,3 +143,8 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+#else
+
+
+int main() {}
+#endif

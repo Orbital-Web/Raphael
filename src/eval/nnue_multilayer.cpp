@@ -38,7 +38,7 @@ const Nnue::NnueParams* Nnue::load_network() {
 
 i32 Nnue::evaluate(const chess::Board& board) {
     // get address to accumulators
-    const auto acc = state_.get_top_accumulator(board);
+    const auto& acc = state_.get_top_accumulator(board);
     const auto stm_acc = acc.values[board.stm()];
     const auto ntm_acc = acc.values[~board.stm()];
 

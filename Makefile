@@ -227,9 +227,9 @@ else
     PGO_USE_FLAGS := -fprofile-use -fprofile-correction
     PGO_MERGE     :=
     ifeq ($(DETECTED_OS),Windows)
-        PGO_CLEAN := del /Q *.gcda src\Raphael\*.gcda src\eval\*.gcda src\eval\net\*.gcda 2>nul
+        PGO_CLEAN := del /S /Q *.gcda 2>nul
     else
-        PGO_CLEAN := rm -rf *.gcda src/Raphael/*.gcda src/eval/*.gcda src/eval/net/*.gcda
+        PGO_CLEAN := find . -type f -name '*.gcda' -delete
     endif
 endif
 

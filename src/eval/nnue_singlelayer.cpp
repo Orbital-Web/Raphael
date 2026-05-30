@@ -75,7 +75,7 @@ i32 Nnue::evaluate(const chess::Board& board) {
     i64 eval = QA * params->b1[bucket_idx];
 
     // compute W1 dot SCReLU(acc)
-    for (i32 i = 0; i < N_HIDDEN / 2; i++) {
+    for (i32 i = 0; i < L1_SIZE / 2; i++) {
         const i32 stm_v0 = min(max(static_cast<i32>(stm_acc[i]), 0), QA);
         const i32 stm_v1 = min(max(static_cast<i32>(stm_acc[i + L1_SIZE / 2]), 0), QA);
         const i32 ntm_v0 = min(max(static_cast<i32>(ntm_acc[i]), 0), QA);

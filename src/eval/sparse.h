@@ -1,5 +1,5 @@
 #pragma once
-#ifdef EVAL_NNUE
+#ifdef EVAL_MULTILAYER
 #include <eval/arch.h>
 #include <eval/simd.h>
 
@@ -12,7 +12,7 @@ private:
     u16 indices_[L1_SIZE / 4] = {};
     i32 count_ = 0;
 
-    #ifdef __AVX512VBMI2__
+#ifdef __AVX512VBMI2__
     // clang-format off
         __m512i offset_ = _mm512_set_epi16(
             31, 30, 29, 28, 27, 26, 25, 24,
@@ -20,7 +20,7 @@ private:
             15, 14, 13, 12, 11, 10,  9,  8,
              7,  6,  5,  4,  3,  2,  1,  0
         );  // clang-format on
-    #else
+#else
     __m128i offset_ = _mm_setzero_si128();
 
     // precompute nonzero_idx[mask][nnz_idx] = position of nonzero block
@@ -35,7 +35,7 @@ private:
 
         return idx;
     }();
-    #endif
+#endif
 
 
 public:

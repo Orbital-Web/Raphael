@@ -115,13 +115,21 @@ inline VecI32 add_i32(VecI32 a, VecI32 b) { return _mm512_add_epi32(a, b); }
  */
 inline VecI16 sub_i16(VecI16 a, VecI16 b) { return _mm512_sub_epi16(a, b); }
 
-/** Does an element-wise product of two VecI32 registers and keeps the low 16 bits
+/** Does an element-wise product of two VecI32 registers and keeps the low 32 bits
  *
  * \param a register 1
  * \param b register 2
  * \returns the result of the multiplication
  */
 inline VecI32 mullo_i32(VecI32 a, VecI32 b) { return _mm512_mullo_epi32(a, b); }
+
+/** Does an element-wise product of two VecI16 registers and keeps the low 16 bits
+ *
+ * \param a register 1
+ * \param b register 2
+ * \returns the result of the multiplication
+ */
+inline VecI16 mullo_i16(VecI16 a, VecI16 b) { return _mm512_mullo_epi16(a, b); }
 
 /** Does an element-wise product of two VecI16 registers and keeps the high 16 bits
  *
@@ -130,6 +138,15 @@ inline VecI32 mullo_i32(VecI32 a, VecI32 b) { return _mm512_mullo_epi32(a, b); }
  * \returns the result of the multiplication
  */
 inline VecI16 mulhi_i16(VecI16 a, VecI16 b) { return _mm512_mulhi_epi16(a, b); }
+
+/** Does an element-wise multiplication of two VecI16 registers and horizontally adds the results,
+ * creating a VecI32 result.
+ *
+ * \param a register 1
+ * \param b register 2
+ * \returns the result of the multiplication-addition
+ */
+inline VecI32 madd_i16(VecI16 a, VecI16 b) { return _mm512_madd_epi16(a, b); }
 
 
 /** Does an element-wise clamping of a VecI16 register
@@ -203,11 +220,11 @@ inline u32 nonzero_mask(VecU8 reg) { return _mm512_cmpgt_epi32_mask(reg, zero_i3
  * \returns the result of the accumulated dot product
  */
 inline VecI32 dpbusd_i32(VecI32 a, VecU8 b, VecI8 c) {
-    #ifdef __AVX512VNNI__
+#ifdef __AVX512VNNI__
     return _mm512_dpbusd_epi32(a, b, c);
-    #else
-    return add_i32(a, _mm512_madd_epi16(_mm512_maddubs_epi16(b, c), full_i16(1)));
-    #endif
+#else
+    return add_i32(a, madd_i16(_mm512_maddubs_epi16(b, c), full_i16(1)));
+#endif
 }
 
 /** Does an element-wise fused multiply add a[i] * b[i] + c[i]
@@ -366,13 +383,21 @@ inline VecI32 add_i32(VecI32 a, VecI32 b) { return _mm256_add_epi32(a, b); }
  */
 inline VecI16 sub_i16(VecI16 a, VecI16 b) { return _mm256_sub_epi16(a, b); }
 
-/** Does an element-wise product of two VecI32 registers and keeps the low 16 bits
+/** Does an element-wise product of two VecI32 registers and keeps the low 32 bits
  *
  * \param a register 1
  * \param b register 2
  * \returns the result of the multiplication
  */
 inline VecI32 mullo_i32(VecI32 a, VecI32 b) { return _mm256_mullo_epi32(a, b); }
+
+/** Does an element-wise product of two VecI16 registers and keeps the low 16 bits
+ *
+ * \param a register 1
+ * \param b register 2
+ * \returns the result of the multiplication
+ */
+inline VecI16 mullo_i16(VecI16 a, VecI16 b) { return _mm256_mullo_epi16(a, b); }
 
 /** Does an element-wise product of two VecI16 registers and keeps the high 16 bits
  *
@@ -381,6 +406,15 @@ inline VecI32 mullo_i32(VecI32 a, VecI32 b) { return _mm256_mullo_epi32(a, b); }
  * \returns the result of the multiplication
  */
 inline VecI16 mulhi_i16(VecI16 a, VecI16 b) { return _mm256_mulhi_epi16(a, b); }
+
+/** Does an element-wise multiplication of two VecI16 registers and horizontally adds the results,
+ * creating a VecI32 result.
+ *
+ * \param a register 1
+ * \param b register 2
+ * \returns the result of the multiplication-addition
+ */
+inline VecI32 madd_i16(VecI16 a, VecI16 b) { return _mm256_madd_epi16(a, b); }
 
 /** Does an element-wise clamping of a VecI16 register
  *

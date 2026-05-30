@@ -1,4 +1,4 @@
-#ifdef EVAL_NNUE
+#ifdef EVAL_MULTILAYER
 #include <eval/eval.h>
 
 #include <fstream>
@@ -143,8 +143,7 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+
 #else
-
-
 int main() {}
 #endif

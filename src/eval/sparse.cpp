@@ -1,4 +1,4 @@
-#ifdef EVAL_NNUE
+#ifdef EVAL_MULTILAYER
 #include <eval/sparse.h>
 
 using namespace raphael::nnue;
@@ -11,7 +11,7 @@ void SparseIterator::add_nonzeros(VecU8 l0_out0, VecU8 l0_out1) {
     constexpr i32 regw32 = ALIGNMENT / sizeof(i32);
     static_assert(regw32 % 8 == 0);
 
-    #ifdef __AVX512VBMI2__
+#ifdef __AVX512VBMI2__
     static_assert(USE_SIMD == 512);
     const auto mask = _mm512_kunpackw(nonzero_mask(l0_out1), nonzero_mask(l0_out0));
 
@@ -20,7 +20,7 @@ void SparseIterator::add_nonzeros(VecU8 l0_out0, VecU8 l0_out1) {
     offset_ = add_i16(offset_, full_i16(32));
     count_ += popcount(mask);
 
-    #else
+#else
     u32 full_mask = (nonzero_mask(l0_out1) << regw32) | nonzero_mask(l0_out0);
 
     for (i32 i = 0; i < regw32 / 4; i++) {
@@ -35,7 +35,7 @@ void SparseIterator::add_nonzeros(VecU8 l0_out0, VecU8 l0_out1) {
         offset_ = _mm_add_epi16(offset_, _mm_set1_epi16(8));
         count_ += popcount(mask);
     }
-    #endif
+#endif
 
     assert(count_ <= L1_SIZE / 4);
 }

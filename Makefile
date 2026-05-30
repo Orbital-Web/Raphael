@@ -264,6 +264,8 @@ endif
 
 ifeq ($(EVAL),multilayer)
     override CXXFLAGS += -DEVAL_NNUE -DEVAL_MULTILAYER
+else ifeq ($(EVAL),singlelayer)
+    override CXXFLAGS += -DEVAL_NNUE -DEVAL_SINGLELAYER
 else ifeq ($(EVAL),hce)
     override CXXFLAGS += -DEVAL_HCE
 else

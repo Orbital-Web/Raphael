@@ -1,0 +1,88 @@
+name: Build Pre-Release
+
+on:
+  pull_request:
+    types:
+      - closed
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    if: github.event.pull_request.merged == true &&
+        github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ make
+
+      - name: Build
+        run: make CXX=g++ prerelease_all
+
+      - name: Collect binaries
+        run: |
+          mkdir artifacts
+          find . -maxdepth 1 -type f -name "Raphael-*" -exec cp {} artifacts/ \;
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: raphael-linux
+          path: artifacts/*
+
+  build-windows:
+    if: github.event.pull_request.merged == true &&
+        github.event.pull_request.base.ref == 'main'
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MinGW
+        uses: egor-tensin/setup-mingw@v2
+
+      - name: Build
+        shell: bash
+        run: make CXX=g++ prerelease_all
+
+      - name: Collect binaries
+        shell: bash
+        run: |
+          mkdir artifacts
+          find . -maxdepth 1 -type f -name "Raphael-*" -exec cp {} artifacts/ \;
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: raphael-windows
+          path: artifacts/*
+
+  publish-prerelease:
+    needs:
+      - build-linux
+      - build-windows
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete pre-release --yes --cleanup-tag || true
+          gh release create pre-release \
+            --title "Latest Pre-Release" \
+            --prerelease \
+            release-assets/raphael-linux/* \
+            release-assets/raphael-windows/*

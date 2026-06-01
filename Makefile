@@ -196,6 +196,10 @@ else ifeq ($(DEBUG),release)
     $(info Building for release)
     DEBUG_FLAGS := $(CCFLAGS_RELEASE)
     override LDFLAGS_UCI += -static
+else ifeq ($(DEBUG),prerelease)
+    $(info Building for prerelease)
+    DEBUG_FLAGS := $(CCFLAGS_RELEASE)
+    override LDFLAGS_UCI += -static
 else ifeq ($(DEBUG),san)
     $(info Debug and address, ub sanitization enabled)
     DEBUG_FLAGS := $(CCFLAGS_SANITIZE)
@@ -350,13 +354,20 @@ __network_preprocess: $(PERM_EXE) $(EVALFILE)
 # Release
 #---------------------------------------------------------------------------------------------------
 
-.PHONY: release_all
+.PHONY: release_all prerelease_all
 release_all:
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION_BASE)-$(DETECTED_OS)-avx512-vnni ARCH=avx512_vnni DEBUG=release -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION_BASE)-$(DETECTED_OS)-avx512 ARCH=avx512 DEBUG=release -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION_BASE)-$(DETECTED_OS)-avx2-bmi2 ARCH=avx2_bmi2 DEBUG=release PGO=on -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION_BASE)-$(DETECTED_OS)-avx2 ARCH=avx2 DEBUG=release PGO=on -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION_BASE)-$(DETECTED_OS)-generic ARCH=generic DEBUG=release -j uci
+
+prerelease_all:
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx512-vnni ARCH=avx512_vnni DEBUG=prerelease -j uci
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx512 ARCH=avx512 DEBUG=prerelease -j uci
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2-bmi2 ARCH=avx2_bmi2 DEBUG=prerelease -j uci
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2 ARCH=avx2 DEBUG=prerelease -j uci
+	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-generic ARCH=generic DEBUG=prerelease -j uci
 
 #---------------------------------------------------------------------------------------------------
 # Packages

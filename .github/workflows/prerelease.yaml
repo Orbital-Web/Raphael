@@ -46,12 +46,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Make
-        run: choco install make
-
       - name: Build
         shell: bash
-        run: make CXX=g++ prerelease_all
+        run: mingw32-make CXX=g++ prerelease_all
 
       - name: Collect binaries
         shell: bash

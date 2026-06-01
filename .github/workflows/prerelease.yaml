@@ -47,14 +47,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build
-        shell: bash
+        shell: cmd
         run: mingw32-make CXX=g++ prerelease_all
 
       - name: Collect binaries
-        shell: bash
         run: |
-          mkdir artifacts
-          find . -maxdepth 1 -type f -name "Raphael-*" -exec cp {} artifacts/ \;
+          New-Item -ItemType Directory -Force -Path artifacts
+          Get-ChildItem -Path . -Filter "Raphael-*" -File | Copy-Item -Destination artifacts/
 
       - uses: actions/upload-artifact@v4
         with:
@@ -65,7 +64,6 @@ jobs:
     needs:
       - build-linux
       - build-windows
-
     runs-on: ubuntu-latest
 
     steps:
@@ -85,3 +83,13 @@ jobs:
             --prerelease \
             release-assets/raphael-linux/* \
             release-assets/raphael-windows/*
+
+      - name: Clean up Linux artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: raphael-linux
+
+      - name: Clean up Windows artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: raphael-windows

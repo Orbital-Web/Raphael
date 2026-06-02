@@ -74,6 +74,49 @@ private:
      * \returns input bucket index
      */
     static i32 king_bucket(chess::Square king_sq, chess::Color perspective);
+
+    /** Adds psq and ti updates for a piece addition to a square
+     *
+     * \param board current board (before addition)
+     * \param piece piece to add
+     * \param sq square to add piece to
+     */
+    void add_piece(const chess::Board& board, chess::Piece piece, chess::Square sq);
+
+    /** Adds psq and ti updates for a piece removal from a square
+     *
+     * \param board current board (before removal)
+     * \param piece piece to remove
+     * \param sq square to remove piece from
+     */
+    void rem_piece(const chess::Board& board, chess::Piece piece, chess::Square sq);
+
+    /** Adds psq and ti updates for a piece move
+     *
+     * \param board current board (before move)
+     * \param from_piece piece to move
+     * \param to_piece piece at destination square
+     * \param from_sq source square
+     * \param to_sq destination square
+     */
+    void move_piece(
+        const chess::Board& board,
+        chess::Piece from_piece,
+        chess::Piece to_piece,
+        chess::Square from_sq,
+        chess::Square to_sq
+    );
+
+    /** Adds psq and ti updates for a piece mutation
+     *
+     * \param board current board (before mutation)
+     * \param from_piece piece to mutate
+     * \param to_piece new piece type
+     * \param sq square to mutate piece on
+     */
+    void mutate_piece(
+        const chess::Board& board, chess::Piece from_piece, chess::Piece to_piece, chess::Square sq
+    );
 };
 }  // namespace raphael::nnue
 #endif

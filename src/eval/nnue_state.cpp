@@ -59,34 +59,41 @@ void NnueState::make_move(const chess::Board& board, chess::Move move) {
 
     accumulators_[idx_].prepare_updates();
 
-    // remove moving piece
-    accumulators_[idx_].rem_psq(from_piece, from_sq);
-
-    // add moved/promoted piece
-    if (move.type() == chess::Move::PROMOTION) {
-        const auto promo = chess::Piece(move.promotion_type(), stm);
-        accumulators_[idx_].add_psq(promo, to_sq);
-    } else if (move.type() == chess::Move::CASTLING) {
+    if (move.type() == chess::Move::CASTLING) {
+        // castling, encoded as king captures own rook
         assert(from_piece.type() == chess::PieceType::KING);
         assert(to_piece.type() == chess::PieceType::ROOK);
 
         const bool is_king_side = to_sq > from_sq;
         new_king_sq = chess::Square::castling_king_dest(is_king_side, stm);
-        const auto rook_sq = chess::Square::castling_rook_dest(is_king_side, stm);
-        accumulators_[idx_].add_psq(from_piece, new_king_sq);
-        accumulators_[idx_].add_psq(to_piece, rook_sq);
-    } else
-        accumulators_[idx_].add_psq(from_piece, to_sq);
+        const auto new_rook_sq = chess::Square::castling_rook_dest(is_king_side, stm);
+        rem_piece(board, from_piece, from_sq);
+        rem_piece(board, to_piece, to_sq);
+        add_piece(board, from_piece, new_king_sq);
+        add_piece(board, to_piece, new_rook_sq);
+    } else if (to_piece != chess::Piece::NONE) {
+        // captures
+        if (move.type() == chess::Move::PROMOTION)
+            mutate_piece(board, to_piece, chess::Piece(move.promotion_type(), stm), to_sq);
+        else
+            mutate_piece(board, to_piece, from_piece, to_sq);
+        rem_piece(board, from_piece, from_sq);
+    } else {
+        // non-captures or ep
+        if (move.type() == chess::Move::PROMOTION)
+            move_piece(board, from_piece, chess::Piece(move.promotion_type(), stm), from_sq, to_sq);
+        else
+            move_piece(board, from_piece, from_piece, from_sq, to_sq);
 
-    // add captured piece/ep pawn/castling rook
-    if (to_piece != chess::Piece::NONE)
-        accumulators_[idx_].rem_psq(to_piece, to_sq);
-    else if (move.type() == chess::Move::ENPASSANT) {
-        assert(from_piece.type() == chess::PieceType::PAWN);
+        if (move.type() == chess::Move::ENPASSANT) {
+            assert(from_piece.type() == chess::PieceType::PAWN);
 
-        const auto ep_pawn = from_piece.color_flipped();
-        const auto ep_sq = to_sq.ep_square();
-        accumulators_[idx_].rem_psq(ep_pawn, ep_sq);
+            const auto ep_pawn = from_piece.color_flipped();
+            const auto ep_sq = to_sq.ep_square();
+            rem_piece(board, ep_pawn, ep_sq);
+        }
+
+        if (from_piece.type() == chess::PieceType::KING) new_king_sq = to_sq;
     }
 
     // need psq refresh if previous accumulator needs refresh or we change mirroring/bucket
@@ -155,5 +162,39 @@ i32 NnueState::king_bucket(chess::Square king_sq, chess::Color perspective) {
     const bool mirror = needs_mirroring(king_sq);
     const auto sq = king_sq.mirrored(mirror).relative(perspective);
     return BUCKETS[4 * sq.rank() + sq.file()];
+}
+
+void NnueState::add_piece(const chess::Board& board, chess::Piece piece, chess::Square sq) {
+    accumulators_[idx_].add_psq(piece, sq);
+
+    // FIXME: threat updates
+}
+
+void NnueState::rem_piece(const chess::Board& board, chess::Piece piece, chess::Square sq) {
+    accumulators_[idx_].rem_psq(piece, sq);
+
+    // FIXME: threat updates
+}
+
+void NnueState::move_piece(
+    const chess::Board& board,
+    chess::Piece from_piece,
+    chess::Piece to_piece,
+    chess::Square from_sq,
+    chess::Square to_sq
+) {
+    accumulators_[idx_].rem_psq(from_piece, from_sq);
+    accumulators_[idx_].add_psq(to_piece, to_sq);
+
+    // FIXME: threat updates
+}
+
+void NnueState::mutate_piece(
+    const chess::Board& board, chess::Piece from_piece, chess::Piece to_piece, chess::Square sq
+) {
+    accumulators_[idx_].rem_psq(from_piece, sq);
+    accumulators_[idx_].add_psq(to_piece, sq);
+
+    // FIXME: threat updates
 }
 #endif

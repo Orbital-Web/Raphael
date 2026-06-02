@@ -354,8 +354,66 @@ void NnueAccumulator::apply_ti_updates(
     chess::Color perspective,
     bool mirror
 ) {
-    // FIXME:
-    assert(false);
+    assert(get_ti_state(perspective) == AccState::DIRTY);
+    assert(old_acc.get_ti_state(perspective) == AccState::CLEAN);
+    assert(ti_adds.size() >= 1);
+    assert(ti_subs.size() >= 1);
+
+#ifdef USE_SIMD
+    constexpr i32 regw = ALIGNMENT / sizeof(i16);
+    constexpr i32 n_chunks = L1_SIZE / regw;
+    static_assert(L1_SIZE % regw == 0);
+    static_assert(n_chunks % 8 == 0);
+    VecI16 accs[8];
+
+    for (i32 i = 0; i < n_chunks; i += 8) {
+        #pragma GCC unroll 32
+        for (i32 r = 0; r < 8; r++)
+            accs[r] = load_i16(&old_acc.ti_vals[perspective][(i + r) * regw]);
+
+        for (const auto feature : ti_subs) {
+            const i32 fidx = feature.index(perspective, mirror);
+
+            #pragma GCC unroll 32
+            for (i32 r = 0; r < 4; r++) {
+                const VecI8 ws = load_i8(&weights[fidx][(i + 2 * r) * regw]);
+                accs[2 * r + 0] = sub_i16(accs[2 * r + 0], low_i8_i16(ws));
+                accs[2 * r + 1] = sub_i16(accs[2 * r + 1], high_i8_i16(ws));
+            }
+        }
+
+        for (const auto feature : ti_adds) {
+            const i32 fidx = feature.index(perspective, mirror);
+
+            #pragma GCC unroll 32
+            for (i32 r = 0; r < 4; r++) {
+                const VecI8 ws = load_i8(&weights[fidx][(i + 2 * r) * regw]);
+                accs[2 * r + 0] = add_i16(accs[2 * r + 0], low_i8_i16(ws));
+                accs[2 * r + 1] = add_i16(accs[2 * r + 1], high_i8_i16(ws));
+            }
+        }
+
+        #pragma GCC unroll 32
+        for (i32 r = 0; r < 8; r++) store_i16(&ti_vals[perspective][(i + r) * regw], accs[r]);
+    }
+#else
+    for (i32 i = 0; i < L1_SIZE; i++) {
+        ti_vals[perspective][i] = old_acc.ti_vals[perspective][i];
+
+        for (const auto feature : ti_subs) {
+            const i32 fidx = feature.index(perspective, mirror);
+            ti_vals[perspective][i] -= weights[fidx][i];
+        }
+
+        for (const auto feature : ti_adds) {
+            const i32 fidx = feature.index(perspective, mirror);
+            ti_vals[perspective][i] += weights[fidx][i];
+        }
+    }
+#endif
+
+    // mark as clean
+    set_ti_state(perspective, AccState::CLEAN);
 }
 
 void NnueAccumulator::refresh_psq(const NnueFinnyEntry& finny_entry, chess::Color perspective) {

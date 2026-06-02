@@ -346,7 +346,6 @@ void NnueAccumulator::apply_psq_updates(
 
     // mark as clean
     set_psq_state(perspective, AccState::CLEAN);
-    set_ti_state(perspective, AccState::CLEAN);
 }
 
 void NnueAccumulator::apply_ti_updates(
@@ -421,5 +420,7 @@ void NnueAccumulator::refresh_ti(
     for (const i32 fidx : features)
         for (i32 i = 0; i < L1_SIZE; i++) ti_vals[perspective][i] += weights[fidx][i];
 #endif
+
+    set_ti_state(perspective, AccState::CLEAN);
 }
 #endif

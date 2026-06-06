@@ -82,4 +82,9 @@ public:
 
     [[nodiscard]] auto begin() const { return list_.begin(); }
     [[nodiscard]] auto end() const { return list_.begin() + size_; }
+
+    template <typename F>
+    void unsafe_write(F f) {
+        size_ += f(&list_[size_]);
+    }
 };

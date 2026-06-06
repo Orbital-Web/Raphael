@@ -4,7 +4,7 @@
 
 
 
-#if defined(__AVX512F__)
+#if defined(__AVX512VBMI2__)  // also means we have AVX512 and AVX512VNNI
 #include <immintrin.h>
 #define USE_AVX512
 #define USE_SIMD 512
@@ -234,13 +234,7 @@ inline u32 nonzero_mask(VecU8 reg) { return _mm512_cmpgt_epi32_mask(reg, zero_i3
  * \param c register 3
  * \returns the result of the accumulated dot product
  */
-inline VecI32 dpbusd_i32(VecI32 a, VecU8 b, VecI8 c) {
-#ifdef __AVX512VNNI__
-    return _mm512_dpbusd_epi32(a, b, c);
-#else
-    return add_i32(a, madd_i16(_mm512_maddubs_epi16(b, c), full_i16(1)));
-#endif
-}
+inline VecI32 dpbusd_i32(VecI32 a, VecU8 b, VecI8 c) { return _mm512_dpbusd_epi32(a, b, c); }
 
 /** Does an element-wise fused multiply add a[i] * b[i] + c[i]
  *

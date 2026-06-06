@@ -12,14 +12,14 @@ private:
     u16 indices_[L1_SIZE / 4] = {};
     i32 count_ = 0;
 
-#ifdef __AVX512VBMI2__
+#ifdef USE_AVX512
     // clang-format off
-        __m512i offset_ = _mm512_set_epi16(
-            31, 30, 29, 28, 27, 26, 25, 24,
-            23, 22, 21, 20, 19, 18, 17, 16,
-            15, 14, 13, 12, 11, 10,  9,  8,
-             7,  6,  5,  4,  3,  2,  1,  0
-        );  // clang-format on
+    __m512i offset_ = _mm512_set_epi16(
+        31, 30, 29, 28, 27, 26, 25, 24,
+        23, 22, 21, 20, 19, 18, 17, 16,
+        15, 14, 13, 12, 11, 10,  9,  8,
+            7,  6,  5,  4,  3,  2,  1,  0
+    );  // clang-format on
 #else
     __m128i offset_ = _mm_setzero_si128();
 

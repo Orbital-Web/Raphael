@@ -34,7 +34,7 @@ struct Vector {
      *
      * \param dst data destination, 8*64 bits
      */
-    void store(void* dst);
+    void store_into(void* dst);
 
     /** Flip board halves, used for swapping perspectives
      *
@@ -56,7 +56,7 @@ struct Vector {
 struct Permutation {
 #ifdef USE_AVX512
     Vector indices;
-    Bitrays valid;
+    BitRays valid;
 #elif defined(USE_AVX2)
     Vector indices;
     Vector invalid;

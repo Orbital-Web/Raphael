@@ -21,8 +21,8 @@ struct PSQFeature {
 
 struct TIFeature {
     chess::Piece attacker;
-    chess::Piece attacked;
     chess::Square attacker_sq;
+    chess::Piece attacked;
     chess::Square attacked_sq;
 
     i32 index(chess::Color perspective, bool mirror) const;
@@ -217,6 +217,10 @@ public:
         chess::Color perspective,
         bool mirror
     );
+
+
+public:
+    friend class NnueState;
 };
 }  // namespace raphael::nnue
 #endif

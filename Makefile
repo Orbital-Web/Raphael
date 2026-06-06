@@ -113,15 +113,13 @@ endif
 # Autodetect arch if ARCH=auto
 ifeq ($(ARCH),auto)
     ifeq ($(DETECTED_OS),Windows)
-        HAS_VNNI := $(shell echo | $(CXX) -march=native -dM -E - | findstr /c:"__AVX512VNNI__" | find /c /v "")
-        HAS_AVX512 := $(shell echo | $(CXX) -march=native -dM -E - | findstr /c:"__AVX512F__" | find /c /v "")
+        HAS_VBMI2 := $(shell echo | $(CXX) -march=native -dM -E - | findstr /c:"__AVX512VBMI2__" | find /c /v "")
         HAS_BMI2 := $(shell echo | $(CXX) -march=native -dM -E - | findstr /c:"__BMI2__" | find /c /v "")
         HAS_AVX2 := $(shell echo | $(CXX) -march=native -dM -E - | findstr /c:"__AVX2__" | find /c /v "")
         IS_ZEN1 := $(shell echo | $(CXX) -march=native -dM -E - | findstr /c:"__znver1__" | find /c /v "")
         IS_ZEN2 := $(shell echo | $(CXX) -march=native -dM -E - | findstr /c:"__znver2__" | find /c /v "")
     else
-        HAS_VNNI := $(shell echo | $(CXX) -march=native -dM -E - | grep -c "__AVX512VNNI__")
-        HAS_AVX512 := $(shell echo | $(CXX) -march=native -dM -E - | grep -c "__AVX512F__")
+        HAS_VBMI2 := $(shell echo | $(CXX) -march=native -dM -E - | grep -c "__AVX512VBMI2__")
         HAS_BMI2 := $(shell echo | $(CXX) -march=native -dM -E - | grep -c "__BMI2__")
         HAS_AVX2 := $(shell echo | $(CXX) -march=native -dM -E - | grep -c "__AVX2__")
         IS_ZEN1 := $(shell echo | $(CXX) -march=native -dM -E - | grep -c "__znver1__")
@@ -130,9 +128,7 @@ ifeq ($(ARCH),auto)
 
     # select best build
     override ARCH := generic
-    ifneq ($(HAS_VNNI),0)
-        override ARCH := avx512_vnni
-    else ifneq ($(HAS_AVX512),0)
+    ifneq ($(HAS_VBMI2),0)
         override ARCH := avx512
     else ifneq ($(HAS_BMI2),0)
         override ARCH := avx2
@@ -148,8 +144,7 @@ ifeq ($(ARCH),auto)
 endif
 
 CCFLAGS_NATIVE      := -march=native
-CCFLAGS_AVX512_VNNI := -march=icelake-client -DCHESS_USE_PEXT
-CCFLAGS_AVX512      := -march=skylake-avx512 -DCHESS_USE_PEXT
+CCFLAGS_AVX512      := -march=icelake-client -DCHESS_USE_PEXT
 CCFLAGS_AVX2_BMI2   := -march=haswell -DCHESS_USE_PEXT
 CCFLAGS_AVX2        := -march=haswell -mno-bmi2
 CCFLAGS_GENERIC     := -march=x86-64
@@ -157,8 +152,6 @@ CCFLAGS_TUNABLE     := -march=native -DTUNE
 
 ifeq ($(ARCH),native)
     ARCH_FLAGS := $(CCFLAGS_NATIVE)
-else ifeq ($(ARCH),avx512_vnni)
-    ARCH_FLAGS := $(CCFLAGS_AVX512_VNNI)
 else ifeq ($(ARCH),avx512)
     ARCH_FLAGS := $(CCFLAGS_AVX512)
 else ifeq ($(ARCH),avx2_bmi2)
@@ -356,14 +349,12 @@ __network_preprocess: $(PERM_EXE) $(EVALFILE)
 
 .PHONY: release_all prerelease_all
 release_all:
-	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION_BASE)-$(DETECTED_OS)-avx512-vnni ARCH=avx512_vnni DEBUG=release -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION_BASE)-$(DETECTED_OS)-avx512 ARCH=avx512 DEBUG=release -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION_BASE)-$(DETECTED_OS)-avx2-bmi2 ARCH=avx2_bmi2 DEBUG=release PGO=on -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION_BASE)-$(DETECTED_OS)-avx2 ARCH=avx2 DEBUG=release PGO=on -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION_BASE)-$(DETECTED_OS)-generic ARCH=generic DEBUG=release -j uci
 
 prerelease_all:
-	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx512-vnni ARCH=avx512_vnni DEBUG=prerelease -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx512 ARCH=avx512 DEBUG=prerelease -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2-bmi2 ARCH=avx2_bmi2 DEBUG=prerelease -j uci
 	$(MAKE) clean && $(MAKE) EXE=Raphael-$(VERSION)-$(DETECTED_OS)-avx2 ARCH=avx2 DEBUG=prerelease -j uci

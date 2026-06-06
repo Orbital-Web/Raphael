@@ -6,6 +6,7 @@
 
 using namespace raphael::nnue;
 using std::array;
+using std::popcount;
 using std::rotr;
 
 
@@ -245,13 +246,38 @@ void NnueState::push_focus_threats(
     chess::Piece piece,
     chess::Square sq
 ) {
-#ifdef __AVX512VBMI2__
-        // TODO:
+#ifdef USE_AVX512
+    // create (attacker, attacker_sq, attacked, attacked_sq) tuples and store it
+
+    // clang-format off
+    const auto pair2shuffle = _mm512_set_epi8(
+        79, 15, 79, 15, 78, 14, 78, 14, 77, 13, 77, 13, 76, 12, 76, 12, 75, 11, 75, 11,
+        74, 10, 74, 10, 73, 9, 73, 9, 72, 8, 72, 8, 71, 7, 71, 7, 70, 6, 70, 6, 69, 5,
+        69, 5, 68, 4, 68, 4, 67, 3, 67, 3, 66, 2, 66, 2, 65, 1, 65, 1, 64, 0, 64, 0
+    );  // clang-format on
+
+    // focus pair
+    const auto pair1 = full_i16(static_cast<i16>(piece | (sq << 8)));
+
+    // non-focus pair
+    const auto pair2sq = _mm512_maskz_compress_epi8(br, indices.raw);
+    const auto pair2piece = _mm512_maskz_compress_epi8(br, rays.raw);
+    const auto pair2 = _mm512_permutex2var_epi8(pair2piece, pair2shuffle, pair2sq);
+
+    // select which is the attacker and which is the victim
+    constexpr u64 mask = (outgoing) ? 0xCCCCCCCCCCCCCCCC : 0x3333333333333333;
+    const auto vector = _mm512_mask_mov_epi8(pair1, mask, pair2);
+
+    ((add) ? accumulators_[idx_].ti_adds : accumulators_[idx_].ti_subs)
+        .unsafe_write([&](TIFeature* ptr) {
+            _mm512_storeu_si512(ptr, vector);
+            return popcount(br);
+        });
 #else
     alignas(64) chess::Piece pieces[64];
     alignas(64) chess::Square squares[64];
-    rays.store(pieces);
-    indices.store(squares);
+    rays.store_into(pieces);
+    indices.store_into(squares);
 
     for (; br; br &= (br - 1)) {
         const auto i = __builtin_ctzll(br);
@@ -279,13 +305,34 @@ void NnueState::push_discovered_threats(
     geometry::BitRays sliders,
     geometry::BitRays victims
 ) {
-#ifdef __AVX512VBMI2__
-        // TODO:
+#ifdef USE_AVX512
+    const auto count = popcount(victims);
+    assert(popcount(victims) == popcount(sliders));
+
+    // create (attacker, attacker_sq, attacked, attacked_sq) tuples and store it
+    const auto p1 = _mm512_castsi512_si128(_mm512_maskz_compress_epi8(sliders, rays.raw));
+    const auto sq1 = _mm512_castsi512_si128(_mm512_maskz_compress_epi8(sliders, indices.raw));
+    const auto p2 = _mm512_castsi512_si128(_mm512_maskz_compress_epi8(victims, rays.flip().raw));
+    const auto sq2
+        = _mm512_castsi512_si128(_mm512_maskz_compress_epi8(victims, indices.flip().raw));
+
+    const auto pair1 = _mm_unpacklo_epi8(p1, sq1);
+    const auto pair2 = _mm_unpacklo_epi8(p2, sq2);
+
+    const auto tuple1 = _mm_unpacklo_epi16(pair1, pair2);
+    const auto tuple2 = _mm_unpackhi_epi16(pair1, pair2);
+
+    ((add) ? accumulators_[idx_].ti_subs : accumulators_[idx_].ti_adds)
+        .unsafe_write([&](TIFeature* ptr) {
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(ptr) + 0, tuple1);
+            _mm_storeu_si128(reinterpret_cast<__m128i*>(ptr) + 1, tuple2);
+            return count;
+        });
 #else
     alignas(64) chess::Piece pieces[64];
     alignas(64) chess::Square squares[64];
-    rays.store(pieces);
-    indices.store(squares);
+    rays.store_into(pieces);
+    indices.store_into(squares);
 
     for (; sliders; sliders &= (sliders - 1), victims &= (victims - 1)) {
         const auto slider = __builtin_ctzll(sliders);

@@ -11,7 +11,7 @@ void SparseIterator::add_nonzeros(VecU8 l0_out0, VecU8 l0_out1) {
     constexpr i32 regw32 = ALIGNMENT / sizeof(i32);
     static_assert(regw32 % 8 == 0);
 
-#ifdef __AVX512VBMI2__
+#ifdef USE_AVX512
     static_assert(USE_SIMD == 512);
     const auto mask = _mm512_kunpackw(nonzero_mask(l0_out1), nonzero_mask(l0_out0));
 

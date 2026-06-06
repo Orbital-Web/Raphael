@@ -252,8 +252,8 @@ void NnueAccumulator::add_ti(
 ) {
     ti_adds.push({
         .attacker = attacker,
-        .attacked = attacked,
         .attacker_sq = attacker_sq,
+        .attacked = attacked,
         .attacked_sq = attacked_sq,
     });
 }
@@ -266,8 +266,8 @@ void NnueAccumulator::rem_ti(
 ) {
     ti_subs.push({
         .attacker = attacker,
-        .attacked = attacked,
         .attacker_sq = attacker_sq,
+        .attacked = attacked,
         .attacked_sq = attacked_sq,
     });
 }
@@ -441,7 +441,7 @@ void NnueAccumulator::refresh_ti(
         while (attacked) {
             const auto to = static_cast<chess::Square>(attacked.poplsb());
             const auto victim = board.at(to);
-            const i32 feature = TIFeature(attacker, victim, from, to).index(perspective, mirror);
+            const i32 feature = TIFeature(attacker, from, victim, to).index(perspective, mirror);
 
             if (feature < N_THREATS) features.push(feature);
         }

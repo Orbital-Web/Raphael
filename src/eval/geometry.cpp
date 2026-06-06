@@ -140,7 +140,7 @@ static constexpr array<Bit, 64> INCOMING_SLIDER_MASK = [] {
 #ifdef USE_AVX512
 Vector Vector::load(const void* src) { return {_mm512_loadu_si512(src)}; }
 
-void Vector::store(void* dst) { _mm512_store_si512(dst); }
+void Vector::store_into(void* dst) { _mm512_store_si512(dst, raw); }
 
 Vector Vector::flip() const { return {_mm512_shuffle_i64x2(raw, raw, 0b01001110)}; }
 
@@ -152,7 +152,7 @@ Vector Vector::load(const void* src) {
     };
 }
 
-void Vector::store(void* dst) {
+void Vector::store_into(void* dst) {
     _mm256_store_si256(reinterpret_cast<__m256i*>(dst) + 0, raw[0]);
     _mm256_store_si256(reinterpret_cast<__m256i*>(dst) + 1, raw[1]);
 }
@@ -180,7 +180,55 @@ BitRays outgoing_threats(chess::Piece piece, BitRays closest) {
 
 
 #ifdef USE_AVX512
-    // TODO:
+BitRays incoming_attackers(Vector bits, BitRays closest) {
+    const auto mask = Vector::load(internal::INCOMING_THREATS_MASK.data());
+    return _mm512_test_epi8_mask(bits.raw, mask.raw) & closest;
+}
+
+BitRays incoming_sliders(Vector bits, BitRays closest) {
+    const auto mask = Vector::load(internal::INCOMING_SLIDER_MASK.data());
+    return _mm512_test_epi8_mask(bits.raw, mask.raw) & closest & 0xFE'FE'FE'FE'FE'FE'FE'FE;
+}
+
+BitRays closest_occupied(Vector bits) {
+    const BitRays occupied = _mm512_test_epi8_mask(bits.raw, bits.raw);
+    const BitRays o = occupied | 0x81'81'81'81'81'81'81'81;
+    return (o ^ (o - 0x03'03'03'03'03'03'03'03)) & occupied;
+}
+
+Permutation permutation_for(chess::Square focus) {
+    const auto indices = Vector::load(internal::PERMUTATIONS[focus].data());
+    const auto valid = _mm512_testn_epi8_mask(indices.raw, _mm512_set1_epi8(0x80));
+    return {indices, valid};
+}
+
+pair<Vector, Vector> permute_mailbox(const Permutation& perm, Vector masked_mailbox) {
+    const auto lut = _mm512_broadcast_i32x4(
+        _mm_loadu_si128(reinterpret_cast<const __m128i*>(internal::PIECE_TO_BIT.data()))
+    );
+
+    const Vector permuted{_mm512_permutexvar_epi8(perm.indices.raw, masked_mailbox.raw)};
+    const Vector bits{_mm512_maskz_shuffle_epi8(perm.valid, lut, permuted.raw)};
+
+    return {permuted, bits};
+}
+
+std::pair<Vector, Vector> permute_mailbox(
+    const Permutation& perm, std::span<const chess::Piece, 64> mailbox
+) {
+    return permute_mailbox(perm, Vector::load(mailbox.data()));
+}
+
+std::pair<Vector, Vector> permute_mailbox(
+    const Permutation& perm, std::span<const chess::Piece, 64> mailbox, chess::Square ignore
+) {
+    const Vector masked_mailbox{_mm512_mask_blend_epi8(
+        static_cast<u64>(chess::BitBoard::from_square(ignore)),
+        Vector::load(mailbox.data()).raw,
+        _mm512_set1_epi8(chess::Piece::NONE)
+    )};
+    return permute_mailbox(perm, masked_mailbox);
+}
 
 #elif defined(USE_AVX2)
 BitRays incoming_attackers(Vector bits, BitRays closest) {

@@ -11,18 +11,18 @@ public:
     enum class NnuePerm : u8 { NONE = 0, AVX2 = 1, AVX512 = 2 };
     struct NnueParams {
         // accumulator: (N_PSQ + N_THREATS) -> L1_SIZE
-        alignas(64) i16 W0_psq[N_INBUCKETS][N_PSQ][L1_SIZE];
-        alignas(64) i8 W0_ti[N_THREATS][L1_SIZE];
-        alignas(64) i16 b0[L1_SIZE];
+        alignas(ALIGNMENT) i16 W0_psq[N_INBUCKETS][N_PSQ][L1_SIZE];
+        alignas(ALIGNMENT) i8 W0_ti[N_THREATS][L1_SIZE];
+        alignas(ALIGNMENT) i16 b0[L1_SIZE];
         // layer1: L1_SIZE -> L2_SIZE
-        alignas(64) i8 W1[N_OUTBUCKETS][L1_SIZE / 4][L2_SIZE * 4];
-        alignas(64) i32 b1[N_OUTBUCKETS][L2_SIZE];
+        alignas(ALIGNMENT) i8 W1[N_OUTBUCKETS][L1_SIZE / 4][L2_SIZE * 4];
+        alignas(ALIGNMENT) i32 b1[N_OUTBUCKETS][L2_SIZE];
         // layer2: L2_SIZE -> L3_SIZE
-        alignas(64) i32 W2[N_OUTBUCKETS][L2_SIZE][L3_SIZE];
-        alignas(64) i32 b2[N_OUTBUCKETS][L3_SIZE];
+        alignas(ALIGNMENT) i32 W2[N_OUTBUCKETS][L2_SIZE][L3_SIZE];
+        alignas(ALIGNMENT) i32 b2[N_OUTBUCKETS][L3_SIZE];
         // layer3: L3_SIZE -> 1
-        alignas(64) i32 W3[N_OUTBUCKETS][L3_SIZE];
-        alignas(64) i32 b3[N_OUTBUCKETS];
+        alignas(ALIGNMENT) i32 W3[N_OUTBUCKETS][L3_SIZE];
+        alignas(ALIGNMENT) i32 b3[N_OUTBUCKETS];
 
         // flags
         NnuePerm permutation;

@@ -58,7 +58,7 @@ static constexpr auto OFFSETS = [] {
     // indices[piece] = {total num squares this piece can attack, global piece threat offset}
     // offsets[piece][from] = global offset for attacker, attacker square features
     struct {
-        array<pair<i32, i32>, 12> indicies{};
+        array<pair<i32, i32>, 12> indices{};
         MultiArray<i32, 12, 64> offsets{};
     } dst{};
 
@@ -77,15 +77,15 @@ static constexpr auto OFFSETS = [] {
             }
         }
 
-        dst.indicies[piece] = {piece_offset, offset};
+        dst.indices[piece] = {piece_offset, offset};
         offset += PIECE_TARGET_COUNT[piece.type()] * piece_offset;
     }
 
     return dst;
 }();
 
-static constexpr auto ATTACK_INDICIES = [] {
-    // indicies[attacker][attacked][forwards] = global threat index offset
+static constexpr auto ATTACK_INDICES = [] {
+    // indices[attacker][attacked][forwards] = global threat index offset
     MultiArray<i32, 12, 12, 2> dst{};
 
     for (chess::Piece atk = chess::Piece::WHITEPAWN; atk <= chess::Piece::BLACKKING; ++atk) {
@@ -98,7 +98,7 @@ static constexpr auto ATTACK_INDICIES = [] {
                 = atk.type() == vic.type() && (is_enemy || atk.type() != chess::PieceType::PAWN);
             const bool is_excluded = map < 0;
 
-            const auto [piece_offset, offset] = OFFSETS.indicies[atk];
+            const auto [piece_offset, offset] = OFFSETS.indices[atk];
 
             const auto feature_idx
                 = offset + (vic.color() * PIECE_TARGET_COUNT[atk.type()] / 2 + map) * piece_offset;
@@ -128,7 +128,7 @@ i32 TIFeature::index(chess::Color perspective, bool mirror) const {
     const auto vic_sq = attacked_sq.mirrored(mirror).relative(perspective);
 
     const bool forwards = atk_sq < vic_sq;
-    const auto attack_idx = internal::ATTACK_INDICIES[atk][vic][forwards];
+    const auto attack_idx = internal::ATTACK_INDICES[atk][vic][forwards];
     const auto offset = internal::OFFSETS.offsets[atk][atk_sq];
     const auto piece_idx = internal::PIECE_INDICES[atk][atk_sq][vic_sq];
 
@@ -280,8 +280,8 @@ void NnueAccumulator::prepare_updates() {
     ti_subs.clear();
     set_psq_state(chess::Color::WHITE, AccState::DIRTY);
     set_psq_state(chess::Color::BLACK, AccState::DIRTY);
-    set_ti_state(chess::Color::WHITE, AccState::REFRESH);  // FIXME: dirty after adding ue
-    set_ti_state(chess::Color::BLACK, AccState::REFRESH);  // here too
+    set_ti_state(chess::Color::WHITE, AccState::DIRTY);
+    set_ti_state(chess::Color::BLACK, AccState::DIRTY);
 }
 
 void NnueAccumulator::apply_psq_updates(
@@ -356,8 +356,8 @@ void NnueAccumulator::apply_ti_updates(
 ) {
     assert(get_ti_state(perspective) == AccState::DIRTY);
     assert(old_acc.get_ti_state(perspective) == AccState::CLEAN);
-    assert(ti_adds.size() >= 1);
-    assert(ti_subs.size() >= 1);
+
+    // FIXME: isolate non-oob threat features first
 
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
@@ -373,6 +373,7 @@ void NnueAccumulator::apply_ti_updates(
 
         for (const auto feature : ti_subs) {
             const i32 fidx = feature.index(perspective, mirror);
+            if (fidx >= N_THREATS) continue;
 
             #pragma GCC unroll 32
             for (i32 r = 0; r < 4; r++) {
@@ -384,6 +385,7 @@ void NnueAccumulator::apply_ti_updates(
 
         for (const auto feature : ti_adds) {
             const i32 fidx = feature.index(perspective, mirror);
+            if (fidx >= N_THREATS) continue;
 
             #pragma GCC unroll 32
             for (i32 r = 0; r < 4; r++) {
@@ -402,11 +404,13 @@ void NnueAccumulator::apply_ti_updates(
 
         for (const auto feature : ti_subs) {
             const i32 fidx = feature.index(perspective, mirror);
+            if (fidx >= N_THREATS) continue;
             ti_vals[perspective][i] -= weights[fidx][i];
         }
 
         for (const auto feature : ti_adds) {
             const i32 fidx = feature.index(perspective, mirror);
+            if (fidx >= N_THREATS) continue;
             ti_vals[perspective][i] += weights[fidx][i];
         }
     }

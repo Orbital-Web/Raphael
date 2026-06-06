@@ -3,6 +3,8 @@
 #include <chess/utils.h>
 #include <chess/zobrist.h>
 
+#include <span>
+
 
 
 namespace chess {
@@ -104,6 +106,8 @@ public:
     [[nodiscard]] BitBoard occ(Color color) const { return occ_[color]; }
 
     [[nodiscard]] Piece at(Square sq) const { return mailbox_[sq]; }
+
+    [[nodiscard]] std::span<const chess::Piece, 64> mailbox() const { return mailbox_; }
 
     [[nodiscard]] CastlingRights castle_rights() const { return castle_rights_; }
     [[nodiscard]] BitBoard castle_path(Color color, bool is_king_side) const {

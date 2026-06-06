@@ -2,6 +2,7 @@
 #ifdef EVAL_NNUE
 #include <Raphael/consts.h>
 #include <eval/accumulator.h>
+#include <eval/geometry.h>
 
 
 
@@ -110,12 +111,49 @@ private:
     /** Adds psq and ti updates for a piece mutation
      *
      * \param board current board (before mutation)
-     * \param from_piece piece to mutate
-     * \param to_piece new piece type
+     * \param old_piece piece before mutation
+     * \param new_piece piece after mutation
      * \param sq square to mutate piece on
      */
     void mutate_piece(
-        const chess::Board& board, chess::Piece from_piece, chess::Piece to_piece, chess::Square sq
+        const chess::Board& board, chess::Piece old_piece, chess::Piece new_piece, chess::Square sq
+    );
+
+    /** Adds ti updates for a piece additional/removal from a square
+     *
+     * \tparam add whether we are adding or removing a piece
+     * \param board current board (before addition/removal)
+     * \param piece piece to add/remove
+     * \param sq square to add/remove piece from
+     */
+    template <bool add>
+    void update_threats_on_change(const chess::Board& board, chess::Piece piece, chess::Square sq);
+
+    /** Adds ti updates for adding/removing a piece on a square
+     *
+     * \tparam add whether we are adding or removing a piece
+     * \tparam whether we are pushing outgoing or incoming threats to this square
+     * \param indices square indices for each ray bit
+     * \param rays piece types in ray space
+     * \param br closest pieces attacking/attacked by the piece on the square
+     * \param piece piece to add/remove
+     * \param sq square to add/remove piece from
+     */
+    template <bool add, bool outgoing>
+    void push_focus_threats(
+        geometry::Vector indices,
+        geometry::Vector rays,
+        geometry::BitRays br,
+        chess::Piece piece,
+        chess::Square sq
+    );
+
+    template <bool add>
+    void push_discovered_threats(
+        geometry::Vector indices,
+        geometry::Vector rays,
+        geometry::BitRays sliders,
+        geometry::BitRays victims
     );
 };
 }  // namespace raphael::nnue

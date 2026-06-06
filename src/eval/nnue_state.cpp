@@ -1,7 +1,12 @@
 #ifdef EVAL_NNUE
 #include <eval/nnue_state.h>
 
+#include <array>
+#include <bit>
+
 using namespace raphael::nnue;
+using std::array;
+using std::rotr;
 
 
 
@@ -73,18 +78,13 @@ void NnueState::make_move(const chess::Board& board, chess::Move move) {
         add_piece(board, to_piece, new_rook_sq);
     } else if (to_piece != chess::Piece::NONE) {
         // captures
+        rem_piece(board, from_piece, from_sq);
         if (move.type() == chess::Move::PROMOTION)
             mutate_piece(board, to_piece, chess::Piece(move.promotion_type(), stm), to_sq);
         else
             mutate_piece(board, to_piece, from_piece, to_sq);
-        rem_piece(board, from_piece, from_sq);
     } else {
         // non-captures or ep
-        if (move.type() == chess::Move::PROMOTION)
-            move_piece(board, from_piece, chess::Piece(move.promotion_type(), stm), from_sq, to_sq);
-        else
-            move_piece(board, from_piece, from_piece, from_sq, to_sq);
-
         if (move.type() == chess::Move::ENPASSANT) {
             assert(from_piece.type() == chess::PieceType::PAWN);
 
@@ -92,6 +92,11 @@ void NnueState::make_move(const chess::Board& board, chess::Move move) {
             const auto ep_sq = to_sq.ep_square();
             rem_piece(board, ep_pawn, ep_sq);
         }
+
+        if (move.type() == chess::Move::PROMOTION)
+            move_piece(board, from_piece, chess::Piece(move.promotion_type(), stm), from_sq, to_sq);
+        else
+            move_piece(board, from_piece, from_piece, from_sq, to_sq);
 
         if (from_piece.type() == chess::PieceType::KING) new_king_sq = to_sq;
     }
@@ -166,14 +171,12 @@ i32 NnueState::king_bucket(chess::Square king_sq, chess::Color perspective) {
 
 void NnueState::add_piece(const chess::Board& board, chess::Piece piece, chess::Square sq) {
     accumulators_[idx_].add_psq(piece, sq);
-
-    // FIXME: threat updates
+    update_threats_on_change<true>(board, piece, sq);
 }
 
 void NnueState::rem_piece(const chess::Board& board, chess::Piece piece, chess::Square sq) {
     accumulators_[idx_].rem_psq(piece, sq);
-
-    // FIXME: threat updates
+    update_threats_on_change<false>(board, piece, sq);
 }
 
 void NnueState::move_piece(
@@ -186,15 +189,158 @@ void NnueState::move_piece(
     accumulators_[idx_].rem_psq(from_piece, from_sq);
     accumulators_[idx_].add_psq(to_piece, to_sq);
 
-    // FIXME: threat updates
+    // find all threats relative to from and to squares
+    const auto src_perm = geometry::permutation_for(from_sq);
+    const auto dst_perm = geometry::permutation_for(to_sq);
+    const auto [src_rays, src_bits] = geometry::permute_mailbox(src_perm, board.mailbox(), to_sq);
+    const auto [dst_rays, dst_bits] = geometry::permute_mailbox(dst_perm, board.mailbox());
+
+    const auto src_closest = geometry::closest_occupied(src_bits);
+    const auto dst_closest = geometry::closest_occupied(dst_bits);
+    const auto src_outgoing = geometry::outgoing_threats(from_piece, src_closest);
+    const auto dst_outgoing = geometry::outgoing_threats(to_piece, dst_closest);
+    const auto src_incoming_attackers = geometry::incoming_attackers(src_bits, src_closest);
+    const auto dst_incoming_attackers = geometry::incoming_attackers(dst_bits, dst_closest);
+    const auto src_incoming_sliders = geometry::incoming_sliders(src_bits, src_closest);
+    const auto dst_incoming_sliders = geometry::incoming_sliders(dst_bits, dst_closest);
+
+    // push from and to square-relative threats
+    push_focus_threats<false, true>(src_perm.indices, src_rays, src_outgoing, from_piece, from_sq);
+    push_focus_threats<false, false>(
+        src_perm.indices, src_rays, src_incoming_attackers, from_piece, from_sq
+    );
+    push_focus_threats<true, true>(dst_perm.indices, dst_rays, dst_outgoing, to_piece, to_sq);
+    push_focus_threats<true, false>(
+        dst_perm.indices, dst_rays, dst_incoming_attackers, to_piece, to_sq
+    );
+
+    // update discovered threats
+    const auto src_victim_mask = rotr(src_closest & 0xFE'FE'FE'FE'FE'FE'FE'FE, 32);
+    const auto dst_victim_mask = rotr(dst_closest & 0xFE'FE'FE'FE'FE'FE'FE'FE, 32);
+    const auto src_valid
+        = geometry::ray_fill(src_victim_mask) & geometry::ray_fill(src_incoming_sliders);
+    const auto dst_valid
+        = geometry::ray_fill(dst_victim_mask) & geometry::ray_fill(dst_incoming_sliders);
+
+    push_discovered_threats<false>(
+        src_perm.indices, src_rays, src_incoming_sliders & src_valid, src_victim_mask & src_valid
+    );
+    push_discovered_threats<true>(
+        dst_perm.indices, dst_rays, dst_incoming_sliders & dst_valid, dst_victim_mask & dst_valid
+    );
 }
 
 void NnueState::mutate_piece(
-    const chess::Board& board, chess::Piece from_piece, chess::Piece to_piece, chess::Square sq
+    const chess::Board& board, chess::Piece old_piece, chess::Piece new_piece, chess::Square sq
 ) {
-    accumulators_[idx_].rem_psq(from_piece, sq);
-    accumulators_[idx_].add_psq(to_piece, sq);
+    accumulators_[idx_].rem_psq(old_piece, sq);
+    accumulators_[idx_].add_psq(new_piece, sq);
 
-    // FIXME: threat updates
+    // find all threats relative to the focus square
+    const auto perm = geometry::permutation_for(sq);
+    const auto [rays, bits] = geometry::permute_mailbox(perm, board.mailbox());
+
+    const auto closest = geometry::closest_occupied(bits);
+    const auto old_outgoing = geometry::outgoing_threats(old_piece, closest);
+    const auto new_outgoing = geometry::outgoing_threats(new_piece, closest);
+    const auto incoming_attackers = geometry::incoming_attackers(bits, closest);
+
+    // push focus square-relative threats, no discovered threat changes
+    push_focus_threats<false, true>(perm.indices, rays, old_outgoing, old_piece, sq);
+    push_focus_threats<false, false>(perm.indices, rays, incoming_attackers, old_piece, sq);
+    push_focus_threats<true, true>(perm.indices, rays, new_outgoing, new_piece, sq);
+    push_focus_threats<true, false>(perm.indices, rays, incoming_attackers, new_piece, sq);
+}
+
+template <bool add>
+void NnueState::update_threats_on_change(
+    const chess::Board& board, chess::Piece piece, chess::Square sq
+) {
+    // find all threats relative to the focus square
+    const auto perm = geometry::permutation_for(sq);
+    const auto [rays, bits] = geometry::permute_mailbox(perm, board.mailbox());
+
+    const auto closest = geometry::closest_occupied(bits);
+    const auto outgoing = geometry::outgoing_threats(piece, closest);
+    const auto incoming_attackers = geometry::incoming_attackers(bits, closest);
+    const auto incoming_sliders = geometry::incoming_sliders(bits, closest);
+
+    // push focus square-relative threats
+    push_focus_threats<add, true>(perm.indices, rays, outgoing, piece, sq);
+    push_focus_threats<add, false>(perm.indices, rays, incoming_attackers, piece, sq);
+
+    // update discovered threats (add if piece remove, retract if piece added)
+    const auto victim_mask = rotr(closest & 0xFE'FE'FE'FE'FE'FE'FE'FE, 32);  // flip slider rays
+    const auto valid = geometry::ray_fill(victim_mask) & geometry::ray_fill(incoming_sliders);
+
+    push_discovered_threats<add>(perm.indices, rays, incoming_sliders & valid, victim_mask & valid);
+}
+
+template <bool add, bool outgoing>
+void NnueState::push_focus_threats(
+    geometry::Vector indices,
+    geometry::Vector rays,
+    geometry::BitRays br,
+    chess::Piece piece,
+    chess::Square sq
+) {
+#ifdef __AVX512VBMI2__
+        // TODO:
+#else
+    alignas(64) chess::Piece pieces[64];
+    alignas(64) chess::Square squares[64];
+    rays.store(pieces);
+    indices.store(squares);
+
+    for (; br; br &= (br - 1)) {
+        const auto i = __builtin_ctzll(br);
+
+        const auto other = pieces[i];
+        const auto other_sq = squares[i];
+
+        const auto attacker = (outgoing) ? piece : other;
+        const auto attacked = (outgoing) ? other : piece;
+        const auto attacker_sq = (outgoing) ? sq : other_sq;
+        const auto attacked_sq = (outgoing) ? other_sq : sq;
+
+        if constexpr (add)
+            accumulators_[idx_].add_ti(attacker, attacked, attacker_sq, attacked_sq);
+        else
+            accumulators_[idx_].rem_ti(attacker, attacked, attacker_sq, attacked_sq);
+    }
+#endif
+}
+
+template <bool add>
+void NnueState::push_discovered_threats(
+    geometry::Vector indices,
+    geometry::Vector rays,
+    geometry::BitRays sliders,
+    geometry::BitRays victims
+) {
+#ifdef __AVX512VBMI2__
+        // TODO:
+#else
+    alignas(64) chess::Piece pieces[64];
+    alignas(64) chess::Square squares[64];
+    rays.store(pieces);
+    indices.store(squares);
+
+    for (; sliders; sliders &= (sliders - 1), victims &= (victims - 1)) {
+        const auto slider = __builtin_ctzll(sliders);
+        const auto victim = (__builtin_ctzll(victims) + 32) % 64;
+
+        const auto attacker = pieces[slider];
+        const auto attacked = pieces[victim];
+        const auto attacker_sq = squares[slider];
+        const auto attacked_sq = squares[victim];
+        if constexpr (add)
+            accumulators_[idx_].rem_ti(attacker, attacked, attacker_sq, attacked_sq);
+        else
+            accumulators_[idx_].add_ti(attacker, attacked, attacker_sq, attacked_sq);
+    }
+
+    assert(!sliders && !victims);
+#endif
 }
 #endif

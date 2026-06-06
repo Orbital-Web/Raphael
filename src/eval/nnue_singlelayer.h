@@ -10,12 +10,12 @@ class Nnue {
 public:
     struct NnueParams {
         // accumulator: (N_PSQ + N_THREATS) -> L1_SIZE
-        alignas(64) i16 W0_psq[N_INBUCKETS][N_PSQ][L1_SIZE];
-        alignas(64) i8 W0_ti[N_THREATS][L1_SIZE];
-        alignas(64) i16 b0[L1_SIZE];
+        alignas(ALIGNMENT) i16 W0_psq[N_INBUCKETS][N_PSQ][L1_SIZE];
+        alignas(ALIGNMENT) i8 W0_ti[N_THREATS][L1_SIZE];
+        alignas(ALIGNMENT) i16 b0[L1_SIZE];
         // layer1: L1_SIZE -> 1
-        alignas(64) i16 W1[N_OUTBUCKETS][L1_SIZE];
-        alignas(64) i16 b1[N_OUTBUCKETS];
+        alignas(ALIGNMENT) i16 W1[N_OUTBUCKETS][L1_SIZE];
+        alignas(ALIGNMENT) i16 b1[N_OUTBUCKETS];
     };
 
 private:

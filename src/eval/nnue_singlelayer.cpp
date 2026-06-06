@@ -102,9 +102,5 @@ i32 Nnue::evaluate(const chess::Board& board) {
     return static_cast<i32>(eval);
 }
 
-void Nnue::set_board(const chess::Board& board) { state_.set_board(board); }
-
-void Nnue::make_move(const chess::Board& board, chess::Move move) { state_.make_move(board, move); }
-
-void Nnue::unmake_move() { state_.unmake_move(); }
+NnueState& Nnue::observer() { return state_; }
 #endif

@@ -29,7 +29,7 @@ public:
             const auto eval = position_.evaluate(false);
 
             const auto& newboard = position_.board();
-            refnet_.set_board(newboard);
+            refnet_.observer().set_board(newboard);
             const auto true_eval = refnet_.evaluate(newboard);
 
             if (eval != true_eval) {
@@ -52,7 +52,7 @@ public:
         const auto eval = position_.evaluate(false);
 
         const auto& newboard = position_.board();
-        refnet_.set_board(newboard);
+        refnet_.observer().set_board(newboard);
         const auto true_eval = refnet_.evaluate(newboard);
 
         if (eval != true_eval) {

@@ -24,9 +24,7 @@ public:
     Position() {
         boards_.reserve(256);
         moves_.reserve(256);
-        if constexpr (include_net) {
-            net_.set_board(current_);
-        }
+        if constexpr (include_net) net_.observer().set_board(current_);
     }
 
 
@@ -38,9 +36,7 @@ public:
         current_ = position.current_;
         boards_ = position.boards_;
         moves_ = position.moves_;
-        if constexpr (include_net) {
-            net_.set_board(current_);
-        }
+        if constexpr (include_net) net_.observer().set_board(current_);
     }
 
     /** Sets the position to the board
@@ -51,9 +47,7 @@ public:
         current_ = board;
         boards_.clear();
         moves_.clear();
-        if constexpr (include_net) {
-            net_.set_board(current_);
-        }
+        if constexpr (include_net) net_.observer().set_board(current_);
     }
 
 
@@ -191,12 +185,12 @@ public:
      * \param move move to play
      */
     void make_move(chess::Move move) {
-        if constexpr (include_net) {
-            net_.make_move(current_, move);
-        }
         boards_.push_back(current_);
         moves_.push_back({.move = move, .moving = current_.at(move.from())});
-        current_.make_move(move);
+        if constexpr (include_net)
+            current_.make_move(move, net_.observer());
+        else
+            current_.make_move(move);
     }
 
     /** Plays a nullmove */
@@ -208,12 +202,10 @@ public:
 
     /** Unmakes the last move */
     void unmake_move() {
-        if constexpr (include_net) {
-            net_.unmake_move();
-        }
         current_ = boards_.back();
         boards_.pop_back();
         moves_.pop_back();
+        if constexpr (include_net) net_.observer().unmake_move();
     }
 
     /** Unmakes a nullmove */

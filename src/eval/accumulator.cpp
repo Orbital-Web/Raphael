@@ -357,7 +357,18 @@ void NnueAccumulator::apply_ti_updates(
     assert(get_ti_state(perspective) == AccState::DIRTY);
     assert(old_acc.get_ti_state(perspective) == AccState::CLEAN);
 
-    // FIXME: isolate non-oob threat features first
+    StaticVector<i32, 128> adds;
+    StaticVector<i32, 128> subs;
+
+    for (const auto& feature : ti_adds) {
+        const i32 fidx = feature.index(perspective, mirror);
+        if (fidx < N_THREATS) adds.push(fidx);
+    }
+
+    for (const auto& feature : ti_subs) {
+        const i32 fidx = feature.index(perspective, mirror);
+        if (fidx < N_THREATS) subs.push(fidx);
+    }
 
 #ifdef USE_SIMD
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
@@ -371,10 +382,7 @@ void NnueAccumulator::apply_ti_updates(
         for (i32 r = 0; r < 8; r++)
             accs[r] = load_i16(&old_acc.ti_vals[perspective][(i + r) * regw]);
 
-        for (const auto feature : ti_subs) {
-            const i32 fidx = feature.index(perspective, mirror);
-            if (fidx >= N_THREATS) continue;
-
+        for (const auto fidx : subs) {
             #pragma GCC unroll 32
             for (i32 r = 0; r < 4; r++) {
                 const VecI8 ws = load_i8(&weights[fidx][(i + 2 * r) * regw]);
@@ -383,10 +391,7 @@ void NnueAccumulator::apply_ti_updates(
             }
         }
 
-        for (const auto feature : ti_adds) {
-            const i32 fidx = feature.index(perspective, mirror);
-            if (fidx >= N_THREATS) continue;
-
+        for (const auto fidx : adds) {
             #pragma GCC unroll 32
             for (i32 r = 0; r < 4; r++) {
                 const VecI8 ws = load_i8(&weights[fidx][(i + 2 * r) * regw]);
@@ -401,18 +406,8 @@ void NnueAccumulator::apply_ti_updates(
 #else
     for (i32 i = 0; i < L1_SIZE; i++) {
         ti_vals[perspective][i] = old_acc.ti_vals[perspective][i];
-
-        for (const auto feature : ti_subs) {
-            const i32 fidx = feature.index(perspective, mirror);
-            if (fidx >= N_THREATS) continue;
-            ti_vals[perspective][i] -= weights[fidx][i];
-        }
-
-        for (const auto feature : ti_adds) {
-            const i32 fidx = feature.index(perspective, mirror);
-            if (fidx >= N_THREATS) continue;
-            ti_vals[perspective][i] += weights[fidx][i];
-        }
+        for (const auto fidx : subs) ti_vals[perspective][i] -= weights[fidx][i];
+        for (const auto fidx : adds) ti_vals[perspective][i] += weights[fidx][i];
     }
 #endif
 

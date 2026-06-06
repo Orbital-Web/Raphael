@@ -3,11 +3,18 @@
 #include <chess/utils.h>
 #include <chess/zobrist.h>
 
-#include <span>
-
 
 
 namespace chess {
+struct NullObserver {
+    void prepare_make_move() {}
+    void add_piece(const std::array<Piece, 64>&, Piece, Square) {}
+    void rem_piece(const std::array<Piece, 64>&, Piece, Square) {}
+    void move_piece(const std::array<Piece, 64>&, Piece, Piece, Square, Square) {}
+    void mutate_piece(const std::array<Piece, 64>&, Piece, Piece, Square) {}
+    void move_king(Color, Square, Square) {}
+};
+
 class Board {
 public:
     static constexpr auto STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -106,8 +113,6 @@ public:
     [[nodiscard]] BitBoard occ(Color color) const { return occ_[color]; }
 
     [[nodiscard]] Piece at(Square sq) const { return mailbox_[sq]; }
-
-    [[nodiscard]] std::span<const chess::Piece, 64> mailbox() const { return mailbox_; }
 
     [[nodiscard]] CastlingRights castle_rights() const { return castle_rights_; }
     [[nodiscard]] BitBoard castle_path(Color color, bool is_king_side) const {
@@ -243,12 +248,16 @@ public:
     [[nodiscard]] bool is_legal(Move move) const { return Movegen::is_legal(*this, move); }
 
 
-    void make_move(Move move) {
-        assert((at(move.from()) < Piece::BLACKPAWN) == (stm_ == Color::WHITE));
-
+    template <typename Observer>
+    void make_move(Move move, Observer& observer) {
+        const auto moving = at(move.from());
+        const auto moved
+            = (move.type() == Move::PROMOTION) ? Piece(move.promotion_type(), stm_) : moving;
         const auto captured = at(move.to());
         const auto capture = captured != Piece::NONE && move.type() != Move::CASTLING;
-        const auto pt = at(move.from()).type();
+        const auto pt = moving.type();
+        auto kingto = move.to();  // assuming king move
+        assert(moving.color() == stm_);
 
         halfmoves_++;
         plies_++;
@@ -257,8 +266,6 @@ public:
         enpassant_ = Square::NONE;
 
         if (capture) {
-            remove_piece(captured, move.to());
-
             halfmoves_ = 0;
 
             // remove castling rights if rook is captured
@@ -301,47 +308,55 @@ public:
             }
         }
 
-        if (move.type() == Move::CASTLING) {
-            const auto king = at(move.from());
-            const auto rook = at(move.to());
+        observer.prepare_make_move();
 
+        if (move.type() == Move::CASTLING) {
+            // castling
+            const auto king = moving;
+            const auto rook = captured;
             assert(king == Piece(PieceType::KING, stm_));
             assert(rook == Piece(PieceType::ROOK, stm_));
 
             const bool is_king_side = move.to() > move.from();
-            const auto kingto = Square::castling_king_dest(is_king_side, stm_);
+            kingto = Square::castling_king_dest(is_king_side, stm_);
             const auto rookto = Square::castling_rook_dest(is_king_side, stm_);
 
             remove_piece(king, move.from());
+            observer.rem_piece(mailbox_, king, move.from());
             remove_piece(rook, move.to());
+            observer.rem_piece(mailbox_, rook, move.to());
 
             place_piece(king, kingto);
+            observer.add_piece(mailbox_, king, kingto);
             place_piece(rook, rookto);
-        } else if (move.type() == Move::PROMOTION) {
-            const auto pawn = at(move.from());
-            const auto prom = Piece(move.promotion_type(), stm_);
+            observer.add_piece(mailbox_, rook, rookto);
 
-            assert(pawn == Piece(PieceType::PAWN, stm_));
+        } else if (capture) {
+            // captures
+            remove_piece(moving, move.from());
+            observer.rem_piece(mailbox_, moving, move.from());
 
-            remove_piece(pawn, move.from());
-            place_piece(prom, move.to());
+            remove_piece(captured, move.to());
+            place_piece(moved, move.to());
+            observer.mutate_piece(mailbox_, captured, moved, move.to());
+
         } else {
-            assert(at(move.from()) != Piece::NONE);
-            assert(at(move.to()) == Piece::NONE);
+            // non-captures or ep
+            if (move.type() == Move::ENPASSANT) {
+                const auto ep_sq = move.to().ep_square();
+                const auto ep_pawn = Piece(PieceType::PAWN, ~stm_);
+                assert(at(ep_sq) == ep_pawn);
 
-            const auto piece = at(move.from());
+                remove_piece(ep_pawn, ep_sq);
+                observer.rem_piece(mailbox_, ep_pawn, ep_sq);
+            }
 
-            remove_piece(piece, move.from());
-            place_piece(piece, move.to());
+            remove_piece(moving, move.from());
+            place_piece(moved, move.to());
+            observer.move_piece(mailbox_, moving, moved, move.from(), move.to());
         }
 
-        if (move.type() == Move::ENPASSANT) {
-            assert(at(move.to().ep_square()).type() == PieceType::PAWN);
-
-            const auto piece = Piece(PieceType::PAWN, ~stm_);
-
-            remove_piece(piece, move.to().ep_square());
-        }
+        if (pt == chess::PieceType::KING) observer.move_king(stm_, move.from(), kingto);
 
         hash_ ^= Zobrist::stm();
         stm_ = ~stm_;
@@ -349,6 +364,11 @@ public:
         pinmask_[Color::WHITE] = compute_pinmask(Color::WHITE);
         pinmask_[Color::BLACK] = compute_pinmask(Color::BLACK);
         update_checkzones();
+    }
+
+    void make_move(Move move) {
+        NullObserver observer;
+        make_move(move, observer);
     }
 
     void make_nullmove() {

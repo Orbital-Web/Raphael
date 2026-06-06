@@ -50,74 +50,118 @@ void NnueState::set_board(const chess::Board& board) {
     }
 }
 
-void NnueState::make_move(const chess::Board& board, chess::Move move) {
+void NnueState::prepare_make_move() {
     assert(idx_ < MAX_DEPTH - 1);
     idx_++;
-
-    const auto stm = board.stm();
-    const auto from_sq = move.from();
-    const auto to_sq = move.to();
-    const auto from_piece = board.at(from_sq);
-    const auto to_piece = board.at(to_sq);
-    auto new_king_sq = move.to();  // assuming from_piece == KING
-    assert(from_piece != chess::Piece::NONE);
-
     accumulators_[idx_].prepare_updates();
-
-    if (move.type() == chess::Move::CASTLING) {
-        // castling, encoded as king captures own rook
-        assert(from_piece.type() == chess::PieceType::KING);
-        assert(to_piece.type() == chess::PieceType::ROOK);
-
-        const bool is_king_side = to_sq > from_sq;
-        new_king_sq = chess::Square::castling_king_dest(is_king_side, stm);
-        const auto new_rook_sq = chess::Square::castling_rook_dest(is_king_side, stm);
-        rem_piece(board, from_piece, from_sq);
-        rem_piece(board, to_piece, to_sq);
-        add_piece(board, from_piece, new_king_sq);
-        add_piece(board, to_piece, new_rook_sq);
-    } else if (to_piece != chess::Piece::NONE) {
-        // captures
-        rem_piece(board, from_piece, from_sq);
-        if (move.type() == chess::Move::PROMOTION)
-            mutate_piece(board, to_piece, chess::Piece(move.promotion_type(), stm), to_sq);
-        else
-            mutate_piece(board, to_piece, from_piece, to_sq);
-    } else {
-        // non-captures or ep
-        if (move.type() == chess::Move::ENPASSANT) {
-            assert(from_piece.type() == chess::PieceType::PAWN);
-
-            const auto ep_pawn = from_piece.color_flipped();
-            const auto ep_sq = to_sq.ep_square();
-            rem_piece(board, ep_pawn, ep_sq);
-        }
-
-        if (move.type() == chess::Move::PROMOTION)
-            move_piece(board, from_piece, chess::Piece(move.promotion_type(), stm), from_sq, to_sq);
-        else
-            move_piece(board, from_piece, from_piece, from_sq, to_sq);
-
-        if (from_piece.type() == chess::PieceType::KING) new_king_sq = to_sq;
-    }
-
-    // need psq refresh if previous accumulator needs refresh or we change mirroring/bucket
-    if (accumulators_[idx_ - 1].get_psq_state(stm) == NnueAccumulator::AccState::REFRESH
-        || (from_piece.type() == chess::PieceType::KING
-            && ((needs_mirroring(from_sq) != needs_mirroring(new_king_sq))
-                || (king_bucket(from_sq, stm) != king_bucket(new_king_sq, stm)))))
-        accumulators_[idx_].set_psq_state(stm, NnueAccumulator::AccState::REFRESH);
-
-    // need ti refresh if previous accumulator needs refresh or we change mirroring
-    if (accumulators_[idx_ - 1].get_ti_state(stm) == NnueAccumulator::AccState::REFRESH
-        || (from_piece.type() == chess::PieceType::KING
-            && needs_mirroring(from_sq) != needs_mirroring(new_king_sq)))
-        accumulators_[idx_].set_ti_state(stm, NnueAccumulator::AccState::REFRESH);
 }
 
 void NnueState::unmake_move() {
     assert(idx_ > 0);
     idx_--;
+}
+
+void NnueState::add_piece(
+    const std::array<chess::Piece, 64>& mailbox, chess::Piece piece, chess::Square sq
+) {
+    accumulators_[idx_].add_psq(piece, sq);
+    update_threats_on_change<true>(mailbox, piece, sq);
+}
+
+void NnueState::rem_piece(
+    const std::array<chess::Piece, 64>& mailbox, chess::Piece piece, chess::Square sq
+) {
+    accumulators_[idx_].rem_psq(piece, sq);
+    update_threats_on_change<false>(mailbox, piece, sq);
+}
+
+void NnueState::move_piece(
+    const std::array<chess::Piece, 64>& mailbox,
+    chess::Piece from_piece,
+    chess::Piece to_piece,
+    chess::Square from_sq,
+    chess::Square to_sq
+) {
+    accumulators_[idx_].rem_psq(from_piece, from_sq);
+    accumulators_[idx_].add_psq(to_piece, to_sq);
+
+    // find all threats relative to from and to squares
+    const auto src_perm = geometry::permutation_for(from_sq);
+    const auto dst_perm = geometry::permutation_for(to_sq);
+    const auto [src_rays, src_bits] = geometry::permute_mailbox(src_perm, mailbox, to_sq);
+    const auto [dst_rays, dst_bits] = geometry::permute_mailbox(dst_perm, mailbox);
+
+    const auto src_closest = geometry::closest_occupied(src_bits);
+    const auto dst_closest = geometry::closest_occupied(dst_bits);
+    const auto src_outgoing = geometry::outgoing_threats(from_piece, src_closest);
+    const auto dst_outgoing = geometry::outgoing_threats(to_piece, dst_closest);
+    const auto src_incoming_attackers = geometry::incoming_attackers(src_bits, src_closest);
+    const auto dst_incoming_attackers = geometry::incoming_attackers(dst_bits, dst_closest);
+    const auto src_incoming_sliders = geometry::incoming_sliders(src_bits, src_closest);
+    const auto dst_incoming_sliders = geometry::incoming_sliders(dst_bits, dst_closest);
+
+    // push from and to square-relative threats
+    push_focus_threats<false, true>(src_perm.indices, src_rays, src_outgoing, from_piece, from_sq);
+    push_focus_threats<false, false>(
+        src_perm.indices, src_rays, src_incoming_attackers, from_piece, from_sq
+    );
+    push_focus_threats<true, true>(dst_perm.indices, dst_rays, dst_outgoing, to_piece, to_sq);
+    push_focus_threats<true, false>(
+        dst_perm.indices, dst_rays, dst_incoming_attackers, to_piece, to_sq
+    );
+
+    // update discovered threats
+    const auto src_victim_mask = rotr(src_closest & 0xFE'FE'FE'FE'FE'FE'FE'FE, 32);
+    const auto dst_victim_mask = rotr(dst_closest & 0xFE'FE'FE'FE'FE'FE'FE'FE, 32);
+    const auto src_valid
+        = geometry::ray_fill(src_victim_mask) & geometry::ray_fill(src_incoming_sliders);
+    const auto dst_valid
+        = geometry::ray_fill(dst_victim_mask) & geometry::ray_fill(dst_incoming_sliders);
+
+    push_discovered_threats<false>(
+        src_perm.indices, src_rays, src_incoming_sliders & src_valid, src_victim_mask & src_valid
+    );
+    push_discovered_threats<true>(
+        dst_perm.indices, dst_rays, dst_incoming_sliders & dst_valid, dst_victim_mask & dst_valid
+    );
+}
+
+void NnueState::mutate_piece(
+    const std::array<chess::Piece, 64>& mailbox,
+    chess::Piece old_piece,
+    chess::Piece new_piece,
+    chess::Square sq
+) {
+    accumulators_[idx_].rem_psq(old_piece, sq);
+    accumulators_[idx_].add_psq(new_piece, sq);
+
+    // find all threats relative to the focus square
+    const auto perm = geometry::permutation_for(sq);
+    const auto [rays, bits] = geometry::permute_mailbox(perm, mailbox);
+
+    const auto closest = geometry::closest_occupied(bits);
+    const auto old_outgoing = geometry::outgoing_threats(old_piece, closest);
+    const auto new_outgoing = geometry::outgoing_threats(new_piece, closest);
+    const auto incoming_attackers = geometry::incoming_attackers(bits, closest);
+
+    // push focus square-relative threats, no discovered threat changes
+    push_focus_threats<false, true>(perm.indices, rays, old_outgoing, old_piece, sq);
+    push_focus_threats<false, false>(perm.indices, rays, incoming_attackers, old_piece, sq);
+    push_focus_threats<true, true>(perm.indices, rays, new_outgoing, new_piece, sq);
+    push_focus_threats<true, false>(perm.indices, rays, incoming_attackers, new_piece, sq);
+}
+
+void NnueState::move_king(chess::Color color, chess::Square from_sq, chess::Square to_sq) {
+    // need psq refresh if previous accumulator needs refresh or we change mirroring/bucket
+    if (accumulators_[idx_ - 1].get_psq_state(color) == NnueAccumulator::AccState::REFRESH
+        || needs_mirroring(from_sq) != needs_mirroring(to_sq)
+        || king_bucket(from_sq, color) != king_bucket(to_sq, color))
+        accumulators_[idx_].set_psq_state(color, NnueAccumulator::AccState::REFRESH);
+
+    // need ti refresh if previous accumulator needs refresh or we change mirroring
+    if (accumulators_[idx_ - 1].get_ti_state(color) == NnueAccumulator::AccState::REFRESH
+        || needs_mirroring(from_sq) != needs_mirroring(to_sq))
+        accumulators_[idx_].set_ti_state(color, NnueAccumulator::AccState::REFRESH);
 }
 
 
@@ -169,96 +213,13 @@ i32 NnueState::king_bucket(chess::Square king_sq, chess::Color perspective) {
     return BUCKETS[4 * sq.rank() + sq.file()];
 }
 
-void NnueState::add_piece(const chess::Board& board, chess::Piece piece, chess::Square sq) {
-    accumulators_[idx_].add_psq(piece, sq);
-    update_threats_on_change<true>(board, piece, sq);
-}
-
-void NnueState::rem_piece(const chess::Board& board, chess::Piece piece, chess::Square sq) {
-    accumulators_[idx_].rem_psq(piece, sq);
-    update_threats_on_change<false>(board, piece, sq);
-}
-
-void NnueState::move_piece(
-    const chess::Board& board,
-    chess::Piece from_piece,
-    chess::Piece to_piece,
-    chess::Square from_sq,
-    chess::Square to_sq
-) {
-    accumulators_[idx_].rem_psq(from_piece, from_sq);
-    accumulators_[idx_].add_psq(to_piece, to_sq);
-
-    // find all threats relative to from and to squares
-    const auto src_perm = geometry::permutation_for(from_sq);
-    const auto dst_perm = geometry::permutation_for(to_sq);
-    const auto [src_rays, src_bits] = geometry::permute_mailbox(src_perm, board.mailbox(), to_sq);
-    const auto [dst_rays, dst_bits] = geometry::permute_mailbox(dst_perm, board.mailbox());
-
-    const auto src_closest = geometry::closest_occupied(src_bits);
-    const auto dst_closest = geometry::closest_occupied(dst_bits);
-    const auto src_outgoing = geometry::outgoing_threats(from_piece, src_closest);
-    const auto dst_outgoing = geometry::outgoing_threats(to_piece, dst_closest);
-    const auto src_incoming_attackers = geometry::incoming_attackers(src_bits, src_closest);
-    const auto dst_incoming_attackers = geometry::incoming_attackers(dst_bits, dst_closest);
-    const auto src_incoming_sliders = geometry::incoming_sliders(src_bits, src_closest);
-    const auto dst_incoming_sliders = geometry::incoming_sliders(dst_bits, dst_closest);
-
-    // push from and to square-relative threats
-    push_focus_threats<false, true>(src_perm.indices, src_rays, src_outgoing, from_piece, from_sq);
-    push_focus_threats<false, false>(
-        src_perm.indices, src_rays, src_incoming_attackers, from_piece, from_sq
-    );
-    push_focus_threats<true, true>(dst_perm.indices, dst_rays, dst_outgoing, to_piece, to_sq);
-    push_focus_threats<true, false>(
-        dst_perm.indices, dst_rays, dst_incoming_attackers, to_piece, to_sq
-    );
-
-    // update discovered threats
-    const auto src_victim_mask = rotr(src_closest & 0xFE'FE'FE'FE'FE'FE'FE'FE, 32);
-    const auto dst_victim_mask = rotr(dst_closest & 0xFE'FE'FE'FE'FE'FE'FE'FE, 32);
-    const auto src_valid
-        = geometry::ray_fill(src_victim_mask) & geometry::ray_fill(src_incoming_sliders);
-    const auto dst_valid
-        = geometry::ray_fill(dst_victim_mask) & geometry::ray_fill(dst_incoming_sliders);
-
-    push_discovered_threats<false>(
-        src_perm.indices, src_rays, src_incoming_sliders & src_valid, src_victim_mask & src_valid
-    );
-    push_discovered_threats<true>(
-        dst_perm.indices, dst_rays, dst_incoming_sliders & dst_valid, dst_victim_mask & dst_valid
-    );
-}
-
-void NnueState::mutate_piece(
-    const chess::Board& board, chess::Piece old_piece, chess::Piece new_piece, chess::Square sq
-) {
-    accumulators_[idx_].rem_psq(old_piece, sq);
-    accumulators_[idx_].add_psq(new_piece, sq);
-
-    // find all threats relative to the focus square
-    const auto perm = geometry::permutation_for(sq);
-    const auto [rays, bits] = geometry::permute_mailbox(perm, board.mailbox());
-
-    const auto closest = geometry::closest_occupied(bits);
-    const auto old_outgoing = geometry::outgoing_threats(old_piece, closest);
-    const auto new_outgoing = geometry::outgoing_threats(new_piece, closest);
-    const auto incoming_attackers = geometry::incoming_attackers(bits, closest);
-
-    // push focus square-relative threats, no discovered threat changes
-    push_focus_threats<false, true>(perm.indices, rays, old_outgoing, old_piece, sq);
-    push_focus_threats<false, false>(perm.indices, rays, incoming_attackers, old_piece, sq);
-    push_focus_threats<true, true>(perm.indices, rays, new_outgoing, new_piece, sq);
-    push_focus_threats<true, false>(perm.indices, rays, incoming_attackers, new_piece, sq);
-}
-
 template <bool add>
 void NnueState::update_threats_on_change(
-    const chess::Board& board, chess::Piece piece, chess::Square sq
+    const std::array<chess::Piece, 64>& mailbox, chess::Piece piece, chess::Square sq
 ) {
     // find all threats relative to the focus square
     const auto perm = geometry::permutation_for(sq);
-    const auto [rays, bits] = geometry::permute_mailbox(perm, board.mailbox());
+    const auto [rays, bits] = geometry::permute_mailbox(perm, mailbox);
 
     const auto closest = geometry::closest_occupied(bits);
     const auto outgoing = geometry::outgoing_threats(piece, closest);

@@ -58,21 +58,11 @@ public:
      */
     i32 evaluate(const chess::Board& board);
 
-    /** Sets internal states to match the given board
+    /** Returns the NnueState object to pass into the board for makemove handling
      *
-     * \param board the board to set
+     * \returns this board's state_
      */
-    void set_board(const chess::Board& board);
-
-    /** Updates internal states based on the given move
-     *
-     * \param board current board (before move is played)
-     * \param move the move to make
-     */
-    void make_move(const chess::Board& board, chess::Move move);
-
-    /** Updates internal states to unmake the last move */
-    void unmake_move();
+    NnueState& observer();
 
 #ifdef MEASURE_SPARSITY
     /** Saves the number of times each ft neuron fired to a file and returns the average number of

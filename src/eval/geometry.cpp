@@ -161,7 +161,7 @@ Vector Vector::flip() const { return {raw[1], raw[0]}; }
 
 BitRays Vector::to_mask() const {
     return (static_cast<BitRays>(_mm256_movemask_epi8(raw[1])) << 32)
-           | static_cast<BitRays>(_mm256_movemask_epi8(raw[0]));
+           | static_cast<u32>(_mm256_movemask_epi8(raw[0]));
 }
 
 #else

@@ -250,7 +250,7 @@ To see all supported commands, run `uci.exe help`
     - [x] Multilayer network                (`v4.1+`)
     - [x] Sparse affine                     (`v4.1+`)
     - [ ] Dual activations
-    - [ ] Threat Inputs
+    - [x] Threat Inputs                     (`v4.2+`)
     - [ ] Relabeling/distillation
 - [x] Time management                       (`v1.0+`)
   - [x] Hard/soft limit                     (`v3.0+`)

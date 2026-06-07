@@ -362,12 +362,16 @@ void NnueAccumulator::apply_ti_updates(
 
     for (const auto& feature : ti_adds) {
         const i32 fidx = feature.index(perspective, mirror);
-        if (fidx < N_THREATS) adds.push(fidx);
+        if (fidx >= N_THREATS) continue;
+        __builtin_prefetch(&weights[fidx]);
+        adds.push(fidx);
     }
 
     for (const auto& feature : ti_subs) {
         const i32 fidx = feature.index(perspective, mirror);
-        if (fidx < N_THREATS) subs.push(fidx);
+        if (fidx >= N_THREATS) continue;
+        __builtin_prefetch(&weights[fidx]);
+        subs.push(fidx);
     }
 
 #ifdef USE_SIMD

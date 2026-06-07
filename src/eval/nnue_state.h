@@ -51,34 +51,30 @@ public:
 
     /** Adds psq and ti updates for a piece addition to a square
      *
-     * \param mailbox board state right before the addition
+     * \param board board right after the addition
      * \param piece piece to add
      * \param sq square to add piece to
      */
-    void add_piece(
-        const std::array<chess::Piece, 64>& mailbox, chess::Piece piece, chess::Square sq
-    );
+    void add_piece(const chess::Board* board, chess::Piece piece, chess::Square sq);
 
     /** Adds psq and ti updates for a piece removal from a square
      *
-     * \param mailbox board state right before the removal
+     * \param board board right after the removal
      * \param piece piece to remove
      * \param sq square to remove piece from
      */
-    void rem_piece(
-        const std::array<chess::Piece, 64>& mailbox, chess::Piece piece, chess::Square sq
-    );
+    void rem_piece(const chess::Board* board, chess::Piece piece, chess::Square sq);
 
     /** Adds psq and ti updates for a piece move
      *
-     * \param mailbox board state right before the movement
+     * \param board board right after the movement
      * \param from_piece piece to move
      * \param to_piece piece at destination square
      * \param from_sq source square
      * \param to_sq destination square
      */
     void move_piece(
-        const std::array<chess::Piece, 64>& mailbox,
+        const chess::Board* board,
         chess::Piece from_piece,
         chess::Piece to_piece,
         chess::Square from_sq,
@@ -87,16 +83,13 @@ public:
 
     /** Adds psq and ti updates for a piece mutation
      *
-     * \param mailbox board state right before the mutation
+     * \param board board right after the mutation
      * \param old_piece piece before mutation
      * \param new_piece piece after mutation
      * \param sq square to mutate piece on
      */
     void mutate_piece(
-        const std::array<chess::Piece, 64>& mailbox,
-        chess::Piece old_piece,
-        chess::Piece new_piece,
-        chess::Square sq
+        const chess::Board* board, chess::Piece old_piece, chess::Piece new_piece, chess::Square sq
     );
 
     /** Sets psq and ti refresh if the king crosses the horizontal or bucket boundary
@@ -133,15 +126,14 @@ private:
     /** Adds ti updates for a piece additional/removal from a square
      *
      * \tparam add whether we are adding or removing a piece
-     * \param mailbox board state right before the addition/removal
+     * \param board board right after the addition/removal
      * \param piece piece to add/remove
      * \param sq square to add/remove piece from
      */
     template <bool add>
-    void update_threats_on_change(
-        const std::array<chess::Piece, 64>& mailbox, chess::Piece piece, chess::Square sq
-    );
+    void update_threats_on_change(const chess::Board* board, chess::Piece piece, chess::Square sq);
 
+#ifdef USE_SIMD
     /** Adds ti updates for adding/removing a piece on a square
      *
      * \tparam add whether we are adding or removing a piece
@@ -168,6 +160,7 @@ private:
         geometry::BitRays sliders,
         geometry::BitRays victims
     );
+#endif
 };
 }  // namespace raphael::nnue
 #endif

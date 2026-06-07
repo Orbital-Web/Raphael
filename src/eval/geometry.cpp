@@ -6,6 +6,7 @@ using std::pair;
 
 
 
+#ifdef USE_SIMD
 namespace raphael::nnue::geometry {
 namespace internal {
 struct Bits {
@@ -164,8 +165,6 @@ BitRays Vector::to_mask() const {
            | static_cast<u32>(_mm256_movemask_epi8(raw[0]));
 }
 
-#else
-static_assert(false);  // FIXME:
 #endif
 
 
@@ -344,8 +343,7 @@ std::pair<Vector, Vector> permute_mailbox(
     return permute_mailbox(perm, masked_mailbox);
 }
 
-#else
-static_assert(false);  // FIXME:
 #endif
 }  // namespace raphael::nnue::geometry
+#endif
 #endif

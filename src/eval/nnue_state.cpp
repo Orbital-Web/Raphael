@@ -62,22 +62,18 @@ void NnueState::unmake_move() {
     idx_--;
 }
 
-void NnueState::add_piece(
-    const std::array<chess::Piece, 64>& mailbox, chess::Piece piece, chess::Square sq
-) {
+void NnueState::add_piece(const chess::Board* board, chess::Piece piece, chess::Square sq) {
     accumulators_[idx_].add_psq(piece, sq);
-    update_threats_on_change<true>(mailbox, piece, sq);
+    update_threats_on_change<true>(board, piece, sq);
 }
 
-void NnueState::rem_piece(
-    const std::array<chess::Piece, 64>& mailbox, chess::Piece piece, chess::Square sq
-) {
+void NnueState::rem_piece(const chess::Board* board, chess::Piece piece, chess::Square sq) {
     accumulators_[idx_].rem_psq(piece, sq);
-    update_threats_on_change<false>(mailbox, piece, sq);
+    update_threats_on_change<false>(board, piece, sq);
 }
 
 void NnueState::move_piece(
-    const std::array<chess::Piece, 64>& mailbox,
+    const chess::Board* board,
     chess::Piece from_piece,
     chess::Piece to_piece,
     chess::Square from_sq,
@@ -86,11 +82,12 @@ void NnueState::move_piece(
     accumulators_[idx_].rem_psq(from_piece, from_sq);
     accumulators_[idx_].add_psq(to_piece, to_sq);
 
+#ifdef USE_SIMD
     // find all threats relative to from and to squares
     const auto src_perm = geometry::permutation_for(from_sq);
     const auto dst_perm = geometry::permutation_for(to_sq);
-    const auto [src_rays, src_bits] = geometry::permute_mailbox(src_perm, mailbox, to_sq);
-    const auto [dst_rays, dst_bits] = geometry::permute_mailbox(dst_perm, mailbox);
+    const auto [src_rays, src_bits] = geometry::permute_mailbox(src_perm, board->mailbox(), to_sq);
+    const auto [dst_rays, dst_bits] = geometry::permute_mailbox(dst_perm, board->mailbox());
 
     const auto src_closest = geometry::closest_occupied(src_bits);
     const auto dst_closest = geometry::closest_occupied(dst_bits);
@@ -125,20 +122,114 @@ void NnueState::move_piece(
     push_discovered_threats<true>(
         dst_perm.indices, dst_rays, dst_incoming_sliders & dst_valid, dst_victim_mask & dst_valid
     );
+#else
+    const auto occ = board->occ();
+    const auto xrayocc = occ ^ chess::BitBoard::from_square(to_sq);
+    const auto mailbox = board->mailbox();
+
+    auto src_outgoing = chess::Attacks::attacks(from_piece, from_sq, xrayocc) & xrayocc;
+    auto dst_outgoing = chess::Attacks::attacks(to_piece, to_sq, occ) & occ;
+
+    while (src_outgoing) {
+        const auto other_sq = static_cast<chess::Square>(src_outgoing.poplsb());
+        const auto other = mailbox[other_sq];
+        accumulators_[idx_].rem_ti(from_piece, other, from_sq, other_sq);
+    }
+    while (dst_outgoing) {
+        const auto other_sq = static_cast<chess::Square>(dst_outgoing.poplsb());
+        const auto other = mailbox[other_sq];
+        accumulators_[idx_].add_ti(to_piece, other, to_sq, other_sq);
+    }
+
+    for (const chess::Piece pc :
+         {chess::Piece::WHITEPAWN,
+          chess::Piece::BLACKPAWN,
+          chess::Piece::WHITEKNIGHT,
+          chess::Piece::WHITEBISHOP,
+          chess::Piece::WHITEROOK})
+    {
+        bool is_slider = false;
+        auto incoming = chess::Attacks::attacks(pc.color_flipped(), from_sq, xrayocc) & xrayocc;
+        const auto potential_victims = incoming;
+        if (pc.type() == chess::PieceType::PAWN)
+            incoming &= board->occ(pc);
+        else if (pc.type() == chess::PieceType::KNIGHT)
+            incoming &= board->occ(pc.type());
+        else {
+            incoming &= board->occ(pc.type()) | board->occ(chess::PieceType::QUEEN);
+            is_slider = true;
+        }
+
+        while (incoming) {
+            const auto other_sq = static_cast<chess::Square>(incoming.poplsb());
+            const auto other = mailbox[other_sq];
+            accumulators_[idx_].rem_ti(other, from_piece, other_sq, from_sq);
+
+            if (!is_slider) continue;
+
+            // check if a victim is in sight from this slider
+            auto victims = (potential_victims ^ chess::BitBoard::from_square(other_sq))
+                           & chess::Attacks::attacks(pc, other_sq, chess::BitBoard());
+            if (victims) {
+                // there will be at most one victim per slider
+                const auto victim_sq = static_cast<chess::Square>(victims.poplsb());
+                const auto victim = mailbox[victim_sq];
+
+                accumulators_[idx_].add_ti(other, victim, other_sq, victim_sq);
+            }
+        }
+    }
+    for (const chess::Piece pc :
+         {chess::Piece::WHITEPAWN,
+          chess::Piece::BLACKPAWN,
+          chess::Piece::WHITEKNIGHT,
+          chess::Piece::WHITEBISHOP,
+          chess::Piece::WHITEROOK})
+    {
+        bool is_slider = false;
+        auto incoming = chess::Attacks::attacks(pc.color_flipped(), to_sq, occ) & occ;
+        const auto potential_victims = incoming;
+        if (pc.type() == chess::PieceType::PAWN)
+            incoming &= board->occ(pc);
+        else if (pc.type() == chess::PieceType::KNIGHT)
+            incoming &= board->occ(pc.type());
+        else {
+            incoming &= board->occ(pc.type()) | board->occ(chess::PieceType::QUEEN);
+            is_slider = true;
+        }
+
+        while (incoming) {
+            const auto other_sq = static_cast<chess::Square>(incoming.poplsb());
+            const auto other = mailbox[other_sq];
+            accumulators_[idx_].add_ti(other, to_piece, other_sq, to_sq);
+
+            if (!is_slider) continue;
+
+            // check if a victim is in sight from this slider
+            auto victims = (potential_victims ^ chess::BitBoard::from_square(other_sq))
+                           & chess::Attacks::attacks(pc, other_sq, chess::BitBoard());
+            if (victims) {
+                // there will be at most one victim per slider
+                const auto victim_sq = static_cast<chess::Square>(victims.poplsb());
+                const auto victim = mailbox[victim_sq];
+
+                accumulators_[idx_].rem_ti(other, victim, other_sq, victim_sq);
+            }
+        }
+    }
+#endif
 }
 
 void NnueState::mutate_piece(
-    const std::array<chess::Piece, 64>& mailbox,
-    chess::Piece old_piece,
-    chess::Piece new_piece,
-    chess::Square sq
+    const chess::Board* board, chess::Piece old_piece, chess::Piece new_piece, chess::Square sq
 ) {
     accumulators_[idx_].rem_psq(old_piece, sq);
     accumulators_[idx_].add_psq(new_piece, sq);
 
+#ifdef USE_SIMD
     // find all threats relative to the focus square
     const auto perm = geometry::permutation_for(sq);
-    const auto [rays, bits] = geometry::permute_mailbox(perm, mailbox);
+    const auto [rays, bits] = geometry::permute_mailbox(perm, board->mailbox());
 
     const auto closest = geometry::closest_occupied(bits);
     const auto old_outgoing = geometry::outgoing_threats(old_piece, closest);
@@ -150,6 +241,47 @@ void NnueState::mutate_piece(
     push_focus_threats<false, false>(perm.indices, rays, incoming_attackers, old_piece, sq);
     push_focus_threats<true, true>(perm.indices, rays, new_outgoing, new_piece, sq);
     push_focus_threats<true, false>(perm.indices, rays, incoming_attackers, new_piece, sq);
+#else
+    const auto occ = board->occ();
+    const auto mailbox = board->mailbox();
+
+    auto old_outgoing = chess::Attacks::attacks(old_piece, sq, occ) & occ;
+    auto new_outgoing = chess::Attacks::attacks(new_piece, sq, occ) & occ;
+
+    while (old_outgoing) {
+        const auto other_sq = static_cast<chess::Square>(old_outgoing.poplsb());
+        const auto other = mailbox[other_sq];
+        accumulators_[idx_].rem_ti(old_piece, other, sq, other_sq);
+    }
+    while (new_outgoing) {
+        const auto other_sq = static_cast<chess::Square>(new_outgoing.poplsb());
+        const auto other = mailbox[other_sq];
+        accumulators_[idx_].add_ti(new_piece, other, sq, other_sq);
+    }
+
+    for (const chess::Piece pc :
+         {chess::Piece::WHITEPAWN,
+          chess::Piece::BLACKPAWN,
+          chess::Piece::WHITEKNIGHT,
+          chess::Piece::WHITEBISHOP,
+          chess::Piece::WHITEROOK})
+    {
+        auto incoming = chess::Attacks::attacks(pc.color_flipped(), sq, occ);
+        if (pc.type() == chess::PieceType::PAWN)
+            incoming &= board->occ(pc);
+        else if (pc.type() == chess::PieceType::KNIGHT)
+            incoming &= board->occ(pc.type());
+        else
+            incoming &= board->occ(pc.type()) | board->occ(chess::PieceType::QUEEN);
+
+        while (incoming) {
+            const auto other_sq = static_cast<chess::Square>(incoming.poplsb());
+            const auto other = mailbox[other_sq];
+            accumulators_[idx_].rem_ti(other, old_piece, other_sq, sq);
+            accumulators_[idx_].add_ti(other, new_piece, other_sq, sq);
+        }
+    }
+#endif
 }
 
 void NnueState::move_king(chess::Color color, chess::Square from_sq, chess::Square to_sq) {
@@ -216,11 +348,12 @@ i32 NnueState::king_bucket(chess::Square king_sq, chess::Color perspective) {
 
 template <bool add>
 void NnueState::update_threats_on_change(
-    const std::array<chess::Piece, 64>& mailbox, chess::Piece piece, chess::Square sq
+    const chess::Board* board, chess::Piece piece, chess::Square sq
 ) {
+#ifdef USE_SIMD
     // find all threats relative to the focus square
     const auto perm = geometry::permutation_for(sq);
-    const auto [rays, bits] = geometry::permute_mailbox(perm, mailbox);
+    const auto [rays, bits] = geometry::permute_mailbox(perm, board->mailbox());
 
     const auto closest = geometry::closest_occupied(bits);
     const auto outgoing = geometry::outgoing_threats(piece, closest);
@@ -236,8 +369,69 @@ void NnueState::update_threats_on_change(
     const auto valid = geometry::ray_fill(victim_mask) & geometry::ray_fill(incoming_sliders);
 
     push_discovered_threats<add>(perm.indices, rays, incoming_sliders & valid, victim_mask & valid);
+#else
+    const auto occ = board->occ();
+    const auto mailbox = board->mailbox();
+
+    auto outgoing = chess::Attacks::attacks(piece, sq, occ) & occ;
+
+    while (outgoing) {
+        const auto other_sq = static_cast<chess::Square>(outgoing.poplsb());
+        const auto other = mailbox[other_sq];
+        if constexpr (add)
+            accumulators_[idx_].add_ti(piece, other, sq, other_sq);
+        else
+            accumulators_[idx_].rem_ti(piece, other, sq, other_sq);
+    }
+
+    for (const chess::Piece pc :
+         {chess::Piece::WHITEPAWN,
+          chess::Piece::BLACKPAWN,
+          chess::Piece::WHITEKNIGHT,
+          chess::Piece::WHITEBISHOP,
+          chess::Piece::WHITEROOK})
+    {
+        bool is_slider = false;
+        auto incoming = chess::Attacks::attacks(pc.color_flipped(), sq, occ) & occ;
+        const auto potential_victims = incoming;
+        if (pc.type() == chess::PieceType::PAWN)
+            incoming &= board->occ(pc);
+        else if (pc.type() == chess::PieceType::KNIGHT)
+            incoming &= board->occ(pc.type());
+        else {
+            incoming &= board->occ(pc.type()) | board->occ(chess::PieceType::QUEEN);
+            is_slider = true;
+        }
+
+        while (incoming) {
+            const auto other_sq = static_cast<chess::Square>(incoming.poplsb());
+            const auto other = mailbox[other_sq];
+            if constexpr (add)
+                accumulators_[idx_].add_ti(other, piece, other_sq, sq);
+            else
+                accumulators_[idx_].rem_ti(other, piece, other_sq, sq);
+
+            if (!is_slider) continue;
+
+            // check if a victim is in sight from this slider
+            auto victims = (potential_victims ^ chess::BitBoard::from_square(other_sq))
+                           & chess::Attacks::attacks(pc, other_sq, chess::BitBoard());
+            if (victims) {
+                // there will be at most one victim per slider
+                const auto victim_sq = static_cast<chess::Square>(victims.poplsb());
+                const auto victim = mailbox[victim_sq];
+
+                if constexpr (add)
+                    accumulators_[idx_].rem_ti(other, victim, other_sq, victim_sq);
+                else
+                    accumulators_[idx_].add_ti(other, victim, other_sq, victim_sq);
+            }
+        }
+    }
+#endif
 }
 
+#ifdef USE_SIMD
 template <bool add, bool outgoing>
 void NnueState::push_focus_threats(
     geometry::Vector indices,
@@ -351,4 +545,5 @@ void NnueState::push_discovered_threats(
     assert(!sliders && !victims);
 #endif
 }
+#endif
 #endif

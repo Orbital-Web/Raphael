@@ -8,6 +8,7 @@
 
 
 
+#ifdef USE_SIMD
 namespace raphael::nnue::geometry {
 using Bit = u8;       // piece type
 using BitRays = u64;  // a bitboard-like structure encoding ray directions and steps
@@ -19,8 +20,6 @@ struct Vector {
     VecU8 raw;
 #elif defined(USE_AVX2)
     VecU8 raw[2];
-#else
-    static_assert(false);  // FIXME:
 #endif
 
     /** Loads a Vector
@@ -60,8 +59,6 @@ struct Permutation {
 #elif defined(USE_AVX2)
     Vector indices;
     Vector invalid;
-#else
-    static_assert(false);  // FIXME:
 #endif
 };
 
@@ -140,4 +137,5 @@ std::pair<Vector, Vector> permute_mailbox(
     const Permutation& perm, std::span<const chess::Piece, 64> mailbox, chess::Square ignore
 );
 }  // namespace raphael::nnue::geometry
+#endif
 #endif

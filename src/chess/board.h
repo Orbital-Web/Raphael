@@ -3,15 +3,17 @@
 #include <chess/utils.h>
 #include <chess/zobrist.h>
 
+#include <span>
+
 
 
 namespace chess {
 struct NullObserver {
     void prepare_make_move() {}
-    void add_piece(const std::array<Piece, 64>&, Piece, Square) {}
-    void rem_piece(const std::array<Piece, 64>&, Piece, Square) {}
-    void move_piece(const std::array<Piece, 64>&, Piece, Piece, Square, Square) {}
-    void mutate_piece(const std::array<Piece, 64>&, Piece, Piece, Square) {}
+    void add_piece(const Board*, Piece, Square) {}
+    void rem_piece(const Board*, Piece, Square) {}
+    void move_piece(const Board*, Piece, Piece, Square, Square) {}
+    void mutate_piece(const Board*, Piece, Piece, Square) {}
     void move_king(Color, Square, Square) {}
 };
 
@@ -113,6 +115,8 @@ public:
     [[nodiscard]] BitBoard occ(Color color) const { return occ_[color]; }
 
     [[nodiscard]] Piece at(Square sq) const { return mailbox_[sq]; }
+
+    [[nodiscard]] std::span<const chess::Piece, 64> mailbox() const { return mailbox_; }
 
     [[nodiscard]] CastlingRights castle_rights() const { return castle_rights_; }
     [[nodiscard]] BitBoard castle_path(Color color, bool is_king_side) const {
@@ -322,23 +326,23 @@ public:
             const auto rookto = Square::castling_rook_dest(is_king_side, stm_);
 
             remove_piece(king, move.from());
-            observer.rem_piece(mailbox_, king, move.from());
+            observer.rem_piece(this, king, move.from());
             remove_piece(rook, move.to());
-            observer.rem_piece(mailbox_, rook, move.to());
+            observer.rem_piece(this, rook, move.to());
 
             place_piece(king, kingto);
-            observer.add_piece(mailbox_, king, kingto);
+            observer.add_piece(this, king, kingto);
             place_piece(rook, rookto);
-            observer.add_piece(mailbox_, rook, rookto);
+            observer.add_piece(this, rook, rookto);
 
         } else if (capture) {
             // captures
             remove_piece(moving, move.from());
-            observer.rem_piece(mailbox_, moving, move.from());
+            observer.rem_piece(this, moving, move.from());
 
             remove_piece(captured, move.to());
             place_piece(moved, move.to());
-            observer.mutate_piece(mailbox_, captured, moved, move.to());
+            observer.mutate_piece(this, captured, moved, move.to());
 
         } else {
             // non-captures or ep
@@ -348,12 +352,12 @@ public:
                 assert(at(ep_sq) == ep_pawn);
 
                 remove_piece(ep_pawn, ep_sq);
-                observer.rem_piece(mailbox_, ep_pawn, ep_sq);
+                observer.rem_piece(this, ep_pawn, ep_sq);
             }
 
             remove_piece(moving, move.from());
             place_piece(moved, move.to());
-            observer.move_piece(mailbox_, moving, moved, move.from(), move.to());
+            observer.move_piece(this, moving, moved, move.from(), move.to());
         }
 
         if (pt == chess::PieceType::KING) observer.move_king(stm_, move.from(), kingto);

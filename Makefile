@@ -15,7 +15,7 @@ EVALFILE := default
 EVAL     := multilayer
 
 # Architecture configuration
-ARCH ?= auto
+ARCH ?= tunable
 
 # Debug option
 DEBUG ?= off

@@ -15,7 +15,7 @@ EVALFILE := default
 EVAL     := multilayer
 
 # Architecture configuration
-ARCH ?= avx2_bmi2
+ARCH ?= auto
 
 # Debug option
 DEBUG ?= off

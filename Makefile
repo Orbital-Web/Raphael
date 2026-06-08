@@ -336,7 +336,7 @@ $(PERM_EXE): $(PERM_OBJS) $(EVALFILE)
 	$(CXX) -o $(PERM_EXE) $(PERM_OBJS) $(LDFLAGS)
 
 .PHONY: __network_preprocess
-__network_preprocess: $(PERM_EXE) $(EVALFILE)
+__network_preprocess: $(PERM_EXE)
 	./$(PERM_EXE) $(EVALFILE)
 
 # compile .cpp -> .o

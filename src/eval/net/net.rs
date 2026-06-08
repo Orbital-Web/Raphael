@@ -50,8 +50,8 @@ use crate::threat_inputs::ThreatInputs;
 
 fn main() {
     // model params
-    const NET_ID: &str = "yogsothoth_v1";
-    const L1_SIZE: usize = 512;
+    const NET_ID: &str = "yogsothoth_v2";
+    const L1_SIZE: usize = 768;
     const L2_SIZE: usize = 32;
     const L3_SIZE: usize = 32;
     const NUM_INPUT_BUCKETS: usize = 16;
@@ -205,7 +205,7 @@ fn main() {
     ] {
         let eval = trainer.eval(fen);
         println!("FEN: {fen}");
-        println!("EVAL: {}", SCALE * eval);
+        println!("EVAL: {}", 255.0 * eval);
     }
 }
 

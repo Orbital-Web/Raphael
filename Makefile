@@ -332,7 +332,7 @@ __pgo:
 	$(MAKE) clean && $(MAKE) PGO_PHASE=use -j __nopgo
 	$(PGO_CLEAN)
 
-$(PERM_EXE): $(PERM_OBJS)
+$(PERM_EXE): $(PERM_OBJS) $(EVALFILE)
 	$(CXX) -o $(PERM_EXE) $(PERM_OBJS) $(LDFLAGS)
 
 .PHONY: __network_preprocess

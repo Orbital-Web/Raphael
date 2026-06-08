@@ -205,7 +205,7 @@ fn main() {
     ] {
         let eval = trainer.eval(fen);
         println!("FEN: {fen}");
-        println!("EVAL: {}", 255.0 * eval);
+        println!("EVAL: {}", SCALE * eval);
     }
 }
 

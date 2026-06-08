@@ -506,7 +506,7 @@ data: d17         | games: 55.34m (mixed nodes)                | source: cerberu
                   |                                            | filter: noisy, checks             |                                                                                              |
 ------------------|--------------------------------------------|-----------------------------------|---------------------------------------------┬------------------------------------------------|
 yogsothoth_v2     | (768x16hm+60144hm->768pw)x2->(32->32->1)x8 | 800sb                             | stc:                                        | Increased L1 size to 768.                      |
-merged as #147    | activ: pw->screlu->crelu                   |   data: d8-17 (29.8b)             | Elo   | 17.97 +- 7.54 (95%)                 |                                                |
+merged as #148    | activ: pw->screlu->crelu                   |   data: d8-17 (29.8b)             | Elo   | 17.97 +- 7.54 (95%)                 |                                                |
                   | scale: 276                                 |   lr: 1600b warmup                | SPRT  | 8.0+0.08s Threads=1 Hash=16MB       |                                                |
                   | quant: [255,128,64]                        |       cos(0.001,0.00000243)       | LLR   | 2.95 (-2.25, 2.89) [0.00, 5.00]     |                                                |
                   | optim: AdamW                               |   wdl: lin(0.2, 0.4)              | Games | N: 2264 W: 619 L: 502 D: 1143       |                                                |

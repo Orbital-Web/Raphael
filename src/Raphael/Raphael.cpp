@@ -627,7 +627,9 @@ i32 Raphael::negamax(
 
             if (is_quiet) {
                 // late move pruning
-                if (move_searched >= LMP_TABLE[improving][fdepth / DEPTH_SCALE]) {
+                if (move_searched
+                    >= LMP_TABLE[improving][fdepth / DEPTH_SCALE] + hist * LMP_HIST_MUL / 8388608)
+                {
                     generator.skip_quiets();
                     continue;
                 }

@@ -139,21 +139,23 @@ inline bool set_tunable(const std::string& name, i32 value) {
     return false;
 }
 
-    #define Tunable(name, value, min_val, max_val, tunable)                                                                               \
+// clang-format off
+    #define Tunable(name, value, min_val, max_val, tunable)      \
         static_assert((min_val <= value) && (value <= max_val)); \
         inline raphael::SpinOption<tunable> name { #name, value, min_val, max_val, nullptr }
 
-    #define TunableCallback(name, value, min_val, max_val, callback, tunable)              \
+    #define TunableCallback(name, value, min_val, max_val, callback, tunable) \
         static_assert((min_val <= value) && (value <= max_val));              \
         inline raphael::SpinOption<tunable> name { #name, value, min_val, max_val, callback }
 #else
-    #define Tunable(name, value, min_val, max_val, tunable) \
-        static_assert((min_val <= value) && (value <= max_val));                 \
+    #define Tunable(name, value, min_val, max_val, tunable)      \
+        static_assert((min_val <= value) && (value <= max_val)); \
         static constexpr i32 name = value
 
-    #define TunableCallback(name, value, min_val, max_val, callback, tunable)                                       \
-        static_assert((min_val <= value) && (value <= max_val));                 \
+    #define TunableCallback(name, value, min_val, max_val, callback, tunable) \
+        static_assert((min_val <= value) && (value <= max_val));              \
         static constexpr i32 name = value
+// clang-format on
 #endif
 
 template <bool tunable>

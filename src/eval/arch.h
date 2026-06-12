@@ -5,7 +5,7 @@
 
 
 namespace raphael::nnue {
-static constexpr i32 OUTPUT_SCALE = 276;
+static constexpr i32 OUTPUT_SCALE = 253;
 static constexpr i32 N_PSQ = 11 * 64;
 static constexpr i32 N_THREATS = 60144;
 static constexpr i32 L1_SIZE = 768;

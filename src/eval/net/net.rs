@@ -50,7 +50,7 @@ use crate::threat_inputs::ThreatInputs;
 
 fn main() {
     // model params
-    const NET_ID: &str = "yogsothoth_v2";
+    const NET_ID: &str = "yogsothoth_v3";
     const L1_SIZE: usize = 768;
     const L2_SIZE: usize = 32;
     const L3_SIZE: usize = 32;
@@ -123,8 +123,9 @@ fn main() {
             let l3 = builder.new_affine("l3", L3_SIZE, NUM_OUTPUT_BUCKETS);
 
             // inference
-            let stm_hidden = l0.forward(stm_inputs).crelu().pairwise_mul();
-            let ntm_hidden = l0.forward(ntm_inputs).crelu().pairwise_mul();
+            let ft = |input, start, end| l0.slice(start, end).forward(input).crelu();
+            let stm_hidden = ft(stm_inputs, 0, L1_SIZE / 2) * ft(stm_inputs, L1_SIZE / 2, L1_SIZE);
+            let ntm_hidden = ft(ntm_inputs, 0, L1_SIZE / 2) * ft(ntm_inputs, L1_SIZE / 2, L1_SIZE);
             let h1 = stm_hidden.concat(ntm_hidden);
             let h2 = l1.forward(h1).select(output_buckets).screlu();
             let h3 = l2.forward(h2).select(output_buckets).crelu();
@@ -177,19 +178,19 @@ fn main() {
             start_superbatch: 1,
             end_superbatch: SUPERBATCHES_STAGE1,
         },
-        wdl_scheduler: wdl::ConstantWDL { value: 0.6 },
+        wdl_scheduler: wdl::ConstantWDL { value: 0.7 },
         lr_scheduler: lr::LinearDecayLR { initial_lr: 1.0e-5, final_lr: 1.0e-7, final_superbatch: SUPERBATCHES_STAGE1 },
         save_rate: 100,
     };
 
     let settings = LocalSettings { threads: 2, test_set: None, output_directory: "checkpoints", batch_queue_size: 32 };
 
-    trainer.run(
-        &schedule_stage0,
-        &settings,
-        &ViriBinpackLoader::new(&DATASET_STAGE0.to_string(), 4096, 4, filter.clone()),
-    );
-    // trainer.load_from_checkpoint("checkpoints/cerberus_v1_stage0-800");
+    // trainer.run(
+    //     &schedule_stage0,
+    //     &settings,
+    //     &ViriBinpackLoader::new(&DATASET_STAGE0.to_string(), 4096, 4, filter.clone()),
+    // );
+    trainer.load_from_checkpoint("checkpoints/yogsothoth_v2_stage0-800");
     trainer.run(
         &schedule_stage1,
         &settings,

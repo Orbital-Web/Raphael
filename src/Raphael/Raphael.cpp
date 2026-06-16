@@ -127,12 +127,12 @@ void Raphael::set_uciinfolevel(UciInfoLevel level) {
 
 void Raphael::set_position(const Position<false>& position) {
     assert(!is_searching_.load(memory_order_acquire));
-    for (auto& tdata : thread_data_) tdata->position_.set_position(position);
+    for (auto& tdata : thread_data_) tdata->position.set_position(position);
 }
 
 void Raphael::set_board(const chess::Board& board) {
     assert(!is_searching_.load(memory_order_acquire));
-    for (auto& tdata : thread_data_) tdata->position_.set_board(board);
+    for (auto& tdata : thread_data_) tdata->position.set_board(board);
 }
 
 
@@ -194,7 +194,7 @@ i32 Raphael::static_eval(bool corrected) {
 
     auto& tdata = *thread_data_[0];
     i32 corrplexity;
-    const auto raw_score = tdata.position_.evaluate(!params_.datagen);
+    const auto raw_score = tdata.position.evaluate(!params_.datagen);
     return (corrected) ? adjust_score(tdata, raw_score, corrplexity) : raw_score;
 }
 
@@ -239,33 +239,48 @@ void Raphael::t_search_function(i32 thread_id) {
             (params_.softnodes) ? params_.softhardmult : 0
         );
         memset(&tdata.search_stack, 0, sizeof(tdata.search_stack));
-        const auto result = iterative_deepen(tdata);
+        iterative_deepen(tdata);
 
         // wait until all threads finish
         if (thread_id == 0) stop_.store(true, memory_order_relaxed);
         search_end_barrier_->arrive_and_wait();
 
         if (thread_id == 0) {
-            search_result_ = result;
+            // TODO: thread voting
+            const auto& selected_tdata = *thread_data_[0];
+
+            // show last info and save results
+            const auto& result = selected_tdata.result;
+            const auto& bestmove = result.pv->moves[0];
+            const bool is_mate = utils::is_mate(result.score);
+            if (ucilevel_ != UciInfoLevel::NONE) print_uci_info(selected_tdata);
+
+            search_result_ = {
+                .move = bestmove,
+                .score = (is_mate) ? utils::mate_distance(result.score) : result.score,
+                .is_mate = is_mate,
+                .nodes = result.nodes,
+            };
             is_searching_.store(false, memory_order_release);
             is_searching_.notify_one();
 
             if (ucilevel_ != UciInfoLevel::NONE)
-                cout << "bestmove " << chess::uci::from_move(result.move, params_.chess960) << "\n"
+                cout << "bestmove " << chess::uci::from_move(bestmove, params_.chess960) << "\n"
                      << flush;
         }
     }
 }
 
 
-void Raphael::print_uci_info(
-    i32 depth, i32 score, UCIScoreType score_type, const chess::Board& board, const SearchStack* ss
-) const {
+void Raphael::print_uci_info(const ThreadData& tdata) const {
+    const auto result = tdata.result;
     const auto dtime = tm_.get_time();
     const auto nodes = tm_.get_nodes();
     const auto nps = (dtime) ? nodes * 1000 / dtime : 0;
+    const auto& board = tdata.position.board();
+    i32 score = result.score;
 
-    cout << "info depth " << depth << " seldepth " << tm_.get_seldepth() << " time " << dtime
+    cout << "info depth " << result.depth << " seldepth " << tm_.get_seldepth() << " time " << dtime
          << " nodes " << nodes << " nps " << nps;
 
     if (utils::is_mate(score))
@@ -275,9 +290,9 @@ void Raphael::print_uci_info(
         if (abs(score) < 2) score = 0;
 
         cout << " score cp " << wdl::normalize_score(score, board);
-        if (score_type == UCIScoreType::LOWER)
+        if (result.bound == UCIScoreType::LOWER)
             cout << " lowerbound";
-        else if (score_type == UCIScoreType::UPPER)
+        else if (result.bound == UCIScoreType::UPPER)
             cout << " upperbound";
     }
 
@@ -286,14 +301,14 @@ void Raphael::print_uci_info(
 
     cout << " hashfull " << tt_.hashfull();
     cout << " pv";
-    for (i32 i = 0; i < ss->pv.length; i++)
-        cout << " " << chess::uci::from_move(ss->pv.moves[i], params_.chess960);
+    for (i32 i = 0; i < result.pv->length; i++)
+        cout << " " << chess::uci::from_move(result.pv->moves[i], params_.chess960);
     cout << "\n" << flush;
 }
 
 
 i32 Raphael::adjust_score(const ThreadData& tdata, i32 raw_static_eval, i32& corrplexity) const {
-    const auto& position = tdata.position_;
+    const auto& position = tdata.position;
     const auto& history = tdata.history;
     const auto& board = position.board();
 
@@ -309,18 +324,19 @@ i32 Raphael::adjust_score(const ThreadData& tdata, i32 raw_static_eval, i32& cor
 }
 
 
-Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
+void Raphael::iterative_deepen(ThreadData& tdata) {
     const i32 thread_id = tdata.thread_id;
-    const auto& board = tdata.position_.board();
     auto ss = &tdata.search_stack[2];
     auto mv = tdata.move_stack;
 
-    i32 score = -INF_SCORE;
-    chess::Move bestmove = chess::Move::NO_MOVE;
+    auto& result = tdata.result;
+    result.pv = &ss->pv;
+    result.score = -INF_SCORE;
+    result.depth = 1;
+    result.bound = UCIScoreType::UPPER;
 
     // begin iterative deepening
-    i32 depth = 1;
-    for (; depth <= MAX_DEPTH; depth++) {
+    for (; result.depth <= MAX_DEPTH; result.depth++) {
         // stop if search stopped
         if (stop_.load(memory_order_relaxed)) break;
 
@@ -330,61 +346,55 @@ Raphael::MoveScore Raphael::iterative_deepen(ThreadData& tdata) {
         i32 beta = INF_SCORE;
         i32 asp_fred = 0;
 
-        if (depth >= ASP_MIN_DEPTH) {
-            alpha = max(score - delta, -INF_SCORE);
-            beta = min(score + delta, INF_SCORE);
+        if (result.depth >= ASP_MIN_DEPTH) {
+            alpha = max(result.score - delta, -INF_SCORE);
+            beta = min(result.score + delta, INF_SCORE);
         }
 
         // search until score lies between alpha and beta
         i32 iterscore;
         while (!stop_.load(memory_order_relaxed)) {
-            const i32 asp_fdepth = max(depth * DEPTH_SCALE - asp_fred, DEPTH_SCALE);
+            const i32 asp_fdepth = max(result.depth * DEPTH_SCALE - asp_fred, DEPTH_SCALE);
             iterscore = negamax<true>(tdata, asp_fdepth, 0, alpha, beta, false, ss, mv);
 
             if (iterscore <= alpha) {
                 beta = (alpha + beta) / 2;
-                alpha = max(score - delta, -INF_SCORE);
+                alpha = max(result.score - delta, -INF_SCORE);
                 asp_fred = 0;
-                if (thread_id == 0 && ucilevel_ == UciInfoLevel::ALL)
-                    print_uci_info(depth, score, UCIScoreType::UPPER, board, ss);
+                result.bound = UCIScoreType::UPPER;
             } else if (iterscore >= beta) {
-                beta = min(score + delta, INF_SCORE);
+                beta = min(result.score + delta, INF_SCORE);
                 asp_fred = min<i32>(asp_fred + ASP_RED, ASP_MAX_RED);
-                if (thread_id == 0 && ucilevel_ == UciInfoLevel::ALL)
-                    print_uci_info(depth, score, UCIScoreType::LOWER, board, ss);
-            } else
+                result.bound = UCIScoreType::LOWER;
+            } else {
+                result.bound = UCIScoreType::EXACT;
                 break;
+            }
+
+            if (stop_.load(memory_order_relaxed)) break;
+            if (thread_id == 0 && ucilevel_ == UciInfoLevel::ALL) print_uci_info(tdata);
 
             delta += delta * ASP_WIDENING_FACTOR / 128;
         }
 
         if (stop_.load(memory_order_relaxed)) break;  // don't use results if timeout
+        result.score = iterscore;
 
-        score = iterscore;
-        bestmove = ss->pv.moves[0];
+        // check soft limit
+        if (tm_.is_soft_limit_reached(
+                thread_id, stop_, result.pv->moves[0], result.score, result.depth
+            ))
+            break;
 
-        // print info
-        if (thread_id == 0 && ucilevel_ == UciInfoLevel::ALL)
-            print_uci_info(depth, score, UCIScoreType::EXACT, board, ss);
-
-        // soft limit
-        if (tm_.is_soft_limit_reached(thread_id, stop_, bestmove, score, depth)) break;
+        // print depth completion info
+        if (thread_id == 0 && ucilevel_ == UciInfoLevel::ALL) print_uci_info(tdata);
     }
-
-    // last attempt to get bestmove
-    if (!bestmove) bestmove = ss->pv.moves[0];
-
-    // print last info
-    if (thread_id == 0 && ucilevel_ == UciInfoLevel::MINIMAL)
-        print_uci_info(depth, score, UCIScoreType::EXACT, board, ss);
 
     // age tt
     tt_.do_age();
 
-    // return result
-    const auto nodes = tm_.get_nodes(thread_id);
-    if (utils::is_mate(score)) return {bestmove, utils::mate_distance(score), true, nodes};
-    return {bestmove, score, false, nodes};
+    // update nodes
+    result.nodes = tm_.get_nodes(thread_id);
 }
 
 template <bool is_PV>
@@ -399,7 +409,7 @@ i32 Raphael::negamax(
     MoveStack* mv
 ) {
     const i32 thread_id = tdata.thread_id;
-    auto& position = tdata.position_;
+    auto& position = tdata.position;
     auto& history = tdata.history;
     const auto& board = position.board();
 
@@ -838,7 +848,7 @@ i32 Raphael::negamax(
 template <bool is_PV>
 i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, MoveStack* mv) {
     const i32 thread_id = tdata.thread_id;
-    auto& position = tdata.position_;
+    auto& position = tdata.position;
     auto& history = tdata.history;
     const auto& board = position.board();
 

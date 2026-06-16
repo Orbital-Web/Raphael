@@ -80,12 +80,21 @@ private:
         StaticVector<chess::Move, 256> noisylist;
     };
 
+    struct SearchResult {
+        u64 nodes;
+        PVList* pv;
+        i32 score;
+        i32 depth;
+        UCIScoreType bound;
+    };
+
     struct alignas(CACHE_SIZE) ThreadData {
         SearchStack search_stack[MAX_DEPTH + 3];
         MoveStack move_stack[MAX_DEPTH * 2];
 
-        Position<true> position_;
+        Position<true> position;
         History history;
+        SearchResult result;
         i32 min_nmp_ply;
         i32 thread_id;
     };
@@ -213,19 +222,9 @@ private:
 
     /** Prints out the uci info
      *
-     * \param depth current depth
-     * \param score score to print
-     * \param score_type score type
-     * \param board current board
-     * \param ss search stack at root
+     * \param tdata thread data to pull results from
      */
-    void print_uci_info(
-        i32 depth,
-        i32 score,
-        UCIScoreType score_type,
-        const chess::Board& board,
-        const SearchStack* ss
-    ) const;
+    void print_uci_info(const ThreadData& tdata) const;
 
 
     /** Adjusts the raw static eval using scaling and corrhists
@@ -242,9 +241,8 @@ private:
      * May set stop to true
      *
      * \param tdata this thread's data
-     * \returns the bestmove and score of this thread
      */
-    MoveScore iterative_deepen(ThreadData& tdata);
+    void iterative_deepen(ThreadData& tdata);
 
     /** Recursively searches for the best move and score of the current position assuming optimal
      * play by both us and the opponent

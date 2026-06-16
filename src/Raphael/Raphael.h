@@ -227,13 +227,6 @@ private:
         const SearchStack* ss
     ) const;
 
-    /** Returns the stringified PV line
-     *
-     * \param pv the PV to stringify
-     * \returns the stringified PV line of the board
-     */
-    std::string get_pv_line(const PVList& pv) const;
-
 
     /** Adjusts the raw static eval using scaling and corrhists
      *

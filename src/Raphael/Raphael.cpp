@@ -285,15 +285,10 @@ void Raphael::print_uci_info(
     cout << " wdl " << wdl_res.win << " " << wdl_res.draw << " " << wdl_res.loss;
 
     cout << " hashfull " << tt_.hashfull();
-    if (score_type == UCIScoreType::EXACT) cout << " pv " << get_pv_line(ss->pv);
+    cout << " pv";
+    for (i32 i = 0; i < ss->pv.length; i++)
+        cout << " " << chess::uci::from_move(ss->pv.moves[i], params_.chess960);
     cout << "\n" << flush;
-}
-
-string Raphael::get_pv_line(const PVList& pv) const {
-    string pvline = "";
-    for (i32 i = 0; i < pv.length; i++)
-        pvline += chess::uci::from_move(pv.moves[i], params_.chess960) + " ";
-    return pvline;
 }
 
 
@@ -750,7 +745,12 @@ i32 Raphael::negamax(
 
         position.unmake_move();
 
-        if (is_root) tm_.inc_nodes(thread_id, move, tm_.get_nodes(thread_id) - old_nodes);
+        if (is_root) {
+            tm_.inc_nodes(thread_id, move, tm_.get_nodes(thread_id) - old_nodes);
+            if (move_searched == 1) ss->pv.update(move, (ss + 1)->pv);
+        }
+
+        if (stop_.load(memory_order_relaxed)) return 0;
 
         if (score > bestscore) {
             bestscore = score;
@@ -822,17 +822,15 @@ i32 Raphael::negamax(
     // terminal analysis
     if (move_searched == 0) return (in_check) ? -MATE_SCORE + ply : 0;  // reward faster mate
 
-    if (!stop_.load(memory_order_relaxed)) {
-        // update transposition table
-        if (!ss->excluded)
-            tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth, ss->ttpv, ttflag, ply);
+    // update transposition table
+    if (!ss->excluded)
+        tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth, ss->ttpv, ttflag, ply);
 
-        // update corrhist
-        if (!in_check && (!bestmove || board.is_quiet(bestmove))
-            && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
-                || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
-            history.update_corrections(position, fdepth, bestscore, ss->static_eval);
-    }
+    // update corrhist
+    if (!in_check && (!bestmove || board.is_quiet(bestmove))
+        && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
+            || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
+        history.update_corrections(position, fdepth, bestscore, ss->static_eval);
 
     return bestscore;
 }

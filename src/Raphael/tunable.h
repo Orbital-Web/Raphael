@@ -208,6 +208,8 @@ Tunable(NODE_TM_BASE, 1991, 1750, 2250, true);
 Tunable(NODE_TM_MUL, 1531, 1250, 1750, true);
 
 // search
+Tunable(BM_SCORE_OFFSET, 10, 0, 20, false);
+
 Tunable(ASP_MIN_DEPTH, 3, 2, 5, false);
 Tunable(ASP_INIT_SIZE, 12, 5, 50, true);
 Tunable(ASP_WIDENING_FACTOR, 95, 16, 128, true);

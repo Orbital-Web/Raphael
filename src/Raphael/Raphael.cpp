@@ -11,6 +11,7 @@
 #include <cstring>
 #include <future>
 #include <iostream>
+#include <unordered_map>
 
 using namespace raphael;
 using std::abs;
@@ -29,6 +30,7 @@ using std::memset;
 using std::min;
 using std::string;
 using std::swap;
+using std::unordered_map;
 
 
 
@@ -246,10 +248,74 @@ void Raphael::t_search_function(i32 thread_id) {
         search_end_barrier_->arrive_and_wait();
 
         if (thread_id == 0) {
-            // TODO: thread voting
-            const auto& selected_tdata = *thread_data_[0];
+            // thread voting
+            i32 min_score = INF_SCORE;
+            for (const auto& td : thread_data_) {
+                const i32 score = td->result.score;
+                if (score != NONE_SCORE && score < min_score) min_score = score;
+            }
+
+            unordered_map<u16, i32> move_votes{};
+            i32 thread_weights[thread_data_.size()] = {};
+            for (const auto& td : thread_data_) {
+                const i32 tid = td->thread_id;
+                const i32 score = td->result.score;
+                const u16 move = static_cast<u16>(td->result.pv->moves[0]);
+
+                if (score != NONE_SCORE) {
+                    thread_weights[tid] = (score - min_score + BM_SCORE_OFFSET) * td->result.depth;
+                    move_votes[move] += thread_weights[tid];
+                }
+            }
+
+            i32 best_tid = 0;
+            i32 best_score = NONE_SCORE;
+            i32 best_votes = -1;
+            const auto accept_thread = [&](i32 tid, i32 score, i32 votes) {
+                best_tid = tid;
+                best_score = score;
+                best_votes = votes;
+            };
+
+            for (const auto& td : thread_data_) {
+                const i32 tid = td->thread_id;
+                const i32 score = td->result.score;
+                const i32 votes = move_votes[static_cast<u16>(td->result.pv->moves[0])];
+
+                if (score == NONE_SCORE) continue;
+                if (best_score == NONE_SCORE) {
+                    accept_thread(tid, score, votes);
+                    continue;
+                }
+
+                // take shorter win/loss if best score is decisive
+                if (utils::is_mate(best_score)) {
+                    if (abs(score) > abs(best_score)) accept_thread(tid, score, votes);
+                    continue;
+                }
+
+                // select thread if score is decisive
+                if (utils::is_mate(score)) {
+                    accept_thread(tid, score, votes);
+                    continue;
+                }
+
+                // otherwise, pick move with higher votes
+                if (votes > best_votes) {
+                    accept_thread(tid, score, votes);
+                    continue;
+                }
+
+                // between threads with equal votes, pick the one with highest weight with full pv
+                if (votes == best_votes
+                    && (thread_weights[tid] * (td->result.pv->length > 2))
+                           > (thread_weights[best_tid]
+                              * (thread_data_[best_tid]->result.pv->length > 2)))
+                    accept_thread(tid, score, votes);
+            }
 
             // show last info and save results
+            const auto& selected_tdata = *thread_data_[best_tid];
             const auto& result = selected_tdata.result;
             const auto& bestmove = result.pv->moves[0];
             const bool is_mate = utils::is_mate(result.score);

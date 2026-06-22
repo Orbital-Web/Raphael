@@ -2,6 +2,7 @@
 #include <Raphael/SEE.h>
 #include <Raphael/consts.h>
 #include <Raphael/movepick.h>
+#include <Raphael/numa.h>
 #include <Raphael/utils.h>
 #include <Raphael/wdl.h>
 
@@ -62,8 +63,9 @@ void Raphael::PVList::update(const chess::Move move, const PVList& child) {
 Raphael::Raphael(): params_(default_params()), tt_(params_.hash) {
     params_.hash.set_callback([this]() { tt_.resize(params_.hash, params_.threads); });
     params_.threads.set_callback([this]() { set_threads(params_.threads); });
-    set_threads(params_.threads);
+    numa::init();
     init_tunables();
+    set_threads(params_.threads);
 }
 
 Raphael::~Raphael() { kill_search(); }
@@ -223,6 +225,7 @@ void Raphael::kill_search() {
 
 
 void Raphael::t_search_function(i32 thread_id) {
+    numa::bind_thread(thread_id);
     thread_data_[thread_id] = make_unique<ThreadData>();
     auto& tdata = *thread_data_[thread_id];
     tdata.thread_id = thread_id;

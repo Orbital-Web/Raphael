@@ -20,6 +20,9 @@ ARCH ?= auto
 # Debug option
 DEBUG ?= off
 
+# NUMA
+NUMA ?= off
+
 # PGO
 PGO ?= off
 
@@ -205,6 +208,20 @@ else
 endif
 
 override CXXFLAGS += $(DEBUG_FLAGS)
+
+#---------------------------------------------------------------------------------------------------
+# NUMA Flags
+#---------------------------------------------------------------------------------------------------
+
+ifeq ($(NUMA),on)
+    $(info NUMA support enabled)
+    override CXXFLAGS += -DUSE_LIBNUMA
+    override LDFLAGS  += -lnuma
+else ifeq ($(NUMA),off)
+    $(info NUMA support disabled)
+else
+    $(error Unknown NUMA flag '$(NUMA)')
+endif
 
 #---------------------------------------------------------------------------------------------------
 # PGO Configurations

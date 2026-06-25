@@ -23,18 +23,6 @@ struct HistoryEntry {
     void update_with_base(i32 bonus, i32 base);
 };
 
-struct CorrectionEntry {
-    i16 value = 0;
-
-    operator i32() const;
-
-    /** Updates the corrhist entry with gravity
-     *
-     * \param bonus bonus to apply, negative to apply penalty
-     */
-    void update(i32 bonus);
-};
-
 
 
 class History {
@@ -42,11 +30,6 @@ private:
     HistoryEntry butterfly_hist_[64][64][2][2];  // [from][to][from attacked][to attacked]
     HistoryEntry cont_hist_[12][64][12][64];     // [prev from][prev to][from][to]
     HistoryEntry capt_hist_[64][64][13];         // [from][to][piece, 12 for non-capture queening]
-
-    CorrectionEntry pawn_correction_[2][CORRHIST_SIZE];        // [stm][pawn_hash idx]
-    CorrectionEntry major_correction_[2][CORRHIST_SIZE];       // [stm][major_hash idx]
-    CorrectionEntry nonpawn_correction_[2][2][CORRHIST_SIZE];  // [stm][color][nonpawn_hash idx]
-    CorrectionEntry cont_correction_[12][64][12][64];          // [prev from][prev to][from][to]
 
 public:
     /** Initializes all the history tables with zeros */
@@ -106,23 +89,6 @@ public:
     i32 get_noisyscore(chess::Move move, chess::Piece captured) const;
 
 
-    /** Updates the correction histories
-     *
-     * \param position current position
-     * \param fdepth current fractional depth
-     * \param score current score
-     * \param static_eval current static eval
-     */
-    void update_corrections(const Position<true>& position, i32 fdepth, i32 score, i32 static_eval);
-
-    /** Returns the correction term
-     *
-     * \param position current position
-     * \returns the correction term
-     */
-    i32 get_correction(const Position<true>& position) const;
-
-
     /** Zeros out all the histories */
     void clear();
 
@@ -156,44 +122,5 @@ private:
      */
     const HistoryEntry& capt_entry(chess::Move move, chess::Piece captured) const;
     HistoryEntry& capt_entry(chess::Move move, chess::Piece captured);
-
-    /** Returns a reference to the pawn corrhist entry
-     *
-     * \param board current board
-     * \returns pawn corrhist entry
-     */
-    const CorrectionEntry& pawn_corr_entry(const chess::Board& board) const;
-    CorrectionEntry& pawn_corr_entry(const chess::Board& board);
-
-    /** Returns a reference to the major corrhist entry
-     *
-     * \param board current board
-     * \returns major corrhist entry
-     */
-    const CorrectionEntry& major_corr_entry(const chess::Board& board) const;
-    CorrectionEntry& major_corr_entry(const chess::Board& board);
-
-    /** Returns a reference to the non-pawn corrhist entry
-     *
-     * \param board current board
-     * \param color color of non-pawns
-     * \returns non-pawn corrhist entry
-     */
-    const CorrectionEntry& nonpawn_corr_entry(const chess::Board& board, chess::Color color) const;
-    CorrectionEntry& nonpawn_corr_entry(const chess::Board& board, chess::Color color);
-
-    /** Returns a reference to the continuation correction history entry
-     *
-     * \param move current move
-     * \param moving current moving piece
-     * \param prev_move previous move and moving piece
-     * \returns continuation history entry
-     */
-    const CorrectionEntry& cont_corr_entry(
-        chess::Move move, chess::Piece moving, chess::PieceMove prev_move
-    ) const;
-    CorrectionEntry& cont_corr_entry(
-        chess::Move move, chess::Piece moving, chess::PieceMove prev_move
-    );
 };
 }  // namespace raphael

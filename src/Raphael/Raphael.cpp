@@ -1,7 +1,6 @@
 #include <Raphael/Raphael.h>
 #include <Raphael/consts.h>
 #include <Raphael/movepick.h>
-#include <Raphael/numa.h>
 #include <Raphael/see.h>
 #include <Raphael/utils.h>
 #include <Raphael/wdl.h>
@@ -206,7 +205,12 @@ i32 Raphael::static_eval(bool corrected) {
 void Raphael::reset() {
     assert(!is_searching_.load(memory_order_acquire));
     tt_.clear(params_.threads);
-    for (auto& tdata : thread_data_) tdata->history.clear();
+    for (auto& tdata : thread_data_) {
+        tdata->history.clear();
+        tdata->corrhist.clear();
+    }
+    for (i32 node = 0; node < numa::node_count(); node++)
+        shared_corrhist_.get_for_node(node)->clear();
 }
 
 
@@ -378,14 +382,15 @@ void Raphael::print_uci_info(const ThreadData& tdata) const {
 
 i32 Raphael::adjust_score(const ThreadData& tdata, i32 raw_static_eval, i32& corrplexity) const {
     const auto& position = tdata.position;
-    const auto& history = tdata.history;
+    const auto* thread_corrhist = &tdata.corrhist;
+    const auto* shared_corrhist = shared_corrhist_.get(tdata.thread_id);
     const auto& board = position.board();
 
     // halfmove scaling
     if (!params_.datagen) raw_static_eval = raw_static_eval * (200 - board.halfmoves()) / 200;
 
     // corrhist
-    const i32 correction = history.get_correction(position);
+    const i32 correction = corrhist::get(position, thread_corrhist, shared_corrhist);
     raw_static_eval = raw_static_eval + correction;
     corrplexity = abs(correction);
 
@@ -909,7 +914,13 @@ i32 Raphael::negamax(
     if (!in_check && (!bestmove || board.is_quiet(bestmove))
         && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
             || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
-        history.update_corrections(position, fdepth, bestscore, ss->static_eval);
+    {
+        auto* thread_corrhist = &tdata.corrhist;
+        auto* shared_corrhist = shared_corrhist_.get(tdata.thread_id);
+        corrhist::update(
+            position, thread_corrhist, shared_corrhist, fdepth, bestscore, ss->static_eval
+        );
+    }
 
     return bestscore;
 }

@@ -20,7 +20,7 @@ namespace raphael::numa {
  *
  * \returns cpu mappings
  */
-std::span<const cpu_set_t> thread_mapping() {
+inline std::span<const cpu_set_t> thread_mapping() {
     static const auto mapping = [] {
         const auto num_nodes = numa_max_node() + 1;
         std::vector<cpu_set_t> masks{};
@@ -56,20 +56,20 @@ std::span<const cpu_set_t> thread_mapping() {
  *
  * \returns number of NUMA nodes
  */
-i32 node_count() { return static_cast<i32>(thread_mapping().size()); }
+inline i32 node_count() { return static_cast<i32>(thread_mapping().size()); }
 
 /** Returns the corresponding NUMA node
  *
  * \param thread_id thread to get NUMA node for
  * \returns corresponding NUMA node
  */
-i32 get_node(i32 thread_id) { return static_cast<i32>(thread_id % node_count()); }
+inline i32 get_node(i32 thread_id) { return static_cast<i32>(thread_id % node_count()); }
 
 /** Binds a thread to the corresponding NUMA node
  *
  * \param thread_id thread to bind
  */
-void bind_thread(i32 thread_id) {
+inline void bind_thread(i32 thread_id) {
     const auto node = get_node(thread_id);
     const auto handle = pthread_self();
     const auto* cpuset = &thread_mapping()[node];
@@ -77,23 +77,23 @@ void bind_thread(i32 thread_id) {
 }
 
 /** Initializes the NUMA support */
-void init() {
+inline void init() {
     if (numa_available() < 0) throw std::runtime_error("NUMA not supported");
     thread_mapping();  // pre-compute
 }
 
 #else
 /** Returns 1 as we assume there is only one NUMA node */
-i32 node_count() { return 1; }
+inline i32 node_count() { return 1; }
 
 /** Returns 0 as we assume there is only one NUMA node */
-i32 get_node(i32) { return 0; }
+inline i32 get_node(i32) { return 0; }
 
 /** Does nothing as libnuma isn't linked */
-void bind_thread(i32) {}
+inline void bind_thread(i32) {}
 
 /** Does nothing as libnuma isnt linked */
-void init() {}
+inline void init() {}
 #endif
 
 
@@ -142,5 +142,14 @@ public:
      * \returns the corresponding object
      */
     T* get(i32 thread_id) { return data_[get_node(thread_id)]; }
+    const T* get(i32 thread_id) const { return data_[get_node(thread_id)]; }
+
+    /** Returns the object on a specific NUMA node
+     *
+     * \param node_id node_id to get corresponding object for
+     * \returns the corresponding object
+     */
+    T* get_for_node(i32 node_id) { return data_[node_id]; }
+    const T* get_for_node(i32 node_id) const { return data_[node_id]; }
 };
 }  // namespace raphael::numa

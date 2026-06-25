@@ -1,5 +1,7 @@
 #pragma once
+#include <Raphael/corrhist.h>
 #include <Raphael/history.h>
+#include <Raphael/numa.h>
 #include <Raphael/position.h>
 #include <Raphael/tm.h>
 #include <Raphael/transposition.h>
@@ -94,6 +96,7 @@ private:
 
         Position<true> position;
         History history;
+        CorrectionHistory corrhist;
         SearchResult result;
         i32 min_nmp_ply;
         i32 thread_id;
@@ -104,6 +107,7 @@ private:
     UciInfoLevel ucilevel_ = UciInfoLevel::NONE;
 
     TranspositionTable tt_;
+    numa::NumaUniqueAllocation<SharedCorrectionHistory> shared_corrhist_;
     TimeManager tm_;
 
     // thread helpers

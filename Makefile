@@ -21,7 +21,7 @@ ARCH ?= auto
 DEBUG ?= off
 
 # NUMA
-NUMA ?= on
+NUMA ?= off
 
 # PGO
 PGO ?= off

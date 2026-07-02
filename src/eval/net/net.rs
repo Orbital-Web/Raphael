@@ -50,8 +50,8 @@ use crate::threat_inputs::ThreatInputs;
 
 fn main() {
     // model params
-    const NET_ID: &str = "yogsothoth_v3";
-    const L1_SIZE: usize = 768;
+    const NET_ID: &str = "yogsothoth_v4";
+    const L1_SIZE: usize = 1024;
     const L2_SIZE: usize = 32;
     const L3_SIZE: usize = 32;
     const NUM_INPUT_BUCKETS: usize = 16;
@@ -185,12 +185,12 @@ fn main() {
 
     let settings = LocalSettings { threads: 2, test_set: None, output_directory: "checkpoints", batch_queue_size: 32 };
 
-    // trainer.run(
-    //     &schedule_stage0,
-    //     &settings,
-    //     &ViriBinpackLoader::new(&DATASET_STAGE0.to_string(), 4096, 4, filter.clone()),
-    // );
-    trainer.load_from_checkpoint("checkpoints/yogsothoth_v2_stage0-800");
+    trainer.run(
+        &schedule_stage0,
+        &settings,
+        &ViriBinpackLoader::new(&DATASET_STAGE0.to_string(), 4096, 4, filter.clone()),
+    );
+    // trainer.load_from_checkpoint("checkpoints/yogsothoth_v2_stage0-800");
     trainer.run(
         &schedule_stage1,
         &settings,

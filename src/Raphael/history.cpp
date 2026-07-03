@@ -25,7 +25,7 @@ void HistoryEntry::update_with_base(i32 bonus, i32 base) {
 
 
 
-History::History(): butterfly_hist_{}, cont_hist_{}, capt_hist_{} {}
+History::History(): butterfly_hist_{}, pawn_hist_{}, cont_hist_{}, capt_hist_{} {}
 
 
 i32 History::bonus(i32 fdepth, i32 depth_mul, i32 base_bonus, i32 max_bonus) const {
@@ -44,6 +44,7 @@ void History::update_quiet(chess::Move move, const Position<true>& position, i32
     const auto total_conthist = get_conthist(move, position);
 
     butterfly_entry(move, threats).update(bonus);
+    pawn_entry(board.pawn_hash(), move, moving).update(bonus);
     if (prev1.moving != chess::Piece::NONE)
         cont_entry(move, moving, prev1).update_with_base(bonus, total_conthist);
     if (prev2.moving != chess::Piece::NONE)
@@ -80,9 +81,11 @@ i32 History::get_conthist(chess::Move move, const Position<true>& position) cons
 i32 History::get_quietscore(chess::Move move, const Position<true>& position) const {
     const auto& board = position.board();
     const auto threats = board.threats();
+    const auto moving = board.at(move.from());
 
     i32 score = 0;
-    score += butterfly_entry(move, threats);
+    score += butterfly_entry(move, threats) * BUTTERFLY_WEIGHT / 128;
+    score += pawn_entry(board.pawn_hash(), move, moving) * PAWNHIST_WEIGHT / 128;
     score += get_conthist(move, position);
     return score;
 }
@@ -94,6 +97,7 @@ i32 History::get_noisyscore(chess::Move move, chess::Piece captured) const {
 
 void History::clear() {
     memset(butterfly_hist_, 0, sizeof(butterfly_hist_));
+    memset(pawn_hist_, 0, sizeof(pawn_hist_));
     memset(cont_hist_, 0, sizeof(cont_hist_));
     memset(capt_hist_, 0, sizeof(capt_hist_));
 }
@@ -109,6 +113,13 @@ HistoryEntry& History::butterfly_entry(chess::Move move, chess::BitBoard threats
     const auto from_attacked = threats.is_set(move.from());
     const auto to_attacked = threats.is_set(move.to());
     return butterfly_hist_[move.from()][move.to()][from_attacked][to_attacked];
+}
+
+const HistoryEntry& History::pawn_entry(u64 pawn_key, chess::Move move, chess::Piece moving) const {
+    return pawn_hist_[pawn_key % PAWNHIST_SIZE][moving][move.to()];
+}
+HistoryEntry& History::pawn_entry(u64 pawn_key, chess::Move move, chess::Piece moving) {
+    return pawn_hist_[pawn_key % PAWNHIST_SIZE][moving][move.to()];
 }
 
 const HistoryEntry& History::cont_entry(

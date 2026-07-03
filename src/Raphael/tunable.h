@@ -319,6 +319,7 @@ TunableCallback(SEE_QUEEN_VAL, 1268, 900, 1500, update_see_table, true);
 
 // move ordering
 static constexpr i32 HISTORY_MAX = 16384;
+static constexpr i32 PAWNHIST_SIZE = 512;
 static constexpr i32 CAPTHIST_DIV = 8;
 
 Tunable(GOOD_NOISY_SEE_BASE, -1, -128, 128, true);
@@ -333,6 +334,8 @@ Tunable(HISTORY_PENALTY_DEPTH_MUL, 86, 32, 384, true);
 Tunable(HISTORY_PENALTY_BASE, 148, 32, 384, true);
 Tunable(HISTORY_PENALTY_MAX, 1814, 1024, 4096, true);
 
+Tunable(BUTTERFLY_WEIGHT, 128, 32, 256, true);
+Tunable(PAWNHIST_WEIGHT, 64, 32, 256, true);
 Tunable(CONTHIST1_WEIGHT, 123, 32, 256, true);
 Tunable(CONTHIST2_WEIGHT, 125, 32, 256, true);
 Tunable(CONTHIST4_WEIGHT, 82, 32, 256, true);

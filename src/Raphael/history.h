@@ -27,9 +27,10 @@ struct HistoryEntry {
 
 class History {
 private:
-    HistoryEntry butterfly_hist_[64][64][2][2];  // [from][to][from attacked][to attacked]
-    HistoryEntry cont_hist_[12][64][12][64];     // [prev from][prev to][from][to]
-    HistoryEntry capt_hist_[64][64][13];         // [from][to][piece, 12 for non-capture queening]
+    HistoryEntry butterfly_hist_[64][64][2][2];      // [from][to][from attacked][to attacked]
+    HistoryEntry pawn_hist_[PAWNHIST_SIZE][12][64];  // [pawn key][from][to]
+    HistoryEntry cont_hist_[12][64][12][64];         // [prev from][prev to][from][to]
+    HistoryEntry capt_hist_[64][64][13];  // [from][to][piece, 12 for non-capture queening]
 
 public:
     /** Initializes all the history tables with zeros */
@@ -101,6 +102,16 @@ private:
      */
     const HistoryEntry& butterfly_entry(chess::Move move, chess::BitBoard threats) const;
     HistoryEntry& butterfly_entry(chess::Move move, chess::BitBoard threats);
+
+    /** Returns a reference to the pawn history entry
+     *
+     * \param pawn_key key for the pawn
+     * \param move current move
+     * \param moving current moving piece
+     * \returns pawn history entry
+     */
+    const HistoryEntry& pawn_entry(u64 pawn_key, chess::Move move, chess::Piece moving) const;
+    HistoryEntry& pawn_entry(u64 pawn_key, chess::Move move, chess::Piece moving);
 
     /** Returns a reference to the continuation history entry
      *

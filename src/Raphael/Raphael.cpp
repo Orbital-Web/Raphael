@@ -757,8 +757,8 @@ i32 Raphael::negamax(
                     const i32 te_margin = TE_MARGIN_BASE + is_PV * TE_MARGIN_PV;
                     fext = SE_EXT + (score + de_margin < s_beta) * DE_EXT
                            + (is_quiet && score + te_margin < s_beta) * TE_EXT;
-                } else if (s_beta >= beta)
-                    return s_beta;  // multicut
+                } else if (score >= beta)
+                    return (utils::is_mate(score)) ? score : (score + beta) / 2;  // multicut
                 else if (cutnode)
                     fext = -CUTNODE_NE_RED;  // cutnode negative extensions
                 else if (ttentry.score >= beta)

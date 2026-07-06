@@ -581,7 +581,8 @@ i32 Raphael::negamax(
                                - improving * RFP_MARGIN_IMPROVING
                                - (opp_worsening_rate > 0) * RFP_MARGIN_OPP_WORSENING
                                + corrplexity * RFP_MARGIN_CORRPLEXITY / 1024;
-        if (fdepth <= RFP_MAX_DEPTH && score_estimate - rfp_margin >= beta) return score_estimate;
+        if (fdepth <= RFP_MAX_DEPTH && !ss->ttpv && score_estimate - rfp_margin >= beta)
+            return score_estimate;
 
         // razoring
         const i32 razor_margin

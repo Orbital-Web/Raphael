@@ -367,6 +367,10 @@ Tunable(MAT_SCALE_BISHOP, 340, 200, 500, false);
 Tunable(MAT_SCALE_ROOK, 590, 400, 800, false);
 Tunable(MAT_SCALE_QUEEN, 970, 800, 1400, false);
 
+Tunable(OPT_SCALE_BASE, 2000, 1000, 4000, false);
+Tunable(OPT_MAX_BONUS, 150, 75, 300, false);
+Tunable(OPT_STRETCH, 100, 50, 200, false);
+
 // commands
 #ifndef MEASURE_SPARSITY
 static constexpr i32 BENCH_DEPTH = 14;

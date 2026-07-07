@@ -387,14 +387,15 @@ i32 Raphael::adjust_score(const ThreadData& tdata, i32 raw_static_eval, i32& cor
     const auto& board = position.board();
 
     if (!params_.datagen) {
-        // material scaling
-        const i32 material_scale = MAT_SCALE_BASE
-                                   + board.occ(chess::PieceType::PAWN).count() * MAT_SCALE_PAWN
-                                   + board.occ(chess::PieceType::KNIGHT).count() * MAT_SCALE_KNIGHT
-                                   + board.occ(chess::PieceType::BISHOP).count() * MAT_SCALE_BISHOP
-                                   + board.occ(chess::PieceType::ROOK).count() * MAT_SCALE_ROOK
-                                   + board.occ(chess::PieceType::QUEEN).count() * MAT_SCALE_QUEEN;
-        raw_static_eval = raw_static_eval * material_scale / 32768;
+        // material scaling and optimism
+        const i32 material = board.occ(chess::PieceType::PAWN).count() * MAT_SCALE_PAWN
+                             + board.occ(chess::PieceType::KNIGHT).count() * MAT_SCALE_KNIGHT
+                             + board.occ(chess::PieceType::BISHOP).count() * MAT_SCALE_BISHOP
+                             + board.occ(chess::PieceType::ROOK).count() * MAT_SCALE_ROOK
+                             + board.occ(chess::PieceType::QUEEN).count() * MAT_SCALE_QUEEN;
+        const i32 material_scale = MAT_SCALE_BASE + material;
+        const i32 optimism_bonus = tdata.optimism[board.stm()] * (OPT_SCALE_BASE + material);
+        raw_static_eval = ((raw_static_eval * material_scale) + optimism_bonus) / 32768;
 
         // halfmove scaling
         raw_static_eval = raw_static_eval * (200 - board.halfmoves()) / 200;
@@ -413,12 +414,16 @@ void Raphael::iterative_deepen(ThreadData& tdata) {
     const i32 thread_id = tdata.thread_id;
     auto* ss = &tdata.search_stack[2];
     auto* mv = tdata.move_stack;
+    const auto& board = tdata.position.board();
+    tdata.optimism = {};
 
     auto& result = tdata.result;
     result.pv = &ss->pv;
     result.score = -INF_SCORE;
     result.depth = 1;
     result.bound = UCIScoreType::UPPER;
+
+    i32 avg_score = NONE_SCORE;
 
     // begin iterative deepening
     for (; result.depth <= MAX_DEPTH; result.depth++) {
@@ -453,6 +458,7 @@ void Raphael::iterative_deepen(ThreadData& tdata) {
                 result.bound = UCIScoreType::LOWER;
             } else {
                 result.bound = UCIScoreType::EXACT;
+                avg_score = (avg_score == NONE_SCORE) ? iterscore : (avg_score + iterscore) / 2;
                 break;
             }
 
@@ -464,6 +470,11 @@ void Raphael::iterative_deepen(ThreadData& tdata) {
 
         if (stop_.load(memory_order_relaxed)) break;  // don't use results if timeout
         result.score = iterscore;
+
+        // update optimism
+        const auto optimism = OPT_MAX_BONUS * avg_score / (abs(avg_score) + OPT_STRETCH);
+        tdata.optimism[board.stm()] = optimism;
+        tdata.optimism[!board.stm()] = -optimism;
 
         // check soft limit
         if (tm_.is_soft_limit_reached(

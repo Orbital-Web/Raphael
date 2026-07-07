@@ -6,6 +6,7 @@
 #include <Raphael/tm.h>
 #include <Raphael/transposition.h>
 
+#include <array>
 #include <atomic>
 #include <barrier>
 #include <memory>
@@ -98,6 +99,7 @@ private:
         History history;
         CorrectionHistory corrhist;
         SearchResult result;
+        std::array<i32, 2> optimism;
         i32 min_nmp_ply;
         i32 thread_id;
     };

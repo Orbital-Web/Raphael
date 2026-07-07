@@ -197,7 +197,7 @@ i32 Raphael::static_eval(bool corrected) {
 
     auto& tdata = *thread_data_[0];
     i32 corrplexity;
-    const auto raw_score = tdata.position.evaluate(!params_.datagen);
+    const auto raw_score = tdata.position.evaluate();
     return (corrected) ? adjust_score(tdata, raw_score, corrplexity) : raw_score;
 }
 
@@ -386,8 +386,19 @@ i32 Raphael::adjust_score(const ThreadData& tdata, i32 raw_static_eval, i32& cor
     const auto* shared_corrhist = shared_corrhist_.get(tdata.thread_id);
     const auto& board = position.board();
 
-    // halfmove scaling
-    if (!params_.datagen) raw_static_eval = raw_static_eval * (200 - board.halfmoves()) / 200;
+    if (!params_.datagen) {
+        // material scaling
+        const i32 material_scale = MAT_SCALE_BASE
+                                   + board.occ(chess::PieceType::PAWN).count() * MAT_SCALE_PAWN
+                                   + board.occ(chess::PieceType::KNIGHT).count() * MAT_SCALE_KNIGHT
+                                   + board.occ(chess::PieceType::BISHOP).count() * MAT_SCALE_BISHOP
+                                   + board.occ(chess::PieceType::ROOK).count() * MAT_SCALE_ROOK
+                                   + board.occ(chess::PieceType::QUEEN).count() * MAT_SCALE_QUEEN;
+        raw_static_eval = raw_static_eval * material_scale / 32768;
+
+        // halfmove scaling
+        raw_static_eval = raw_static_eval * (200 - board.halfmoves()) / 200;
+    }
 
     // corrhist
     const i32 correction = corrhist::get(position, thread_corrhist, shared_corrhist);
@@ -551,7 +562,7 @@ i32 Raphael::negamax(
             if (tthit && ttentry.static_eval != NONE_SCORE)
                 raw_static_eval = ttentry.static_eval;
             else if (!tt_.get_static_eval(ttkey, raw_static_eval)) {
-                raw_static_eval = position.evaluate(!params_.datagen);
+                raw_static_eval = position.evaluate();
                 tt_.set_static_eval(ttkey, raw_static_eval);
             }
 
@@ -938,8 +949,7 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
     const bool in_check = board.in_check();
     i32 corrplexity = 0;
     if (ply >= MAX_DEPTH - 1)
-        return (in_check) ? 0
-                          : adjust_score(tdata, position.evaluate(!params_.datagen), corrplexity);
+        return (in_check) ? 0 : adjust_score(tdata, position.evaluate(), corrplexity);
 
     // probe transposition table
     const auto ttkey = board.hash();
@@ -967,7 +977,7 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
         if (tthit && ttentry.static_eval != NONE_SCORE)
             raw_static_eval = ttentry.static_eval;
         else if (!tt_.get_static_eval(ttkey, raw_static_eval)) {
-            raw_static_eval = position.evaluate(!params_.datagen);
+            raw_static_eval = position.evaluate();
             tt_.set_static_eval(ttkey, raw_static_eval);
         }
 

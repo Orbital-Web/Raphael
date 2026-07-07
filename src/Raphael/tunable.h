@@ -232,6 +232,7 @@ Tunable(RFP_MARGIN_DEPTH_MUL, 36, 0, 128, true);
 Tunable(RFP_MARGIN_IMPROVING, 33, 0, 64, true);
 Tunable(RFP_MARGIN_OPP_WORSENING, 17, 0, 64, true);
 Tunable(RFP_MARGIN_CORRPLEXITY, 100, 32, 384, true);
+Tunable(RFP_TTPV_MARGIN, 30, 0, 64, true);
 
 Tunable(RAZOR_MAX_DEPTH, 651, 128, 1280, true);
 Tunable(RAZOR_MARGIN_DEPTH_MUL, 223, 32, 384, true);

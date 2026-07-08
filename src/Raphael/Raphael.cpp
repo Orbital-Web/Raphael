@@ -1002,7 +1002,10 @@ i32 Raphael::quiescence(ThreadData& tdata, const i32 ply, i32 alpha, i32 beta, M
     // initialize move generator
     mv->quietlist.clear();
     mv->noisylist.clear();
-    auto generator = MoveGenerator::quiescence(&mv->movelist, &position, &history, ttmove);
+    const bool search_quiets
+        = !is_PV && ttmove && ttentry.flag != tt_.UPPER && board.is_quiet(ttmove);
+    auto generator
+        = MoveGenerator::quiescence(&mv->movelist, &position, &history, ttmove, search_quiets);
 
     // search
     i32 bestscore = static_eval;

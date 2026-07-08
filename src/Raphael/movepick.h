@@ -65,13 +65,15 @@ public:
      * \param position pointer to current position
      * \param history pointer to history table
      * \param ttmove transposition table move
+     * \param force_quiets whether to force quiet moves to be generated
      * \returns the move generator
      */
     static MoveGenerator quiescence(
         chess::MoveList* movelist,
         const Position<true>* position,
         const History* history,
-        chess::Move ttmove
+        chess::Move ttmove,
+        bool force_quiets
     );
 
     /** Initializes a move generator for probcut

@@ -21,12 +21,13 @@ MoveGenerator MoveGenerator::quiescence(
     chess::MoveList* movelist,
     const Position<true>* position,
     const History* history,
-    chess::Move ttmove
+    chess::Move ttmove,
+    bool force_quiets
 ) {
     const auto& board = position->board();
 
     auto generator = MoveGenerator(Stage::QS_TT_MOVE, movelist, position, history, ttmove);
-    if (!board.in_check()) generator.skip_quiets();
+    if (!board.in_check() && !force_quiets) generator.skip_quiets();
 
     return generator;
 }

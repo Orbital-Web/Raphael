@@ -577,14 +577,11 @@ i32 Raphael::negamax(
             fdepth += HINDSIGHT_EXT;
 
         // reverse futility pruning
-        const i32 rfp_margin = RFP_MARGIN_DEPTH_MUL * fdepth / DEPTH_SCALE
-                               - improving * RFP_MARGIN_IMPROVING
-                               - (opp_worsening_rate > 0) * RFP_MARGIN_OPP_WORSENING
-                               + corrplexity * RFP_MARGIN_CORRPLEXITY / 1024;
-        if (fdepth <= RFP_MAX_DEPTH
-            && (!ss->ttpv || (ss->ttpv && tthit && ttentry.score >= beta + RFP_TTPV_MARGIN))
-            && score_estimate >= beta + rfp_margin)
-            return score_estimate;
+        const i32 rfp_margin
+            = RFP_MARGIN_DEPTH_MUL * fdepth / DEPTH_SCALE - improving * RFP_MARGIN_IMPROVING
+              - (opp_worsening_rate > 0) * RFP_MARGIN_OPP_WORSENING + (ss->ttpv) * RFP_MARGIN_TTPV
+              + corrplexity * RFP_MARGIN_CORRPLEXITY / 1024;
+        if (fdepth <= RFP_MAX_DEPTH && score_estimate >= beta + rfp_margin) return score_estimate;
 
         // razoring
         const i32 razor_margin

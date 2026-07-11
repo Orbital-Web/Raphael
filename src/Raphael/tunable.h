@@ -186,35 +186,35 @@ void init_tunables();
 static constexpr i32 DEPTH_SCALE = 128;
 
 // time management
-Tunable(TIME_FACTOR, 66, 35, 85, true);
-Tunable(INC_FACTOR, 801, 750, 850, true);
+Tunable(TIME_FACTOR, 66, 35, 85, false);
+Tunable(INC_FACTOR, 801, 750, 850, false);
 
-Tunable(HARD_TIME_FACTOR, 2015, 1750, 2250, true);
-Tunable(SOFT_TIME_FACTOR, 790, 500, 1000, true);
+Tunable(HARD_TIME_FACTOR, 2015, 1750, 2250, false);
+Tunable(SOFT_TIME_FACTOR, 790, 500, 1000, false);
 
 Tunable(MV_STAB_TM_MIN_DEPTH, 5, 3, 10, false);
-Tunable(MV_STAB_TM_BASE, 1223, 1000, 1500, true);
-Tunable(MV_STAB_TM_MUL, 46, 0, 150, true);
-Tunable(MV_STAB_TM_MIN, 795, 500, 1000, true);
+Tunable(MV_STAB_TM_BASE, 1223, 1000, 1500, false);
+Tunable(MV_STAB_TM_MUL, 46, 0, 150, false);
+Tunable(MV_STAB_TM_MIN, 795, 500, 1000, false);
 
 Tunable(SCORE_STAB_MARGIN, 10, 1, 50, false);
 Tunable(SCORE_STAB_TM_MIN_DEPTH, 5, 3, 10, false);
-Tunable(SCORE_STAB_TM_BASE, 1130, 1000, 1500, true);
-Tunable(SCORE_STAB_TM_MUL, 63, 0, 150, true);
-Tunable(SCORE_STAB_TM_MIN, 767, 500, 1000, true);
+Tunable(SCORE_STAB_TM_BASE, 1130, 1000, 1500, false);
+Tunable(SCORE_STAB_TM_MUL, 63, 0, 150, false);
+Tunable(SCORE_STAB_TM_MIN, 767, 500, 1000, false);
 
 Tunable(NODE_TM_MIN_DEPTH, 5, 3, 10, false);
-Tunable(NODE_TM_BASE, 1991, 1750, 2250, true);
-Tunable(NODE_TM_MUL, 1531, 1250, 1750, true);
+Tunable(NODE_TM_BASE, 1991, 1750, 2250, false);
+Tunable(NODE_TM_MUL, 1531, 1250, 1750, false);
 
 // search
 Tunable(BM_SCORE_OFFSET, 10, 0, 20, false);
 
 Tunable(ASP_MIN_DEPTH, 3, 2, 5, false);
-Tunable(ASP_INIT_SIZE, 12, 5, 50, true);
-Tunable(ASP_WIDENING_FACTOR, 95, 16, 128, true);
-Tunable(ASP_RED, 150, 64, 256, true);
-Tunable(ASP_MAX_RED, 370, 128, 640, true);
+Tunable(ASP_INIT_SIZE, 12, 5, 50, false);
+Tunable(ASP_WIDENING_FACTOR, 95, 16, 128, false);
+Tunable(ASP_RED, 150, 64, 256, false);
+Tunable(ASP_MAX_RED, 370, 128, 640, false);
 
 Tunable(TT_REPL_DEPTH_MARGIN, 512, 0, 1024, false);
 Tunable(TT_REPL_PV_MARGIN, 128, 0, 768, false);
@@ -222,134 +222,134 @@ Tunable(TT_VALUE_DEPTH_WEIGHT, 128, 0, 512, false);
 Tunable(TT_VALUE_AGE_WEIGHT, 256, 0, 512, false);
 
 // negamax
-Tunable(IIR_MIN_DEPTH, 397, 384, 768, true);
-Tunable(IIR_RED, 138, 64, 256, true);
-Tunable(HINDSIGHT_MIN_RED, 420, 384, 768, true);
-Tunable(HINDSIGHT_EXT, 150, 64, 256, true);
+Tunable(IIR_MIN_DEPTH, 397, 384, 768, false);
+Tunable(IIR_RED, 138, 64, 256, false);
+Tunable(HINDSIGHT_MIN_RED, 420, 384, 768, false);
+Tunable(HINDSIGHT_EXT, 150, 64, 256, false);
 
-Tunable(RFP_MAX_DEPTH, 995, 128, 1280, true);
-Tunable(RFP_MARGIN_DEPTH_MUL, 36, 0, 128, true);
-Tunable(RFP_MARGIN_IMPROVING, 33, 0, 64, true);
-Tunable(RFP_MARGIN_OPP_WORSENING, 17, 0, 64, true);
-Tunable(RFP_MARGIN_CORRPLEXITY, 100, 32, 384, true);
+Tunable(RFP_MAX_DEPTH, 995, 128, 1280, false);
+Tunable(RFP_MARGIN_DEPTH_MUL, 36, 0, 128, false);
+Tunable(RFP_MARGIN_IMPROVING, 33, 0, 64, false);
+Tunable(RFP_MARGIN_OPP_WORSENING, 17, 0, 64, false);
+Tunable(RFP_MARGIN_CORRPLEXITY, 100, 32, 384, false);
 
-Tunable(RAZOR_MAX_DEPTH, 651, 128, 1280, true);
-Tunable(RAZOR_MARGIN_DEPTH_MUL, 223, 32, 384, true);
-Tunable(RAZOR_MARGIN_BASE, 291, 32, 384, true);
+Tunable(RAZOR_MAX_DEPTH, 651, 128, 1280, false);
+Tunable(RAZOR_MARGIN_DEPTH_MUL, 223, 32, 384, false);
+Tunable(RAZOR_MARGIN_BASE, 291, 32, 384, false);
 
-Tunable(NMP_MIN_DEPTH, 291, 128, 1280, true);
-Tunable(NMP_MARGIN_DEPTH_MUL, 1464, 768, 1536, true);
-Tunable(NMP_MARGIN_BASE, 126, 32, 384, true);
-Tunable(NMP_RED_BASE, 420, 256, 1024, true);
+Tunable(NMP_MIN_DEPTH, 291, 128, 1280, false);
+Tunable(NMP_MARGIN_DEPTH_MUL, 1464, 768, 1536, false);
+Tunable(NMP_MARGIN_BASE, 126, 32, 384, false);
+Tunable(NMP_RED_BASE, 420, 256, 1024, false);
 Tunable(NMP_RED_DEPTH_MUL, 200, 64, 512, false);
 Tunable(NMP_RED_EVAL_MUL, 82, 16, 128, false);
 Tunable(NMP_RED_EVAL_MAX, 384, 128, 512, false);
 Tunable(NMP_VERIF_MIN_DEPTH, 1920, 1280, 2560, false);
 Tunable(NMP_VERIF_DEPTH_FACTOR, 96, 32, 128, false);
 
-Tunable(PC_MIN_DEPTH, 840, 512, 1024, true);
-Tunable(PC_MARGIN, 263, 128, 512, true);
-Tunable(PC_RED, 441, 128, 512, true);
-Tunable(PC_SEE_FACTOR, 125, 64, 256, true);
+Tunable(PC_MIN_DEPTH, 840, 512, 1024, false);
+Tunable(PC_MARGIN, 263, 128, 512, false);
+Tunable(PC_RED, 441, 128, 512, false);
+Tunable(PC_SEE_FACTOR, 125, 64, 256, false);
 
 inline MultiArray<i32, 2, 256> LMP_TABLE;  // lmp moves threshold[improving][depth]
 TunableCallback(LMP_THRESH_BASE, 3, 1, 12, update_lmp_table, false);
-Tunable(LMP_HIST_MUL, 512, 256, 1024, true);
+Tunable(LMP_HIST_MUL, 512, 256, 1024, false);
 
 Tunable(QUIET_HP_MAX_DEPTH, 512, 256, 1024, true);
 Tunable(QUIET_HP_BASE, -1000, -2000, 0, true);
-Tunable(QUIET_HP_DEPTH_MUL, -1000, -4000, 0, true);
+Tunable(QUIET_HP_DEPTH_MUL, -2000, -4000, 0, true);
 
-Tunable(FP_MAX_DEPTH, 876, 512, 1536, true);
-Tunable(FP_MARGIN_DEPTH_MUL, 44, 32, 384, true);
-Tunable(FP_MARGIN_BASE, 91, 32, 384, true);
-Tunable(FP_MARGIN_HIST_MUL, 396, 64, 512, true);
+Tunable(FP_MAX_DEPTH, 876, 512, 1536, false);
+Tunable(FP_MARGIN_DEPTH_MUL, 44, 32, 384, false);
+Tunable(FP_MARGIN_BASE, 91, 32, 384, false);
+Tunable(FP_MARGIN_HIST_MUL, 396, 64, 512, false);
 
-Tunable(SEE_QUIET_DEPTH_MUL, -23, -128, -16, true);
-Tunable(SEE_NOISY_DEPTH_MUL, -95, -256, -32, true);
+Tunable(SEE_QUIET_DEPTH_MUL, -23, -128, -16, false);
+Tunable(SEE_NOISY_DEPTH_MUL, -95, -256, -32, false);
 
-Tunable(SE_MIN_DEPTH, 603, 512, 1536, true);
-Tunable(SE_MIN_DEPTH_TTPV, 75, 32, 384, true);
-Tunable(SE_MIN_TT_DEPTH, 354, 128, 512, true);
-Tunable(SE_MARGIN_DEPTH_MUL, 88, 64, 512, true);
-Tunable(DE_MARGIN_BASE, 30, 0, 50, true);
-Tunable(DE_MARGIN_PV, 245, 200, 300, true);
-Tunable(TE_MARGIN_BASE, 107, 50, 150, true);
-Tunable(TE_MARGIN_PV, 723, 600, 800, true);
-Tunable(SE_EXT, 189, 64, 256, true);
-Tunable(DE_EXT, 141, 64, 256, true);
-Tunable(TE_EXT, 85, 64, 256, true);
-Tunable(NE_RED, 123, 64, 256, true);
-Tunable(CUTNODE_NE_RED, 132, 64, 256, true);
-Tunable(LDSE_MAX_DEPTH, 732, 256, 1024, true);
-Tunable(LDSE_MARGIN_BASE, 24, 0, 50, true);
-Tunable(LDSE_MARGIN_CORRPLEXITY_MUL, 102, 32, 128, true);
-Tunable(LDSE_EXT, 127, 64, 256, true);
+Tunable(SE_MIN_DEPTH, 603, 512, 1536, false);
+Tunable(SE_MIN_DEPTH_TTPV, 75, 32, 384, false);
+Tunable(SE_MIN_TT_DEPTH, 354, 128, 512, false);
+Tunable(SE_MARGIN_DEPTH_MUL, 88, 64, 512, false);
+Tunable(DE_MARGIN_BASE, 30, 0, 50, false);
+Tunable(DE_MARGIN_PV, 245, 200, 300, false);
+Tunable(TE_MARGIN_BASE, 107, 50, 150, false);
+Tunable(TE_MARGIN_PV, 723, 600, 800, false);
+Tunable(SE_EXT, 189, 64, 256, false);
+Tunable(DE_EXT, 141, 64, 256, false);
+Tunable(TE_EXT, 85, 64, 256, false);
+Tunable(NE_RED, 123, 64, 256, false);
+Tunable(CUTNODE_NE_RED, 132, 64, 256, false);
+Tunable(LDSE_MAX_DEPTH, 732, 256, 1024, false);
+Tunable(LDSE_MARGIN_BASE, 24, 0, 50, false);
+Tunable(LDSE_MARGIN_CORRPLEXITY_MUL, 102, 32, 128, false);
+Tunable(LDSE_EXT, 127, 64, 256, false);
 
-Tunable(LMR_MIN_DEPTH, 429, 128, 640, true);
+Tunable(LMR_MIN_DEPTH, 429, 128, 640, false);
 Tunable(LMR_FROMMOVE, 5, 2, 8, false);
 inline MultiArray<i32, 2, 256, 256> LMR_TABLE;  // lmr reduction[quiet][ply][move_searched]
-TunableCallback(LMR_QUIET_BASE, 155, 32, 384, update_lmr_table, true);
-TunableCallback(LMR_NOISY_BASE, 4, -128, 128, update_lmr_table, true);
-TunableCallback(LMR_QUIET_DIV, 369, 128, 512, update_lmr_table, true);
-TunableCallback(LMR_NOISY_DIV, 499, 128, 512, update_lmr_table, true);
-Tunable(LMR_NONPV, 38, 32, 384, true);
-Tunable(LMR_CUTNODE, 208, 32, 384, true);
-Tunable(LMR_IMPROVING, 112, 32, 384, true);
-Tunable(LMR_CHECK, 178, 32, 384, true);
-Tunable(LMR_QUIET_HIST_DIV, 12259, 8192, 16384, true);
-Tunable(LMR_NOISY_HIST_DIV, 11183, 8192, 16384, true);
-Tunable(LMR_CORRPLEXITY_DIV, 276, 128, 1024, true);
+TunableCallback(LMR_QUIET_BASE, 155, 32, 384, update_lmr_table, false);
+TunableCallback(LMR_NOISY_BASE, 4, -128, 128, update_lmr_table, false);
+TunableCallback(LMR_QUIET_DIV, 369, 128, 512, update_lmr_table, false);
+TunableCallback(LMR_NOISY_DIV, 499, 128, 512, update_lmr_table, false);
+Tunable(LMR_NONPV, 38, 32, 384, false);
+Tunable(LMR_CUTNODE, 208, 32, 384, false);
+Tunable(LMR_IMPROVING, 112, 32, 384, false);
+Tunable(LMR_CHECK, 178, 32, 384, false);
+Tunable(LMR_QUIET_HIST_DIV, 12259, 8192, 16384, false);
+Tunable(LMR_NOISY_HIST_DIV, 11183, 8192, 16384, false);
+Tunable(LMR_CORRPLEXITY_DIV, 276, 128, 1024, false);
 
 Tunable(DO_DEEPER_BASE, 40, 0, 128, false);
 Tunable(DO_DEEPER_DEPTH_MUL, 6, 1, 12, false);
 Tunable(DO_SHALLOWER_BASE, 0, 0, 128, false);
 Tunable(DO_SHALLOWER_DEPTH_MUL, 1, 1, 12, false);
-Tunable(DO_DEEPER_EXT, 158, 64, 256, true);
-Tunable(DO_SHALLOWER_RED, 140, 64, 256, true);
+Tunable(DO_DEEPER_EXT, 158, 64, 256, false);
+Tunable(DO_SHALLOWER_RED, 140, 64, 256, false);
 
 // quiescence
 Tunable(QS_MAX_MOVES, 3, 1, 5, false);
-Tunable(QS_FP_MARGIN, 145, 32, 384, true);
-Tunable(QS_SEE_THRESH, -189, -384, 32, true);
+Tunable(QS_FP_MARGIN, 145, 32, 384, false);
+Tunable(QS_SEE_THRESH, -189, -384, 32, false);
 
 // SEE
 inline MultiArray<i32, 13> SEE_TABLE;
 TunableCallback(SEE_PAWN_VAL, 100, 100, 100, update_see_table, false);
-TunableCallback(SEE_KNIGHT_VAL, 470, 300, 600, update_see_table, true);
-TunableCallback(SEE_BISHOP_VAL, 435, 300, 600, update_see_table, true);
-TunableCallback(SEE_ROOK_VAL, 676, 500, 800, update_see_table, true);
-TunableCallback(SEE_QUEEN_VAL, 1268, 900, 1500, update_see_table, true);
+TunableCallback(SEE_KNIGHT_VAL, 470, 300, 600, update_see_table, false);
+TunableCallback(SEE_BISHOP_VAL, 435, 300, 600, update_see_table, false);
+TunableCallback(SEE_ROOK_VAL, 676, 500, 800, update_see_table, false);
+TunableCallback(SEE_QUEEN_VAL, 1268, 900, 1500, update_see_table, false);
 
 // move ordering
 static constexpr i32 HISTORY_MAX = 16384;
 static constexpr i32 PAWNHIST_SIZE = 512;
 static constexpr i32 CAPTHIST_DIV = 8;
 
-Tunable(GOOD_NOISY_SEE_BASE, -1, -128, 128, true);
-Tunable(GOOD_NOISY_SEE_MUL, 363, 16, 2048, true);
+Tunable(GOOD_NOISY_SEE_BASE, -1, -128, 128, false);
+Tunable(GOOD_NOISY_SEE_MUL, 363, 16, 2048, false);
 
-Tunable(DIRECT_CHECK_BONUS, 5012, 1024, 8192, true);
+Tunable(DIRECT_CHECK_BONUS, 5012, 1024, 8192, false);
 
-Tunable(HISTORY_BONUS_DEPTH_MUL, 139, 32, 384, true);
-Tunable(HISTORY_BONUS_BASE, 99, 32, 384, true);
-Tunable(HISTORY_BONUS_MAX, 1789, 1024, 4096, true);
-Tunable(HISTORY_PENALTY_DEPTH_MUL, 86, 32, 384, true);
-Tunable(HISTORY_PENALTY_BASE, 148, 32, 384, true);
-Tunable(HISTORY_PENALTY_MAX, 1814, 1024, 4096, true);
+Tunable(HISTORY_BONUS_DEPTH_MUL, 139, 32, 384, false);
+Tunable(HISTORY_BONUS_BASE, 99, 32, 384, false);
+Tunable(HISTORY_BONUS_MAX, 1789, 1024, 4096, false);
+Tunable(HISTORY_PENALTY_DEPTH_MUL, 86, 32, 384, false);
+Tunable(HISTORY_PENALTY_BASE, 148, 32, 384, false);
+Tunable(HISTORY_PENALTY_MAX, 1814, 1024, 4096, false);
 
-Tunable(BUTTERFLY_WEIGHT, 128, 32, 256, true);
-Tunable(PAWNHIST_WEIGHT, 64, 32, 256, true);
-Tunable(CONTHIST1_WEIGHT, 123, 32, 256, true);
-Tunable(CONTHIST2_WEIGHT, 125, 32, 256, true);
-Tunable(CONTHIST4_WEIGHT, 82, 32, 256, true);
+Tunable(BUTTERFLY_WEIGHT, 128, 32, 256, false);
+Tunable(PAWNHIST_WEIGHT, 64, 32, 256, false);
+Tunable(CONTHIST1_WEIGHT, 123, 32, 256, false);
+Tunable(CONTHIST2_WEIGHT, 125, 32, 256, false);
+Tunable(CONTHIST4_WEIGHT, 82, 32, 256, false);
 
-Tunable(CAPTHIST_BONUS_DEPTH_MUL, 58, 32, 384, true);
-Tunable(CAPTHIST_BONUS_BASE, 192, 32, 384, true);
-Tunable(CAPTHIST_BONUS_MAX, 2324, 1024, 4096, true);
-Tunable(CAPTHIST_PENALTY_DEPTH_MUL, 174, 32, 384, true);
-Tunable(CAPTHIST_PENALTY_BASE, 77, 32, 384, true);
-Tunable(CAPTHIST_PENALTY_MAX, 1361, 1024, 4096, true);
+Tunable(CAPTHIST_BONUS_DEPTH_MUL, 58, 32, 384, false);
+Tunable(CAPTHIST_BONUS_BASE, 192, 32, 384, false);
+Tunable(CAPTHIST_BONUS_MAX, 2324, 1024, 4096, false);
+Tunable(CAPTHIST_PENALTY_DEPTH_MUL, 174, 32, 384, false);
+Tunable(CAPTHIST_PENALTY_BASE, 77, 32, 384, false);
+Tunable(CAPTHIST_PENALTY_MAX, 1361, 1024, 4096, false);
 
 // corrections
 static constexpr i32 CORRHIST_SIZE = 16384;
@@ -357,11 +357,11 @@ static constexpr i32 CORRHIST_MAX = 1024;
 static constexpr i32 CORRHIST_BONUS_DEPTH_DIV = 8;
 static constexpr i32 CORRHIST_BONUS_MAX = 256;
 
-Tunable(PAWN_CORRHIST_WEIGHT, 37, 16, 128, true);
-Tunable(MAJOR_CORRHIST_WEIGHT, 60, 16, 128, true);
-Tunable(NONPAWN_CORRHIST_WEIGHT, 63, 16, 128, true);
-Tunable(CONT1_CORRHIST_WEIGHT, 70, 16, 128, true);
-Tunable(CONT2_CORRHIST_WEIGHT, 57, 16, 128, true);
+Tunable(PAWN_CORRHIST_WEIGHT, 37, 16, 128, false);
+Tunable(MAJOR_CORRHIST_WEIGHT, 60, 16, 128, false);
+Tunable(NONPAWN_CORRHIST_WEIGHT, 63, 16, 128, false);
+Tunable(CONT1_CORRHIST_WEIGHT, 70, 16, 128, false);
+Tunable(CONT2_CORRHIST_WEIGHT, 57, 16, 128, false);
 
 // eval scaling
 Tunable(MAT_SCALE_BASE, 25100, 20000, 30000, false);

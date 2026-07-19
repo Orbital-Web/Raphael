@@ -275,7 +275,7 @@ void MoveGenerator::score_noisies() {
         const auto victim = board.get_captured(smove.move);
 
         i32 score = 0;
-        score += history_->get_noisyscore(smove.move, victim) / CAPTHIST_DIV;
+        score += history_->get_noisyscore(smove.move, *position_) / CAPTHIST_DIV;
         score += SEE_TABLE[victim];
         if (smove.move.type() == chess::Move::PROMOTION)
             score += SEE_TABLE[smove.move.promotion_type()] - SEE_TABLE[chess::PieceType::PAWN];

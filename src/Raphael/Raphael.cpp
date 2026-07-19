@@ -711,7 +711,7 @@ i32 Raphael::negamax(
         const bool is_quiet = board.is_quiet(move);
         const auto base_lmr = LMR_TABLE[is_quiet][fdepth / DEPTH_SCALE][move_searched + 1];
         const auto hist = (is_quiet) ? history.get_quietscore(move, position)
-                                     : history.get_noisyscore(move, board.get_captured(move));
+                                     : history.get_noisyscore(move, position);
 
         // moveloop pruning
         if (!is_root && !utils::is_loss(bestscore) && (!params_.datagen || !is_PV)) {
@@ -887,7 +887,7 @@ i32 Raphael::negamax(
                             CAPTHIST_BONUS_BASE,
                             CAPTHIST_BONUS_MAX
                         );
-                        history.update_noisy(bestmove, board.get_captured(bestmove), bonus);
+                        history.update_noisy(bestmove, position, bonus);
                     }
 
                     // always apply capthist penalty
@@ -898,7 +898,7 @@ i32 Raphael::negamax(
                         CAPTHIST_PENALTY_MAX
                     );
                     for (const auto noisymove : mv->noisylist)
-                        history.update_noisy(noisymove, board.get_captured(noisymove), penalty);
+                        history.update_noisy(noisymove, position, penalty);
 
                     break;  // prune
                 }

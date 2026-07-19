@@ -30,7 +30,7 @@ private:
     HistoryEntry butterfly_hist_[64][64][2][2];      // [from][to][from attacked][to attacked]
     HistoryEntry pawn_hist_[PAWNHIST_SIZE][12][64];  // [pawn key][from][to]
     HistoryEntry cont_hist_[12][64][12][64];         // [prev from][prev to][from][to]
-    HistoryEntry capt_hist_[64][64][13];  // [from][to][piece, 12 for non-capture queening]
+    HistoryEntry capt_hist_[64][64][13][2][2];  // [from][to][piece][from attacked][to attacked]
 
 public:
     /** Initializes all the history tables with zeros */
@@ -59,10 +59,10 @@ public:
     /** Applies a bonus to the noisy history score
      *
      * \param move noisy move
-     * \param captured the captured piece
+     * \param position current position
      * \param bonus bonus to apply, negative to apply penalty
      */
-    void update_noisy(chess::Move move, chess::Piece captured, i32 bonus);
+    void update_noisy(chess::Move move, const Position<true>& position, i32 bonus);
 
 
     /** Returns the continuation history score
@@ -84,10 +84,10 @@ public:
     /** Returns the noisy history score
      *
      * \param move noisy move
-     * \param captured the captured piece
+     * \param position current position
      * \returns noisy history score
      */
-    [[nodiscard]] i32 get_noisyscore(chess::Move move, chess::Piece captured) const;
+    [[nodiscard]] i32 get_noisyscore(chess::Move move, const Position<true>& position) const;
 
 
     /** Zeros out all the histories */
@@ -135,9 +135,14 @@ private:
      *
      * \param move move to get history for
      * \param captured the captured piece
+     * \param threats squares attacked by the current not side to move
      * \returns capture history entry
      */
-    [[nodiscard]] const HistoryEntry& capt_entry(chess::Move move, chess::Piece captured) const;
-    [[nodiscard]] HistoryEntry& capt_entry(chess::Move move, chess::Piece captured);
+    [[nodiscard]] const HistoryEntry& capt_entry(
+        chess::Move move, chess::Piece captured, chess::BitBoard threats
+    ) const;
+    [[nodiscard]] HistoryEntry& capt_entry(
+        chess::Move move, chess::Piece captured, chess::BitBoard threats
+    );
 };
 }  // namespace raphael

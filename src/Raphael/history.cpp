@@ -53,8 +53,11 @@ void History::update_quiet(chess::Move move, const Position<true>& position, i32
         cont_entry(move, moving, prev4).update_with_base(bonus, total_conthist);
 }
 
-void History::update_noisy(chess::Move move, chess::Piece captured, i32 bonus) {
-    capt_entry(move, captured).update(bonus);
+void History::update_noisy(chess::Move move, const Position<true>& position, i32 bonus) {
+    const auto& board = position.board();
+    const auto captured = board.get_captured(move);
+    const auto threats = board.threats();
+    capt_entry(move, captured, threats).update(bonus);
 }
 
 
@@ -90,8 +93,11 @@ i32 History::get_quietscore(chess::Move move, const Position<true>& position) co
     return score;
 }
 
-i32 History::get_noisyscore(chess::Move move, chess::Piece captured) const {
-    return capt_entry(move, captured);
+i32 History::get_noisyscore(chess::Move move, const Position<true>& position) const {
+    const auto& board = position.board();
+    const auto captured = board.get_captured(move);
+    const auto threats = board.threats();
+    return capt_entry(move, captured, threats);
 }
 
 
@@ -141,9 +147,17 @@ HistoryEntry& History::cont_entry(
     return cont_hist_[prev_move.moving][prev_move.move.to()][moving][move.to()];
 }
 
-const HistoryEntry& History::capt_entry(chess::Move move, chess::Piece captured) const {
-    return capt_hist_[move.from()][move.to()][captured];
+const HistoryEntry& History::capt_entry(
+    chess::Move move, chess::Piece captured, chess::BitBoard threats
+) const {
+    const auto from_attacked = threats.is_set(move.from());
+    const auto to_attacked = threats.is_set(move.to());
+    return capt_hist_[move.from()][move.to()][captured][from_attacked][to_attacked];
 }
-HistoryEntry& History::capt_entry(chess::Move move, chess::Piece captured) {
-    return capt_hist_[move.from()][move.to()][captured];
+HistoryEntry& History::capt_entry(
+    chess::Move move, chess::Piece captured, chess::BitBoard threats
+) {
+    const auto from_attacked = threats.is_set(move.from());
+    const auto to_attacked = threats.is_set(move.to());
+    return capt_hist_[move.from()][move.to()][captured][from_attacked][to_attacked];
 }

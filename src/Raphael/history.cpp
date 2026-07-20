@@ -56,8 +56,7 @@ void History::update_quiet(chess::Move move, const Position<true>& position, i32
 void History::update_noisy(chess::Move move, const Position<true>& position, i32 bonus) {
     const auto& board = position.board();
     const auto captured = board.get_captured(move);
-    const auto threats = board.threats();
-    capt_entry(move, captured, threats).update(bonus);
+    capt_entry(move, captured, board).update(bonus);
 }
 
 
@@ -96,8 +95,7 @@ i32 History::get_quietscore(chess::Move move, const Position<true>& position) co
 i32 History::get_noisyscore(chess::Move move, const Position<true>& position) const {
     const auto& board = position.board();
     const auto captured = board.get_captured(move);
-    const auto threats = board.threats();
-    return capt_entry(move, captured, threats);
+    return capt_entry(move, captured, board);
 }
 
 
@@ -148,16 +146,56 @@ HistoryEntry& History::cont_entry(
 }
 
 const HistoryEntry& History::capt_entry(
-    chess::Move move, chess::Piece captured, chess::BitBoard threats
+    chess::Move move, chess::Piece captured, const chess::Board& board
 ) const {
-    const auto from_attacked = threats.is_set(move.from());
-    const auto to_attacked = threats.is_set(move.to());
+    const auto threats = board.threats();
+    const auto moving = board.at(move.from());
+    chess::BitBoard attacked_lte = 0;
+
+    switch (moving.type()) {
+        case chess::PieceType::KING:
+        case chess::PieceType::QUEEN:
+            attacked_lte |= board.threats(chess::PieceType::QUEEN);
+            [[fallthrough]];
+        case chess::PieceType::ROOK:
+            attacked_lte |= board.threats(chess::PieceType::ROOK);
+            [[fallthrough]];
+        case chess::PieceType::BISHOP:
+        case chess::PieceType::KNIGHT:
+            attacked_lte |= board.threats(chess::PieceType::BISHOP);
+            attacked_lte |= board.threats(chess::PieceType::KNIGHT);
+            [[fallthrough]];
+        default: attacked_lte |= board.threats(chess::PieceType::PAWN); break;
+    }
+
+    const auto from_attacked = threats.is_set(move.from()) + attacked_lte.is_set(move.from());
+    const auto to_attacked = threats.is_set(move.to()) + attacked_lte.is_set(move.to());
     return capt_hist_[move.from()][move.to()][captured][from_attacked][to_attacked];
 }
 HistoryEntry& History::capt_entry(
-    chess::Move move, chess::Piece captured, chess::BitBoard threats
+    chess::Move move, chess::Piece captured, const chess::Board& board
 ) {
-    const auto from_attacked = threats.is_set(move.from());
-    const auto to_attacked = threats.is_set(move.to());
+    const auto threats = board.threats();
+    const auto moving = board.at(move.from());
+    chess::BitBoard attacked_lte = 0;
+
+    switch (moving.type()) {
+        case chess::PieceType::KING:
+        case chess::PieceType::QUEEN:
+            attacked_lte |= board.threats(chess::PieceType::QUEEN);
+            [[fallthrough]];
+        case chess::PieceType::ROOK:
+            attacked_lte |= board.threats(chess::PieceType::ROOK);
+            [[fallthrough]];
+        case chess::PieceType::BISHOP:
+        case chess::PieceType::KNIGHT:
+            attacked_lte |= board.threats(chess::PieceType::BISHOP);
+            attacked_lte |= board.threats(chess::PieceType::KNIGHT);
+            [[fallthrough]];
+        default: attacked_lte |= board.threats(chess::PieceType::PAWN); break;
+    }
+
+    const auto from_attacked = threats.is_set(move.from()) + attacked_lte.is_set(move.from());
+    const auto to_attacked = threats.is_set(move.to()) + attacked_lte.is_set(move.to());
     return capt_hist_[move.from()][move.to()][captured][from_attacked][to_attacked];
 }

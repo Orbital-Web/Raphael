@@ -30,7 +30,7 @@ private:
     HistoryEntry butterfly_hist_[64][64][2][2];      // [from][to][from attacked][to attacked]
     HistoryEntry pawn_hist_[PAWNHIST_SIZE][12][64];  // [pawn key][from][to]
     HistoryEntry cont_hist_[12][64][12][64];         // [prev from][prev to][from][to]
-    HistoryEntry capt_hist_[64][64][13][2][2];  // [from][to][piece][from attacked][to attacked]
+    HistoryEntry capt_hist_[64][64][13][3][3];  // [from][to][piece][from attacked][to attacked]
 
 public:
     /** Initializes all the history tables with zeros */
@@ -135,14 +135,14 @@ private:
      *
      * \param move move to get history for
      * \param captured the captured piece
-     * \param threats squares attacked by the current not side to move
+     * \param board current board
      * \returns capture history entry
      */
     [[nodiscard]] const HistoryEntry& capt_entry(
-        chess::Move move, chess::Piece captured, chess::BitBoard threats
+        chess::Move move, chess::Piece captured, const chess::Board& board
     ) const;
     [[nodiscard]] HistoryEntry& capt_entry(
-        chess::Move move, chess::Piece captured, chess::BitBoard threats
+        chess::Move move, chess::Piece captured, const chess::Board& board
     );
 };
 }  // namespace raphael

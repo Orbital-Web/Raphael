@@ -143,7 +143,7 @@ void Nnue::forward_l1(
 
     #pragma GCC unroll 32
     for (i32 r = 0; r < n_chunks; r++) {
-        l1_pre[r][0] = zero_i32();
+        l1_pre[r][0] = load_i32(&params->b1[bucket_idx][r * regw32]);
         l1_pre[r][1] = zero_i32();
         l1_pre[r][2] = zero_i32();
         l1_pre[r][3] = zero_i32();
@@ -190,10 +190,9 @@ void Nnue::forward_l1(
     for (i32 r = 0; r < n_chunks; r++) {
         const VecI32 pre0 = add_i32(l1_pre[r][0], l1_pre[r][1]);
         const VecI32 pre1 = add_i32(l1_pre[r][2], l1_pre[r][3]);
+        const VecI32 pre = add_i32(pre0, pre1);
 
         // apply screlu and downshift into QC^2 space
-        const VecI32 bias = load_i32(&params->b1[bucket_idx][r * regw32]);
-        const VecI32 pre = add_i32(add_i32(pre0, pre1), bias);
         const VecI32 crelu = clamp_i32(pre, zs, qs);
         const VecI32 screlu = rshift_i32(mullo_i32(crelu, crelu), 2 * L1_SHIFT);
         store_i32(&l1_out[r * regw32], screlu);

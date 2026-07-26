@@ -22,8 +22,7 @@ INCBIN(unsigned char, netfile, TOSTRING(NETWORK_FILE));
 
 i32 Nnue::NnueFeature::index(chess::Color perspective, bool mirror) const {
     const auto sq = (mirror) ? square.mirrored() : square;
-    const auto pc = (piece.type() == chess::PieceType::KING) ? chess::Piece::WHITEKING
-                                                             : piece.relative(perspective);
+    const auto pc = piece.relative(perspective);
     return 64 * pc + sq.relative(perspective);
 }
 
@@ -82,20 +81,20 @@ void Nnue::NnueFinnyEntry::update(
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
     constexpr i32 n_chunks = N_HIDDEN / regw;
     static_assert(N_HIDDEN % regw == 0);
-    static_assert(n_chunks % SIMD_UNROLL == 0);
-    VecI16 accs[SIMD_UNROLL];
+    static_assert(n_chunks % 2 == 0);
+    VecI16 accs[2];
 
-    for (i32 i = 0; i < n_chunks; i += SIMD_UNROLL) {
-        // copy bias
+    for (i32 i = 0; i < n_chunks; i += 2) {
+    // copy bias
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_UNROLL; r++) accs[r] = load_i16(&values[(i + r) * regw]);
+        for (i32 r = 0; r < 2; r++) accs[r] = load_i16(&values[(i + r) * regw]);
 
         // add features
         for (i32 f = 0; f < n_adds; f++) {
             const auto fidx = adds[f];
 
             #pragma GCC unroll 32  // fmt: skip
-            for (i32 r = 0; r < SIMD_UNROLL; r++)
+            for (i32 r = 0; r < 2; r++)
                 accs[r] = adds_i16(accs[r], load_i16(&weights[fidx][(i + r) * regw]));
         }
 
@@ -104,13 +103,13 @@ void Nnue::NnueFinnyEntry::update(
             const auto fidx = subs[f];
 
             #pragma GCC unroll 32  // fmt: skip
-            for (i32 r = 0; r < SIMD_UNROLL; r++)
+            for (i32 r = 0; r < 2; r++)
                 accs[r] = subs_i16(accs[r], load_i16(&weights[fidx][(i + r) * regw]));
         }
 
-    // store into self
+        // store into self
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_UNROLL; r++) store_i16(&values[(i + r) * regw], accs[r]);
+        for (i32 r = 0; r < 2; r++) store_i16(&values[(i + r) * regw], accs[r]);
     }
 #else
     for (i32 f = 0; f < n_adds; f++)
@@ -167,35 +166,35 @@ void Nnue::NnueAccumulator::update(
     constexpr i32 regw = ALIGNMENT / sizeof(i16);
     constexpr i32 n_chunks = N_HIDDEN / regw;
     static_assert(N_HIDDEN % regw == 0);
-    static_assert(n_chunks % SIMD_UNROLL == 0);
-    VecI16 accs[SIMD_UNROLL];
+    static_assert(n_chunks % 2 == 0);
+    VecI16 accs[2];
 
-    for (i32 i = 0; i < n_chunks; i += SIMD_UNROLL) {
-        // copy old_acc
+    for (i32 i = 0; i < n_chunks; i += 2) {
+    // copy old_acc
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_UNROLL; r++) accs[r] = load_i16(&old_acc.values[(i + r) * regw]);
+        for (i32 r = 0; r < 2; r++) accs[r] = load_i16(&old_acc.values[(i + r) * regw]);
 
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_UNROLL; r++)
+        for (i32 r = 0; r < 2; r++)
             accs[r] = subs_i16(accs[r], load_i16(&weights[sub1][(i + r) * regw]));
 
         if (n_subs > 1)
             #pragma GCC unroll 32  // fmt: skip
-            for (i32 r = 0; r < SIMD_UNROLL; r++)
+            for (i32 r = 0; r < 2; r++)
                 accs[r] = subs_i16(accs[r], load_i16(&weights[sub2][(i + r) * regw]));
 
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_UNROLL; r++)
+        for (i32 r = 0; r < 2; r++)
             accs[r] = adds_i16(accs[r], load_i16(&weights[add1][(i + r) * regw]));
 
         if (n_adds > 1)
             #pragma GCC unroll 32  // fmt: skip
-            for (i32 r = 0; r < SIMD_UNROLL; r++)
+            for (i32 r = 0; r < 2; r++)
                 accs[r] = adds_i16(accs[r], load_i16(&weights[add2][(i + r) * regw]));
 
-    // store into self
+        // store into self
         #pragma GCC unroll 32  // fmt: skip
-        for (i32 r = 0; r < SIMD_UNROLL; r++) store_i16(&values[(i + r) * regw], accs[r]);
+        for (i32 r = 0; r < 2; r++) store_i16(&values[(i + r) * regw], accs[r]);
     }
 #else
     for (i32 i = 0; i < N_HIDDEN; i++) {

@@ -176,6 +176,7 @@ public:
     /** Starts a search without blocking, does nothing if there is an ongoing search
      *
      * \param options search options
+     * \param search_moves allowed root moves, or empty to search all legal moves
      */
     void start_search(
         const TimeManager::SearchOptions& options, std::vector<chess::Move> search_moves = {}

@@ -9,12 +9,14 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 using std::cin;
 using std::cout;
 using std::exception;
 using std::flush;
+using std::move;
 using std::stoi;
 using std::stoll;
 using std::stoull;
@@ -212,7 +214,7 @@ inline void handle_go(const vector<string>& tokens) {
              << flush;
     }
 
-    engine.start_search(options, std::move(search_moves));
+    engine.start_search(options, move(search_moves));
 }
 
 /** Handles the eval command

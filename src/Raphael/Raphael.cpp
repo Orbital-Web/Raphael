@@ -12,6 +12,7 @@
 #include <future>
 #include <iostream>
 #include <unordered_map>
+#include <utility>
 
 using namespace raphael;
 using std::abs;
@@ -28,9 +29,11 @@ using std::memory_order_relaxed;
 using std::memory_order_release;
 using std::memset;
 using std::min;
+using std::move;
 using std::string;
 using std::swap;
 using std::unordered_map;
+using std::vector;
 
 
 
@@ -163,12 +166,12 @@ void Raphael::set_threads(i32 num_searchers) {
 
 
 void Raphael::start_search(
-    const TimeManager::SearchOptions& options, std::vector<chess::Move> search_moves
+    const TimeManager::SearchOptions& options, vector<chess::Move> search_moves
 ) {
     // no need to do compare exchange as all public functions should get called from a single thread
     assert(!is_searching_.load(memory_order_acquire));
     search_opt_ = options;
-    search_moves_ = std::move(search_moves);
+    search_moves_ = move(search_moves);
     stop_.store(false, memory_order_relaxed);
     is_searching_.store(true, memory_order_release);
 

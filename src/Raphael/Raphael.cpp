@@ -162,10 +162,13 @@ void Raphael::set_threads(i32 num_searchers) {
 }
 
 
-void Raphael::start_search(const TimeManager::SearchOptions& options) {
+void Raphael::start_search(
+    const TimeManager::SearchOptions& options, std::vector<chess::Move> search_moves
+) {
     // no need to do compare exchange as all public functions should get called from a single thread
     assert(!is_searching_.load(memory_order_acquire));
     search_opt_ = options;
+    search_moves_ = std::move(search_moves);
     stop_.store(false, memory_order_relaxed);
     is_searching_.store(true, memory_order_release);
 
@@ -324,7 +327,9 @@ void Raphael::t_search_function(i32 thread_id) {
             // show last info and save results
             const auto& selected_tdata = *thread_data_[best_tid];
             const auto& result = selected_tdata.result;
-            const auto& bestmove = result.pv->moves[0];
+            auto bestmove = result.pv->moves[0];
+            if (result.pv->length == 0 && !search_moves_.empty())
+                bestmove = search_moves_.front();
             const bool is_mate = utils::is_mate(result.score);
             if (ucilevel_ != UciInfoLevel::NONE) print_uci_info(selected_tdata);
 
@@ -504,6 +509,7 @@ i32 Raphael::negamax(
     const auto& board = position.board();
 
     const bool is_root = (ply == 0);
+    const bool restricted_root = is_root && !search_moves_.empty();
     assert(!is_root || is_PV);
     assert(!is_PV || !cutnode);
     assert(!is_root || !ss->excluded);
@@ -707,6 +713,7 @@ i32 Raphael::negamax(
     i32 move_searched = 0;
     while (const auto move = generator.next()) {
         if (move == ss->excluded) continue;
+        if (restricted_root && std::ranges::find(search_moves_, move) == search_moves_.end()) continue;
 
         const bool is_quiet = board.is_quiet(move);
         const auto base_lmr = LMR_TABLE[is_quiet][fdepth / DEPTH_SCALE][move_searched + 1];
@@ -917,11 +924,11 @@ i32 Raphael::negamax(
     if (move_searched == 0) return (in_check) ? -MATE_SCORE + ply : 0;  // reward faster mate
 
     // update transposition table
-    if (!ss->excluded)
+    if (!ss->excluded && !restricted_root)
         tt_.set(ttkey, bestscore, raw_static_eval, bestmove, fdepth, ss->ttpv, ttflag, ply);
 
     // update corrhist
-    if (!in_check && (!bestmove || board.is_quiet(bestmove))
+    if (!restricted_root && !in_check && (!bestmove || board.is_quiet(bestmove))
         && (ttflag == tt_.EXACT || (ttflag == tt_.LOWER && bestscore > ss->static_eval)
             || (ttflag == tt_.UPPER && bestscore < ss->static_eval)))
     {

@@ -186,7 +186,7 @@ Raphael::MoveScore Raphael::wait_search() {
 }
 
 Raphael::MoveScore Raphael::search(const TimeManager::SearchOptions& options) {
-    start_search(options);
+    start_search(options, {});
     return wait_search();
 }
 

@@ -63,7 +63,7 @@ void GameEngine::run_match(const GameOptions& options) {
 
         if (cur_is_engine) {
             players[turn].set_position(position);
-            players[turn].start_search({.t_remain = t_remain[turn], .t_inc = t_inc});
+            players[turn].start_search({.t_remain = t_remain[turn], .t_inc = t_inc}, {});
         } else
             human.set_board(position.board());
 

@@ -4,16 +4,19 @@
 #include <Raphael/tunable.h>
 #include <Raphael/wdl.h>
 
+#include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 using std::cin;
 using std::cout;
 using std::exception;
 using std::flush;
+using std::move;
 using std::stoi;
 using std::stoll;
 using std::stoull;
@@ -145,10 +148,27 @@ inline void handle_go(const vector<string>& tokens) {
 
     // get arguments
     raphael::TimeManager::SearchOptions options = {};
+    vector<string> search_move_tokens;
+    bool restrict_moves = false;
+    bool has_limits = false;
 
     bool is_white = position.board().stm() == chess::Color::WHITE;
     i32 i = 1;
     while (i < ntokens) {
+        if (tokens[i] == "searchmoves") {
+            restrict_moves = true;
+            for (++i; i < ntokens; ++i) {
+                const auto& move = tokens[i];
+                if (move.size() < 4 || move.size() > 5 ||
+                    move[1] < '1' || move[1] > '8' || move[3] < '1' || move[3] > '8')
+                    break;
+                search_move_tokens.push_back(move);
+            }
+            continue;
+        }
+        has_limits = true;
+        if (tokens[i] != "infinite" && i + 1 == ntokens) break;
+
         if (tokens[i] == "depth")
             options.maxdepth = stoi(tokens[i + 1]);
         else if (tokens[i] == "nodes")
@@ -167,7 +187,23 @@ inline void handle_go(const vector<string>& tokens) {
         i += 2;
     }
     if (options.t_remain < 0) options.t_remain = 1;
-    if (ntokens == 1) options.infinite = true;
+    if (!has_limits) options.infinite = true;
+
+    vector<chess::Move> search_moves;
+    if (restrict_moves) {
+        chess::MoveList legal_moves;
+        chess::Movegen::generate_legals(legal_moves, position.board());
+        for (const auto& scored_move : legal_moves) {
+            const auto move = scored_move.move;
+            const auto uci_move = chess::uci::from_move(move, chess960);
+            if (std::ranges::find(search_move_tokens, uci_move) != search_move_tokens.end())
+                search_moves.push_back(move);
+        }
+        if (search_moves.empty()) {
+            cout << "bestmove 0000\n" << flush;
+            return;
+        }
+    }
 
     if (!position_ready) {
         engine.set_position(position);
@@ -178,7 +214,7 @@ inline void handle_go(const vector<string>& tokens) {
              << flush;
     }
 
-    engine.start_search(options);
+    engine.start_search(options, move(search_moves));
 }
 
 /** Handles the eval command

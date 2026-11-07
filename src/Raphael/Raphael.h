@@ -115,6 +115,7 @@ private:
     // thread helpers
     std::atomic<bool> is_searching_{false};
     TimeManager::SearchOptions search_opt_;
+    std::vector<chess::Move> search_moves_;
     MoveScore search_result_;
 
     std::atomic<bool> stop_{false};
@@ -175,8 +176,11 @@ public:
     /** Starts a search without blocking, does nothing if there is an ongoing search
      *
      * \param options search options
+     * \param search_moves allowed root moves, or empty to search all legal moves
      */
-    void start_search(const TimeManager::SearchOptions& options);
+    void start_search(
+        const TimeManager::SearchOptions& options, std::vector<chess::Move> search_moves = {}
+    );
 
     /** Returns whether the search is complete (or isn't running)
      *

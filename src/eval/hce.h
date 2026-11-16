@@ -5,6 +5,18 @@
 
 
 namespace raphael::hce {
+struct NullHceObserver {
+    void prepare_make_move() {}
+    void add_piece(const chess::Board*, chess::Piece, chess::Square) {}
+    void rem_piece(const chess::Board*, chess::Piece, chess::Square) {}
+    void move_piece(const chess::Board*, chess::Piece, chess::Piece, chess::Square, chess::Square) {
+    }
+    void mutate_piece(const chess::Board*, chess::Piece, chess::Piece, chess::Square) {}
+    void move_king(chess::Color, chess::Square, chess::Square) {}
+    void set_board(const chess::Board&) {}
+    void unmake_move() {}
+};
+
 // legacy, kept for future references
 class RaphaelHCE {
 private:
@@ -50,6 +62,8 @@ private:
     };
     static const PMasks PMASK;
 
+    NullHceObserver observer_;
+
 
 public:
     /** Evaluates the board from the current side to move's perspective
@@ -74,6 +88,12 @@ public:
 
     /** Updates internal states to unmake the last move */
     void unmake_move() {}
+
+    /** Returns a null observer as this class does not use an observer to manage states
+     *
+     * \returns a null observer
+     */
+    NullHceObserver& observer() { return observer_; }
 };
 }  // namespace raphael::hce
 #endif

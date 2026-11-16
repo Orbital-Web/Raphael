@@ -159,8 +159,8 @@ inline void handle_go(const vector<string>& tokens) {
             restrict_moves = true;
             for (++i; i < ntokens; ++i) {
                 const auto& move = tokens[i];
-                if (move.size() < 4 || move.size() > 5 ||
-                    move[1] < '1' || move[1] > '8' || move[3] < '1' || move[3] > '8')
+                if (move.size() < 4 || move.size() > 5 || move[1] < '1' || move[1] > '8'
+                    || move[3] < '1' || move[3] > '8')
                     break;
                 search_move_tokens.push_back(move);
             }

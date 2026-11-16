@@ -331,8 +331,7 @@ void Raphael::t_search_function(i32 thread_id) {
             const auto& selected_tdata = *thread_data_[best_tid];
             const auto& result = selected_tdata.result;
             auto bestmove = result.pv->moves[0];
-            if (result.pv->length == 0 && !search_moves_.empty())
-                bestmove = search_moves_.front();
+            if (result.pv->length == 0 && !search_moves_.empty()) bestmove = search_moves_.front();
             const bool is_mate = utils::is_mate(result.score);
             if (ucilevel_ != UciInfoLevel::NONE) print_uci_info(selected_tdata);
 
@@ -716,7 +715,8 @@ i32 Raphael::negamax(
     i32 move_searched = 0;
     while (const auto move = generator.next()) {
         if (move == ss->excluded) continue;
-        if (restricted_root && std::ranges::find(search_moves_, move) == search_moves_.end()) continue;
+        if (restricted_root && std::ranges::find(search_moves_, move) == search_moves_.end())
+            continue;
 
         const bool is_quiet = board.is_quiet(move);
         const auto base_lmr = LMR_TABLE[is_quiet][fdepth / DEPTH_SCALE][move_searched + 1];

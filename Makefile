@@ -424,3 +424,14 @@ ifeq ($(DETECTED_OS),Windows)
 else
 	rm -f $(MAIN_EXE) $(EXE) $(TEST_EXE) $(PERM_EXE)
 endif
+
+ALL_CPP      := $(MAIN_SOURCES) $(UCI_SOURCES) $(TEST_SOURCES) $(PERM_SOURCES)
+ALL_HPP      := $(wildcard $(ALL_CPP:.cpp=.h))
+CLANG_FORMAT := clang-format
+
+.PHONY: fmt fmt_check
+fmt:
+	$(CLANG_FORMAT) --style=file:.clang-format -i $(ALL_CPP) $(ALL_HPP)
+
+fmt_check:
+	$(CLANG_FORMAT) --style=file:.clang-format --dry-run --Werror $(ALL_CPP) $(ALL_HPP)

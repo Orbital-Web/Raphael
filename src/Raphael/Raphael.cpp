@@ -334,6 +334,7 @@ void Raphael::t_search_function(i32 thread_id) {
             if (result.pv->length == 0 && !search_moves_.empty()) bestmove = search_moves_.front();
             const bool is_mate = utils::is_mate(result.score);
             if (ucilevel_ != UciInfoLevel::NONE) print_uci_info(selected_tdata);
+            tt_.do_age();
 
             search_result_ = {
                 .move = bestmove,
@@ -492,9 +493,6 @@ void Raphael::iterative_deepen(ThreadData& tdata) {
         // print depth completion info
         if (thread_id == 0 && ucilevel_ == UciInfoLevel::ALL) print_uci_info(tdata);
     }
-
-    // age tt
-    tt_.do_age();
 
     // update nodes
     result.nodes = tm_.get_nodes(thread_id);

@@ -8,7 +8,7 @@ using std::swap;
 
 
 Cuckoo::Cuckoo() {
-    u32 count = 0;
+    [[maybe_unused]] u32 count = 0;
 
     for (chess::Piece piece = chess::Piece::WHITEKNIGHT; piece <= chess::Piece::BLACKKING; ++piece)
     {

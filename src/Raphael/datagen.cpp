@@ -14,7 +14,6 @@ using std::ifstream;
 using std::memory_order_relaxed;
 using std::min;
 using std::mt19937_64;
-using std::mutex;
 using std::ofstream;
 using std::signal;
 using std::string;

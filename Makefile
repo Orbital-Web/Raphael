@@ -435,3 +435,69 @@ fmt:
 
 fmt_check:
 	$(CLANG_FORMAT) --style=file:.clang-format --dry-run --Werror $(ALL_CPP) $(ALL_HPP)
+
+
+#---------------------------------------------------------------------------------------------------
+# Help
+#---------------------------------------------------------------------------------------------------
+
+ifeq ($(filter help,$(MAKECMDGOALS)),help)
+    ifndef NO_COLOR
+        ifeq ($(DETECTED_OS),Windows)
+            ifneq ($(MSYSTEM),)
+                ESC := $(shell printf '\033')
+            endif
+        else
+            ESC := $(shell printf '\033')
+        endif
+    endif
+endif
+
+ifdef ESC
+    C_RST  := $(ESC)[0m
+    C_BOLD := $(ESC)[1m
+    C_DIM  := $(ESC)[2m
+    C_HEAD := $(ESC)[1;33m
+    C_NAME := $(ESC)[1;36m
+    C_KEY  := $(ESC)[36m
+    C_CMD  := $(ESC)[32m
+endif
+
+define HELP_TEXT
+$(C_NAME)Raphael $(VERSION)$(C_RST) $(C_BOLD)Build System$(C_RST)
+
+$(C_HEAD)USAGE:$(C_RST)
+  $(C_CMD)make$(C_RST) [-j] [TARGET] [OPTION=VALUE ...]
+
+$(C_HEAD)TARGETS:$(C_RST)
+  $(C_KEY)uci$(C_RST)             Build UCI engine (default) $(C_DIM)-> $(EXE)$(C_RST)
+  $(C_KEY)main$(C_RST)            Build SFML GUI (requires packages) $(C_DIM)-> $(MAIN_EXE)$(C_RST)
+  $(C_KEY)test$(C_RST)            Build test suite $(C_DIM)-> $(TEST_EXE)$(C_RST)
+  $(C_KEY)packages$(C_RST)        Download SFML 3.0.2 for GUI builds
+  $(C_KEY)all$(C_RST)             Build uci, packages, main, and test
+  $(C_KEY)release_all$(C_RST)     Build release binaries for all architectures
+  $(C_KEY)prerelease_all$(C_RST)  Build prerelease binaries for all architectures
+  $(C_KEY)fmt$(C_RST)             Format C++ sources with clang-format
+  $(C_KEY)fmt_check$(C_RST)       Verify formatting without modifying files
+  $(C_KEY)clean$(C_RST)           Remove compiled object files
+  $(C_KEY)clean_all$(C_RST)       Remove object files and executables
+
+$(C_HEAD)OPTIONS:$(C_RST)
+  $(C_KEY)ARCH$(C_RST)            Target architecture: $(C_BOLD)auto$(C_RST) (default), native, avx512, avx2_bmi2, avx2, generic, tunable
+  $(C_KEY)DEBUG$(C_RST)           Build mode: $(C_BOLD)off$(C_RST) (default), on, release, prerelease, san, net
+  $(C_KEY)EVAL$(C_RST)            Evaluation type: $(C_BOLD)multilayer$(C_RST) (default), singlelayer, hce
+  $(C_KEY)EVALFILE$(C_RST)        NNUE file path, or $(C_BOLD)default$(C_RST) (reads from network.txt)
+  $(C_KEY)NUMA$(C_RST)            NUMA support: $(C_BOLD)off$(C_RST) (default), on
+  $(C_KEY)PGO$(C_RST)             Profile-guided optimization for uci: $(C_BOLD)off$(C_RST) (default), on
+  $(C_KEY)EXE$(C_RST)             Output name for uci binary $(C_DIM)(default: uci / uci.exe)$(C_RST)
+
+$(C_HEAD)EXAMPLES:$(C_RST)
+  $(C_CMD)make -j uci$(C_RST)
+  $(C_CMD)make -j uci ARCH=avx2_bmi2 PGO=on$(C_RST)
+  $(C_CMD)make -j test DEBUG=on && ./$(TEST_EXE)$(C_RST)
+endef
+
+.PHONY: help
+help:
+	$(info $(HELP_TEXT))
+	$(if $(filter Windows,$(DETECTED_OS)),@rem,@:)
